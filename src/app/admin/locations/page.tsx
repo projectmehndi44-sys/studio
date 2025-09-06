@@ -113,18 +113,19 @@ export default function LocationManagementPage() {
 
                                     return (
                                         <AccordionItem value={state} key={state}>
-                                            <AccordionTrigger>
-                                                <div className="flex items-center gap-4 w-full">
+                                            <div className="flex items-center gap-4 w-full border-b">
+                                                <div className="flex items-center gap-4 p-4">
                                                     <Checkbox 
                                                         id={`state-${state}`}
                                                         checked={isAllSelected}
                                                         onCheckedChange={(checked) => handleStateChange(state, checked)}
                                                         data-state={isIndeterminate ? 'indeterminate' : (isAllSelected ? 'checked' : 'unchecked')}
-                                                        onClick={(e) => e.stopPropagation()} // prevent trigger from firing
                                                     />
-                                                    <Label htmlFor={`state-${state}`} className="font-bold text-lg flex-1 text-left">{state}</Label>
                                                 </div>
-                                            </AccordionTrigger>
+                                                <AccordionTrigger className="flex-1 text-left border-b-0 py-4">
+                                                    <Label htmlFor={`state-${state}`} className="font-bold text-lg">{state}</Label>
+                                                </AccordionTrigger>
+                                            </div>
                                             <AccordionContent>
                                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 pl-12 bg-muted/50 rounded-md">
                                                     {allDistrictsInState.map(district => (
