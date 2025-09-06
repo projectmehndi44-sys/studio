@@ -102,6 +102,16 @@ export default function Home() {
   };
 
   React.useEffect(() => {
+    // On initial load, show all artists if logged in, otherwise show none.
+    if (isCustomerLoggedIn) {
+        setFilteredArtists(allArtists);
+    } else {
+        setFilteredArtists([]);
+    }
+  }, [isCustomerLoggedIn]);
+
+
+  const applyFilters = () => {
     if (!isCustomerLoggedIn) {
       setFilteredArtists([]);
       return;
@@ -131,7 +141,12 @@ export default function Home() {
     }
 
     setFilteredArtists(artists);
+  };
+  
+  React.useEffect(() => {
+    applyFilters();
   }, [location, serviceType, priceRange, availabilityDate, isCustomerLoggedIn]);
+
 
   const resetFilters = () => {
     setLocation('');
@@ -160,7 +175,7 @@ export default function Home() {
 
         {isCustomerLoggedIn ? (
           <div className="space-y-8">
-            <RecommendationsTab onBookingRequest={handleBookingRequest} isCustomerLoggedIn={isCustomerLoggedIn} onLoginRequest={handleCustomerLogin} />
+            <RecommendationsTab onBookingRequest={handleBookingRequest} />
             
             <Separator />
             
