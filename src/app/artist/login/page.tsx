@@ -25,15 +25,15 @@ export default function ArtistLoginPage() {
         // This is a basic, client-side-only authentication for prototyping.
         // It checks against artists who were approved in the admin portal.
         setTimeout(() => {
-            const pendingArtists = JSON.parse(localStorage.getItem('pendingArtists') || '[]');
-            const artist = pendingArtists.find(
-                (a: any) => a.email === email && a.password === password && a.status === 'Approved'
+            const approvedArtists = JSON.parse(localStorage.getItem('artists') || '[]');
+            const artist = approvedArtists.find(
+                (a: any) => a.email === email && a.password === password
             );
 
             if (artist) {
                  toast({
                     title: 'Login Successful',
-                    description: `Welcome back, ${artist.fullName}!`,
+                    description: `Welcome back, ${artist.name}!`,
                 });
                 // In a real app, you would use a proper session/token management system.
                 // For this prototype, we'll use localStorage.

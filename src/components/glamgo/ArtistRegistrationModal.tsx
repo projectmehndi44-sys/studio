@@ -23,7 +23,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Terminal, Upload } from 'lucide-react';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AVAILABLE_LOCATIONS } from '@/lib/available-locations';
 import { INDIA_LOCATIONS } from '@/lib/india-locations';
 
 
@@ -77,9 +76,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
   const [isVerifyingOtp, setIsVerifyingOtp] = React.useState(false);
   const [isOtpSent, setIsOtpSent] = React.useState(false);
   const [availableStates, setAvailableStates] = React.useState<string[]>([]);
-  const [availableLocations, setAvailableLocations] = React.useState<Record<string, string[]>>({});
-
-
+  
   const form = useForm<RegistrationFormValues>({
     resolver: zodResolver(registrationSchema),
     defaultValues: {
@@ -103,14 +100,12 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
   React.useEffect(() => {
     if (isOpen) {
         const savedLocations = localStorage.getItem('availableLocations');
-        const locations = savedLocations ? JSON.parse(savedLocations) : AVAILABLE_LOCATIONS;
-        setAvailableLocations(locations);
+        const locations = savedLocations ? JSON.parse(savedLocations) : {};
         setAvailableStates(Object.keys(locations));
     }
   }, [isOpen]);
 
   const selectedState = form.watch('state');
-  
   const districts = selectedState ? INDIA_LOCATIONS[selectedState] : [];
 
   const onSubmit = (data: RegistrationFormValues) => {
@@ -353,5 +348,3 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
     </Dialog>
   );
 }
-
-    
