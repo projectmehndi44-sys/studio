@@ -1,9 +1,26 @@
 'use client';
 
+import * as React from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield } from "lucide-react";
+import { Button } from '@/components/ui/button';
 
 export default function AdminPage() {
+    const router = useRouter();
+
+    React.useEffect(() => {
+        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
+        if (isAdminAuthenticated !== 'true') {
+            router.push('/admin/login');
+        }
+    }, [router]);
+
+    const handleLogout = () => {
+        localStorage.removeItem('isAdminAuthenticated');
+        router.push('/admin/login');
+    };
+
     // In a real application, you would protect this route and fetch real data.
     const pendingArtists = [
         { id: 1, name: 'Creative Hands by S', email: 's@example.com', date: '2023-10-27' },
@@ -18,11 +35,12 @@ export default function AdminPage() {
     return (
         <div className="flex min-h-screen w-full flex-col bg-muted/40">
             <div className="flex flex-col sm:gap-4 sm:py-4">
-                <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+                <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 justify-between">
                     <h1 className="flex items-center gap-2 text-2xl font-bold text-primary">
                         <Shield className="w-8 h-8" />
                         Admin Portal
                     </h1>
+                    <Button onClick={handleLogout} variant="outline">Logout</Button>
                 </header>
                 <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
                     <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
