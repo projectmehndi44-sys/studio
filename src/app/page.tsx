@@ -32,6 +32,7 @@ import { Header } from '@/components/glamgo/Header';
 import { ArtistCard } from '@/components/glamgo/ArtistCard';
 import { BookingModal } from '@/components/glamgo/BookingModal';
 import { RecommendationsTab } from '@/components/glamgo/RecommendationsTab';
+import { ArtistRegistrationModal } from '@/components/glamgo/ArtistRegistrationModal';
 
 export default function Home() {
   const [filteredArtists, setFilteredArtists] =
@@ -40,6 +41,8 @@ export default function Home() {
     null
   );
   const [isBookingModalOpen, setIsBookingModalOpen] = React.useState(false);
+  const [isArtistRegistrationModalOpen, setIsArtistRegistrationModalOpen] =
+    React.useState(false);
 
   const [location, setLocation] = React.useState('');
   const [serviceType, setServiceType] = React.useState('all');
@@ -51,6 +54,10 @@ export default function Home() {
   const handleBookingRequest = (artist: Artist) => {
     setSelectedArtist(artist);
     setIsBookingModalOpen(true);
+  };
+
+  const handleArtistRegister = () => {
+    setIsArtistRegistrationModalOpen(true);
   };
 
   React.useEffect(() => {
@@ -90,7 +97,7 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <Header />
+      <Header onArtistRegister={handleArtistRegister} />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="text-center">
           <h1 className="font-headline text-5xl text-primary md:text-7xl">
@@ -220,6 +227,10 @@ export default function Home() {
             onOpenChange={setIsBookingModalOpen}
           />
         )}
+        <ArtistRegistrationModal
+            isOpen={isArtistRegistrationModalOpen}
+            onOpenChange={setIsArtistRegistrationModalOpen}
+        />
       </main>
     </div>
   );
