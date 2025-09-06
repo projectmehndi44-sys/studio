@@ -179,6 +179,15 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
             <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <div className="max-h-[60vh] overflow-y-auto pr-4">
+                   {states.length === 0 ? (
+                        <Alert variant="destructive">
+                            <Terminal className="h-4 w-4" />
+                            <AlertTitle>Registration Currently Unavailable</AlertTitle>
+                            <AlertDescription>
+                                We are not currently accepting new artist registrations. Please check back later or contact support for more information.
+                            </AlertDescription>
+                        </Alert>
+                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
                         <FormField control={form.control} name="fullName" render={({ field }) => (
                             <FormItem className="md:col-span-2"><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>
@@ -321,9 +330,10 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                             )}
                         />
                     </div>
+                   )}
                 </div>
             <DialogFooter>
-                <Button type="submit" className="bg-accent hover:bg-accent/90 w-full">Submit for Review</Button>
+                <Button type="submit" className="bg-accent hover:bg-accent/90 w-full" disabled={states.length === 0}>Submit for Review</Button>
             </DialogFooter>
             </form>
             </Form>
