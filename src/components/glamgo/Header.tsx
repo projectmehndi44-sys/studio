@@ -61,12 +61,12 @@ export function Header({
           </DropdownMenu>
         ) : (
           <div className="flex items-center gap-2">
-            <Link href="/admin/login">
+            <Link href="/admin/login" passHref>
                 <Button variant="outline">
                     <ShieldCheck className="mr-2 h-4 w-4" /> Admin Portal
                 </Button>
             </Link>
-            <Link href="/admin/login">
+            <Link href="/admin/login" passHref>
                 <Button onClick={handleArtistLogin}>
                     <Palette className="mr-2 h-4 w-4" /> Artist Login
                 </Button>
