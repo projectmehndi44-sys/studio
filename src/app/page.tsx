@@ -216,12 +216,9 @@ export default function Home() {
       />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="text-center">
-            <h1 className="font-body text-5xl font-bold text-primary md:text-7xl">
-                Mehendi<span className="font-headline">f</span>y
+            <h1 className="font-body text-5xl font-bold text-primary md:text-6xl">
+                Book Mehendi & Makeup Artists Near You, Instantly
             </h1>
-            <p className="font-body mx-auto max-w-2xl text-foreground/80 md:text-xl">
-                Mehndi and Makeup artist at your fingertips
-            </p>
         </div>
 
         {isCustomerLoggedIn ? (

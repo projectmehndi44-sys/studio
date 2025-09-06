@@ -20,8 +20,8 @@ const roboto = Roboto({
 
 
 export const metadata: Metadata = {
-  title: 'MehendiFy - Mehndi and Makeup artist at your fingertips',
-  description: 'Find and book the best mehndi and makeup artists. Your perfect look for any occasion is just a click away.',
+  title: 'MehendiFy - Book Mehendi & Makeup Artists Near You, Instantly',
+  description: 'Book Mehendi & Makeup Artists Near You, Instantly. Your perfect look for any occasion is just a click away.',
 };
 
 export default function RootLayout({
