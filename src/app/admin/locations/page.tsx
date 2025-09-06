@@ -17,17 +17,21 @@ import { AVAILABLE_LOCATIONS } from '@/lib/available-locations';
 export default function LocationManagementPage() {
     const router = useRouter();
     const { toast } = useToast();
-    const [selectedLocations, setSelectedLocations] = React.useState<Record<string, string[]>>(
-        // In a real app, this would be fetched from a database.
-        // For this prototype, we'll use the imported data.
-        JSON.parse(JSON.stringify(AVAILABLE_LOCATIONS)) // Deep copy
-    );
+    const [selectedLocations, setSelectedLocations] = React.useState<Record<string, string[]>>({});
     const [isLoading, setIsLoading] = React.useState(false);
 
-    React.useEffect(() => {
+     React.useEffect(() => {
         const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
         if (isAdminAuthenticated !== 'true') {
             router.push('/admin/login');
+        }
+        
+        // Load saved locations from localStorage, or use defaults
+        const savedLocations = localStorage.getItem('availableLocations');
+        if (savedLocations) {
+            setSelectedLocations(JSON.parse(savedLocations));
+        } else {
+            setSelectedLocations(AVAILABLE_LOCATIONS);
         }
     }, [router]);
     
@@ -66,16 +70,18 @@ export default function LocationManagementPage() {
     
     const handleSave = () => {
         setIsLoading(true);
-        // In a real application, you would make an API call to save this data to your database.
-        // For this prototype, we'll just log it and show a toast.
-        console.log("Saving locations:", selectedLocations);
+        // Save the selected locations to localStorage to persist them.
+        localStorage.setItem('availableLocations', JSON.stringify(selectedLocations));
+        
+        // Dispatch a storage event to notify other components if they need to update
+        window.dispatchEvent(new Event('storage'));
+
         setTimeout(() => {
             toast({
                 title: 'Locations Saved',
                 description: 'The list of available service locations has been updated.',
             });
             setIsLoading(false);
-            // Here you would update the `available-locations.ts` file or your DB
         }, 1000);
     };
 
@@ -108,13 +114,13 @@ export default function LocationManagementPage() {
                                 {allStates.map(state => {
                                     const allDistrictsInState = INDIA_LOCATIONS[state];
                                     const selectedDistrictsInState = selectedLocations[state] || [];
-                                    const isAllSelected = selectedDistrictsInState.length === allDistrictsInState.length;
+                                    const isAllSelected = allDistrictsInState && selectedDistrictsInState.length === allDistrictsInState.length;
                                     const isIndeterminate = selectedDistrictsInState.length > 0 && !isAllSelected;
 
                                     return (
                                         <AccordionItem value={state} key={state}>
-                                            <div className="flex items-center gap-4 w-full border-b">
-                                                <div className="flex items-center gap-4 p-4">
+                                            <div className="flex items-center gap-4 w-full">
+                                                <div className="flex items-center gap-4 p-4 pl-0">
                                                     <Checkbox 
                                                         id={`state-${state}`}
                                                         checked={isAllSelected}
@@ -122,8 +128,8 @@ export default function LocationManagementPage() {
                                                         data-state={isIndeterminate ? 'indeterminate' : (isAllSelected ? 'checked' : 'unchecked')}
                                                     />
                                                 </div>
-                                                <AccordionTrigger className="flex-1 text-left border-b-0 py-4">
-                                                    <Label htmlFor={`state-${state}`} className="font-bold text-lg">{state}</Label>
+                                                <AccordionTrigger className="flex-1 text-left border-b py-4 hover:no-underline">
+                                                    <Label htmlFor={`state-${state}`} className="font-bold text-lg cursor-pointer">{state}</Label>
                                                 </AccordionTrigger>
                                             </div>
                                             <AccordionContent>
@@ -154,5 +160,3 @@ export default function LocationManagementPage() {
         </div>
     );
 }
-
-    

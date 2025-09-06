@@ -48,7 +48,7 @@ const registrationSchema = z.object({
   phone: z.string().regex(/^\d{10}$/, { message: 'Please enter a valid 10-digit phone number.' }),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: passwordSchema,
-  confirmPassword: passwordSchema,
+  confirmPassword: z.string(),
   workImages: z.any()
     .refine((files) => files?.length >= 1, "At least one work image is required.")
     .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 5MB.`)
@@ -71,13 +71,12 @@ interface ArtistRegistrationModalProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
-const states = Object.keys(AVAILABLE_LOCATIONS);
-
 export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistrationModalProps) {
   const { toast } = useToast();
   const [isSubmitted, setIsSubmitted] = React.useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = React.useState(false);
   const [isOtpSent, setIsOtpSent] = React.useState(false);
+  const [availableStates, setAvailableStates] = React.useState<string[]>([]);
 
 
   const form = useForm<RegistrationFormValues>({
@@ -98,6 +97,15 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
       agreed: false,
     },
   });
+
+  // Effect to load available locations from localStorage when the modal opens
+  React.useEffect(() => {
+    if (isOpen) {
+        const savedLocations = localStorage.getItem('availableLocations');
+        const locations = savedLocations ? JSON.parse(savedLocations) : AVAILABLE_LOCATIONS;
+        setAvailableStates(Object.keys(locations));
+    }
+  }, [isOpen]);
 
   const selectedState = form.watch('state');
   
@@ -180,12 +188,12 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
             <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <div className="max-h-[60vh] overflow-y-auto pr-4">
-                   {states.length === 0 ? (
+                   {availableStates.length === 0 ? (
                         <Alert variant="destructive">
                             <Terminal className="h-4 w-4" />
                             <AlertTitle>Registration Currently Unavailable</AlertTitle>
                             <AlertDescription>
-                                We are not currently accepting new artist registrations. Please check back later or contact support for more information.
+                                We are not currently accepting new artist registrations. The admin has not configured any service locations yet. Please check back later or contact support for more information.
                             </AlertDescription>
                         </Alert>
                    ) : (
@@ -213,7 +221,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                                         <SelectTrigger><SelectValue placeholder="Select an available state" /></SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        {states.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                        {availableStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -334,7 +342,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                    )}
                 </div>
             <DialogFooter>
-                <Button type="submit" className="bg-accent hover:bg-accent/90 w-full" disabled={states.length === 0}>Submit for Review</Button>
+                <Button type="submit" className="bg-accent hover:bg-accent/90 w-full" disabled={availableStates.length === 0}>Submit for Review</Button>
             </DialogFooter>
             </form>
             </Form>

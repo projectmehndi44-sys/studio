@@ -3,7 +3,7 @@ export type TeamMember = {
     id: string;
     name: string;
     username: string;
-    password: 'Abhi@123';
+    password?: 'Abhi@123';
     role: 'admin' | 'team-member';
 };
 
@@ -18,5 +18,3 @@ export const teamMembers: TeamMember[] = [
         role: 'admin',
     }
 ];
-
-    
