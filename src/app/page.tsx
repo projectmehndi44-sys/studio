@@ -43,7 +43,7 @@ export default function Home() {
 
   const [location, setLocation] = React.useState('');
   const [serviceType, setServiceType] = React.useState('all');
-  const [priceRange, setPriceRange] = React.useState([5000]);
+  const [priceRange, setPriceRange] = React.useState([10000]);
   const [availabilityDate, setAvailabilityDate] = React.useState<
     Date | undefined
   >();
@@ -84,7 +84,7 @@ export default function Home() {
   const resetFilters = () => {
     setLocation('');
     setServiceType('all');
-    setPriceRange([5000]);
+    setPriceRange([10000]);
     setAvailabilityDate(undefined);
   };
 
