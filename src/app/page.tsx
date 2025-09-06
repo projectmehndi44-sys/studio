@@ -49,9 +49,12 @@ const galleryImages = [
     { src: 'https://picsum.photos/600/400?random=101', alt: 'Intricate bridal mehndi', hint: 'bridal mehndi' },
     { src: 'https://picsum.photos/600/400?random=102', alt: 'Glamorous makeup look', hint: 'glamorous makeup' },
     { src: 'https://picsum.photos/600/400?random=103', alt: 'Arabic mehndi design', hint: 'arabic mehndi' },
+    { src: 'https://picsum.photos/600/400?random=107', alt: 'Full hand traditional mehndi', hint: 'traditional mehndi' },
     { src: 'https://picsum.photos/600/400?random=104', alt: 'Natural makeup for a daytime event', hint: 'natural makeup' },
     { src: 'https://picsum.photos/600/400?random=105', alt: 'Minimalist mehndi pattern', hint: 'minimalist mehndi' },
+    { src: 'https://picsum.photos/600/400?random=108', alt: 'Peacock feather mehndi design', hint: 'peacock mehndi' },
     { src: 'https://picsum.photos/600/400?random=106', alt: 'Bold party makeup', hint: 'party makeup' },
+    { src: 'https://picsum.photos/600/400?random=109', alt: 'Simple finger mehndi design', hint: 'finger mehndi' },
 ];
 
 const backgroundImages = [
