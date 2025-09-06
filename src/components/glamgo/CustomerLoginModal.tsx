@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -19,6 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { LogIn } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { GoogleIcon } from '../icons';
+import { signInWithGoogle } from '@/lib/firebase';
 
 const loginSchema = z.object({
   phone: z.string().regex(/^\d{10}$/, { message: 'Please enter a valid 10-digit phone number.' }),
@@ -86,11 +88,25 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
     }, 300);
   }
   
-  const handleGoogleSignIn = () => {
-    toast({
-      title: 'Coming Soon!',
-      description: 'Google sign-in functionality is under development.',
-    });
+  const handleGoogleSignIn = async () => {
+    try {
+      const user = await signInWithGoogle();
+      if (user && user.displayName) {
+        onSuccessfulLogin(user.displayName);
+        handleClose();
+      } else {
+        // Handle case where displayName is null
+        onSuccessfulLogin('New User');
+        handleClose();
+      }
+    } catch (error) {
+      console.error("Google Sign-In Error:", error);
+      toast({
+        title: 'Google Sign-In Failed',
+        description: 'Could not sign in with Google. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (

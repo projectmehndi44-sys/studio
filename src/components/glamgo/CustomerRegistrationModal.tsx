@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -19,6 +20,8 @@ import { useToast } from '@/hooks/use-toast';
 import { UserPlus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { GoogleIcon } from '../icons';
+import { signInWithGoogle } from '@/lib/firebase';
+
 
 const registrationSchema = z.object({
   fullName: z.string().min(1, { message: 'Full name is required.' }),
@@ -89,11 +92,24 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
     }, 300);
   }
 
-  const handleGoogleSignUp = () => {
-    toast({
-      title: 'Coming Soon!',
-      description: 'Google sign-up functionality is under development.',
-    });
+  const handleGoogleSignUp = async () => {
+    try {
+      const user = await signInWithGoogle();
+      if (user && user.displayName) {
+        onSuccessfulRegister(user.displayName);
+        handleClose();
+      } else {
+        onSuccessfulRegister('New User');
+        handleClose();
+      }
+    } catch (error) {
+      console.error("Google Sign-Up Error:", error);
+      toast({
+        title: 'Google Sign-Up Failed',
+        description: 'Could not sign up with Google. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
