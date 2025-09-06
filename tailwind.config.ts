@@ -10,8 +10,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
+        body: ['Lato', 'sans-serif'],
+        headline: ['"Mrs Saint Delafield"', 'cursive'],
         code: ['monospace'],
       },
       colors: {
