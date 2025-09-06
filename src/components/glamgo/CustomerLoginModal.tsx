@@ -17,6 +17,8 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { LogIn } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { GoogleIcon } from '../icons';
 
 const loginSchema = z.object({
   phone: z.string().regex(/^\d{10}$/, { message: 'Please enter a valid 10-digit phone number.' }),
@@ -83,6 +85,13 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
         setIsSubmitting(false);
     }, 300);
   }
+  
+  const handleGoogleSignIn = () => {
+    toast({
+      title: 'Coming Soon!',
+      description: 'Google sign-in functionality is under development.',
+    });
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -124,11 +133,19 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
 
                 <DialogFooter>
                     <Button type="submit" className="w-full" disabled={!isOtpSent || isSubmitting}>
-                        {isSubmitting ? 'Logging in...' : <><LogIn className="mr-2 h-4 w-4"/> Login</>}
+                        {isSubmitting ? 'Logging in...' : <><LogIn className="mr-2 h-4 w-4"/> Login with OTP</>}
                     </Button>
                 </DialogFooter>
             </form>
         </Form>
+        <div className="relative my-2">
+            <Separator />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-2 bg-background text-sm text-muted-foreground">OR</div>
+        </div>
+        <Button variant="outline" className="w-full" onClick={handleGoogleSignIn}>
+            <GoogleIcon className="mr-2 h-5 w-5"/>
+            Continue with Google
+        </Button>
       </DialogContent>
     </Dialog>
   );

@@ -17,6 +17,8 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { UserPlus } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { GoogleIcon } from '../icons';
 
 const registrationSchema = z.object({
   fullName: z.string().min(1, { message: 'Full name is required.' }),
@@ -87,6 +89,13 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
     }, 300);
   }
 
+  const handleGoogleSignUp = () => {
+    toast({
+      title: 'Coming Soon!',
+      description: 'Google sign-up functionality is under development.',
+    });
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
@@ -126,11 +135,19 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
 
                 <DialogFooter>
                     <Button type="submit" className="w-full" disabled={!isOtpSent || isSubmitting}>
-                        {isSubmitting ? 'Registering...' : <><UserPlus className="mr-2 h-4 w-4" /> Register</>}
+                        {isSubmitting ? 'Registering...' : <><UserPlus className="mr-2 h-4 w-4" /> Register with OTP</>}
                     </Button>
                 </DialogFooter>
             </form>
         </Form>
+        <div className="relative my-2">
+            <Separator />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 px-2 bg-background text-sm text-muted-foreground">OR</div>
+        </div>
+        <Button variant="outline" className="w-full" onClick={handleGoogleSignUp}>
+            <GoogleIcon className="mr-2 h-5 w-5"/>
+            Continue with Google
+        </Button>
       </DialogContent>
     </Dialog>
   );
