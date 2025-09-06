@@ -41,6 +41,26 @@ import { CustomerLoginModal } from '@/components/glamgo/CustomerLoginModal';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
+import Autoplay from "embla-carousel-autoplay"
+import Image from 'next/image';
+
+const galleryImages = [
+    { src: 'https://picsum.photos/600/400?random=101', alt: 'Intricate bridal mehndi', hint: 'bridal mehndi' },
+    { src: 'https://picsum.photos/600/400?random=102', alt: 'Glamorous makeup look', hint: 'glamorous makeup' },
+    { src: 'https://picsum.photos/600/400?random=103', alt: 'Arabic mehndi design', hint: 'arabic mehndi' },
+    { src: 'https://picsum.photos/600/400?random=104', alt: 'Natural makeup for a daytime event', hint: 'natural makeup' },
+    { src: 'https://picsum.photos/600/400?random=105', alt: 'Minimalist mehndi pattern', hint: 'minimalist mehndi' },
+    { src: 'https://picsum.photos/600/400?random=106', alt: 'Bold party makeup', hint: 'party makeup' },
+];
+
+const backgroundImages = [
+  'https://picsum.photos/1200/800?random=201',
+  'https://picsum.photos/1200/800?random=202',
+  'https://picsum.photos/1200/800?random=203',
+  'https://picsum.photos/1200/800?random=204',
+];
+
 
 export default function Home() {
   const [filteredArtists, setFilteredArtists] =
@@ -65,6 +85,16 @@ export default function Home() {
   const [availabilityDate, setAvailabilityDate] = React.useState<
     Date | undefined
   >();
+
+  const [currentBgIndex, setCurrentBgIndex] = React.useState(0);
+
+  React.useEffect(() => {
+    const intervalId = setInterval(() => {
+      setCurrentBgIndex((prevIndex) => (prevIndex + 1) % backgroundImages.length);
+    }, 5000); // Change image every 5 seconds
+
+    return () => clearInterval(intervalId);
+  }, []);
 
   const handleBookingRequest = (artist: Artist) => {
     setSelectedArtist(artist);
@@ -158,7 +188,23 @@ export default function Home() {
   };
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
+    <div className="flex min-h-screen w-full flex-col relative">
+      <div className="fixed inset-0 -z-10 h-full w-full">
+          {backgroundImages.map((src, index) => (
+              <Image
+                  key={src}
+                  src={src}
+                  alt="Background Image"
+                  fill
+                  className={cn(
+                      'object-cover transition-opacity duration-1000 ease-in-out',
+                      index === currentBgIndex ? 'opacity-20' : 'opacity-0'
+                  )}
+                  priority={index === 0}
+                  data-ai-hint="mehndi makeup"
+              />
+          ))}
+      </div>
       <Header 
         isCustomerLoggedIn={isCustomerLoggedIn}
         onCustomerLogout={handleCustomerLogout}
@@ -183,7 +229,7 @@ export default function Home() {
             
             <div>
               <h2 className="text-center font-headline text-5xl text-primary mb-8">All Artists</h2>
-              <Card className="my-4 border-2 border-accent/20 shadow-lg">
+              <Card className="my-4 border-2 border-accent/20 shadow-lg bg-background/80 backdrop-blur-sm">
                 <CardContent className="p-6">
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5">
                     <div className="space-y-2">
@@ -284,7 +330,7 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <div className="text-center py-16 text-card-foreground bg-card rounded-lg shadow-md max-w-lg mx-auto mt-4 space-y-6 flex flex-col items-center">
+           <div className="text-center py-16 bg-card/80 backdrop-blur-sm rounded-lg shadow-md max-w-lg mx-auto mt-4 space-y-6 flex flex-col items-center">
             <LogIn className="mx-auto h-12 w-12 text-primary" />
             <h2 className="text-2xl font-bold">Customer Login</h2>
             <p className="text-muted-foreground">Please log in to continue.</p>
@@ -318,6 +364,44 @@ export default function Home() {
             </div>
           </div>
         )}
+
+        <div className="py-12">
+            <h2 className="text-center font-headline text-5xl text-primary mb-8">Our Gallery</h2>
+            <Carousel
+                opts={{
+                    align: "start",
+                    loop: true,
+                }}
+                plugins={[
+                    Autoplay({
+                        delay: 3000,
+                    }),
+                ]}
+                className="w-full max-w-6xl mx-auto"
+            >
+                <CarouselContent>
+                    {galleryImages.map((image, index) => (
+                        <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                            <div className="p-1">
+                                <Card className="overflow-hidden">
+                                    <CardContent className="flex aspect-video items-center justify-center p-0">
+                                        <Image 
+                                            src={image.src} 
+                                            alt={image.alt}
+                                            width={600}
+                                            height={400}
+                                            className="w-full h-full object-cover"
+                                            data-ai-hint={image.hint}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </CarouselItem>
+                    ))}
+                </CarouselContent>
+            </Carousel>
+        </div>
+
 
         {selectedArtist && (
           <BookingModal
