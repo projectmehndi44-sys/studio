@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Shield } from 'lucide-react';
+import { Shield, Home } from 'lucide-react';
 
 export default function AdminLoginPage() {
     const router = useRouter();
@@ -91,6 +92,12 @@ export default function AdminLoginPage() {
                             {isLoading ? 'Logging in...' : 'Login'}
                         </Button>
                     </form>
+                     <div className="mt-4 text-center text-sm">
+                        <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors">
+                            <Home className="mr-1 h-4 w-4" />
+                            Back to Home
+                        </Link>
+                    </div>
                 </CardContent>
             </Card>
         </div>
