@@ -51,8 +51,8 @@ export default function AdminLoginPage() {
             <Card className="w-full max-w-sm">
                 <CardHeader className="text-center">
                     <Shield className="mx-auto w-12 h-12 text-primary" />
-                    <CardTitle className="text-2xl font-bold mt-2">Admin Portal</CardTitle>
-                    <CardDescription>Enter your credentials to access the dashboard</CardDescription>
+                    <CardTitle className="text-2xl font-bold mt-2">Admin / Artist Portal</CardTitle>
+                    <CardDescription>Enter your credentials to access your dashboard</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleLogin} className="space-y-4">
@@ -64,6 +64,7 @@ export default function AdminLoginPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="admin">Admin</SelectItem>
+                                    <SelectItem value="artist">Artist</SelectItem>
                                     <SelectItem value="team-member" disabled>Team Member (Coming Soon)</SelectItem>
                                 </SelectContent>
                             </Select>
@@ -72,15 +73,14 @@ export default function AdminLoginPage() {
                             <Label htmlFor="username">Username</Label>
                             <Input
                                 id="username"
-                                placeholder="admin"
+                                placeholder="admin or artist username"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 required
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input
+                            <Label htmlFor="password">Password</Label>                            <Input
                                 id="password"
                                 type="password"
                                 value={password}
