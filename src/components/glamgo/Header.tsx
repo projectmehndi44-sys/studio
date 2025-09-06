@@ -29,9 +29,7 @@ export function Header({
   const { toast } = useToast();
 
   const handleArtistLogin = () => {
-    // In a real app, this would redirect to a specific artist login page
-    // For now, we can reuse the admin login page as a placeholder
-    router.push('/admin/login');
+    // This function is now primarily for showing the toast, as navigation is handled by the Link component.
     toast({ title: 'Artist Login', description: 'Please enter your artist credentials.' });
   };
 
@@ -68,9 +66,11 @@ export function Header({
                     <ShieldCheck className="mr-2 h-4 w-4" /> Admin Portal
                 </Button>
             </Link>
-            <Button onClick={handleArtistLogin}>
-                <Palette className="mr-2 h-4 w-4" /> Artist Login
-            </Button>
+            <Link href="/admin/login">
+                <Button onClick={handleArtistLogin}>
+                    <Palette className="mr-2 h-4 w-4" /> Artist Login
+                </Button>
+            </Link>
           </div>
         )}
       </div>
