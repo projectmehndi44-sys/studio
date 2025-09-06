@@ -216,9 +216,12 @@ export default function Home() {
       />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="text-center">
-            <h1 className="font-body text-5xl font-bold text-primary md:text-6xl">
-                Book Mehendi & Makeup Artists Near You, Instantly
+            <h1 className="font-headline text-5xl font-bold text-primary md:text-6xl">
+                Artistry at Your Fingertips
             </h1>
+            <p className="mt-4 text-lg text-foreground/80 max-w-2xl mx-auto">
+              Discover and book the most talented mehndi and makeup artists near you. Your perfect look for any occasion is just a click away.
+            </p>
         </div>
 
         {isCustomerLoggedIn ? (
