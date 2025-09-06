@@ -350,11 +350,6 @@ export default function Home() {
             </div>
             <Separator className="my-4 w-4/5" />
             <div className="space-y-4 flex flex-col items-center w-full">
-                 <Link href="/admin/login" className="w-4/5">
-                    <Button variant="outline" className="w-full">
-                        <ShieldCheck className="mr-2 h-4 w-4" /> Admin Portal
-                    </Button>
-                 </Link>
                  <Button variant="outline" onClick={handleArtistRegister} className="w-4/5">
                     <Palette className="mr-2 h-4 w-4"/>
                     Are you an artist? Register here

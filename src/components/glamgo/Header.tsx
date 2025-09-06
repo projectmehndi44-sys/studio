@@ -47,7 +47,7 @@ export function Header({
         </Link>
       </div>
       <div className="flex items-center gap-2">
-        {isCustomerLoggedIn && (
+        {isCustomerLoggedIn ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2">
@@ -71,6 +71,12 @@ export function Header({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+        ) : (
+           <Link href="/admin/login">
+            <Button variant="outline">
+                <ShieldCheck className="mr-2 h-4 w-4" /> Admin Portal
+            </Button>
+            </Link>
         )}
       </div>
     </header>
