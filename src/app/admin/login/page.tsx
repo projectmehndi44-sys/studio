@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -26,7 +27,7 @@ export default function AdminLoginPage() {
         // This is a basic, client-side-only authentication for prototyping.
         // In a real application, this should be a server action that validates credentials against a secure backend.
         setTimeout(() => {
-            if (role === 'admin' && username === 'admin' && password === 'Abhi@204567') {
+            if (role === 'admin' && username === 'admin' && password === 'Abhi@123') {
                 toast({
                     title: 'Login Successful',
                     description: 'Welcome, Admin!',
