@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -13,7 +14,7 @@ import { Palette, Home } from 'lucide-react';
 export default function ArtistLoginPage() {
     const router = useRouter();
     const { toast } = useToast();
-    const [username, setUsername] = React.useState('');
+    const [email, setEmail] = React.useState('');
     const [password, setPassword] = React.useState('');
     const [isLoading, setIsLoading] = React.useState(false);
 
@@ -22,16 +23,31 @@ export default function ArtistLoginPage() {
         setIsLoading(true);
 
         // This is a basic, client-side-only authentication for prototyping.
-        // In a real application, this should be a server action that validates credentials against a secure backend.
-        // For now, we'll just show a toast and simulate a delay.
+        // It checks against artists who were approved in the admin portal.
         setTimeout(() => {
-            toast({
-                title: 'Login Attempted',
-                description: 'Artist login functionality coming soon!',
-            });
+            const pendingArtists = JSON.parse(localStorage.getItem('pendingArtists') || '[]');
+            const artist = pendingArtists.find(
+                (a: any) => a.email === email && a.password === password && a.status === 'Approved'
+            );
+
+            if (artist) {
+                 toast({
+                    title: 'Login Successful',
+                    description: `Welcome back, ${artist.fullName}!`,
+                });
+                // In a real app, you would use a proper session/token management system.
+                // For this prototype, we'll use localStorage.
+                localStorage.setItem('isArtistAuthenticated', 'true');
+                localStorage.setItem('artistEmail', artist.email);
+                router.push('/'); // Redirect to homepage or an artist dashboard
+            } else {
+                 toast({
+                    title: 'Login Failed',
+                    description: 'Invalid credentials or your account is not yet approved.',
+                    variant: 'destructive',
+                });
+            }
             setIsLoading(false);
-            // In a real app, you would redirect to an artist dashboard:
-            // router.push('/artist/dashboard');
         }, 1000);
     };
 
@@ -46,12 +62,13 @@ export default function ArtistLoginPage() {
                 <CardContent>
                     <form onSubmit={handleLogin} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="username">Username (Email)</Label>
+                            <Label htmlFor="email">Email (Username)</Label>
                             <Input
-                                id="username"
+                                id="email"
+                                type="email"
                                 placeholder="your.email@example.com"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 required
                             />
                         </div>

@@ -25,55 +25,60 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { artists as approvedArtistsData } from '@/lib/data';
+import { artists as initialArtists } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import type { Artist } from '@/types';
+
+// Define a type for pending artist data, which might be slightly different
+type PendingArtist = {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  location: string;
+  date: string;
+  status: 'Pending';
+  [key: string]: any; // To accommodate other registration fields
+};
+
 
 export default function AdminPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const [approvedArtists, setApprovedArtists] = React.useState<Artist[]>([]);
+    const [pendingArtists, setPendingArtists] = React.useState<PendingArtist[]>([]);
+
+
+    const fetchArtists = React.useCallback(() => {
+        // Fetch approved artists
+        const storedArtists = localStorage.getItem('artists');
+        setApprovedArtists(storedArtists ? JSON.parse(storedArtists) : initialArtists);
+
+        // Fetch pending artists
+        const storedPending = localStorage.getItem('pendingArtists');
+        const pending = storedPending ? JSON.parse(storedPending) : [];
+        setPendingArtists(pending.map((p: any) => ({...p, id: p.email, date: new Date(p.submissionDate).toLocaleDateString(), name: p.fullName, location: `${p.district}, ${p.state}` })));
+
+    }, []);
 
     React.useEffect(() => {
         const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
         if (isAdminAuthenticated !== 'true') {
             router.push('/admin/login');
+        } else {
+            fetchArtists();
+             // Listen for storage changes to update lists
+            window.addEventListener('storage', fetchArtists);
+            return () => window.removeEventListener('storage', fetchArtists);
         }
-    }, [router]);
+    }, [router, fetchArtists]);
 
     const handleLogout = () => {
         localStorage.removeItem('isAdminAuthenticated');
+        localStorage.removeItem('adminRole');
+        localStorage.removeItem('adminUsername');
         router.push('/admin/login');
     };
-
-    // In a real application, you would fetch this data from your backend.
-    const pendingArtists = [
-        { 
-            id: 'artist_001', 
-            name: 'Creative Hands by S', 
-            email: 's@example.com', 
-            phone: '9876543210',
-            location: 'Mumbai, Maharashtra',
-            date: '2023-10-27',
-            status: 'Pending'
-        },
-        { 
-            id: 'artist_002', 
-            name: 'Makeup by Riya', 
-            email: 'riya@example.com', 
-            phone: '8765432109',
-            location: 'South Delhi, Delhi',
-            date: '2023-10-26',
-            status: 'Pending'
-        },
-        { 
-            id: 'artist_003', 
-            name: 'Modern Mehndi', 
-            email: 'modern@example.com', 
-            phone: '7654321098',
-            location: 'Koregaon Park, Pune',
-            date: '2023-10-28',
-            status: 'Pending'
-        },
-    ];
 
     const customers = [
         {
@@ -102,23 +107,58 @@ export default function AdminPage() {
         }
     ];
 
-    const approvedArtists = approvedArtistsData.map(artist => ({...artist, status: 'Approved'}));
+    const allArtistsWithStatus = approvedArtists.map(artist => ({...artist, status: 'Approved'}));
 
     const handleApprove = (artistId: string) => {
+        const artistToApprove = pendingArtists.find(p => p.id === artistId);
+        if (!artistToApprove) return;
+        
+        // Add to approved artists list
+        const newArtist: Artist = {
+            id: artistToApprove.id,
+            name: artistToApprove.name,
+            profilePicture: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 100)}`,
+            workImages: [
+                `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
+                `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
+            ],
+            services: ['mehndi', 'makeup'], // Default for now
+            location: artistToApprove.location,
+            charge: 2000, // Default charge
+            rating: 0, // New artist rating
+            styleTags: ['new', 'verified'],
+        };
+        const updatedApprovedArtists = [...approvedArtists, newArtist];
+        localStorage.setItem('artists', JSON.stringify(updatedApprovedArtists));
+
+        // Remove from pending list
+        const updatedPendingArtists = pendingArtists.filter(p => p.id !== artistId);
+        localStorage.setItem('pendingArtists', JSON.stringify(updatedPendingArtists));
+        
+        // Update state
+        fetchArtists();
+
         toast({
             title: "Artist Approved",
-            description: `Artist with ID ${artistId} has been approved.`,
+            description: `${artistToApprove.name} has been approved. They can now log in.`,
         });
-        // Here you would add logic to update the artist's status in your database.
     };
 
      const handleReject = (artistId: string) => {
+        const artistToReject = pendingArtists.find(p => p.id === artistId);
+        if (!artistToReject) return;
+
+        // Remove from pending list
+        const updatedPendingArtists = pendingArtists.filter(p => p.id !== artistId);
+        localStorage.setItem('pendingArtists', JSON.stringify(updatedPendingArtists));
+        
+        fetchArtists();
+        
         toast({
             title: "Artist Rejected",
-            description: `Artist with ID ${artistId} has been rejected.`,
+            description: `${artistToReject.name}'s application has been rejected.`,
             variant: "destructive"
         });
-        // Here you would add logic to update the artist's status in your database.
     };
     
     const handleAction = (action: string, type: string, id: string) => {
@@ -384,7 +424,7 @@ export default function AdminPage() {
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {approvedArtists.map((artist) => (
+                                                {allArtistsWithStatus.map((artist) => (
                                                     <TableRow key={artist.id}>
                                                         <TableCell className="font-medium flex items-center gap-2">
                                                             <Avatar>
@@ -437,7 +477,3 @@ export default function AdminPage() {
         </div>
     );
 }
-
-    
-
-    

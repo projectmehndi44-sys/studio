@@ -103,9 +103,24 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
   const districts = selectedState ? AVAILABLE_LOCATIONS[selectedState] : [];
 
   const onSubmit = (data: RegistrationFormValues) => {
-    // In a real app, this would trigger a server action to create a registration request
-    console.log(data);
+    const existingPending = JSON.parse(localStorage.getItem('pendingArtists') || '[]');
     
+    // Check if email is already registered
+    if (existingPending.some((artist: any) => artist.email === data.email)) {
+        form.setError('email', { type: 'manual', message: 'This email is already registered.' });
+        return;
+    }
+    
+    const newPendingArtist = {
+        ...data,
+        status: 'Pending',
+        submissionDate: new Date().toISOString(),
+    };
+
+    localStorage.setItem('pendingArtists', JSON.stringify([...existingPending, newPendingArtist]));
+     // Dispatch a storage event to notify other components (like the admin page)
+    window.dispatchEvent(new Event('storage'));
+
     setIsSubmitted(true);
   };
 
@@ -317,5 +332,3 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
     </Dialog>
   );
 }
-
-    
