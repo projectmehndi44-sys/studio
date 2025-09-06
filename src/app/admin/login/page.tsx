@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Shield, Home } from 'lucide-react';
 import { teamMembers } from '@/lib/team-data';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 export default function AdminLoginPage() {
@@ -18,16 +19,27 @@ export default function AdminLoginPage() {
     const { toast } = useToast();
     const [username, setUsername] = React.useState('');
     const [password, setPassword] = React.useState('');
+    const [userType, setUserType] = React.useState<'admin' | 'team-member' | ''>('');
     const [isLoading, setIsLoading] = React.useState(false);
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
+        if (!userType) {
+            toast({
+                title: 'Login Failed',
+                description: 'Please select a user type.',
+                variant: 'destructive',
+            });
+            setIsLoading(false);
+            return;
+        }
+        
         // This is a basic, client-side-only authentication for prototyping.
         // In a real application, this should be a server action that validates credentials against a secure backend.
         setTimeout(() => {
-            const member = teamMembers.find(m => m.username === username && m.password === password);
+            const member = teamMembers.find(m => m.username === username && m.password === password && m.role === userType);
 
             if (member) {
                 toast({
@@ -42,7 +54,7 @@ export default function AdminLoginPage() {
             } else {
                  toast({
                     title: 'Login Failed',
-                    description: 'Invalid username or password.',
+                    description: 'Invalid credentials for the selected user type.',
                     variant: 'destructive',
                 });
             }
@@ -60,6 +72,18 @@ export default function AdminLoginPage() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleLogin} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="userType">User Type</Label>
+                             <Select onValueChange={(value: 'admin' | 'team-member') => setUserType(value)} value={userType}>
+                                <SelectTrigger id="userType">
+                                    <SelectValue placeholder="Select user type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="admin">Admin</SelectItem>
+                                    <SelectItem value="team-member">Team Member</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <div className="space-y-2">
                             <Label htmlFor="username">Username</Label>
                             <Input
@@ -94,5 +118,3 @@ export default function AdminLoginPage() {
         </div>
     );
 }
-
-    
