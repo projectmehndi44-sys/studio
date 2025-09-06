@@ -81,13 +81,13 @@ export function Header({
         ) : (
           <div className="flex items-center gap-2">
             <Link href="/admin/login" passHref>
-               <Button variant="outline">
-                  <ShieldCheck className="mr-2 h-4 w-4" /> Admin Portal
+               <Button asChild variant="outline">
+                 <a><ShieldCheck className="mr-2 h-4 w-4" /> Admin Portal</a>
                </Button>
             </Link>
              <Link href="/admin/login" passHref>
-                <Button>
-                    <Palette className="mr-2 h-4 w-4" /> Artist Login
+                <Button asChild>
+                    <a><Palette className="mr-2 h-4 w-4" /> Artist Login</a>
                 </Button>
             </Link>
           </div>
