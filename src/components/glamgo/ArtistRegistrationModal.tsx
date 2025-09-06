@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -22,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Terminal, Upload } from 'lucide-react';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AVAILABLE_LOCATIONS } from '@/lib/available-locations';
 
 
 const passwordSchema = z.string()
@@ -40,7 +42,7 @@ const registrationSchema = z.object({
   presentAddress: z.string().min(1, { message: 'Present address is required.' }),
   state: z.string().min(1, { message: 'Please select a state.' }),
   district: z.string().min(1, { message: 'Please select a district.' }),
-  locality: z.string().min(1, { message: 'Please select a locality.' }),
+  locality: z.string().min(1, { message: 'Please enter a locality.' }),
   servingAreas: z.string().min(1, { message: 'Please list at least one serving area.' }),
   phone: z.string().regex(/^\d{10}$/, { message: 'Please enter a valid 10-digit phone number.' }),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -68,19 +70,7 @@ interface ArtistRegistrationModalProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
-// Placeholder data - in a real app, this would come from a database
-const locations: Record<string, Record<string, string[]>> = {
-    'Maharashtra': {
-        'Mumbai': ['Andheri', 'Bandra', 'Dadar', 'Thane'],
-        'Pune': ['Koregaon Park', 'Hinjewadi', 'Kothrud']
-    },
-    'Delhi': {
-        'Central Delhi': ['Connaught Place', 'Karol Bagh'],
-        'South Delhi': ['Hauz Khas', 'Saket']
-    }
-};
-
-const states = Object.keys(locations);
+const states = Object.keys(AVAILABLE_LOCATIONS);
 
 export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistrationModalProps) {
   const { toast } = useToast();
@@ -109,10 +99,8 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
   });
 
   const selectedState = form.watch('state');
-  const selectedDistrict = form.watch('district');
-
-  const districts = selectedState ? Object.keys(locations[selectedState]) : [];
-  const localities = selectedState && selectedDistrict ? locations[selectedState][selectedDistrict] : [];
+  
+  const districts = selectedState ? AVAILABLE_LOCATIONS[selectedState] : [];
 
   const onSubmit = (data: RegistrationFormValues) => {
     // In a real app, this would trigger a server action to create a registration request
@@ -195,10 +183,9 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                                 <Select onValueChange={(value) => {
                                     field.onChange(value);
                                     form.setValue('district', '');
-                                    form.setValue('locality', '');
                                 }} defaultValue={field.value}>
                                     <FormControl>
-                                        <SelectTrigger><SelectValue placeholder="Select a state" /></SelectTrigger>
+                                        <SelectTrigger><SelectValue placeholder="Select an available state" /></SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
                                         {states.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -211,35 +198,28 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                         <FormField control={form.control} name="district" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>District</FormLabel>
-                                <Select onValueChange={(value) => {
-                                    field.onChange(value);
-                                    form.setValue('locality', '');
-                                }} value={field.value} disabled={!selectedState}>
+                                <Select onValueChange={field.onChange} value={field.value} disabled={!selectedState}>
                                     <FormControl>
-                                        <SelectTrigger><SelectValue placeholder="Select a district" /></SelectTrigger>
+                                        <SelectTrigger><SelectValue placeholder="Select an available district" /></SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
                                         {districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
+                                 { !selectedState && <FormDescription>Please select a state first.</FormDescription> }
                                 <FormMessage />
                             </FormItem>
                         )} />
 
                         <FormField control={form.control} name="locality" render={({ field }) => (
                              <FormItem className="md:col-span-2">
-                                <FormLabel>Locality</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value} disabled={!selectedDistrict}>
-                                    <FormControl>
-                                        <SelectTrigger><SelectValue placeholder="Select a locality" /></SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {localities.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <FormLabel>Locality / Area</FormLabel>
+                                <FormControl><Input placeholder="e.g., Koregaon Park" {...field} /></FormControl>
+                                <FormDescription>Your primary service locality.</FormDescription>
                                 <FormMessage />
                             </FormItem>
                         )} />
+
 
                         <FormField control={form.control} name="servingAreas" render={({ field }) => (
                              <FormItem className="md:col-span-2"><FormLabel>Other Serving Areas</FormLabel><FormControl><Input placeholder="e.g., South Mumbai, Navi Mumbai, Thane" {...field} /></FormControl><FormDescription>Comma-separated list of other areas you serve.</FormDescription><FormMessage /></FormItem>
@@ -337,3 +317,5 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
     </Dialog>
   );
 }
+
+    

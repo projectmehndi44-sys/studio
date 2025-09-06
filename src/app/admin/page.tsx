@@ -1,9 +1,11 @@
+
 'use client';
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, MapPin } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -137,6 +139,22 @@ export default function AdminPage() {
                 </header>
                 <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
                     <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
+                        <Card>
+                             <CardHeader>
+                                <CardTitle>Location Management</CardTitle>
+                                <CardDescription>
+                                    Define the states and districts where your services are available.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Link href="/admin/locations">
+                                    <Button>
+                                        <MapPin className="mr-2 h-4 w-4" />
+                                        Manage Locations
+                                    </Button>
+                                </Link>
+                            </CardContent>
+                        </Card>
                         <Card>
                             <CardHeader>
                                 <CardTitle>Pending Artist Approvals</CardTitle>
@@ -339,3 +357,5 @@ export default function AdminPage() {
         </div>
     );
 }
+
+    
