@@ -13,6 +13,7 @@ export default {
       fontFamily: {
         body: ['var(--font-roboto)', 'sans-serif'],
         headline: ['var(--font-playfair-display)', 'serif'],
+        cursive: ['var(--font-cursive)', 'cursive'],
         code: ['monospace'],
       },
       colors: {
