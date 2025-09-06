@@ -219,9 +219,10 @@ export default function Home() {
             <h1 className="font-cursive tracking-wider text-5xl font-bold text-primary md:text-7xl">
                 Artistry at Your Fingertips
             </h1>
-            <p className="mt-4 font-headline text-lg text-foreground/80 max-w-2xl mx-auto">
-              Discover and book the most talented mehndi and makeup artists near you. Your perfect look for any occasion is just a click away.
-            </p>
+            <div className="mt-4 font-headline text-lg text-foreground/80 max-w-2xl mx-auto">
+              <p>Discover and book the most talented mehndi and makeup artists near you.</p>
+              <p>Your perfect look for any occasion is just a click away.</p>
+            </div>
         </div>
 
         {isCustomerLoggedIn ? (
@@ -426,3 +427,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
