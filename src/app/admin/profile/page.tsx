@@ -46,38 +46,45 @@ export default function ProfileManagementPage() {
     });
 
     const getTeamMembers = (): TeamMember[] => {
-        const storedMembers = localStorage.getItem('teamMembers');
-        return storedMembers ? JSON.parse(storedMembers) : initialTeamMembers;
+        if (typeof window !== 'undefined') {
+            const storedMembers = localStorage.getItem('teamMembers');
+            return storedMembers ? JSON.parse(storedMembers) : initialTeamMembers;
+        }
+        return initialTeamMembers;
     };
 
     const saveTeamMembers = (members: TeamMember[]) => {
-        localStorage.setItem('teamMembers', JSON.stringify(members));
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('teamMembers', JSON.stringify(members));
+        }
     };
 
     React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
-        const role = localStorage.getItem('adminRole');
-        const currentUsername = localStorage.getItem('adminUsername');
-        
-        setUserRole(role);
-        if (isAdminAuthenticated !== 'true' || !role) {
-            toast({
-                title: "Access Denied",
-                description: "You are not logged in.",
-                variant: "destructive"
-            });
-            router.push('/admin/login');
-            return;
-        }
+        if (typeof window !== 'undefined') {
+            const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
+            const role = localStorage.getItem('adminRole');
+            const currentUsername = localStorage.getItem('adminUsername');
+            
+            setUserRole(role);
+            if (isAdminAuthenticated !== 'true' || !role) {
+                toast({
+                    title: "Access Denied",
+                    description: "You are not logged in.",
+                    variant: "destructive"
+                });
+                router.push('/admin/login');
+                return;
+            }
 
-        const teamMembers = getTeamMembers();
-        const currentUser = teamMembers.find(member => member.username === currentUsername && member.role === role);
-        
-        if (currentUser) {
-            form.reset({
-                name: currentUser.name,
-                username: currentUser.username,
-            });
+            const teamMembers = getTeamMembers();
+            const currentUser = teamMembers.find(member => member.username === currentUsername && member.role === role);
+            
+            if (currentUser) {
+                form.reset({
+                    name: currentUser.name,
+                    username: currentUser.username,
+                });
+            }
         }
     }, [router, toast, form]);
 
@@ -98,7 +105,7 @@ export default function ProfileManagementPage() {
         updatedUser.name = data.name;
         updatedUser.username = data.username;
         if (data.password) {
-            updatedUser.password = data.password as 'Abhi@123'; // Casting for prototype
+            updatedUser.password = data.password;
         }
         
         teamMembers[userIndex] = updatedUser;

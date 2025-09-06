@@ -23,12 +23,15 @@ export default function AdminLoginPage() {
     const [isLoading, setIsLoading] = React.useState(false);
 
     const getTeamMembers = (): TeamMember[] => {
-        const storedMembers = localStorage.getItem('teamMembers');
-        if (storedMembers) {
-            return JSON.parse(storedMembers);
+        if (typeof window !== 'undefined') {
+            const storedMembers = localStorage.getItem('teamMembers');
+            if (storedMembers) {
+                return JSON.parse(storedMembers);
+            }
+            // If nothing in local storage, initialize with default admin
+            localStorage.setItem('teamMembers', JSON.stringify(initialTeamMembers));
+            return initialTeamMembers;
         }
-        // If nothing in local storage, initialize with default admin
-        localStorage.setItem('teamMembers', JSON.stringify(initialTeamMembers));
         return initialTeamMembers;
     };
     

@@ -76,6 +76,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
   const [isVerifyingOtp, setIsVerifyingOtp] = React.useState(false);
   const [isOtpSent, setIsOtpSent] = React.useState(false);
   const [availableStates, setAvailableStates] = React.useState<string[]>([]);
+  const [allAvailableLocations, setAllAvailableLocations] = React.useState<Record<string, string[]>>({});
   
   const form = useForm<RegistrationFormValues>({
     resolver: zodResolver(registrationSchema),
@@ -101,6 +102,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
     if (isOpen) {
         const savedLocations = localStorage.getItem('availableLocations');
         const locations = savedLocations ? JSON.parse(savedLocations) : {};
+        setAllAvailableLocations(locations);
         setAvailableStates(Object.keys(locations));
     }
   }, [isOpen]);

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Home, MapPin, Save, ChevronDown, ChevronRight } from 'lucide-react';
+import { Shield, MapPin, Save } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { INDIA_LOCATIONS } from '@/lib/india-locations';
 import { AVAILABLE_LOCATIONS } from '@/lib/available-locations';
@@ -26,7 +26,7 @@ export default function LocationManagementPage() {
             router.push('/admin/login');
         }
         
-        // Load saved locations from localStorage, or use defaults
+        // Load saved locations from localStorage, or use defaults if none are saved
         const savedLocations = localStorage.getItem('availableLocations');
         if (savedLocations) {
             setSelectedLocations(JSON.parse(savedLocations));
@@ -119,8 +119,8 @@ export default function LocationManagementPage() {
 
                                     return (
                                         <AccordionItem value={state} key={state}>
-                                            <div className="flex items-center gap-4 w-full">
-                                                <div className="flex items-center gap-4 p-4 pl-0">
+                                            <div className="flex items-center gap-4 w-full border-b">
+                                                <div className="flex items-center gap-4 py-4 pl-0">
                                                     <Checkbox 
                                                         id={`state-${state}`}
                                                         checked={isAllSelected}
@@ -128,7 +128,7 @@ export default function LocationManagementPage() {
                                                         data-state={isIndeterminate ? 'indeterminate' : (isAllSelected ? 'checked' : 'unchecked')}
                                                     />
                                                 </div>
-                                                <AccordionTrigger className="flex-1 text-left border-b py-4 hover:no-underline">
+                                                <AccordionTrigger className="flex-1 text-left py-4 hover:no-underline border-none">
                                                     <Label htmlFor={`state-${state}`} className="font-bold text-lg cursor-pointer">{state}</Label>
                                                 </AccordionTrigger>
                                             </div>
