@@ -19,8 +19,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Terminal, ShieldAlert } from 'lucide-react';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Terminal, Upload } from 'lucide-react';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 const passwordSchema = z.string()
@@ -30,15 +31,28 @@ const passwordSchema = z.string()
   .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter.' })
   .regex(/[^A-Za-z0-9]/, { message: 'Password must contain at least one symbol.' });
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
 const registrationSchema = z.object({
   fullName: z.string().min(1, { message: 'Full name is required.' }),
   aadharAddress: z.string().min(1, { message: 'Aadhar address is required.' }),
   presentAddress: z.string().min(1, { message: 'Present address is required.' }),
+  state: z.string().min(1, { message: 'Please select a state.' }),
+  district: z.string().min(1, { message: 'Please select a district.' }),
+  locality: z.string().min(1, { message: 'Please select a locality.' }),
   servingAreas: z.string().min(1, { message: 'Please list at least one serving area.' }),
   phone: z.string().regex(/^\d{10}$/, { message: 'Please enter a valid 10-digit phone number.' }),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
   password: passwordSchema,
   confirmPassword: passwordSchema,
+  workImages: z.any()
+    .refine((files) => files?.length >= 1, "At least one work image is required.")
+    .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 5MB.`)
+    .refine(
+      (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+      ".jpg, .jpeg, .png and .webp files are accepted."
+    ),
   agreed: z.boolean().refine((val) => val === true, { message: 'You must agree to the terms and conditions.' }),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -54,6 +68,20 @@ interface ArtistRegistrationModalProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
+// Placeholder data - in a real app, this would come from a database
+const locations: Record<string, Record<string, string[]>> = {
+    'Maharashtra': {
+        'Mumbai': ['Andheri', 'Bandra', 'Dadar', 'Thane'],
+        'Pune': ['Koregaon Park', 'Hinjewadi', 'Kothrud']
+    },
+    'Delhi': {
+        'Central Delhi': ['Connaught Place', 'Karol Bagh'],
+        'South Delhi': ['Hauz Khas', 'Saket']
+    }
+};
+
+const states = Object.keys(locations);
+
 export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistrationModalProps) {
   const { toast } = useToast();
   const [isSubmitted, setIsSubmitted] = React.useState(false);
@@ -67,14 +95,24 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
       fullName: '',
       aadharAddress: '',
       presentAddress: '',
+      state: '',
+      district: '',
+      locality: '',
       servingAreas: '',
       phone: '',
       email: '',
       password: '',
       confirmPassword: '',
+      workImages: undefined,
       agreed: false,
     },
   });
+
+  const selectedState = form.watch('state');
+  const selectedDistrict = form.watch('district');
+
+  const districts = selectedState ? Object.keys(locations[selectedState]) : [];
+  const localities = selectedState && selectedDistrict ? locations[selectedState][selectedDistrict] : [];
 
   const onSubmit = (data: RegistrationFormValues) => {
     // In a real app, this would trigger a server action to create a registration request
@@ -112,7 +150,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-primary font-bold text-2xl">Register as an Artist</DialogTitle>
           <DialogDescription>
@@ -138,24 +176,76 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
             <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <div className="max-h-[60vh] overflow-y-auto pr-4">
-                    <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
                         <FormField control={form.control} name="fullName" render={({ field }) => (
-                            <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem className="md:col-span-2"><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
 
                         <FormField control={form.control} name="aadharAddress" render={({ field }) => (
-                             <FormItem><FormLabel>Address (As per Aadhaar)</FormLabel><FormControl><Textarea placeholder="Enter your official address" {...field} /></FormControl><FormMessage /></FormItem>
+                             <FormItem className="md:col-span-2"><FormLabel>Address (As per Aadhaar)</FormLabel><FormControl><Textarea placeholder="Enter your official address" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
 
                         <FormField control={form.control} name="presentAddress" render={({ field }) => (
-                            <FormItem><FormLabel>Present Address</FormLabel><FormControl><Textarea placeholder="Enter your current residential address" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem className="md:col-span-2"><FormLabel>Present Address</FormLabel><FormControl><Textarea placeholder="Enter your current residential address" {...field} /></FormControl><FormMessage /></FormItem>
+                        )} />
+
+                        <FormField control={form.control} name="state" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>State</FormLabel>
+                                <Select onValueChange={(value) => {
+                                    field.onChange(value);
+                                    form.setValue('district', '');
+                                    form.setValue('locality', '');
+                                }} defaultValue={field.value}>
+                                    <FormControl>
+                                        <SelectTrigger><SelectValue placeholder="Select a state" /></SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {states.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        
+                        <FormField control={form.control} name="district" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>District</FormLabel>
+                                <Select onValueChange={(value) => {
+                                    field.onChange(value);
+                                    form.setValue('locality', '');
+                                }} value={field.value} disabled={!selectedState}>
+                                    <FormControl>
+                                        <SelectTrigger><SelectValue placeholder="Select a district" /></SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+
+                        <FormField control={form.control} name="locality" render={({ field }) => (
+                             <FormItem className="md:col-span-2">
+                                <FormLabel>Locality</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value} disabled={!selectedDistrict}>
+                                    <FormControl>
+                                        <SelectTrigger><SelectValue placeholder="Select a locality" /></SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {localities.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                            </FormItem>
                         )} />
 
                         <FormField control={form.control} name="servingAreas" render={({ field }) => (
-                             <FormItem><FormLabel>Serving Areas</FormLabel><FormControl><Input placeholder="e.g., South Mumbai, Navi Mumbai, Thane" {...field} /></FormControl><FormMessage /></FormItem>
+                             <FormItem className="md:col-span-2"><FormLabel>Other Serving Areas</FormLabel><FormControl><Input placeholder="e.g., South Mumbai, Navi Mumbai, Thane" {...field} /></FormControl><FormDescription>Comma-separated list of other areas you serve.</FormDescription><FormMessage /></FormItem>
                         )} />
 
-                        <FormField control={form.control} name="email" render={({ field }) => (
+                         <FormField control={form.control} name="email" render={({ field }) => (
                             <FormItem><FormLabel>Email Address (will be your username)</FormLabel><FormControl><Input type="email" placeholder="your.email@example.com" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                         
@@ -175,7 +265,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                         )} />
 
                          {isOtpSent && (
-                            <div className="space-y-2">
+                            <div className="space-y-2 md:col-span-2">
                                <Label htmlFor="otp">Enter OTP</Label>
                                <Input id="otp" placeholder="Enter 6-digit OTP" />
                                <p className="text-xs text-muted-foreground">For this demo, any OTP will work. In a real app, this would be validated.</p>
@@ -189,12 +279,37 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                         <FormField control={form.control} name="confirmPassword" render={({ field }) => (
                             <FormItem><FormLabel>Confirm Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
+                        
+                        <FormField
+                            control={form.control}
+                            name="workImages"
+                            render={({ field }) => (
+                                <FormItem className="md:col-span-2">
+                                    <FormLabel>Work Images</FormLabel>
+                                    <FormControl>
+                                        <div className="relative border-2 border-dashed border-muted-foreground/50 rounded-lg p-4 text-center hover:border-accent cursor-pointer">
+                                            <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
+                                            <p className="mt-2 text-sm text-muted-foreground">Click to upload or drag and drop</p>
+                                            <p className="text-xs text-muted-foreground">PNG, JPG, WEBP up to 5MB</p>
+                                            <Input 
+                                                type="file" 
+                                                className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
+                                                accept=".jpg,.jpeg,.png,.webp"
+                                                multiple
+                                                onChange={(e) => field.onChange(e.target.files)}
+                                            />
+                                        </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                        
                         <FormField
                             control={form.control}
                             name="agreed"
                             render={({ field }) => (
-                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow">
+                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow md:col-span-2">
                                 <FormControl>
                                     <Checkbox
                                     checked={field.value}
