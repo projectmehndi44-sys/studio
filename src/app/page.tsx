@@ -21,7 +21,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Calendar as CalendarIcon,
   Search,
@@ -37,6 +36,7 @@ import { ArtistRegistrationModal } from '@/components/glamgo/ArtistRegistrationM
 import { CustomerRegistrationModal } from '@/components/glamgo/CustomerRegistrationModal';
 import { CustomerLoginModal } from '@/components/glamgo/CustomerLoginModal';
 import { useToast } from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
 
 export default function Home() {
   const [filteredArtists, setFilteredArtists] =
@@ -159,135 +159,130 @@ export default function Home() {
           </p>
         </div>
 
-        <Tabs defaultValue="all-artists" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mx-auto max-w-md">
-            <TabsTrigger value="all-artists">All Artists</TabsTrigger>
-            <TabsTrigger value="for-you">For You</TabsTrigger>
-          </TabsList>
-          <TabsContent value="all-artists">
-            {isCustomerLoggedIn ? (
-              <>
-                <Card className="my-4 border-2 border-accent/20 shadow-lg">
-                  <CardContent className="p-6">
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5">
-                      <div className="space-y-2">
-                        <Label htmlFor="location">Location</Label>
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="location"
-                            placeholder="City or pin code..."
-                            className="pl-9"
-                            value={location}
-                            onChange={(e) => setLocation(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="service">Service</Label>
-                        <Select value={serviceType} onValueChange={setServiceType}>
-                          <SelectTrigger id="service">
-                            <SelectValue placeholder="Select service" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="mehndi">Mehndi</SelectItem>
-                            <SelectItem value="makeup">Makeup</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="price">Price Range (Max)</Label>
-                        <div className="flex items-center gap-4">
-                          <Slider
-                            id="price"
-                            max={10000}
-                            min={500}
-                            step={500}
-                            value={priceRange}
-                            onValueChange={setPriceRange}
-                          />
-                          <span className="text-sm font-medium text-foreground/80 w-24 text-right">
-                            ₹{priceRange[0]}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="availability">Availability</Label>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant={'outline'}
-                              className={cn(
-                                'w-full justify-start text-left font-normal',
-                                !availabilityDate && 'text-muted-foreground'
-                              )}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {availabilityDate ? (
-                                format(availabilityDate, 'PPP')
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
-                            <Calendar
-                              mode="single"
-                              selected={availabilityDate}
-                              onSelect={setAvailabilityDate}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                      <div className="flex items-end">
-                        <Button onClick={resetFilters} variant="ghost" className="w-full">
-                          Reset
-                        </Button>
+        {isCustomerLoggedIn ? (
+          <div className="space-y-8">
+            <RecommendationsTab onBookingRequest={handleBookingRequest} isCustomerLoggedIn={isCustomerLoggedIn} onLoginRequest={handleCustomerLogin} />
+            
+            <Separator />
+            
+            <div>
+              <h2 className="text-center font-headline text-5xl text-primary mb-8">All Artists</h2>
+              <Card className="my-4 border-2 border-accent/20 shadow-lg">
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5">
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Location</Label>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="location"
+                          placeholder="City or pin code..."
+                          className="pl-9"
+                          value={location}
+                          onChange={(e) => setLocation(e.target.value)}
+                        />
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="space-y-2">
+                      <Label htmlFor="service">Service</Label>
+                      <Select value={serviceType} onValueChange={setServiceType}>
+                        <SelectTrigger id="service">
+                          <SelectValue placeholder="Select service" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All</SelectItem>
+                          <SelectItem value="mehndi">Mehndi</SelectItem>
+                          <SelectItem value="makeup">Makeup</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="price">Price Range (Max)</Label>
+                      <div className="flex items-center gap-4">
+                        <Slider
+                          id="price"
+                          max={10000}
+                          min={500}
+                          step={500}
+                          value={priceRange}
+                          onValueChange={setPriceRange}
+                        />
+                        <span className="text-sm font-medium text-foreground/80 w-24 text-right">
+                          ₹{priceRange[0]}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="availability">Availability</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={'outline'}
+                            className={cn(
+                              'w-full justify-start text-left font-normal',
+                              !availabilityDate && 'text-muted-foreground'
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {availabilityDate ? (
+                              format(availabilityDate, 'PPP')
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={availabilityDate}
+                            onSelect={setAvailabilityDate}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="flex items-end">
+                      <Button onClick={resetFilters} variant="ghost" className="w-full">
+                        Reset
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-                {filteredArtists.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {filteredArtists.map((artist) => (
-                      <ArtistCard
-                        key={artist.id}
-                        artist={artist}
-                        onBookingRequest={handleBookingRequest}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-16">
-                    <p className="text-lg text-muted-foreground">No artists found matching your criteria.</p>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="text-center py-16 text-card-foreground bg-card rounded-lg shadow-md max-w-lg mx-auto mt-4">
-                 <LogIn className="mx-auto h-12 w-12 text-primary mb-4" />
-                <h2 className="text-2xl font-bold mb-2">Welcome to GlamGo!</h2>
-                <p className="text-muted-foreground mb-6">Please log in or sign up to search for artists and view their profiles.</p>
-                 <div className="flex justify-center gap-4">
-                  <Button onClick={handleCustomerLogin}>
-                      <LogIn className="mr-2 h-4 w-4" />
-                      Customer Login
-                  </Button>
-                  <Button onClick={handleCustomerRegister} variant="secondary">
-                      Sign Up
-                  </Button>
-                 </div>
+              {filteredArtists.length > 0 ? (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {filteredArtists.map((artist) => (
+                    <ArtistCard
+                      key={artist.id}
+                      artist={artist}
+                      onBookingRequest={handleBookingRequest}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <p className="text-lg text-muted-foreground">No artists found matching your criteria.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-16 text-card-foreground bg-card rounded-lg shadow-md max-w-lg mx-auto mt-4">
+              <LogIn className="mx-auto h-12 w-12 text-primary mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Welcome to GlamGo!</h2>
+            <p className="text-muted-foreground mb-6">Please log in or sign up to search for artists and view their profiles.</p>
+              <div className="flex justify-center gap-4">
+              <Button onClick={handleCustomerLogin}>
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Customer Login
+              </Button>
+              <Button onClick={handleCustomerRegister} variant="secondary">
+                  Sign Up
+              </Button>
               </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="for-you">
-            <RecommendationsTab onBookingRequest={handleBookingRequest} isCustomerLoggedIn={isCustomerLoggedIn} onLoginRequest={handleCustomerLogin} />
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
 
         {selectedArtist && (
           <BookingModal
