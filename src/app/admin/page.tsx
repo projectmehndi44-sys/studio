@@ -140,7 +140,7 @@ export default function AdminPage() {
 
         toast({
             title: "Artist Approved",
-            description: `${artistToApprove.name} has been approved. They can now log in.`,
+            description: `A notification has been sent to ${artistToApprove.name}'s app, email, and phone, informing them of the approval. They can now log in.`,
         });
     };
 
@@ -156,7 +156,7 @@ export default function AdminPage() {
         
         toast({
             title: "Artist Rejected",
-            description: `${artistToReject.name}'s application has been rejected.`,
+            description: `A notification has been sent to ${artistToReject.name}'s app, email, and phone, informing them of the rejection.`,
             variant: "destructive"
         });
     };
