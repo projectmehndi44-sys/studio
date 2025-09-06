@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, MapPin, Image as ImageIcon, Users } from "lucide-react";
+import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, MapPin, Image as ImageIcon, Users, Bell } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -184,6 +184,22 @@ export default function AdminPage() {
                                         <Button>
                                             <Users className="mr-2 h-4 w-4" />
                                             Manage Team
+                                        </Button>
+                                    </Link>
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle>Notifications</CardTitle>
+                                    <CardDescription>
+                                       Send notifications to artists and customers.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Link href="/admin/notifications">
+                                        <Button>
+                                            <Bell className="mr-2 h-4 w-4" />
+                                            Send Notifications
                                         </Button>
                                     </Link>
                                 </CardContent>
@@ -391,5 +407,3 @@ export default function AdminPage() {
         </div>
     );
 }
-
-    
