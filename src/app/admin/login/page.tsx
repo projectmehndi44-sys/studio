@@ -8,14 +8,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Shield, Home } from 'lucide-react';
+import { teamMembers } from '@/lib/team-data';
+
 
 export default function AdminLoginPage() {
     const router = useRouter();
     const { toast } = useToast();
-    const [role, setRole] = React.useState('admin');
     const [username, setUsername] = React.useState('');
     const [password, setPassword] = React.useState('');
     const [isLoading, setIsLoading] = React.useState(false);
@@ -27,23 +27,26 @@ export default function AdminLoginPage() {
         // This is a basic, client-side-only authentication for prototyping.
         // In a real application, this should be a server action that validates credentials against a secure backend.
         setTimeout(() => {
-            if (role === 'admin' && username === 'admin' && password === 'Abhi@123') {
+            const member = teamMembers.find(m => m.username === username && m.password === password);
+
+            if (member) {
                 toast({
                     title: 'Login Successful',
-                    description: 'Welcome, Admin! Redirecting...',
+                    description: `Welcome, ${member.name}! Redirecting...`,
                 });
                 // In a real app, you would use a proper session/token management system.
                 // For this prototype, we'll use localStorage.
                 localStorage.setItem('isAdminAuthenticated', 'true');
+                localStorage.setItem('adminRole', member.role);
                 router.push('/admin');
             } else {
                  toast({
                     title: 'Login Failed',
-                    description: 'Invalid role, username, or password.',
+                    description: 'Invalid username or password.',
                     variant: 'destructive',
                 });
-                setIsLoading(false);
             }
+            setIsLoading(false);
         }, 1000);
     };
 
@@ -57,23 +60,11 @@ export default function AdminLoginPage() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleLogin} className="space-y-4">
-                         <div className="space-y-2">
-                            <Label htmlFor="role">Role</Label>
-                            <Select value={role} onValueChange={setRole}>
-                                <SelectTrigger id="role">
-                                    <SelectValue placeholder="Select your role" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="admin">Admin</SelectItem>
-                                    <SelectItem value="team-member" disabled>Team Member (Coming Soon)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
                         <div className="space-y-2">
                             <Label htmlFor="username">Username</Label>
                             <Input
                                 id="username"
-                                placeholder="admin or team member username"
+                                placeholder="Enter your username"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 required
@@ -103,3 +94,5 @@ export default function AdminLoginPage() {
         </div>
     );
 }
+
+    
