@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -80,14 +81,14 @@ export function Header({
           </DropdownMenu>
         ) : (
           <div className="flex items-center gap-2">
-            <Link href="/admin/login" passHref>
-               <Button asChild variant="outline">
-                 <a><ShieldCheck className="mr-2 h-4 w-4" /> Admin Portal</a>
+            <Link href="/admin/login">
+               <Button variant="outline">
+                 <ShieldCheck className="mr-2 h-4 w-4" /> Admin Portal
                </Button>
             </Link>
-             <Link href="/admin/login" passHref>
-                <Button asChild>
-                    <a><Palette className="mr-2 h-4 w-4" /> Artist Login</a>
+             <Link href="/admin/login">
+                <Button>
+                    <Palette className="mr-2 h-4 w-4" /> Artist Login
                 </Button>
             </Link>
           </div>
