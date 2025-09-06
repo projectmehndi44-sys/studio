@@ -310,7 +310,7 @@ export default function Home() {
                         <ShieldCheck className="mr-2 h-4 w-4" /> Admin Portal
                     </Button>
                  </Link>
-                 <Link href="/admin/login" className="w-4/5">
+                 <Link href="/artist/login" className="w-4/5">
                     <Button className="w-full">
                         <Palette className="mr-2 h-4 w-4" /> Artist Login
                     </Button>
