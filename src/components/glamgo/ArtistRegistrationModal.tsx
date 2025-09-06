@@ -165,7 +165,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                     <AlertDescription className="space-y-2">
                       <p>Thank you for registering! Your profile is now under review.</p>
                       <p className="font-semibold">Profile creation is subject to data verification and admin approval and may take up to 24 hours. Please wait.</p>
-                      <p>For more details, contact our admin at <a href="mailto:admin@glamgo.com" className="underline">admin@glamgo.com</a>.</p>
+                      <p>For more details, contact our admin at <a href="mailto:admin@mehendify.com" className="underline">admin@mehendify.com</a>.</p>
                     </AlertDescription>
                 </Alert>
                  <Button onClick={handleClose} className="w-full">

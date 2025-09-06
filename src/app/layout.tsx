@@ -19,7 +19,7 @@ const roboto = Roboto({
 
 
 export const metadata: Metadata = {
-  title: 'GlamGo',
+  title: 'MehendiFy',
   description: 'Find and book the best mehndi and makeup artists.',
 };
 

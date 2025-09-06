@@ -70,7 +70,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
     setTimeout(() => {
         toast({
           title: "Registration Successful!",
-          description: `Welcome to GlamGo, ${data.fullName}!`,
+          description: `Welcome to MehendiFy, ${data.fullName}!`,
         });
         onSuccessfulRegister(data.fullName);
         handleClose();
@@ -93,7 +93,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
         <DialogHeader>
           <DialogTitle className="text-primary font-bold text-2xl">Create Customer Account</DialogTitle>
           <DialogDescription>
-            Join GlamGo to start booking amazing artists.
+            Join MehendiFy to start booking amazing artists.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

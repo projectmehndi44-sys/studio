@@ -342,7 +342,7 @@ export default function Home() {
                 Login
             </Button>
              <div className="text-sm">
-                New to GlamGo?{' '}
+                New to MehendiFy?{' '}
                 <Button variant="link" className="p-0 h-auto" onClick={handleCustomerRegister}>
                     <UserPlus className="mr-1 h-4 w-4" />
                     Sign Up
@@ -350,15 +350,15 @@ export default function Home() {
             </div>
             <Separator className="my-4 w-4/5" />
             <div className="space-y-4 flex flex-col items-center w-full">
-                 <Button variant="outline" onClick={handleArtistRegister} className="w-4/5">
-                    <Palette className="mr-2 h-4 w-4"/>
-                    Are you an artist? Register here
-                 </Button>
                  <Link href="/admin/login" className="w-4/5">
                     <Button variant="outline" className="w-full">
                         <ShieldCheck className="mr-2 h-4 w-4" /> Admin Portal
                     </Button>
                  </Link>
+                 <Button variant="outline" onClick={handleArtistRegister} className="w-4/5">
+                    <Palette className="mr-2 h-4 w-4"/>
+                    Are you an artist? Register here
+                 </Button>
                  <Link href="/artist/login" className="w-4/5">
                     <Button className="w-full">
                         <Palette className="mr-2 h-4 w-4" /> Artist Login

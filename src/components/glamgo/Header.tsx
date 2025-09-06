@@ -43,7 +43,7 @@ export function Header({
       <div className="flex items-center gap-2">
         <Sparkles className="w-8 h-8 text-accent" />
         <Link href="/" className="flex items-center gap-2">
-          <h1 className="font-headline text-5xl text-primary">GlamGo</h1>
+          <h1 className="font-headline text-5xl text-primary">MehendiFy</h1>
         </Link>
       </div>
       <div className="flex items-center gap-2">
