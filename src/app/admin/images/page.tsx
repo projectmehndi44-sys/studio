@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Shield, Home, Image as ImageIcon, Upload, Trash2 } from 'lucide-react';
 import NextImage from 'next/image';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 // Mock data for existing images. In a real app, this would come from a database or file storage.
@@ -106,73 +107,84 @@ export default function ImageManagementPage() {
                                 Add or remove images displayed in the "Our Works" gallery and on the site's background.
                             </CardDescription>
                         </CardHeader>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Gallery Images</CardTitle>
-                            <CardDescription>These images appear in the "Our Works" carousel on the homepage.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
-                                {galleryImages.map((image, index) => (
-                                    <div key={index} className="relative group">
-                                        <NextImage src={image.src} alt={image.alt} width={200} height={150} className="rounded-md object-cover w-full aspect-[4/3]"/>
-                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button variant="destructive" size="icon" onClick={() => handleImageDelete('gallery', index)}>
-                                                <Trash2 className="h-4 w-4" />
-                                                <span className="sr-only">Delete Image</span>
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="relative border-2 border-dashed border-muted-foreground/50 rounded-lg p-6 text-center hover:border-accent">
-                                <Upload className="mx-auto h-10 w-10 text-muted-foreground" />
-                                <p className="mt-2 text-muted-foreground">Click to upload or drag and drop</p>
-                                <Button asChild className="mt-2">
-                                     <label htmlFor="gallery-upload">
-                                        {isUploading ? 'Uploading...' : 'Add Gallery Images'}
-                                     </label>
-                                </Button>
-                                <Input id="gallery-upload" type="file" className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" multiple onChange={handleImageUpload('gallery')} disabled={isUploading} />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Background Images</CardTitle>
-                            <CardDescription>These images fade in and out as the background of the homepage.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
-                                {backgroundImages.map((src, index) => (
-                                    <div key={index} className="relative group">
-                                        <NextImage src={src} alt={`Background ${index + 1}`} width={200} height={150} className="rounded-md object-cover w-full aspect-[4/3]"/>
-                                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button variant="destructive" size="icon" onClick={() => handleImageDelete('background', index)}>
-                                                <Trash2 className="h-4 w-4" />
-                                                <span className="sr-only">Delete Image</span>
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                           <div className="relative border-2 border-dashed border-muted-foreground/50 rounded-lg p-6 text-center hover:border-accent">
-                                <Upload className="mx-auto h-10 w-10 text-muted-foreground" />
-                                <p className="mt-2 text-muted-foreground">Click to upload or drag and drop</p>
-                                <Button asChild className="mt-2">
-                                     <label htmlFor="background-upload">
-                                        {isUploading ? 'Uploading...' : 'Add Background Images'}
-                                     </label>
-                                </Button>
-                                <Input id="background-upload" type="file" className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" multiple onChange={handleImageUpload('background')} disabled={isUploading} />
-                            </div>
+                         <CardContent>
+                            <Tabs defaultValue="gallery">
+                                <TabsList>
+                                    <TabsTrigger value="gallery">Gallery Images</TabsTrigger>
+                                    <TabsTrigger value="background">Background Images</TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="gallery" className="mt-4">
+                                     <Card>
+                                        <CardHeader>
+                                            <CardTitle>Gallery Images</CardTitle>
+                                            <CardDescription>These images appear in the "Our Works" carousel on the homepage.</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
+                                                {galleryImages.map((image, index) => (
+                                                    <div key={index} className="relative group">
+                                                        <NextImage src={image.src} alt={image.alt} width={200} height={150} className="rounded-md object-cover w-full aspect-[4/3]"/>
+                                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Button variant="destructive" size="icon" onClick={() => handleImageDelete('gallery', index)}>
+                                                                <Trash2 className="h-4 w-4" />
+                                                                <span className="sr-only">Delete Image</span>
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="relative border-2 border-dashed border-muted-foreground/50 rounded-lg p-6 text-center hover:border-accent">
+                                                <Upload className="mx-auto h-10 w-10 text-muted-foreground" />
+                                                <p className="mt-2 text-muted-foreground">Click to upload or drag and drop</p>
+                                                <Button asChild className="mt-2">
+                                                     <label htmlFor="gallery-upload">
+                                                        {isUploading ? 'Uploading...' : 'Add Gallery Images'}
+                                                     </label>
+                                                </Button>
+                                                <Input id="gallery-upload" type="file" className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" multiple onChange={handleImageUpload('gallery')} disabled={isUploading} />
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </TabsContent>
+                                <TabsContent value="background" className="mt-4">
+                                     <Card>
+                                        <CardHeader>
+                                            <CardTitle>Background Images</CardTitle>
+                                            <CardDescription>These images fade in and out as the background of the homepage.</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-4">
+                                                {backgroundImages.map((src, index) => (
+                                                    <div key={index} className="relative group">
+                                                        <NextImage src={src} alt={`Background ${index + 1}`} width={200} height={150} className="rounded-md object-cover w-full aspect-[4/3]"/>
+                                                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Button variant="destructive" size="icon" onClick={() => handleImageDelete('background', index)}>
+                                                                <Trash2 className="h-4 w-4" />
+                                                                <span className="sr-only">Delete Image</span>
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                           <div className="relative border-2 border-dashed border-muted-foreground/50 rounded-lg p-6 text-center hover:border-accent">
+                                                <Upload className="mx-auto h-10 w-10 text-muted-foreground" />
+                                                <p className="mt-2 text-muted-foreground">Click to upload or drag and drop</p>
+                                                <Button asChild className="mt-2">
+                                                     <label htmlFor="background-upload">
+                                                        {isUploading ? 'Uploading...' : 'Add Background Images'}
+                                                     </label>
+                                                </Button>
+                                                <Input id="background-upload" type="file" className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" multiple onChange={handleImageUpload('background')} disabled={isUploading} />
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </TabsContent>
+                            </Tabs>
                         </CardContent>
                     </Card>
                  </div>
             </main>
         </div>
     );
-}
+
+    
