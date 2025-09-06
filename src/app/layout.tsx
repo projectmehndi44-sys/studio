@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
-import { Playfair_Display, Roboto } from 'next/font/google';
+import { Playfair_Display, Roboto, Anton } from 'next/font/google';
 
 const playfairDisplay = Playfair_Display({
   subsets: ['latin'],
@@ -16,6 +16,13 @@ const roboto = Roboto({
   display: 'swap',
   weight: ['400', '700'],
   variable: '--font-roboto',
+});
+
+const anton = Anton({
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['400'],
+  variable: '--font-anton',
 });
 
 
@@ -31,7 +38,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn('font-body antialiased min-h-screen', playfairDisplay.variable, roboto.variable)}>
+      <body className={cn('font-body antialiased min-h-screen', playfairDisplay.variable, roboto.variable, anton.variable)}>
         {children}
         <Toaster />
       </body>
