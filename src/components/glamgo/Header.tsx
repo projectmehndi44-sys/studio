@@ -44,11 +44,13 @@ export function Header({
         <h1 className="font-headline text-5xl text-primary">GlamGo</h1>
       </div>
       <div className="flex items-center gap-2">
-        <Link href="/admin">
-          <Button variant="outline">
-            <ShieldCheck className="mr-2 h-4 w-4" /> Admin Portal
-          </Button>
-        </Link>
+        {!isCustomerLoggedIn && (
+            <Link href="/admin">
+            <Button variant="outline">
+                <ShieldCheck className="mr-2 h-4 w-4" /> Admin Portal
+            </Button>
+            </Link>
+        )}
         {isCustomerLoggedIn ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
