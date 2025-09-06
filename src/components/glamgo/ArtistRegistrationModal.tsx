@@ -24,6 +24,7 @@ import { Terminal, Upload } from 'lucide-react';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AVAILABLE_LOCATIONS } from '@/lib/available-locations';
+import { INDIA_LOCATIONS } from '@/lib/india-locations';
 
 
 const passwordSchema = z.string()
@@ -100,7 +101,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
 
   const selectedState = form.watch('state');
   
-  const districts = selectedState ? AVAILABLE_LOCATIONS[selectedState] : [];
+  const districts = selectedState ? INDIA_LOCATIONS[selectedState] : [];
 
   const onSubmit = (data: RegistrationFormValues) => {
     const existingPending = JSON.parse(localStorage.getItem('pendingArtists') || '[]');
@@ -224,7 +225,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                                 <FormLabel>District</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value} disabled={!selectedState}>
                                     <FormControl>
-                                        <SelectTrigger><SelectValue placeholder="Select an available district" /></SelectTrigger>
+                                        <SelectTrigger><SelectValue placeholder="Select a district" /></SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
                                         {districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
