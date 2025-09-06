@@ -26,6 +26,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { artists as approvedArtistsData } from '@/lib/data';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function AdminPage() {
     const router = useRouter();
@@ -205,205 +206,220 @@ export default function AdminPage() {
                                 </CardContent>
                             </Card>
                         </div>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Pending Artist Approvals</CardTitle>
-                                <CardDescription>
-                                    Review and approve new artist registrations. There are currently {pendingArtists.length} pending approvals.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Artist Name</TableHead>
-                                            <TableHead>Contact</TableHead>
-                                            <TableHead>Location</TableHead>
-                                            <TableHead>Registered On</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead>
-                                                <span className="sr-only">Actions</span>
-                                            </TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {pendingArtists.map((artist) => (
-                                            <TableRow key={artist.id}>
-                                                <TableCell className="font-medium">{artist.name}</TableCell>
-                                                <TableCell>
-                                                    <div className="flex flex-col">
-                                                        <span>{artist.email}</span>
-                                                        <span className="text-muted-foreground">{artist.phone}</span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>{artist.location}</TableCell>
-                                                <TableCell>{artist.date}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant={artist.status === 'Pending' ? 'secondary' : 'default'}>
-                                                        {artist.status}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                                <MoreHorizontal className="h-4 w-4" />
-                                                                <span className="sr-only">Toggle menu</span>
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                            <DropdownMenuItem onSelect={() => handleApprove(artist.id)}>
-                                                                <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                                                                Approve
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onSelect={() => handleReject(artist.id)}>
-                                                                <XCircle className="mr-2 h-4 w-4 text-red-500" />
-                                                                Reject
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Customer Management</CardTitle>
-                                <CardDescription>
-                                    View and manage registered customers.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                               <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Customer Name</TableHead>
-                                            <TableHead>Contact</TableHead>
-                                            <TableHead>Registered On</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead>
-                                                <span className="sr-only">Actions</span>
-                                            </TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {customers.map((customer) => (
-                                            <TableRow key={customer.id}>
-                                                <TableCell className="font-medium">{customer.name}</TableCell>
-                                                <TableCell>
-                                                    <div className="flex flex-col">
-                                                        <span>{customer.email}</span>
-                                                        <span className="text-muted-foreground">{customer.phone}</span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>{customer.registeredOn}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant={customer.status === 'Active' ? 'default' : 'destructive'}>
-                                                        {customer.status}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                     <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                                <MoreHorizontal className="h-4 w-4" />
-                                                                <span className="sr-only">Toggle menu</span>
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                            <DropdownMenuItem onSelect={() => handleAction('Suspend', 'Customer', customer.id)}>
-                                                                <XCircle className="mr-2 h-4 w-4 text-yellow-500" />
-                                                                Suspend
-                                                            </DropdownMenuItem>
-                                                             <DropdownMenuItem onSelect={() => handleAction('Delete', 'Customer', customer.id)}>
-                                                                <Trash2 className="mr-2 h-4 w-4 text-red-500" />
-                                                                Delete
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>All Data Control - Artists</CardTitle>
-                                <CardDescription>
-                                    Manage all approved artists from this central hub.
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                               <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Artist</TableHead>
-                                            <TableHead>Location</TableHead>
-                                            <TableHead>Services</TableHead>
-                                            <TableHead>Charge</TableHead>
-                                            <TableHead>Rating</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead>
-                                                <span className="sr-only">Actions</span>
-                                            </TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {approvedArtists.map((artist) => (
-                                            <TableRow key={artist.id}>
-                                                <TableCell className="font-medium flex items-center gap-2">
-                                                    <Avatar>
-                                                        <AvatarImage src={artist.profilePicture} alt={artist.name} />
-                                                        <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
-                                                    </Avatar>
-                                                    {artist.name}
-                                                </TableCell>
-                                                <TableCell>{artist.location}</TableCell>
-                                                <TableCell className="capitalize">{artist.services.join(', ')}</TableCell>
-                                                <TableCell>₹{artist.charge}</TableCell>
-                                                <TableCell>{artist.rating}</TableCell>
-                                                <TableCell>
-                                                    <Badge>
-                                                        {artist.status}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                                <MoreHorizontal className="h-4 w-4" />
-                                                                <span className="sr-only">Toggle menu</span>
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                             <DropdownMenuItem onSelect={() => handleAction('Edit', 'Artist', artist.id)}>
-                                                                <Pencil className="mr-2 h-4 w-4" />
-                                                                Edit
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onSelect={() => handleAction('Delete', 'Artist', artist.id)}>
-                                                                <Trash2 className="mr-2 h-4 w-4 text-red-500" />
-                                                                Delete
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </CardContent>
-                        </Card>
+                        <Tabs defaultValue="approvals">
+                             <TabsList>
+                                <TabsTrigger value="approvals">Artist Approvals</TabsTrigger>
+                                <TabsTrigger value="customers">Customer Management</TabsTrigger>
+                                <TabsTrigger value="artists">All Data Control</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="approvals">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Pending Artist Approvals</CardTitle>
+                                        <CardDescription>
+                                            Review and approve new artist registrations. There are currently {pendingArtists.length} pending approvals.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Artist Name</TableHead>
+                                                    <TableHead>Contact</TableHead>
+                                                    <TableHead>Location</TableHead>
+                                                    <TableHead>Registered On</TableHead>
+                                                    <TableHead>Status</TableHead>
+                                                    <TableHead>
+                                                        <span className="sr-only">Actions</span>
+                                                    </TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {pendingArtists.map((artist) => (
+                                                    <TableRow key={artist.id}>
+                                                        <TableCell className="font-medium">{artist.name}</TableCell>
+                                                        <TableCell>
+                                                            <div className="flex flex-col">
+                                                                <span>{artist.email}</span>
+                                                                <span className="text-muted-foreground">{artist.phone}</span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>{artist.location}</TableCell>
+                                                        <TableCell>{artist.date}</TableCell>
+                                                        <TableCell>
+                                                            <Badge variant={artist.status === 'Pending' ? 'secondary' : 'default'}>
+                                                                {artist.status}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                                        <MoreHorizontal className="h-4 w-4" />
+                                                                        <span className="sr-only">Toggle menu</span>
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                                    <DropdownMenuItem onSelect={() => handleApprove(artist.id)}>
+                                                                        <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                                                                        Approve
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onSelect={() => handleReject(artist.id)}>
+                                                                        <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                                                                        Reject
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                             <TabsContent value="customers">
+                                 <Card>
+                                    <CardHeader>
+                                        <CardTitle>Customer Management</CardTitle>
+                                        <CardDescription>
+                                            View and manage registered customers.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                    <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Customer Name</TableHead>
+                                                    <TableHead>Contact</TableHead>
+                                                    <TableHead>Registered On</TableHead>
+                                                    <TableHead>Status</TableHead>
+                                                    <TableHead>
+                                                        <span className="sr-only">Actions</span>
+                                                    </TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {customers.map((customer) => (
+                                                    <TableRow key={customer.id}>
+                                                        <TableCell className="font-medium">{customer.name}</TableCell>
+                                                        <TableCell>
+                                                            <div className="flex flex-col">
+                                                                <span>{customer.email}</span>
+                                                                <span className="text-muted-foreground">{customer.phone}</span>
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell>{customer.registeredOn}</TableCell>
+                                                        <TableCell>
+                                                            <Badge variant={customer.status === 'Active' ? 'default' : 'destructive'}>
+                                                                {customer.status}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                                        <MoreHorizontal className="h-4 w-4" />
+                                                                        <span className="sr-only">Toggle menu</span>
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                                    <DropdownMenuItem onSelect={() => handleAction('Suspend', 'Customer', customer.id)}>
+                                                                        <XCircle className="mr-2 h-4 w-4 text-yellow-500" />
+                                                                        Suspend
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onSelect={() => handleAction('Delete', 'Customer', customer.id)}>
+                                                                        <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                                                                        Delete
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </CardContent>
+                                </Card>
+                             </TabsContent>
+                             <TabsContent value="artists">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>All Data Control - Artists</CardTitle>
+                                        <CardDescription>
+                                            Manage all approved artists from this central hub.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                    <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Artist</TableHead>
+                                                    <TableHead>Location</TableHead>
+                                                    <TableHead>Services</TableHead>
+                                                    <TableHead>Charge</TableHead>
+                                                    <TableHead>Rating</TableHead>
+                                                    <TableHead>Status</TableHead>
+                                                    <TableHead>
+                                                        <span className="sr-only">Actions</span>
+                                                    </TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {approvedArtists.map((artist) => (
+                                                    <TableRow key={artist.id}>
+                                                        <TableCell className="font-medium flex items-center gap-2">
+                                                            <Avatar>
+                                                                <AvatarImage src={artist.profilePicture} alt={artist.name} />
+                                                                <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
+                                                            </Avatar>
+                                                            {artist.name}
+                                                        </TableCell>
+                                                        <TableCell>{artist.location}</TableCell>
+                                                        <TableCell className="capitalize">{artist.services.join(', ')}</TableCell>
+                                                        <TableCell>₹{artist.charge}</TableCell>
+                                                        <TableCell>{artist.rating}</TableCell>
+                                                        <TableCell>
+                                                            <Badge>
+                                                                {artist.status}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                                        <MoreHorizontal className="h-4 w-4" />
+                                                                        <span className="sr-only">Toggle menu</span>
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                                    <DropdownMenuItem onSelect={() => handleAction('Edit', 'Artist', artist.id)}>
+                                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                                        Edit
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onSelect={() => handleAction('Delete', 'Artist', artist.id)}>
+                                                                        <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                                                                        Delete
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </CardContent>
+                                </Card>
+                             </TabsContent>
+                        </Tabs>
                     </div>
                 </main>
             </div>
         </div>
     );
 }
+
+    
