@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Shield, Home } from 'lucide-react';
-import { teamMembers } from '@/lib/team-data';
+import { teamMembers as initialTeamMembers, TeamMember } from '@/lib/team-data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
@@ -22,6 +22,16 @@ export default function AdminLoginPage() {
     const [userType, setUserType] = React.useState<'admin' | 'team-member' | ''>('');
     const [isLoading, setIsLoading] = React.useState(false);
 
+    const getTeamMembers = (): TeamMember[] => {
+        const storedMembers = localStorage.getItem('teamMembers');
+        if (storedMembers) {
+            return JSON.parse(storedMembers);
+        }
+        // If nothing in local storage, initialize with default admin
+        localStorage.setItem('teamMembers', JSON.stringify(initialTeamMembers));
+        return initialTeamMembers;
+    };
+    
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
@@ -36,9 +46,10 @@ export default function AdminLoginPage() {
             return;
         }
         
-        // This is a basic, client-side-only authentication for prototyping.
+        // This is a basic, client-side-only authentication for prototyping using localStorage as a mock DB.
         // In a real application, this should be a server action that validates credentials against a secure backend.
         setTimeout(() => {
+            const teamMembers = getTeamMembers();
             const member = teamMembers.find(m => m.username === username && m.password === password && m.role === userType);
 
             if (member) {
@@ -119,5 +130,3 @@ export default function AdminLoginPage() {
         </div>
     );
 }
-
-    

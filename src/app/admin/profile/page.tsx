@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Shield, User, Save } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { teamMembers } from '@/lib/team-data';
+import { teamMembers as initialTeamMembers, TeamMember } from '@/lib/team-data';
 
 
 const profileSchema = z.object({
@@ -45,29 +45,38 @@ export default function ProfileManagementPage() {
         },
     });
 
+    const getTeamMembers = (): TeamMember[] => {
+        const storedMembers = localStorage.getItem('teamMembers');
+        return storedMembers ? JSON.parse(storedMembers) : initialTeamMembers;
+    };
+
+    const saveTeamMembers = (members: TeamMember[]) => {
+        localStorage.setItem('teamMembers', JSON.stringify(members));
+    };
+
     React.useEffect(() => {
         const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
         const role = localStorage.getItem('adminRole');
-        const username = localStorage.getItem('adminUsername');
+        const currentUsername = localStorage.getItem('adminUsername');
         
         setUserRole(role);
-        if (isAdminAuthenticated !== 'true' || role !== 'admin') {
+        if (isAdminAuthenticated !== 'true' || !role) {
             toast({
                 title: "Access Denied",
-                description: "You do not have permission to view this page.",
+                description: "You are not logged in.",
                 variant: "destructive"
             });
-            router.push('/admin');
+            router.push('/admin/login');
             return;
         }
 
-        // In a real app, you'd fetch this from the backend.
-        // For now, we find the user in our mock data.
-        const adminUser = teamMembers.find(member => member.username === username && member.role === 'admin');
-        if(adminUser) {
+        const teamMembers = getTeamMembers();
+        const currentUser = teamMembers.find(member => member.username === currentUsername && member.role === role);
+        
+        if (currentUser) {
             form.reset({
-                name: adminUser.name,
-                username: adminUser.username,
+                name: currentUser.name,
+                username: currentUser.username,
             });
         }
     }, [router, toast, form]);
@@ -75,8 +84,29 @@ export default function ProfileManagementPage() {
 
     const onSubmit: SubmitHandler<ProfileFormValues> = (data) => {
         setIsLoading(true);
-        // In a real app, you would send this to your backend to update the user.
-        console.log("Updating profile:", data);
+        const currentUsername = localStorage.getItem('adminUsername');
+        const teamMembers = getTeamMembers();
+        const userIndex = teamMembers.findIndex(member => member.username === currentUsername);
+
+        if (userIndex === -1) {
+            toast({ title: 'Error', description: 'Could not find user to update.', variant: 'destructive' });
+            setIsLoading(false);
+            return;
+        }
+
+        const updatedUser = { ...teamMembers[userIndex] };
+        updatedUser.name = data.name;
+        updatedUser.username = data.username;
+        if (data.password) {
+            updatedUser.password = data.password as 'Abhi@123'; // Casting for prototype
+        }
+        
+        teamMembers[userIndex] = updatedUser;
+        saveTeamMembers(teamMembers);
+        
+        // Update the username in localStorage for the current session
+        localStorage.setItem('adminUsername', updatedUser.username);
+
         setTimeout(() => {
             toast({
                 title: 'Profile Updated',
@@ -93,16 +123,13 @@ export default function ProfileManagementPage() {
             setIsLoading(false);
         }, 1500)
     };
-
-    if (userRole !== 'admin') {
+    
+    // Simplified access control for demonstration
+    if (!userRole) {
          return (
              <div className="flex min-h-screen w-full flex-col bg-muted/40 items-center justify-center">
                 <Card className="p-8 text-center">
-                    <CardTitle>Access Denied</CardTitle>
-                    <CardDescription>You need to be an admin to manage your profile.</CardDescription>
-                    <Button asChild className="mt-4">
-                        <Link href="/admin">Back to Dashboard</Link>
-                    </Button>
+                    <CardTitle>Loading...</CardTitle>
                 </Card>
             </div>
         );
@@ -166,5 +193,3 @@ export default function ProfileManagementPage() {
         </div>
     );
 }
-
-    

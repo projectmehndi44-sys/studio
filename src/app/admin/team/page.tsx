@@ -10,10 +10,9 @@ import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Home, Users, PlusCircle, Trash2, MoreHorizontal } from 'lucide-react';
+import { Shield, Users, PlusCircle, Trash2, MoreHorizontal } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -33,7 +32,7 @@ type MemberFormValues = z.infer<typeof memberSchema>;
 export default function TeamManagementPage() {
     const router = useRouter();
     const { toast } = useToast();
-    const [teamMembers, setTeamMembers] = React.useState<TeamMember[]>(initialTeamMembers);
+    const [teamMembers, setTeamMembers] = React.useState<TeamMember[]>([]);
     const [userRole, setUserRole] = React.useState<string | null>(null);
 
     const form = useForm<MemberFormValues>({
@@ -41,10 +40,25 @@ export default function TeamManagementPage() {
         defaultValues: { name: '', username: '', password: '', role: 'team-member' },
     });
 
+    const getTeamMembers = React.useCallback((): TeamMember[] => {
+        const storedMembers = localStorage.getItem('teamMembers');
+        if (storedMembers) {
+            return JSON.parse(storedMembers);
+        }
+        localStorage.setItem('teamMembers', JSON.stringify(initialTeamMembers));
+        return initialTeamMembers;
+    }, []);
+
+    const saveTeamMembers = (members: TeamMember[]) => {
+        localStorage.setItem('teamMembers', JSON.stringify(members));
+        setTeamMembers(members);
+    };
+
     React.useEffect(() => {
         const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
         const role = localStorage.getItem('adminRole');
         setUserRole(role);
+        
         if (isAdminAuthenticated !== 'true' || role !== 'admin') {
             toast({
                 title: "Access Denied",
@@ -52,17 +66,26 @@ export default function TeamManagementPage() {
                 variant: "destructive"
             });
             router.push('/admin');
+        } else {
+             setTeamMembers(getTeamMembers());
         }
-    }, [router, toast]);
+    }, [router, toast, getTeamMembers]);
     
     const onSubmit: SubmitHandler<MemberFormValues> = (data) => {
-        // In a real app, you would send this to your backend to create a new user.
-        // For this prototype, we'll just add it to our local state.
+        const currentMembers = getTeamMembers();
+        if (currentMembers.some(member => member.username === data.username)) {
+            form.setError('username', { type: 'manual', message: 'Username already exists.' });
+            return;
+        }
+
         const newMember: TeamMember = {
             id: `user_${Date.now()}`,
             ...data,
         };
-        setTeamMembers(prev => [...prev, newMember]);
+        
+        const updatedMembers = [...currentMembers, newMember];
+        saveTeamMembers(updatedMembers);
+
         toast({
             title: 'Team Member Added',
             description: `${data.name} has been added to the team.`,
@@ -79,7 +102,9 @@ export default function TeamManagementPage() {
             });
             return;
         }
-        setTeamMembers(prev => prev.filter(member => member.id !== memberId));
+        const updatedMembers = teamMembers.filter(member => member.id !== memberId);
+        saveTeamMembers(updatedMembers);
+        
         toast({
             title: 'Member Removed',
             description: 'The team member has been removed.',
@@ -216,5 +241,3 @@ export default function TeamManagementPage() {
         </div>
     );
 }
-
-    
