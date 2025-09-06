@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, MapPin, Image as ImageIcon, Users, Bell } from "lucide-react";
+import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, MapPin, Image as ImageIcon, Users, Bell, User } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -140,7 +140,7 @@ export default function AdminPage() {
                 </header>
                 <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
                     <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
-                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5">
                             <Card>
                                  <CardHeader>
                                     <CardTitle>Location Management</CardTitle>
@@ -201,6 +201,22 @@ export default function AdminPage() {
                                         <Button>
                                             <Bell className="mr-2 h-4 w-4" />
                                             Send Notifications
+                                        </Button>
+                                    </Link>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>My Profile</CardTitle>
+                                    <CardDescription>
+                                        Update your admin account details and password.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Link href="/admin/profile">
+                                        <Button>
+                                            <User className="mr-2 h-4 w-4" />
+                                            Manage Profile
                                         </Button>
                                     </Link>
                                 </CardContent>
@@ -421,5 +437,7 @@ export default function AdminPage() {
         </div>
     );
 }
+
+    
 
     

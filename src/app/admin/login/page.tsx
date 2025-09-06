@@ -50,6 +50,7 @@ export default function AdminLoginPage() {
                 // For this prototype, we'll use localStorage.
                 localStorage.setItem('isAdminAuthenticated', 'true');
                 localStorage.setItem('adminRole', member.role);
+                localStorage.setItem('adminUsername', member.username);
                 router.push('/admin');
             } else {
                  toast({
@@ -118,3 +119,5 @@ export default function AdminLoginPage() {
         </div>
     );
 }
+
+    
