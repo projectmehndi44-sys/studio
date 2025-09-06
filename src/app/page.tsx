@@ -25,6 +25,8 @@ import {
   Calendar as CalendarIcon,
   Search,
   LogIn,
+  UserPlus,
+  Palette,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -40,7 +42,7 @@ import { Separator } from '@/components/ui/separator';
 
 export default function Home() {
   const [filteredArtists, setFilteredArtists] =
-    React.useState<Artist[]>(allArtists);
+    React.useState<Artist[]>([]);
   const [selectedArtist, setSelectedArtist] = React.useState<Artist | null>(
     null
   );
@@ -141,10 +143,7 @@ export default function Home() {
   return (
     <div className="flex min-h-screen w-full flex-col">
       <Header 
-        onArtistRegister={handleArtistRegister}
-        onCustomerRegister={handleCustomerRegister}
         isCustomerLoggedIn={isCustomerLoggedIn}
-        onCustomerLogin={handleCustomerLogin}
         onCustomerLogout={handleCustomerLogout}
         customer={customer}
       />
@@ -268,19 +267,27 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <div className="text-center py-16 text-card-foreground bg-card rounded-lg shadow-md max-w-lg mx-auto mt-4">
-              <LogIn className="mx-auto h-12 w-12 text-primary mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Welcome to GlamGo!</h2>
-            <p className="text-muted-foreground mb-6">Please log in or sign up to search for artists and view their profiles.</p>
-              <div className="flex justify-center gap-4">
-              <Button onClick={handleCustomerLogin}>
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Customer Login
-              </Button>
-              <Button onClick={handleCustomerRegister} variant="secondary">
-                  Sign Up
-              </Button>
-              </div>
+          <div className="text-center py-16 text-card-foreground bg-card rounded-lg shadow-md max-w-lg mx-auto mt-4 space-y-6">
+            <LogIn className="mx-auto h-12 w-12 text-primary" />
+            <h2 className="text-2xl font-bold">Customer Login</h2>
+            <p className="text-muted-foreground">Please log in to continue.</p>
+            <Button onClick={handleCustomerLogin} size="lg" className="w-4/5">
+                <LogIn className="mr-2 h-4 w-4" />
+                Login
+            </Button>
+             <div className="text-sm">
+                New to GlamGo?{' '}
+                <Button variant="link" className="p-0 h-auto" onClick={handleCustomerRegister}>
+                    Sign Up
+                </Button>
+            </div>
+            <Separator className="my-4" />
+             <div>
+                 <Button variant="outline" onClick={handleArtistRegister}>
+                    <Palette className="mr-2 h-4 w-4"/>
+                    Are you an artist? Register here
+                 </Button>
+            </div>
           </div>
         )}
 

@@ -68,6 +68,8 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
     console.log(data);
     setTimeout(() => {
         // Mock a successful login and retrieve a mock user name
+        // For demonstration, we'll use a hardcoded name. 
+        // In a real app, you would fetch this from your database based on the phone number.
         onSuccessfulLogin('Jane Doe');
         handleClose();
     }, 1000)

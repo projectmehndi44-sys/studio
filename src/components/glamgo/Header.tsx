@@ -12,29 +12,27 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
-    onArtistRegister: () => void;
-    onCustomerRegister: () => void;
     isCustomerLoggedIn: boolean;
-    onCustomerLogin: () => void;
     onCustomerLogout: () => void;
     customer: { name: string } | null;
 }
 
 export function Header({ 
-  onArtistRegister, 
-  onCustomerRegister,
   isCustomerLoggedIn, 
-  onCustomerLogin, 
   onCustomerLogout, 
   customer 
 }: HeaderProps) {
+  const router = useRouter();
   const { toast } = useToast();
 
   const handleArtistLogin = () => {
-    // In a real app, this would redirect to a login page
-    toast({ title: 'Login', description: 'Redirecting to artist login...' });
+    // In a real app, this would redirect to a specific artist login page
+    // For now, we can reuse the admin login page as a placeholder
+    router.push('/admin/login');
+    toast({ title: 'Artist Login', description: 'Please enter your artist credentials.' });
   };
 
   return (
@@ -44,13 +42,6 @@ export function Header({
         <h1 className="font-headline text-5xl text-primary">GlamGo</h1>
       </div>
       <div className="flex items-center gap-2">
-        {!isCustomerLoggedIn && (
-            <Link href="/admin">
-            <Button variant="outline">
-                <ShieldCheck className="mr-2 h-4 w-4" /> Admin Portal
-            </Button>
-            </Link>
-        )}
         {isCustomerLoggedIn ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -72,40 +63,14 @@ export function Header({
           </DropdownMenu>
         ) : (
           <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost">Login</Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Login as</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" onClick={onCustomerLogin}>
-                  <LogIn className="mr-2 h-4 w-4" />
-                  <span>Customer</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" onClick={handleArtistLogin}>
-                  <Palette className="mr-2 h-4 w-4" />
-                  <span>Artist</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button>Sign Up</Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Sign up as</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer" onClick={onCustomerRegister}>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Customer</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="cursor-pointer" onClick={onArtistRegister}>
-                  <Palette className="mr-2 h-4 w-4" />
-                  <span>Register as Artist</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Link href="/admin/login">
+                <Button variant="outline">
+                    <ShieldCheck className="mr-2 h-4 w-4" /> Admin Portal
+                </Button>
+            </Link>
+            <Button onClick={handleArtistLogin}>
+                <Palette className="mr-2 h-4 w-4" /> Artist Login
+            </Button>
           </div>
         )}
       </div>
