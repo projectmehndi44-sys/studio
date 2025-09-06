@@ -27,6 +27,7 @@ import {
   LogIn,
   UserPlus,
   Palette,
+  ShieldCheck,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -39,6 +40,7 @@ import { CustomerRegistrationModal } from '@/components/glamgo/CustomerRegistrat
 import { CustomerLoginModal } from '@/components/glamgo/CustomerLoginModal';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
 
 export default function Home() {
   const [filteredArtists, setFilteredArtists] =
@@ -282,7 +284,7 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <div className="text-center py-16 text-card-foreground bg-card rounded-lg shadow-md max-w-lg mx-auto mt-4 space-y-6">
+          <div className="text-center py-16 text-card-foreground bg-card rounded-lg shadow-md max-w-lg mx-auto mt-4 space-y-6 flex flex-col items-center">
             <LogIn className="mx-auto h-12 w-12 text-primary" />
             <h2 className="text-2xl font-bold">Customer Login</h2>
             <p className="text-muted-foreground">Please log in to continue.</p>
@@ -293,15 +295,26 @@ export default function Home() {
              <div className="text-sm">
                 New to GlamGo?{' '}
                 <Button variant="link" className="p-0 h-auto" onClick={handleCustomerRegister}>
+                    <UserPlus className="mr-1 h-4 w-4" />
                     Sign Up
                 </Button>
             </div>
-            <Separator className="my-4" />
-             <div>
-                 <Button variant="outline" onClick={handleArtistRegister}>
+            <Separator className="my-4 w-4/5" />
+            <div className="space-y-4 flex flex-col items-center w-full">
+                 <Button variant="outline" onClick={handleArtistRegister} className="w-4/5">
                     <Palette className="mr-2 h-4 w-4"/>
                     Are you an artist? Register here
                  </Button>
+                 <Link href="/admin/login" className="w-4/5">
+                    <Button variant="outline" className="w-full">
+                        <ShieldCheck className="mr-2 h-4 w-4" /> Admin Portal
+                    </Button>
+                 </Link>
+                 <Link href="/admin/login" className="w-4/5">
+                    <Button className="w-full">
+                        <Palette className="mr-2 h-4 w-4" /> Artist Login
+                    </Button>
+                 </Link>
             </div>
           </div>
         )}

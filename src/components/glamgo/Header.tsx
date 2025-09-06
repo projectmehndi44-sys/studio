@@ -38,14 +38,6 @@ export function Header({
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleArtistLogin = () => {
-    // This function is now primarily for showing the toast, as navigation is handled by the Link component.
-    toast({
-      title: 'Artist Login',
-      description: 'Please enter your artist credentials.',
-    });
-  };
-
   return (
     <header className="flex items-center justify-between w-full px-4 md:px-8 py-2 bg-background/80 backdrop-blur-sm sticky top-0 z-40 border-b">
       <div className="flex items-center gap-2">
@@ -55,7 +47,7 @@ export function Header({
         </Link>
       </div>
       <div className="flex items-center gap-2">
-        {isCustomerLoggedIn ? (
+        {isCustomerLoggedIn && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2">
@@ -79,19 +71,6 @@ export function Header({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        ) : (
-          <div className="flex items-center gap-2">
-            <Link href="/admin/login">
-               <Button variant="outline">
-                 <ShieldCheck className="mr-2 h-4 w-4" /> Admin Portal
-               </Button>
-            </Link>
-             <Link href="/admin/login">
-                <Button>
-                    <Palette className="mr-2 h-4 w-4" /> Artist Login
-                </Button>
-            </Link>
-          </div>
         )}
       </div>
     </header>
