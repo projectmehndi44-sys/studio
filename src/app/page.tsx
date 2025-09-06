@@ -34,6 +34,8 @@ import { ArtistCard } from '@/components/glamgo/ArtistCard';
 import { BookingModal } from '@/components/glamgo/BookingModal';
 import { RecommendationsTab } from '@/components/glamgo/RecommendationsTab';
 import { ArtistRegistrationModal } from '@/components/glamgo/ArtistRegistrationModal';
+import { CustomerRegistrationModal } from '@/components/glamgo/CustomerRegistrationModal';
+import { CustomerLoginModal } from '@/components/glamgo/CustomerLoginModal';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
@@ -45,6 +47,8 @@ export default function Home() {
   const [isBookingModalOpen, setIsBookingModalOpen] = React.useState(false);
   const [isArtistRegistrationModalOpen, setIsArtistRegistrationModalOpen] =
     React.useState(false);
+  const [isCustomerRegistrationModalOpen, setIsCustomerRegistrationModalOpen] = React.useState(false);
+  const [isCustomerLoginModalOpen, setIsCustomerLoginModalOpen] = React.useState(false);
   
   const [isCustomerLoggedIn, setIsCustomerLoggedIn] = React.useState(false);
   const [customer, setCustomer] = React.useState<{ name: string } | null>(null);
@@ -67,15 +71,24 @@ export default function Home() {
     setIsArtistRegistrationModalOpen(true);
   };
 
+  const handleCustomerRegister = () => {
+    setIsCustomerRegistrationModalOpen(true);
+  };
+
   const handleCustomerLogin = () => {
-    // In a real app, this would be a proper authentication flow.
+    setIsCustomerLoginModalOpen(true);
+  };
+  
+  const onSuccessfulLogin = (name: string) => {
     setIsCustomerLoggedIn(true);
-    setCustomer({ name: 'Jane Doe' });
+    setCustomer({ name: name });
+    setIsCustomerLoginModalOpen(false);
+    setIsCustomerRegistrationModalOpen(false);
     toast({
       title: 'Login Successful',
-      description: 'Welcome back! You can now search for artists.',
+      description: `Welcome back, ${name}! You can now search for artists.`,
     });
-  };
+  }
 
   const handleCustomerLogout = () => {
     setIsCustomerLoggedIn(false);
@@ -128,7 +141,8 @@ export default function Home() {
   return (
     <div className="flex min-h-screen w-full flex-col">
       <Header 
-        onArtistRegister={handleArtistRegister} 
+        onArtistRegister={handleArtistRegister}
+        onCustomerRegister={handleCustomerRegister}
         isCustomerLoggedIn={isCustomerLoggedIn}
         onCustomerLogin={handleCustomerLogin}
         onCustomerLogout={handleCustomerLogout}
@@ -256,17 +270,22 @@ export default function Home() {
               <div className="text-center py-16 text-card-foreground bg-card rounded-lg shadow-md max-w-lg mx-auto mt-4">
                  <LogIn className="mx-auto h-12 w-12 text-primary mb-4" />
                 <h2 className="text-2xl font-bold mb-2">Welcome to GlamGo!</h2>
-                <p className="text-muted-foreground mb-6">Please log in to search for artists and view their profiles.</p>
-                 <Button onClick={handleCustomerLogin}>
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Customer Login
+                <p className="text-muted-foreground mb-6">Please log in or sign up to search for artists and view their profiles.</p>
+                 <div className="flex justify-center gap-4">
+                  <Button onClick={handleCustomerLogin}>
+                      <LogIn className="mr-2 h-4 w-4" />
+                      Customer Login
                   </Button>
+                  <Button onClick={handleCustomerRegister} variant="secondary">
+                      Sign Up
+                  </Button>
+                 </div>
               </div>
             )}
           </TabsContent>
 
           <TabsContent value="for-you">
-            <RecommendationsTab onBookingRequest={handleBookingRequest} />
+            <RecommendationsTab onBookingRequest={handleBookingRequest} isCustomerLoggedIn={isCustomerLoggedIn} onLoginRequest={handleCustomerLogin} />
           </TabsContent>
         </Tabs>
 
@@ -280,6 +299,16 @@ export default function Home() {
         <ArtistRegistrationModal
             isOpen={isArtistRegistrationModalOpen}
             onOpenChange={setIsArtistRegistrationModalOpen}
+        />
+        <CustomerRegistrationModal
+            isOpen={isCustomerRegistrationModalOpen}
+            onOpenChange={setIsCustomerRegistrationModalOpen}
+            onSuccessfulRegister={onSuccessfulLogin}
+        />
+        <CustomerLoginModal
+            isOpen={isCustomerLoginModalOpen}
+            onOpenChange={setIsCustomerLoginModalOpen}
+            onSuccessfulLogin={onSuccessfulLogin}
         />
       </main>
     </div>

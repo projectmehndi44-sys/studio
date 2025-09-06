@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { ArtistCard } from './ArtistCard';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles, LogIn } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const recommendationSchema = z.object({
@@ -25,9 +25,11 @@ type RecommendationFormValues = z.infer<typeof recommendationSchema>;
 
 interface RecommendationsTabProps {
   onBookingRequest: (artist: Artist) => void;
+  isCustomerLoggedIn: boolean;
+  onLoginRequest: () => void;
 }
 
-export function RecommendationsTab({ onBookingRequest }: RecommendationsTabProps) {
+export function RecommendationsTab({ onBookingRequest, isCustomerLoggedIn, onLoginRequest }: RecommendationsTabProps) {
   const [recommendedArtists, setRecommendedArtists] = React.useState<Artist[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
   const { toast } = useToast();
@@ -67,6 +69,20 @@ export function RecommendationsTab({ onBookingRequest }: RecommendationsTabProps
       setIsLoading(false);
     }
   };
+
+  if (!isCustomerLoggedIn) {
+    return (
+        <div className="text-center py-16 text-card-foreground bg-card rounded-lg shadow-md max-w-lg mx-auto mt-4">
+            <Sparkles className="mx-auto h-12 w-12 text-primary mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Get Personalized AI Recommendations!</h2>
+            <p className="text-muted-foreground mb-6">Log in to get artist suggestions tailored just for you.</p>
+            <Button onClick={onLoginRequest}>
+                <LogIn className="mr-2 h-4 w-4" />
+                Login to Get Recommendations
+            </Button>
+        </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
