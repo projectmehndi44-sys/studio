@@ -216,8 +216,8 @@ export default function Home() {
       />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="text-center">
-            <h1 className="font-dancing-script tracking-wider text-5xl font-bold text-primary md:text-7xl">
-                Artistry at Your Fingertips
+            <h1 className="font-headline text-5xl font-bold text-primary md:text-7xl">
+                Mehendi<span className="text-accent">f</span>y
             </h1>
             <div className="mt-4 font-headline text-lg text-foreground/80 max-w-2xl mx-auto">
               <p>Discover and book the most talented mehndi and makeup artists near you.</p>
@@ -365,7 +365,7 @@ export default function Home() {
         )}
 
         <div className="py-12">
-            <h2 className="text-center font-headline text-5xl text-primary mb-8">Our Gallery</h2>
+            <h2 className="text-center font-headline text-5xl text-primary mb-8">Our Works</h2>
             <Carousel
                 opts={{
                     align: "start",
