@@ -42,8 +42,8 @@ export function Header({
     <header className="flex items-center justify-between w-full px-4 md:px-8 py-2 bg-background/80 backdrop-blur-sm sticky top-0 z-40 border-b">
       <Link href="/" className="flex items-center gap-2">
         <Sparkles className="w-8 h-8 text-accent" />
-         <h1 className="font-body text-3xl font-bold text-primary">
-            Mehendi<span className="font-headline">f</span>y
+         <h1 className="font-headline text-3xl font-bold text-primary">
+            Mehendi<span className="font-cursive">f</span>y
         </h1>
       </Link>
       <div className="flex items-center gap-2">
