@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -19,8 +20,8 @@ const roboto = Roboto({
 
 
 export const metadata: Metadata = {
-  title: 'MehendiFy',
-  description: 'Find and book the best mehndi and makeup artists.',
+  title: 'MehendiFy - Mehndi and Makeup artist at your fingertips',
+  description: 'Find and book the best mehndi and makeup artists. Your perfect look for any occasion is just a click away.',
 };
 
 export default function RootLayout({
