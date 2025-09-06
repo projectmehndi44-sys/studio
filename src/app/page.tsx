@@ -219,6 +219,7 @@ export default function Home() {
             <h1 className="font-headline text-5xl font-bold text-primary md:text-7xl">
                 Mehendi<span className="text-accent">f</span>y
             </h1>
+            <p className="mt-2 font-dancing-script text-2xl text-foreground/90">Artistry at Your Fingertips</p>
             <div className="mt-4 font-headline text-lg text-foreground/80 max-w-2xl mx-auto">
               <p>Discover and book the most talented mehndi and makeup artists near you.</p>
               <p>Your perfect look for any occasion is just a click away.</p>
@@ -427,5 +428,7 @@ export default function Home() {
     </div>
   );
 }
+
+    
 
     
