@@ -30,7 +30,7 @@ export default function AdminLoginPage() {
             if (role === 'admin' && username === 'admin' && password === 'Abhi@123') {
                 toast({
                     title: 'Login Successful',
-                    description: 'Welcome, Admin!',
+                    description: 'Welcome, Admin! Redirecting...',
                 });
                 // In a real app, you would use a proper session/token management system.
                 // For this prototype, we'll use localStorage.
