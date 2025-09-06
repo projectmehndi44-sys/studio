@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
-import { Playfair_Display, Roboto, Dancing_Script } from 'next/font/google';
+import { Playfair_Display, Roboto, Dancing_Script, Great_Vibes } from 'next/font/google';
 
 const playfairDisplay = Playfair_Display({
   subsets: ['latin'],
@@ -19,6 +19,13 @@ const roboto = Roboto({
 });
 
 const dancingScript = Dancing_Script({
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['400'],
+  variable: '--font-dancing-script',
+});
+
+const greatVibes = Great_Vibes({
   subsets: ['latin'],
   display: 'swap',
   weight: ['400'],
@@ -38,7 +45,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn('font-body antialiased min-h-screen', playfairDisplay.variable, roboto.variable, dancingScript.variable)}>
+      <body className={cn('font-body antialiased min-h-screen', playfairDisplay.variable, roboto.variable, dancingScript.variable, greatVibes.variable)}>
         {children}
         <Toaster />
       </body>
