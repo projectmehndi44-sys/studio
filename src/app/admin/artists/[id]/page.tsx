@@ -12,19 +12,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from '@/hooks/use-toast';
 import { IndianRupee, BarChart, Star, Users, Briefcase, Calendar as CalendarIcon, Image as ImageIcon, Download, ChevronDown } from 'lucide-react';
 import type { Artist, Booking, Review } from '@/types';
-import { artists as initialArtists } from '@/lib/data';
+import { artists as initialArtists, allBookings as initialBookings } from '@/lib/data';
 import NextImage from 'next/image';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { exportToExcel, exportToPdf } from '@/lib/export';
 
-// Mock data for a single artist's details - in a real app, this would be fetched
-const mockBookings: Omit<Booking, 'artistIds'>[] = [
-    { id: 'book_01', customerName: 'Priya Patel', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed', customerContact: '', serviceAddress: '' },
-    { id: 'book_02', customerName: 'Anjali Sharma', date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed', customerContact: '', serviceAddress: '' },
-    { id: 'book_03', customerName: 'Sneha Reddy', date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Confirmed', customerContact: '', serviceAddress: '' },
-    { id: 'book_04', customerName: 'Meera Iyer', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed', customerContact: '', serviceAddress: '' },
-];
-
+// Mock data for reviews - in a real app, this would be fetched
 const mockReviews: Review[] = [
     { id: 'rev_01', customerName: 'Priya Patel', rating: 5, comment: 'Absolutely stunning work! Made my wedding day perfect.' },
     { id: 'rev_02', customerName: 'Anjali Sharma', rating: 4, comment: 'Great makeup, but was a little late. Overall happy with the result.' },
@@ -38,7 +31,7 @@ export default function ArtistDetailPage() {
     const artistId = params.id as string;
 
     const [artist, setArtist] = React.useState<Artist | null>(null);
-    const [bookings] = React.useState<Omit<Booking, 'artistIds'>[]>(mockBookings);
+    const [bookings, setBookings] = React.useState<Booking[]>([]);
     const [reviews] = React.useState<Review[]>(mockReviews);
 
     React.useEffect(() => {
@@ -62,14 +55,25 @@ export default function ArtistDetailPage() {
             });
             router.push('/admin/artists');
         }
+        
+        // Fetch bookings to calculate financials
+        const storedBookings = localStorage.getItem('bookings');
+        const allBookings: Booking[] = storedBookings ? JSON.parse(storedBookings) : initialBookings;
+        const artistBookings = allBookings
+            .filter(b => b.artistIds.includes(artistId))
+            .map(b => ({...b, date: new Date(b.date)}));
+        setBookings(artistBookings);
+
     }, [router, artistId, toast]);
 
     const handleDownload = (format: 'json' | 'pdf' | 'excel') => {
         if (!artist) return;
+        
+        const artistBookings = bookings.filter(b => b.status === 'Completed' || b.status === 'Confirmed');
 
         const dataToDownload = {
             artist,
-            bookings: mockBookings.map(b => ({...b, artistIds: [artistId]})),
+            bookings: artistBookings,
             reviews,
         };
 
@@ -100,8 +104,10 @@ export default function ArtistDetailPage() {
         return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
     }
 
-    const totalRevenue = bookings.reduce((acc, booking) => acc + booking.amount, 0);
-    const platformFee = totalRevenue * 0.1; // 10% platform fee
+    const completedBookings = bookings.filter(b => b.status === 'Completed');
+    const totalRevenue = completedBookings.reduce((acc, booking) => acc + booking.amount, 0);
+    const platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10') / 100;
+    const platformFee = totalRevenue * platformFeePercentage;
     const netPayout = totalRevenue - platformFee;
     const bookedDates = bookings.map(b => b.date);
 
@@ -152,17 +158,17 @@ export default function ArtistDetailPage() {
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">₹{totalRevenue.toLocaleString()}</div>
-                            <p className="text-xs text-muted-foreground">from {bookings.length} bookings</p>
+                            <p className="text-xs text-muted-foreground">from {completedBookings.length} completed bookings</p>
                         </CardContent>
                     </Card>
                         <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Platform Fees (10%)</CardTitle>
+                            <CardTitle className="text-sm font-medium">Platform Fees</CardTitle>
                             <BarChart className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold">₹{platformFee.toLocaleString()}</div>
-                            <p className="text-xs text-muted-foreground">Total fees collected</p>
+                            <div className="text-2xl font-bold">₹{platformFee.toLocaleString(undefined, { maximumFractionDigits: 0}) }</div>
+                            <p className="text-xs text-muted-foreground">Based on {platformFeePercentage * 100}% of revenue</p>
                         </CardContent>
                     </Card>
                         <Card>
@@ -171,8 +177,8 @@ export default function ArtistDetailPage() {
                             <IndianRupee className="h-4 w-4 text-muted-foreground" />
                         </CardHeader>
                         <CardContent>
-                            <div className="text-2xl font-bold text-green-600">₹{netPayout.toLocaleString()}</div>
-                            <p className="text-xs text-muted-foreground">Total amount paid to artist</p>
+                            <div className="text-2xl font-bold text-green-600">₹{netPayout.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
+                            <p className="text-xs text-muted-foreground">Total amount due to artist</p>
                         </CardContent>
                     </Card>
                 </div>
@@ -209,7 +215,7 @@ export default function ArtistDetailPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {bookings.map(booking => (
+                                    {bookings.slice(0, 5).map(booking => (
                                         <TableRow key={booking.id}>
                                             <TableCell>{booking.customerName}</TableCell>
                                             <TableCell>{booking.date.toLocaleDateString()}</TableCell>
@@ -221,6 +227,11 @@ export default function ArtistDetailPage() {
                                             </TableCell>
                                         </TableRow>
                                     ))}
+                                     {bookings.length === 0 && (
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="text-center">No bookings found for this artist.</TableCell>
+                                        </TableRow>
+                                    )}
                                 </TableBody>
                             </Table>
                         </CardContent>
@@ -246,6 +257,9 @@ export default function ArtistDetailPage() {
                                     <p className="text-sm text-muted-foreground italic">"{review.comment}"</p>
                                 </div>
                             ))}
+                             {reviews.length === 0 && (
+                                <p className="text-center text-muted-foreground">No reviews yet for this artist.</p>
+                             )}
                         </CardContent>
                     </Card>
 
