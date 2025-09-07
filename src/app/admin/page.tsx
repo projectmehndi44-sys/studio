@@ -19,10 +19,11 @@ import {
 import { artists as initialArtists, allBookings as initialBookings } from '@/lib/data';
 import type { Artist, Booking } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 export default function AdminPage() {
     const router = useRouter();
+    const { isAuthenticated, isLoading } = useAdminAuth();
     const [approvedArtists, setApprovedArtists] = React.useState<Artist[]>([]);
     const [bookings, setBookings] = React.useState<Booking[]>([]);
     const [pendingBookingCount, setPendingBookingCount] = React.useState(0);
@@ -49,11 +50,14 @@ export default function AdminPage() {
     }, []);
 
     React.useEffect(() => {
-        fetchAdminData();
-        // Listen for storage changes to update lists
-        window.addEventListener('storage', fetchAdminData);
-        return () => window.removeEventListener('storage', fetchAdminData);
-    }, [fetchAdminData]);
+        if (!isLoading && !isAuthenticated) {
+            router.push('/admin/login');
+        } else if (isAuthenticated) {
+            fetchAdminData();
+            window.addEventListener('storage', fetchAdminData);
+            return () => window.removeEventListener('storage', fetchAdminData);
+        }
+    }, [isLoading, isAuthenticated, router, fetchAdminData]);
 
      // Effect for calculating financials
     React.useEffect(() => {
@@ -85,6 +89,14 @@ export default function AdminPage() {
             default: return 'outline';
         }
     };
+    
+    if (isLoading || !isAuthenticated) {
+        return (
+            <div className="flex items-center justify-center min-h-full">
+                <p>Loading dashboard...</p>
+            </div>
+        );
+    }
 
     return (
         <>

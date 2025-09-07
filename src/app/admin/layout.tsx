@@ -34,6 +34,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 
 const NavLink = ({ href, pathname, icon: Icon, label }: { href: string; pathname: string; icon: React.ElementType, label: string }) => (
@@ -58,21 +59,17 @@ export default function AdminLayout({
 }) {
     const router = useRouter();
     const pathname = usePathname();
+    const { isAuthenticated, user, isLoading } = useAdminAuth();
     const [adminName, setAdminName] = React.useState('Admin');
 
     React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
-        if (isAdminAuthenticated !== 'true') {
+        if (!isLoading && !isAuthenticated) {
             router.push('/admin/login');
-        } else {
-            const username = localStorage.getItem('adminUsername');
-            const teamMembers = JSON.parse(localStorage.getItem('teamMembers') || '[]');
-            const currentUser = teamMembers.find((m: any) => m.username === username);
-            if (currentUser) {
-                setAdminName(currentUser.name);
-            }
         }
-    }, [router]);
+        if (user) {
+            setAdminName(user.name);
+        }
+    }, [isLoading, isAuthenticated, router, user]);
     
     const handleLogout = () => {
         localStorage.removeItem('isAdminAuthenticated');
@@ -99,6 +96,14 @@ export default function AdminLayout({
             ))}
         </nav>
     );
+
+     if (isLoading || !isAuthenticated) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-background">
+                <p>Loading...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
