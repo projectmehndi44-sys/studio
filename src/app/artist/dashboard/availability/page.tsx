@@ -145,7 +145,8 @@ export default function ArtistAvailabilityPage() {
                     </div>
                 </div>
                  <Button onClick={handleSave} className="w-full">
-                    <Save className="mr-2 h-4 w-4" /> Save Availability
+                    <Save className="mr-2 h-4 w-4" />
+                    {unavailableDates.length > (artist?.unavailableDates?.length ?? 0) ? `Save ${unavailableDates.length} Dates as Unavailable` : 'Save Availability'}
                 </Button>
             </CardContent>
         </Card>
