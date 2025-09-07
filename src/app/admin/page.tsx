@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, MapPin, Image as ImageIcon, Users, Bell, User, Eye, Download, ChevronDown } from "lucide-react";
+import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, MapPin, Image as ImageIcon, Users, Bell, User, Eye, Download, ChevronDown, Calendar as CalendarIcon, Briefcase } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -27,9 +27,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { artists as initialArtists } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { Artist } from '@/types';
+import type { Artist, Booking } from '@/types';
 import { Checkbox } from '@/components/ui/checkbox';
 import { exportToExcel } from '@/lib/export';
+import { Calendar } from '@/components/ui/calendar';
 
 // Define a type for pending artist data, which might be slightly different
 type PendingArtist = {
@@ -43,6 +44,15 @@ type PendingArtist = {
   [key: string]: any; // To accommodate other registration fields
 };
 
+// Mock data for bookings across all artists for the master calendar
+const allBookings: Booking[] = [
+    { id: 'book_01', artistId: '1', customerName: 'Priya Patel', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed' },
+    { id: 'book_02', artistId: '2', customerName: 'Anjali Sharma', date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed' },
+    { id: 'book_03', artistId: '3', customerName: 'Sneha Reddy', date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Confirmed' },
+    { id: 'book_04', artistId: '1', customerName: 'Meera Iyer', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed' },
+    { id: 'book_05', artistId: '4', customerName: 'Rohan Gupta', date: new Date('2024-08-05'), service: 'Minimalist Mehndi', amount: 1800, status: 'Confirmed' },
+];
+
 
 export default function AdminPage() {
     const router = useRouter();
@@ -50,6 +60,7 @@ export default function AdminPage() {
     const [approvedArtists, setApprovedArtists] = React.useState<Artist[]>([]);
     const [pendingArtists, setPendingArtists] = React.useState<PendingArtist[]>([]);
     const [selectedArtistIds, setSelectedArtistIds] = React.useState<string[]>([]);
+    const [bookings] = React.useState<Booking[]>(allBookings);
 
 
     const fetchArtists = React.useCallback(() => {
@@ -224,6 +235,8 @@ export default function AdminPage() {
         setSelectedArtistIds([]);
     };
 
+    const bookedDates = bookings.map(b => b.date);
+
     return (
         <div className="flex min-h-screen w-full flex-col bg-muted/40">
             <div className="flex flex-col sm:gap-4 sm:py-4">
@@ -234,42 +247,10 @@ export default function AdminPage() {
                     </h1>
                     <Button onClick={handleLogout} variant="outline">Logout</Button>
                 </header>
-                <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8">
+                <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
                     <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
-                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5">
+                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
                             <Card>
-                                 <CardHeader>
-                                    <CardTitle>Location Management</CardTitle>
-                                    <CardDescription>
-                                        Define the states and districts where your services are available.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <Link href="/admin/locations">
-                                        <Button>
-                                            <MapPin className="mr-2 h-4 w-4" />
-                                            Manage Locations
-                                        </Button>
-                                    </Link>
-                                </CardContent>
-                            </Card>
-                             <Card>
-                                <CardHeader>
-                                    <CardTitle>Image Management</CardTitle>
-                                    <CardDescription>
-                                       Manage gallery and background images for the homepage.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <Link href="/admin/images">
-                                        <Button>
-                                            <ImageIcon className="mr-2 h-4 w-4" />
-                                            Manage Images
-                                        </Button>
-                                    </Link>
-                                </CardContent>
-                            </Card>
-                             <Card>
                                 <CardHeader>
                                     <CardTitle>Team Management</CardTitle>
                                     <CardDescription>
@@ -323,6 +304,7 @@ export default function AdminPage() {
                                 <TabsTrigger value="approvals">Artist Approvals</TabsTrigger>
                                 <TabsTrigger value="artists">Artist Management</TabsTrigger>
                                 <TabsTrigger value="customers">Customer Management</TabsTrigger>
+                                <TabsTrigger value="bookings">All Bookings</TabsTrigger>
                             </TabsList>
                             <TabsContent value="approvals">
                                 <Card>
@@ -559,7 +541,93 @@ export default function AdminPage() {
                                     </CardContent>
                                 </Card>
                              </TabsContent>
+                              <TabsContent value="bookings">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>All Bookings</CardTitle>
+                                        <CardDescription>
+                                            View all bookings across the platform.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Customer</TableHead>
+                                                    <TableHead>Artist</TableHead>
+                                                    <TableHead>Date</TableHead>
+                                                    <TableHead>Amount</TableHead>
+                                                    <TableHead>Status</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {bookings.map((booking) => {
+                                                    const artist = approvedArtists.find(a => a.id === booking.artistId);
+                                                    return (
+                                                        <TableRow key={booking.id}>
+                                                            <TableCell>{booking.customerName}</TableCell>
+                                                            <TableCell>{artist ? artist.name : 'N/A'}</TableCell>
+                                                            <TableCell>{booking.date.toLocaleDateString()}</TableCell>
+                                                            <TableCell>₹{booking.amount}</TableCell>
+                                                            <TableCell>
+                                                                <Badge variant={booking.status === 'Completed' ? 'default' : 'secondary'}>
+                                                                    {booking.status}
+                                                                </Badge>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )
+                                                })}
+                                            </TableBody>
+                                        </Table>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
                         </Tabs>
+                    </div>
+                     <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-1">
+                        <Card>
+                             <CardHeader>
+                                <CardTitle className="flex items-center gap-2"><CalendarIcon className="w-5 h-5 text-primary"/> Platform Schedule</CardTitle>
+                                <CardDescription>Consolidated view of all artist bookings. Red dates are booked.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex justify-center">
+                                <Calendar
+                                    mode="multiple"
+                                    selected={bookedDates}
+                                    className="rounded-md border"
+                                    classNames={{ day_selected: "bg-red-500 text-white hover:bg-red-600 focus:bg-red-600" }}
+                                    disabled
+                                />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Site Configuration</CardTitle>
+                                <CardDescription>
+                                    Manage global settings for the application.
+                                </CardDescription>
+                            </CardHeader>
+                            <CardContent className="grid gap-4">
+                               <Link href="/admin/locations">
+                                    <Button variant="outline" className="w-full justify-start gap-2">
+                                        <MapPin />
+                                        Manage Locations
+                                    </Button>
+                                </Link>
+                                <Link href="/admin/images">
+                                    <Button variant="outline" className="w-full justify-start gap-2">
+                                        <ImageIcon />
+                                        Manage Images
+                                    </Button>
+                                </Link>
+                                <Link href="/admin/bookings">
+                                    <Button variant="outline" className="w-full justify-start gap-2">
+                                        <Briefcase />
+                                        Manage Bookings
+                                    </Button>
+                                </Link>
+                            </CardContent>
+                        </Card>
                     </div>
                 </main>
             </div>

@@ -14,6 +14,7 @@ export type Artist = {
 
 export type Booking = {
   id: string;
+  artistId?: string;
   customerName: string;
   date: Date;
   service: string;
