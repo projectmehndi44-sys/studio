@@ -25,7 +25,7 @@ export default function CustomerManagementPage() {
         // Add mock status and registration date for UI
         setCustomers(storedCustomers.map((c: Customer) => ({
             ...c,
-            status: c.name.includes('Sunita') ? 'Suspended' : 'Active', // Mocked status
+            status: c.name && c.name.includes('Sunita') ? 'Suspended' : 'Active', // Mocked status
             registeredOn: new Date(Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 30).toLocaleDateString() // Mocked date
         })));
     }, []);
@@ -74,7 +74,7 @@ export default function CustomerManagementPage() {
                         <TableBody>
                             {customers.map((customer) => (
                                 <TableRow key={customer.id}>
-                                    <TableCell className="font-medium">{customer.name}</TableCell>
+                                    <TableCell className="font-medium">{customer.name || 'N/A'}</TableCell>
                                     <TableCell>
                                         <div className="flex flex-col">
                                             <span>{customer.email}</span>
