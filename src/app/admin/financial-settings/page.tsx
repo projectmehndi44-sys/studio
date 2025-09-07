@@ -18,7 +18,6 @@ const settingsSchema = z.object({
   gstin: z.string().regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, { message: 'Invalid GSTIN format.' }).or(z.literal('')),
   platformFee: z.coerce.number().min(0, 'Fee cannot be negative.').max(100, 'Fee cannot exceed 100%.'),
   refundFee: z.coerce.number().min(0, 'Refund fee cannot be negative.'),
-  multiDayDiscounts: z.array(z.coerce.number().min(0).max(100)).length(10),
   dailyPriceIncrements: z.array(z.coerce.number().min(0).max(100)).length(10),
 });
 
@@ -35,7 +34,6 @@ export default function FinancialSettingsPage() {
             gstin: '',
             platformFee: 10,
             refundFee: 500,
-            multiDayDiscounts: Array(10).fill(0),
             dailyPriceIncrements: Array(10).fill(0),
         },
     });
@@ -50,14 +48,12 @@ export default function FinancialSettingsPage() {
         const savedGstin = localStorage.getItem('platformGstin');
         const savedFee = localStorage.getItem('platformFeePercentage');
         const savedRefundFee = localStorage.getItem('platformRefundFee');
-        const savedDiscounts = localStorage.getItem('multiDayDiscounts');
         const savedIncrements = localStorage.getItem('dailyPriceIncrements');
         
         form.reset({
             gstin: savedGstin || '',
             platformFee: savedFee ? parseFloat(savedFee) : 10,
             refundFee: savedRefundFee ? parseFloat(savedRefundFee) : 500,
-            multiDayDiscounts: savedDiscounts ? JSON.parse(savedDiscounts) : Array(10).fill(0).map((_, i) => (i + 1) * 1.5), // Example default logic
             dailyPriceIncrements: savedIncrements ? JSON.parse(savedIncrements) : Array(10).fill(0),
         });
 
@@ -69,7 +65,6 @@ export default function FinancialSettingsPage() {
         localStorage.setItem('platformGstin', data.gstin);
         localStorage.setItem('platformFeePercentage', data.platformFee.toString());
         localStorage.setItem('platformRefundFee', data.refundFee.toString());
-        localStorage.setItem('multiDayDiscounts', JSON.stringify(data.multiDayDiscounts));
         localStorage.setItem('dailyPriceIncrements', JSON.stringify(data.dailyPriceIncrements));
 
 
@@ -130,33 +125,6 @@ export default function FinancialSettingsPage() {
                                     </FormItem>
                                 )} />
                              </div>
-                            
-                            <Separator />
-
-                            {/* Multi-day Discounts */}
-                            <div>
-                                <h3 className="text-lg font-medium">Multi-Day Booking Discounts</h3>
-                                <p className="text-sm text-muted-foreground">Set a discount percentage based on the number of days booked. Day 1 has no discount.</p>
-                                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-4">
-                                    {Array.from({ length: 9 }, (_, i) => i + 1).map((dayIndex) => (
-                                        <FormField
-                                            key={`discount-${dayIndex}`}
-                                            control={form.control}
-                                            name={`multiDayDiscounts.${dayIndex}`}
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Day {dayIndex + 1}</FormLabel>
-                                                    <div className="relative">
-                                                        <FormControl><Input type="number" {...field} className="pl-8"/></FormControl>
-                                                        <Percent className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                    </div>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
                             
                             <Separator />
 

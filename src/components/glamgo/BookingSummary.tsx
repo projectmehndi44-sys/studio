@@ -13,13 +13,10 @@ interface BookingSummaryProps {
 }
 
 export function BookingSummary({ packages, artist, serviceDates }: BookingSummaryProps) {
-    const [discounts, setDiscounts] = React.useState<number[]>([]);
     const [increments, setIncrements] = React.useState<number[]>([]);
 
     React.useEffect(() => {
-        const savedDiscounts = localStorage.getItem('multiDayDiscounts');
         const savedIncrements = localStorage.getItem('dailyPriceIncrements');
-        setDiscounts(savedDiscounts ? JSON.parse(savedDiscounts) : Array(10).fill(0));
         setIncrements(savedIncrements ? JSON.parse(savedIncrements) : Array(10).fill(0));
     }, []);
 
@@ -30,7 +27,7 @@ export function BookingSummary({ packages, artist, serviceDates }: BookingSummar
     const numDays = serviceDates.length;
 
     // Calculate total price with daily increments
-    const totalWithIncrements = React.useMemo(() => {
+    const total = React.useMemo(() => {
         if (numDays <= 1) {
             return initialBaseTotal;
         }
@@ -41,12 +38,6 @@ export function BookingSummary({ packages, artist, serviceDates }: BookingSummar
         }
         return total;
     }, [numDays, initialBaseTotal, increments]);
-
-    // Calculate discount based on the number of days
-    const discountPercentage = numDays > 1 ? discounts[numDays - 2] || discounts[discounts.length - 1] || 0 : 0;
-    const discountAmount = totalWithIncrements * (discountPercentage / 100);
-
-    const total = totalWithIncrements - discountAmount;
     
     // Assuming 18% GST is included in the price
     const subtotal = total / 1.18;
@@ -71,21 +62,15 @@ export function BookingSummary({ packages, artist, serviceDates }: BookingSummar
                             <span>₹{artist.charge.toLocaleString()}</span>
                         </div>
                     )}
+                     {numDays > 1 && (
+                         <div className="flex justify-between">
+                            <span>Number of Days</span>
+                            <span>{numDays}</span>
+                        </div>
+                    )}
                 </div>
                 <Separator />
                  <div className="space-y-2 text-sm">
-                     {numDays > 1 && (
-                         <div className="flex justify-between">
-                            <span>Total for {numDays} days (incl. daily increments)</span>
-                            <span>₹{totalWithIncrements.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                        </div>
-                    )}
-                    {discountAmount > 0 && (
-                         <div className="flex justify-between text-green-600">
-                            <span>Multi-Day Discount ({discountPercentage}%)</span>
-                            <span>- ₹{discountAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-                        </div>
-                    )}
                      <div className="flex justify-between">
                         <span className="text-muted-foreground">Subtotal (Pre-tax)</span>
                         <span>₹{subtotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
