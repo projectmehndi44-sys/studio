@@ -245,13 +245,13 @@ export default function BookingPage() {
                                 <div><Label htmlFor="state">State*</Label>
                                  <Select value={state} onValueChange={s => { setState(s); setDistrict(''); }}>
                                     <SelectTrigger id="state"><SelectValue placeholder="Select state"/></SelectTrigger>
-                                    <SelectContent>{availableStates.length > 0 ? availableStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : <SelectItem value="" disabled>No locations available</SelectItem>}</SelectContent>
+                                    <SelectContent>{availableStates.length > 0 ? availableStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : <div className="p-2 text-sm text-muted-foreground">No locations available</div>}</SelectContent>
                                 </Select>
                                 </div>
                                  <div><Label htmlFor="district">District*</Label>
                                 <Select value={district} onValueChange={setDistrict} disabled={!state}>
                                     <SelectTrigger id="district"><SelectValue placeholder="Select district"/></SelectTrigger>
-                                    <SelectContent>{availableDistricts.length > 0 ? availableDistricts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>) : <SelectItem value="" disabled>Select a state first</SelectItem>}</SelectContent>
+                                    <SelectContent>{availableDistricts.length > 0 ? availableDistricts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>) : <div className="p-2 text-sm text-muted-foreground">Select a state first</div>}</SelectContent>
                                 </Select>
                                 </div>
                                 <div><Label htmlFor="location">Locality / Area*</Label><Input id="location" placeholder="e.g., Koregaon Park" value={location} onChange={e => setLocation(e.target.value)} required/></div>
@@ -300,5 +300,3 @@ export default function BookingPage() {
         </div>
     )
 }
-
-    
