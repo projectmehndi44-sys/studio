@@ -59,14 +59,16 @@ export default function BookingManagementPage() {
         window.dispatchEvent(new Event('storage'));
     };
 
-    const updateBookingStatus = (bookingId: string, status: Booking['status'], artistIds?: (string | null)[]) => {
-        setBookings(prevBookings => 
-            prevBookings.map(b => 
-                b.id === bookingId 
-                ? { ...b, status, artistIds: artistIds !== undefined ? artistIds : b.artistIds } 
-                : b
-            )
+    const updateBookingStatus = (bookingId: string, status: Booking['status'], artistIds?: string[]) => {
+        const updatedBookings = bookings.map(b => 
+            b.id === bookingId 
+            ? { ...b, status, artistIds: artistIds !== undefined ? artistIds : b.artistIds } 
+            : b
         );
+        setBookings(updatedBookings);
+        // Persist to localStorage to notify other clients
+        localStorage.setItem('bookings', JSON.stringify(updatedBookings));
+        window.dispatchEvent(new Event('storage'));
     };
     
     const handleApproveBooking = (bookingId: string) => {
@@ -298,3 +300,5 @@ export default function BookingManagementPage() {
         </>
     );
 }
+
+    

@@ -35,14 +35,15 @@ export default function ArtistDashboardLayout({
     const fetchArtistData = React.useCallback(() => {
         const currentArtistId = localStorage.getItem('artistId');
         if (!currentArtistId) {
+            // No need to toast here, just redirect.
             router.push('/artist/login');
             return;
         }
         setArtistId(currentArtistId);
         
-        // Fetch Artist Profile
-        const localArtists: Artist[] = JSON.parse(localStorage.getItem('artists') || '[]');
-        const allArtists: Artist[] = [...initialArtists, ...localArtists.filter(la => !initialArtists.some(ia => ia.id === la.id))];
+        // Fetch Artist Profile from both initial data and localStorage
+        const storedArtists: Artist[] = JSON.parse(localStorage.getItem('artists') || '[]');
+        const allArtists: Artist[] = [...initialArtists.filter(ia => !storedArtists.some(sa => sa.id === ia.id)), ...storedArtists];
         const currentArtist = allArtists.find((a: Artist) => a.id === currentArtistId);
         
         if (currentArtist) {
@@ -57,13 +58,13 @@ export default function ArtistDashboardLayout({
             return;
         }
 
-        // Fetch Bookings
-        const localBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || '[]');
-        const artistBookings = [...allBookings, ...localBookings].filter(b => b.artistIds.includes(currentArtistId));
+        // Fetch Bookings from localStorage primarily, fallback to initial data
+        const storedBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || 'null') || allBookings;
+        const artistBookings = storedBookings.filter(b => b.artistIds.includes(currentArtistId));
         setBookings(artistBookings);
         
-        // Fetch Notifications
-        const allNotifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+        // Fetch Notifications from localStorage
+        const allNotifications: Notification[] = JSON.parse(localStorage.getItem('notifications') || '[]');
         const artistNotifications = allNotifications.filter((n: Notification) => n.artistId === currentArtistId);
         setNotifications(artistNotifications);
         setUnreadCount(artistNotifications.filter((n: Notification) => !n.isRead).length);
@@ -78,7 +79,9 @@ export default function ArtistDashboardLayout({
         }
         
         fetchArtistData();
+        // Set up the listener for storage events to keep data in sync
         window.addEventListener('storage', fetchArtistData);
+        // Clean up the listener when the component unmounts
         return () => {
             window.removeEventListener('storage', fetchArtistData);
         };
@@ -94,13 +97,15 @@ export default function ArtistDashboardLayout({
         return <div className="flex items-center justify-center min-h-screen">Loading Artist Portal...</div>;
     }
     
+    // Clone children and pass down the fetched data as props
     const childrenWithProps = React.Children.map(children, child => {
         if (React.isValidElement(child)) {
-            // Pass bookings and setBookings to the bookings page
+            const props: any = { artist, bookings, notifications, setNotifications, setUnreadCount, artistId };
+             // Special case for bookings page to allow mutation
             if (pathname === '/artist/dashboard/bookings') {
-                return React.cloneElement(child, { bookings, setBookings } as any);
+                props.setBookings = setBookings;
             }
-            return React.cloneElement(child, { artist, bookings, notifications, setNotifications, setUnreadCount, artistId } as any);
+            return React.cloneElement(child, props);
         }
         return child;
     });
@@ -144,3 +149,5 @@ export default function ArtistDashboardLayout({
         </div>
     );
 }
+
+    
