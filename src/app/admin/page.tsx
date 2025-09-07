@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, MapPin, Image as ImageIcon, Users, Bell, User, Eye } from "lucide-react";
+import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, MapPin, Image as ImageIcon, Users, Bell, User, Eye, Download } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -28,6 +28,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { artists as initialArtists } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Artist } from '@/types';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // Define a type for pending artist data, which might be slightly different
 type PendingArtist = {
@@ -47,6 +48,7 @@ export default function AdminPage() {
     const { toast } = useToast();
     const [approvedArtists, setApprovedArtists] = React.useState<Artist[]>([]);
     const [pendingArtists, setPendingArtists] = React.useState<PendingArtist[]>([]);
+    const [selectedArtistIds, setSelectedArtistIds] = React.useState<string[]>([]);
 
 
     const fetchArtists = React.useCallback(() => {
@@ -167,7 +169,53 @@ export default function AdminPage() {
             title: `${action} ${type}`,
             description: `Action '${action}' performed on ${type} with ID ${id}.`,
         });
-    }
+    };
+
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            setSelectedArtistIds(approvedArtists.map(a => a.id));
+        } else {
+            setSelectedArtistIds([]);
+        }
+    };
+
+    const handleSelectOne = (artistId: string, checked: boolean) => {
+        if (checked) {
+            setSelectedArtistIds(prev => [...prev, artistId]);
+        } else {
+            setSelectedArtistIds(prev => prev.filter(id => id !== artistId));
+        }
+    };
+
+    const handleDownloadSelected = () => {
+        const artistsToDownload = approvedArtists.filter(a => selectedArtistIds.includes(a.id));
+        
+        if (artistsToDownload.length === 0) {
+            toast({
+                title: "No artists selected",
+                description: "Please select at least one artist to download.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        const dataStr = JSON.stringify(artistsToDownload, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `selected-artists-${new Date().toISOString()}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        toast({
+            title: "Download Started",
+            description: `Downloading details for ${artistsToDownload.length} artist(s).`,
+        });
+        setSelectedArtistIds([]);
+    };
 
     return (
         <div className="flex min-h-screen w-full flex-col bg-muted/40">
@@ -338,16 +386,29 @@ export default function AdminPage() {
                             </TabsContent>
                              <TabsContent value="artists">
                                 <Card>
-                                    <CardHeader>
-                                        <CardTitle>Artist Management</CardTitle>
-                                        <CardDescription>
-                                            View and manage all approved artists.
-                                        </CardDescription>
+                                    <CardHeader className="flex flex-row items-center justify-between">
+                                        <div>
+                                            <CardTitle>Artist Management</CardTitle>
+                                            <CardDescription>
+                                                View and manage all approved artists. {selectedArtistIds.length} of {approvedArtists.length} selected.
+                                            </CardDescription>
+                                        </div>
+                                        <Button onClick={handleDownloadSelected} disabled={selectedArtistIds.length === 0}>
+                                            <Download className="mr-2 h-4 w-4" />
+                                            Download Selected ({selectedArtistIds.length})
+                                        </Button>
                                     </CardHeader>
                                     <CardContent>
                                     <Table>
                                             <TableHeader>
                                                 <TableRow>
+                                                    <TableHead className="w-12">
+                                                        <Checkbox 
+                                                          checked={selectedArtistIds.length === approvedArtists.length && approvedArtists.length > 0}
+                                                          onCheckedChange={(checked) => handleSelectAll(!!checked)}
+                                                          aria-label="Select all"
+                                                        />
+                                                    </TableHead>
                                                     <TableHead>Artist</TableHead>
                                                     <TableHead>Location</TableHead>
                                                     <TableHead>Services</TableHead>
@@ -362,6 +423,13 @@ export default function AdminPage() {
                                             <TableBody>
                                                 {allArtistsWithStatus.map((artist) => (
                                                     <TableRow key={artist.id}>
+                                                         <TableCell>
+                                                            <Checkbox
+                                                                checked={selectedArtistIds.includes(artist.id)}
+                                                                onCheckedChange={(checked) => handleSelectOne(artist.id, !!checked)}
+                                                                aria-label={`Select ${artist.name}`}
+                                                            />
+                                                        </TableCell>
                                                         <TableCell className="font-medium flex items-center gap-2">
                                                             <Avatar>
                                                                 <AvatarImage src={artist.profilePicture} alt={artist.name} />

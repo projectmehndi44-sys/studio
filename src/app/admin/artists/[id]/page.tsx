@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
-import { Shield, ArrowLeft, DollarSign, BarChart, Star, Users, Briefcase, Calendar as CalendarIcon, Image as ImageIcon } from 'lucide-react';
+import { Shield, ArrowLeft, DollarSign, BarChart, Star, Users, Briefcase, Calendar as CalendarIcon, Image as ImageIcon, Download } from 'lucide-react';
 import type { Artist, Booking, Review } from '@/types';
 import { artists as initialArtists } from '@/lib/data';
 import NextImage from 'next/image';
@@ -63,6 +63,32 @@ export default function ArtistDetailPage() {
         }
     }, [router, artistId, toast]);
 
+    const handleDownload = () => {
+        if (!artist) return;
+
+        const dataToDownload = {
+            artist,
+            bookings,
+            reviews,
+        };
+
+        const dataStr = JSON.stringify(dataToDownload, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `artist-details-${artist.id}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+
+        toast({
+            title: "Download Started",
+            description: `Details for ${artist.name} are being downloaded.`,
+        });
+    };
+
     if (!artist) {
         return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
     }
@@ -79,9 +105,12 @@ export default function ArtistDetailPage() {
                     <Shield className="w-6 h-6" />
                     Artist Management
                 </h1>
-                <Link href="/admin">
-                     <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Dashboard</Button>
-                </Link>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={handleDownload}><Download className="mr-2 h-4 w-4"/> Download Details</Button>
+                    <Link href="/admin">
+                        <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Dashboard</Button>
+                    </Link>
+                </div>
             </header>
             <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8">
                  <div className="max-w-7xl mx-auto grid gap-6">
