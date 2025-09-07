@@ -36,12 +36,13 @@ export function BookingSummary({ packages, artist, serviceDates }: BookingSummar
         if (numDays === 1) return initialBaseTotal;
         
         let total = 0;
-        // Day 1 is always the base price
+        // Day 1 is always the base price (0% increment)
         total += initialBaseTotal; 
 
         for (let i = 1; i < numDays; i++) {
-            // increment index should be i-1 because increments array is for Day 2, Day 3...
-            const incrementPercentage = increments[i-1] || increments[increments.length - 1] || 0;
+            // increment index for Day 2 is 0, for Day 3 is 1, etc.
+            // The increments array is for Day 2, Day 3,... up to Day 11
+            const incrementPercentage = increments[i - 1] || 0;
             total += initialBaseTotal * (1 + incrementPercentage / 100);
         }
         return total;
@@ -49,8 +50,8 @@ export function BookingSummary({ packages, artist, serviceDates }: BookingSummar
     
     const discountPercentage = React.useMemo(() => {
         if (numDays <= 1) return 0;
-        // discount index should be numDays - 2 because it's for 2 days, 3 days...
-        return discounts[numDays - 2] || discounts[discounts.length - 1] || 0;
+        // discount index for 2 days is 0, for 3 days is 1...
+        return discounts[numDays - 2] || 0;
     }, [numDays, discounts]);
 
     const discountAmount = totalBeforeDiscount * (discountPercentage / 100);
