@@ -14,10 +14,14 @@ interface BookingSummaryProps {
 
 export function BookingSummary({ packages, artist, serviceDates }: BookingSummaryProps) {
     const [increments, setIncrements] = React.useState<number[]>([]);
+    const [discounts, setDiscounts] = React.useState<number[]>([]);
 
     React.useEffect(() => {
         const savedIncrements = localStorage.getItem('dailyPriceIncrements');
         setIncrements(savedIncrements ? JSON.parse(savedIncrements) : Array(10).fill(0));
+        
+        const savedDiscounts = localStorage.getItem('multiDayDiscounts');
+        setDiscounts(savedDiscounts ? JSON.parse(savedDiscounts) : Array(9).fill(0));
     }, []);
 
     const packageBaseTotal = packages.reduce((sum, pkg) => sum + pkg.price, 0);
@@ -27,17 +31,30 @@ export function BookingSummary({ packages, artist, serviceDates }: BookingSummar
     const numDays = serviceDates.length;
 
     // Calculate total price with daily increments
-    const total = React.useMemo(() => {
-        if (numDays <= 1) {
-            return initialBaseTotal;
-        }
+    const totalBeforeDiscount = React.useMemo(() => {
+        if (numDays === 0) return 0;
+        if (numDays === 1) return initialBaseTotal;
+        
         let total = 0;
-        for (let i = 0; i < numDays; i++) {
-            const incrementPercentage = increments[i] || increments[increments.length - 1] || 0;
+        // Day 1 is always the base price
+        total += initialBaseTotal; 
+
+        for (let i = 1; i < numDays; i++) {
+            // increment index should be i-1 because increments array is for Day 2, Day 3...
+            const incrementPercentage = increments[i-1] || increments[increments.length - 1] || 0;
             total += initialBaseTotal * (1 + incrementPercentage / 100);
         }
         return total;
     }, [numDays, initialBaseTotal, increments]);
+    
+    const discountPercentage = React.useMemo(() => {
+        if (numDays <= 1) return 0;
+        // discount index should be numDays - 2 because it's for 2 days, 3 days...
+        return discounts[numDays - 2] || discounts[discounts.length - 1] || 0;
+    }, [numDays, discounts]);
+
+    const discountAmount = totalBeforeDiscount * (discountPercentage / 100);
+    const total = totalBeforeDiscount - discountAmount;
     
     // Assuming 18% GST is included in the price
     const subtotal = total / 1.18;
@@ -63,10 +80,20 @@ export function BookingSummary({ packages, artist, serviceDates }: BookingSummar
                         </div>
                     )}
                      {numDays > 1 && (
-                         <div className="flex justify-between">
-                            <span>Number of Days</span>
-                            <span>{numDays}</span>
-                        </div>
+                        <>
+                            <div className="flex justify-between">
+                                <span>Number of Days</span>
+                                <span>{numDays}</span>
+                            </div>
+                            <div className="flex justify-between">
+                                <span>Total w/ Daily Increments</span>
+                                <span>₹{totalBeforeDiscount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                            </div>
+                             <div className="flex justify-between text-green-600">
+                                <span>Multi-Day Discount ({discountPercentage}%)</span>
+                                <span>- ₹{discountAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                            </div>
+                        </>
                     )}
                 </div>
                 <Separator />
