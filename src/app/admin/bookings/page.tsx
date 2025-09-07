@@ -18,13 +18,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 const allBookings: Booking[] = [
-    { id: 'book_01', artistIds: ['1'], customerName: 'Priya Patel', customerContact: '9876543210', serviceAddress: '123, Rose Villa, Bandra West, Mumbai', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed', paidOut: true },
-    { id: 'book_02', artistIds: ['2'], customerName: 'Anjali Sharma', customerContact: '9876543211', serviceAddress: '456, Sunshine Apts, Saket, New Delhi', date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed', paidOut: false },
-    { id: 'book_03', artistIds: ['3'], customerName: 'Sneha Reddy', customerContact: '9876543212', serviceAddress: '789, Tech Park, Koramangala, Bangalore', date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Pending Approval', paidOut: false },
-    { id: 'book_04', artistIds: ['1'], customerName: 'Meera Iyer', customerContact: '9876543213', serviceAddress: '321, Lakeview, Powai, Mumbai', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed', paidOut: false },
-    { id: 'book_05', artistIds: [], customerName: 'Rohan Gupta', customerContact: '9876543214', serviceAddress: '654, MG Road, Pune', date: new Date('2024-08-12'), service: 'Mehndi Package', amount: 1800, status: 'Needs Assignment', paidOut: false },
-    { id: 'book_06', artistIds: ['4'], customerName: 'Kavita Singh', customerContact: '9876543215', serviceAddress: '987, Cyber City, Gurgaon', date: new Date('2024-08-15'), service: 'Minimalist Mehndi', amount: 2200, status: 'Pending Approval', paidOut: false },
-    { id: 'book_07', artistIds: ['5'], customerName: 'Divya Kumar', customerContact: '9876543216', serviceAddress: '111, Jubilee Hills, Hyderabad', date: new Date('2024-07-28'), service: 'Bridal Makeup', amount: 9000, status: 'Disputed', paidOut: false },
+    { id: 'book_01', artistIds: ['1'], customerName: 'Priya Patel', customerContact: '9876543210', eventType: 'Wedding', serviceAddress: '123, Rose Villa, Bandra West, Mumbai', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed', paidOut: true, eventDate: new Date('2024-07-22'), state: 'Maharashtra', district: 'Mumbai', location: 'Bandra West' },
+    { id: 'book_02', artistIds: ['2'], customerName: 'Anjali Sharma', customerContact: '9876543211', eventType: 'Party', serviceAddress: '456, Sunshine Apts, Saket, New Delhi', date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed', paidOut: false, eventDate: new Date('2024-07-25'), state: 'Delhi', district: 'South Delhi', location: 'Saket' },
+    { id: 'book_03', artistIds: ['3'], customerName: 'Sneha Reddy', customerContact: '9876543212', eventType: 'Wedding', serviceAddress: '789, Tech Park, Koramangala, Bangalore', date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Pending Approval', paidOut: false, eventDate: new Date('2024-08-07'), state: 'Karnataka', district: 'Bengaluru Urban', location: 'Koramangala' },
+    { id: 'book_04', artistIds: ['1'], customerName: 'Meera Iyer', customerContact: '9876543213', eventType: 'Engagement', serviceAddress: '321, Lakeview, Powai, Mumbai', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed', paidOut: false, eventDate: new Date('2024-08-11'), state: 'Maharashtra', district: 'Mumbai Suburban', location: 'Powai' },
+    { id: 'book_05', artistIds: [], customerName: 'Rohan Gupta', customerContact: '9876543214', eventType: 'Festival', serviceAddress: '654, MG Road, Pune', date: new Date('2024-08-12'), service: 'Mehndi Package', amount: 1800, status: 'Needs Assignment', paidOut: false, eventDate: new Date('2024-08-13'), state: 'Maharashtra', district: 'Pune', location: 'MG Road' },
+    { id: 'book_06', artistIds: ['4'], customerName: 'Kavita Singh', customerContact: '9876543215', eventType: 'Wedding', serviceAddress: '987, Cyber City, Gurgaon', date: new Date('2024-08-15'), service: 'Minimalist Mehndi', amount: 2200, status: 'Pending Approval', paidOut: false, eventDate: new Date('2024-08-18'), state: 'Haryana', district: 'Gurugram', location: 'Cyber City' },
+    { id: 'book_07', artistIds: ['5'], customerName: 'Divya Kumar', customerContact: '9876543216', eventType: 'Wedding', serviceAddress: '111, Jubilee Hills, Hyderabad', date: new Date('2024-07-28'), service: 'Bridal Makeup', amount: 9000, status: 'Disputed', paidOut: false, eventDate: new Date('2024-07-30'), state: 'Telangana', district: 'Hyderabad', location: 'Jubilee Hills' },
 ];
 
 export default function BookingManagementPage() {
@@ -45,7 +45,7 @@ export default function BookingManagementPage() {
         setArtists(storedArtists ? JSON.parse(storedArtists) : initialArtists);
 
         const storedBookings = localStorage.getItem('bookings');
-        setBookings(storedBookings ? JSON.parse(storedBookings).map((b: Booking) => ({...b, date: new Date(b.date)})) : allBookings);
+        setBookings(storedBookings ? JSON.parse(storedBookings).map((b: Booking) => ({...b, date: new Date(b.date), eventDate: b.eventDate ? new Date(b.eventDate) : new Date(b.date) })) : allBookings);
 
     }, [router]);
     

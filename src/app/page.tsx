@@ -4,9 +4,8 @@
 import * as React from 'react';
 import type { Artist, MehndiPackage } from '@/types';
 import { artists as allArtists } from '@/lib/data';
-import { packages as allPackages } from '@/lib/packages-data';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -29,7 +28,7 @@ import {
   LogIn,
   UserPlus,
   Palette,
-  PackageCheck,
+  ShoppingBag,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -46,8 +45,7 @@ import Link from 'next/link';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Autoplay from "embla-carousel-autoplay"
 import Image from 'next/image';
-import { Badge } from '@/components/ui/badge';
-import { MehndiIcon } from '@/components/icons';
+import { Packages } from '@/components/glamgo/Packages';
 
 const galleryImages = [
     { src: 'https://picsum.photos/600/400?random=101', alt: 'Intricate bridal mehndi', hint: 'bridal mehndi' },
@@ -75,7 +73,6 @@ export default function Home() {
   const [selectedArtist, setSelectedArtist] = React.useState<Artist | null>(
     null
   );
-  const [selectedPackage, setSelectedPackage] = React.useState<MehndiPackage | null>(null);
   const [isBookingModalOpen, setIsBookingModalOpen] = React.useState(false);
   const [isArtistRegistrationModalOpen, setIsArtistRegistrationModalOpen] =
     React.useState(false);
@@ -84,6 +81,8 @@ export default function Home() {
   
   const [isCustomerLoggedIn, setIsCustomerLoggedIn] = React.useState(false);
   const [customer, setCustomer] = React.useState<{ name: string } | null>(null);
+
+  const [cart, setCart] = React.useState<MehndiPackage[]>([]);
 
   const { toast } = useToast();
 
@@ -106,14 +105,18 @@ export default function Home() {
 
   const handleBookingRequest = (artist: Artist) => {
     setSelectedArtist(artist);
-    setSelectedPackage(null);
     setIsBookingModalOpen(true);
   };
   
-  const handlePackageBookingRequest = (pkg: MehndiPackage) => {
-      setSelectedPackage(pkg);
-      setSelectedArtist(null);
-      setIsBookingModalOpen(true);
+  const handleAddToCart = (pkg: MehndiPackage) => {
+    setCart(currentCart => {
+        if(currentCart.find(item => item.id === pkg.id)) {
+            toast({ title: "Already in cart", description: `${pkg.name} is already in your selection.`, variant: "default" });
+            return currentCart;
+        }
+        toast({ title: "Package Added!", description: `${pkg.name} has been added to your selection.`, });
+        return [...currentCart, pkg];
+    });
   }
 
   const handleArtistRegister = () => {
@@ -142,6 +145,7 @@ export default function Home() {
   const handleCustomerLogout = () => {
     setIsCustomerLoggedIn(false);
     setCustomer(null);
+    setCart([]);
     toast({
       title: 'Logged Out',
       description: 'You have been successfully logged out.',
@@ -204,6 +208,16 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen w-full flex-col relative">
+       {cart.length > 0 && (
+         <div className="fixed bottom-8 right-8 z-50">
+             <Link href={`/book?packages=${cart.map(p => p.id).join(',')}`}>
+                <Button size="lg" className="rounded-full shadow-lg text-lg">
+                    <ShoppingBag className="mr-2 h-6 w-6"/>
+                    Book Now ({cart.length})
+                </Button>
+            </Link>
+         </div>
+       )}
       <div className="fixed inset-0 -z-10 h-full w-full">
           {backgroundImages.map((src, index) => (
               <Image
@@ -243,45 +257,7 @@ export default function Home() {
             
             <Separator />
 
-             <div className="py-12">
-                <h2 className="text-center font-headline text-5xl text-primary mb-8">Our Packages</h2>
-                 <Carousel opts={{ align: "start", loop: true, }} plugins={[ Autoplay({ delay: 5000, }), ]} className="w-full max-w-7xl mx-auto" >
-                    <CarouselContent>
-                        {allPackages.map((pkg) => (
-                            <CarouselItem key={pkg.id} className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
-                                <div className="p-1 h-full">
-                                    <Card className="overflow-hidden flex flex-col h-full hover:shadow-xl transition-shadow">
-                                        <CardHeader className="p-0">
-                                             <Image src={pkg.image} alt={pkg.name} width={400} height={250} className="w-full object-cover aspect-video" data-ai-hint="mehndi design"/>
-                                        </CardHeader>
-                                        <CardContent className="p-4 flex-grow">
-                                            <CardTitle className="text-xl font-bold text-primary mb-2">{pkg.name}</CardTitle>
-                                            <p className="text-sm text-muted-foreground mb-3">{pkg.description}</p>
-                                            <div className="flex flex-wrap gap-1">
-                                                {pkg.tags.map(tag => (
-                                                    <Badge key={tag} variant="secondary" className="gap-1.5 pl-2">
-                                                        <MehndiIcon className="w-3.5 h-3.5"/>
-                                                        <span className="capitalize">{tag}</span>
-                                                    </Badge>
-                                                ))}
-                                            </div>
-                                        </CardContent>
-                                        <CardFooter className="p-4 bg-background/50 flex justify-between items-center mt-auto">
-                                            <div className="text-lg font-bold text-primary">
-                                                <span className="text-xs font-normal text-muted-foreground">Starting from</span><br/>
-                                                ₹{pkg.price.toLocaleString()}
-                                            </div>
-                                            <Button onClick={() => handlePackageBookingRequest(pkg)} className="bg-accent hover:bg-accent/90">
-                                                <PackageCheck className="mr-2 h-4 w-4"/>Book Package
-                                            </Button>
-                                        </CardFooter>
-                                    </Card>
-                                </div>
-                            </CarouselItem>
-                        ))}
-                    </CarouselContent>
-                </Carousel>
-             </div>
+            <Packages onAddToCart={handleAddToCart} cart={cart}/>
             
             <Separator />
             
@@ -456,10 +432,10 @@ export default function Home() {
         </div>
 
 
-        {(selectedArtist || selectedPackage) && (
+        {selectedArtist && (
           <BookingModal
             artist={selectedArtist}
-            pkg={selectedPackage}
+            pkg={null}
             isOpen={isBookingModalOpen}
             onOpenChange={setIsBookingModalOpen}
           />

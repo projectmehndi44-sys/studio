@@ -26,6 +26,20 @@ export type Booking = {
   amount: number;
   status: 'Completed' | 'Confirmed' | 'Cancelled' | 'Pending Approval' | 'Needs Assignment' | 'Disputed';
   paidOut?: boolean;
+  
+  // New detailed fields
+  eventType: string;
+  eventDate: Date;
+  state: string;
+  district: string;
+  location: string; // Locality/Area
+  mapLink?: string;
+  note?: string;
+  referencePhoto?: string;
+  guestMehndi?: {
+    included: boolean;
+    expectedCount: number;
+  };
 };
 
 export type Review = {

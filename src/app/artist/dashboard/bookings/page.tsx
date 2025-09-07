@@ -77,8 +77,8 @@ export default function ArtistBookingsPage({ bookings, setBookings }: ArtistBook
                     <TableHeader>
                         <TableRow>
                             <TableHead>Customer</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Service</TableHead>
+                            <TableHead>Mehndi Date</TableHead>
+                            <TableHead>Event Type</TableHead>
                             <TableHead>Location</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">Action</TableHead>
@@ -89,8 +89,8 @@ export default function ArtistBookingsPage({ bookings, setBookings }: ArtistBook
                             <TableRow key={booking.id}>
                                 <TableCell>{booking.customerName}</TableCell>
                                 <TableCell>{new Date(booking.date).toLocaleDateString()}</TableCell>
-                                <TableCell>{booking.service}</TableCell>
-                                <TableCell>{booking.serviceAddress}</TableCell>
+                                <TableCell>{booking.eventType}</TableCell>
+                                <TableCell>{booking.location}, {booking.district}</TableCell>
                                 <TableCell>
                                     <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                                 </TableCell>
