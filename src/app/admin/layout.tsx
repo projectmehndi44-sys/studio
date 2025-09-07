@@ -15,7 +15,12 @@ import {
     PanelLeft,
     Package,
     Users,
-    Palette
+    Palette,
+    Tag,
+    Image as ImageIcon,
+    MapPin,
+    AreaChart,
+    User as UserIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';

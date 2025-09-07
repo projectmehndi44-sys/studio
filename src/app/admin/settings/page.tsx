@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Shield, Users, MapPin, Image as ImageIcon, User, ArrowLeft, AreaChart, Tag, IndianRupee } from 'lucide-react';
+import { Users, MapPin, Image as ImageIcon, User, Tag, IndianRupee, AreaChart } from 'lucide-react';
 
 export default function SettingsPage() {
     const router = useRouter();
@@ -56,4 +56,3 @@ export default function SettingsPage() {
         </>
     );
 }
-

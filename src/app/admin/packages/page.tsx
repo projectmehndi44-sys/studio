@@ -3,7 +3,6 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, ArrowLeft, Package, PlusCircle, Trash2, Edit, Upload, Image as ImageIcon, DollarSign, Tag } from 'lucide-react';
+import { Package, PlusCircle, Trash2, Edit, Upload, DollarSign, Tag } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import type { MehndiPackage } from '@/types';
 import { packages as initialPackages } from '@/lib/packages-data';
@@ -216,4 +215,3 @@ export default function PackageManagementPage() {
         </>
     );
 }
-
