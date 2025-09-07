@@ -11,9 +11,10 @@ interface BookingSummaryProps {
 }
 
 export function BookingSummary({ packages }: BookingSummaryProps) {
-    const subtotal = packages.reduce((sum, pkg) => sum + pkg.price, 0);
-    const taxes = subtotal * 0.18; // 18% GST
-    const total = subtotal + taxes;
+    const total = packages.reduce((sum, pkg) => sum + pkg.price, 0);
+    // Assuming 18% GST is included in the price
+    const subtotal = total / 1.18;
+    const taxes = total - subtotal;
 
     return (
         <Card>
@@ -32,12 +33,12 @@ export function BookingSummary({ packages }: BookingSummaryProps) {
                 <Separator />
                 <div className="space-y-2 text-sm">
                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Subtotal</span>
-                        <span>₹{subtotal.toLocaleString()}</span>
+                        <span className="text-muted-foreground">Subtotal (Pre-tax)</span>
+                        <span>₹{subtotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                     </div>
                     <div className="flex justify-between">
-                        <span className="text-muted-foreground">Taxes & Fees (GST)</span>
-                        <span>₹{taxes.toLocaleString()}</span>
+                        <span className="text-muted-foreground">GST (18% included)</span>
+                        <span>₹{taxes.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                     </div>
                 </div>
                 <Separator />
@@ -49,3 +50,5 @@ export function BookingSummary({ packages }: BookingSummaryProps) {
         </Card>
     );
 }
+
+    

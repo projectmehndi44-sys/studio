@@ -21,7 +21,7 @@ import { packages as allPackages } from '@/lib/packages-data';
 import { INDIA_LOCATIONS } from '@/lib/india-locations';
 import type { MehndiPackage, Booking } from '@/types';
 
-import { Calendar as CalendarIcon, ChevronLeft, Minus, Plus, Trash2, Upload } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, Minus, Plus, Trash2, Upload, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { BookingSummary } from '@/components/glamgo/BookingSummary';
@@ -91,6 +91,7 @@ export default function BookingPage() {
             district &&
             location &&
             address &&
+            mapLink &&
             selectedPackages.length > 0
         );
     }
@@ -121,7 +122,7 @@ export default function BookingPage() {
             state,
             district,
             location,
-            mapLink: mapLink || '',
+            mapLink: mapLink,
             note: note || '',
             guestMehndi: {
                 included: includeGuestMehndi,
@@ -139,6 +140,36 @@ export default function BookingPage() {
         });
 
         router.push('/'); // Redirect to payment or a confirmation page in a real app
+    };
+
+    const handleFetchLocation = () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const { latitude, longitude } = position.coords;
+                    const googleMapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+                    setMapLink(googleMapsUrl);
+                    toast({
+                        title: 'Location Fetched',
+                        description: 'Google Maps link has been created for your current location.',
+                    });
+                },
+                (error) => {
+                    toast({
+                        title: 'Location Error',
+                        description: 'Could not retrieve your location. Please ensure location services are enabled and try again.',
+                        variant: 'destructive',
+                    });
+                    console.error("Geolocation Error:", error);
+                }
+            );
+        } else {
+             toast({
+                title: 'Location Not Supported',
+                description: 'Geolocation is not supported by your browser.',
+                variant: 'destructive',
+            });
+        }
     };
 
 
@@ -251,13 +282,27 @@ export default function BookingPage() {
                                  <div><Label htmlFor="district">District*</Label>
                                 <Select value={district} onValueChange={setDistrict} disabled={!state}>
                                     <SelectTrigger id="district"><SelectValue placeholder="Select district"/></SelectTrigger>
-                                    <SelectContent>{availableDistricts.length > 0 ? availableDistricts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>) : <div className="p-2 text-sm text-muted-foreground">Select a state first</div>}</SelectContent>
+                                    <SelectContent>
+                                        {availableDistricts.length > 0 ? (
+                                            availableDistricts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)
+                                        ) : (
+                                            <div className="p-2 text-sm text-muted-foreground">Select a state first</div>
+                                        )}
+                                    </SelectContent>
                                 </Select>
                                 </div>
                                 <div><Label htmlFor="location">Locality / Area*</Label><Input id="location" placeholder="e.g., Koregaon Park" value={location} onChange={e => setLocation(e.target.value)} required/></div>
                             </div>
                             <div><Label htmlFor="address">Full Address*</Label><Textarea id="address" placeholder="House No, Street, Landmark..." value={address} onChange={e => setAddress(e.target.value)} required/></div>
-                            <div><Label htmlFor="map-link">Google Maps Link (Optional)</Label><Input id="map-link" placeholder="Paste location link here" value={mapLink} onChange={e => setMapLink(e.target.value)}/></div>
+                            <div>
+                                <Label htmlFor="map-link">Google Maps Link*</Label>
+                                <div className="flex items-center gap-2">
+                                <Input id="map-link" placeholder="Paste location link here" value={mapLink} onChange={e => setMapLink(e.target.value)} required/>
+                                <Button type="button" variant="outline" onClick={handleFetchLocation}>
+                                    <MapPin className="mr-2 h-4 w-4"/> Get Current Location
+                                </Button>
+                                </div>
+                            </div>
                             <div><Label htmlFor="note">Note (Optional)</Label><Textarea id="note" placeholder="Any special requests or instructions..." value={note} onChange={e => setNote(e.target.value)}/></div>
                              <div>
                                 <Label htmlFor="ref-photo">Reference Photo (Optional)</Label>
@@ -300,3 +345,5 @@ export default function BookingPage() {
         </div>
     )
 }
+
+    
