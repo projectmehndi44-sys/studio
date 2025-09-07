@@ -21,6 +21,7 @@ import { Calendar as CalendarIcon, Clock, IndianRupee, User, Package as PackageI
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 
 interface BookingModalProps {
   artist: Artist | null;
@@ -90,7 +91,15 @@ export function BookingModal({ artist, pkg: selectedPackage, isOpen, onOpenChang
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-primary font-bold text-2xl">Book {bookingTargetName}</DialogTitle>
+          <DialogTitle className="text-primary font-bold text-2xl flex items-center gap-2">
+            {artist && (
+                <Avatar className="h-9 w-9">
+                    <AvatarImage src={artist.profilePicture} alt={artist.name} />
+                    <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+            )}
+            Book {bookingTargetName}
+            </DialogTitle>
           <DialogDescription>
             Fill in the details below to request a booking. Your request will be sent for approval.
           </DialogDescription>
