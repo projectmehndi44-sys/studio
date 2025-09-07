@@ -62,13 +62,14 @@ export default function AdminLayout({
     const [adminName, setAdminName] = React.useState('Admin');
 
     React.useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
+        // If we are not on the login page and the user is not authenticated, redirect them.
+        if (!isLoading && !isAuthenticated && pathname !== '/admin/login') {
             router.push('/admin/login');
         }
-        if (user) {
+        if (isAuthenticated && user) {
             setAdminName(user.name);
         }
-    }, [isLoading, isAuthenticated, router, user]);
+    }, [isLoading, isAuthenticated, router, user, pathname]);
     
     const handleLogout = () => {
         localStorage.removeItem('isAdminAuthenticated');
@@ -96,14 +97,21 @@ export default function AdminLayout({
         </nav>
     );
 
-     if (isLoading || !isAuthenticated) {
+    // If on the login page, render only the children (the login form) without any layout.
+    if (pathname === '/admin/login') {
+        return <>{children}</>;
+    }
+
+    // While checking auth state, show a loading screen to prevent content flash.
+    if (isLoading || !isAuthenticated) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-background">
                 <p>Loading...</p>
             </div>
         );
     }
-
+    
+    // If authenticated and not on the login page, render the full admin dashboard.
     return (
         <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
             <aside className="hidden border-r bg-muted/40 md:block">
