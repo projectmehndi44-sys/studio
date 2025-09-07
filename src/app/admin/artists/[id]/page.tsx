@@ -191,14 +191,14 @@ export default function ArtistDetailPage() {
                         <Card className="lg:col-span-1">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2"><CalendarIcon className="w-5 h-5 text-primary"/> Availability Calendar</CardTitle>
-                                <CardDescription>Green dates indicate bookings.</CardDescription>
+                                <CardDescription>Red dates indicate bookings.</CardDescription>
                             </CardHeader>
                             <CardContent className="flex justify-center">
                                 <Calendar
                                     mode="multiple"
                                     selected={bookedDates}
                                     className="rounded-md border"
-                                    classNames={{ day_selected: "bg-green-500 text-white hover:bg-green-600 focus:bg-green-600" }}
+                                    classNames={{ day_selected: "bg-red-500 text-white hover:bg-red-600 focus:bg-red-600" }}
                                 />
                             </CardContent>
                         </Card>
