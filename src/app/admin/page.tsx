@@ -68,7 +68,9 @@ export default function AdminPage() {
     const fetchAdminData = React.useCallback(() => {
         // Fetch approved artists
         const storedArtists = localStorage.getItem('artists');
-        setApprovedArtists(storedArtists ? JSON.parse(storedArtists) : initialArtists);
+        const localArtists = storedArtists ? JSON.parse(storedArtists) : [];
+        const allApproved = [...initialArtists.filter(a => !localArtists.some((la: Artist) => la.id === a.id)), ...localArtists];
+        setApprovedArtists(allApproved);
 
         // Fetch pending artists
         const storedPending = localStorage.getItem('pendingArtists');
