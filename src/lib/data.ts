@@ -159,7 +159,7 @@ export const artists: Artist[] = [
     name: 'Abhi',
     email: 'abhi@gmail.com',
     phone: '9999999999',
-    password: 'Password@123',
+    password: '123456',
     profilePicture: 'https://picsum.photos/200/200?random=9',
     workImages: [
       'https://picsum.photos/600/400?random=91',
