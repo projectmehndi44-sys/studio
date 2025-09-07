@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, Users, Eye, Download, ChevronDown, Calendar as CalendarIcon, Briefcase, Settings, DollarSign, BarChart, RefreshCw, Star, Bell } from "lucide-react";
+import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, Users, Eye, Download, ChevronDown, Calendar as CalendarIcon, Briefcase, Settings, DollarSign, BarChart, RefreshCw, Star, Bell, AlertOctagon } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -84,7 +84,7 @@ export default function AdminPage() {
         
         // Fetch and count pending bookings
         const storedBookings = localStorage.getItem('bookings');
-        const currentBookings = storedBookings ? JSON.parse(storedBookings) : allBookings;
+        const currentBookings: Booking[] = storedBookings ? JSON.parse(storedBookings).map((b: any) => ({...b, date: new Date(b.date)})) : allBookings;
         setBookings(currentBookings);
         const pendingCount = currentBookings.filter((b: Booking) => b.status === 'Pending Approval' || b.status === 'Needs Assignment').length;
         setPendingBookingCount(pendingCount);
@@ -260,6 +260,7 @@ export default function AdminPage() {
             case 'Pending Approval': return 'secondary';
             case 'Needs Assignment': return 'destructive';
             case 'Cancelled': return 'destructive';
+            case 'Disputed': return 'destructive';
             default: return 'outline';
         }
     };

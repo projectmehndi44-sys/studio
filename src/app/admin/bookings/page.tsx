@@ -7,13 +7,14 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Briefcase, ArrowLeft, MoreHorizontal } from 'lucide-react';
+import { Shield, Briefcase, ArrowLeft, MoreHorizontal, AlertOctagon } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import type { Booking, Artist, Notification } from '@/types';
 import { artists as initialArtists } from '@/lib/data';
 import { AssignArtistModal } from '@/components/glamgo/AssignArtistModal';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 const allBookings: Booking[] = [
@@ -23,6 +24,7 @@ const allBookings: Booking[] = [
     { id: 'book_04', artistIds: ['1'], customerName: 'Meera Iyer', customerContact: '9876543213', serviceAddress: '321, Lakeview, Powai, Mumbai', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed' },
     { id: 'book_05', artistIds: [], customerName: 'Rohan Gupta', customerContact: '9876543214', serviceAddress: '654, MG Road, Pune', date: new Date('2024-08-12'), service: 'Mehndi Package', amount: 1800, status: 'Needs Assignment' },
     { id: 'book_06', artistIds: ['4'], customerName: 'Kavita Singh', customerContact: '9876543215', serviceAddress: '987, Cyber City, Gurgaon', date: new Date('2024-08-15'), service: 'Minimalist Mehndi', amount: 2200, status: 'Pending Approval' },
+    { id: 'book_07', artistIds: ['5'], customerName: 'Divya Kumar', customerContact: '9876543216', serviceAddress: '111, Jubilee Hills, Hyderabad', date: new Date('2024-07-28'), service: 'Bridal Makeup', amount: 9000, status: 'Disputed' },
 ];
 
 export default function BookingManagementPage() {
@@ -125,6 +127,32 @@ export default function BookingManagementPage() {
         });
     };
 
+    const handleDisputeBooking = (bookingId: string) => {
+        const booking = bookings.find(b => b.id === bookingId);
+        if (!booking) return;
+
+        updateBookingStatus(bookingId, 'Disputed');
+        
+        if (booking.artistIds && booking.artistIds.length > 0) {
+             booking.artistIds.forEach(artistId => {
+                if (artistId) {
+                     sendNotification(
+                        artistId,
+                        booking,
+                        'Booking Disputed',
+                        `A dispute has been raised for your booking with ${booking.customerName}. Please contact admin.`
+                    );
+                }
+            });
+        }
+
+        toast({
+            title: 'Booking Disputed',
+            description: `Booking ${bookingId} is now marked as disputed.`,
+            variant: 'destructive',
+        });
+    };
+
     const handleOpenAssignModal = (booking: Booking) => {
         setSelectedBooking(booking);
         setIsAssignModalOpen(true);
@@ -162,11 +190,93 @@ export default function BookingManagementPage() {
             case 'Confirmed': return 'default';
             case 'Pending Approval': return 'secondary';
             case 'Needs Assignment': return 'destructive';
+            case 'Disputed': return 'destructive';
             case 'Cancelled': return 'destructive';
             default: return 'outline';
         }
     };
-
+    
+    const renderTable = (filteredBookings: Booking[]) => (
+         <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Booking ID</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Artists</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {filteredBookings.map(booking => {
+                    const assignedArtists = artists.filter(a => booking.artistIds.includes(a.id));
+                    return (
+                        <TableRow key={booking.id}>
+                            <TableCell className="font-mono text-xs">{booking.id}</TableCell>
+                            <TableCell>{booking.customerName}</TableCell>
+                            <TableCell>
+                                {assignedArtists.length > 0 ? (
+                                    <div className="flex flex-col">
+                                        {assignedArtists.map(artist => (
+                                            <span key={artist.id}>{artist.name}</span>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <span className="text-muted-foreground">Not Assigned</span>
+                                )}
+                            </TableCell>
+                            <TableCell>{booking.date.toLocaleDateString()}</TableCell>
+                            <TableCell>₹{booking.amount}</TableCell>
+                            <TableCell>
+                                <Badge variant={getStatusVariant(booking.status)}>
+                                    {booking.status}
+                                </Badge>
+                            </TableCell>
+                            <TableCell className="text-right space-x-2">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                            <span className="sr-only">Toggle menu</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        {booking.status === 'Pending Approval' && (
+                                            <>
+                                                <DropdownMenuItem onSelect={() => handleApproveBooking(booking.id)} disabled={assignedArtists.length === 0}>Approve</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleOpenAssignModal(booking)}>Assign Artist</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleCancelBooking(booking.id)}>Cancel Booking</DropdownMenuItem>
+                                            </>
+                                        )}
+                                        {booking.status === 'Needs Assignment' && (
+                                             <DropdownMenuItem onSelect={() => handleOpenAssignModal(booking)}>Assign Artist</DropdownMenuItem>
+                                        )}
+                                        {booking.status === 'Confirmed' && (
+                                            <>
+                                                <DropdownMenuItem onSelect={() => handleOpenAssignModal(booking)}>Change Artists</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleCancelBooking(booking.id)}>Cancel Booking</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleDisputeBooking(booking.id)}>Mark as Disputed</DropdownMenuItem>
+                                            </>
+                                        )}
+                                        {booking.status === 'Disputed' && (
+                                             <>
+                                                <DropdownMenuItem onSelect={() => updateBookingStatus(booking.id, 'Completed')}>Resolve (Mark as Complete)</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleCancelBooking(booking.id)}>Resolve (Cancel Booking)</DropdownMenuItem>
+                                            </>
+                                        )}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </TableCell>
+                        </TableRow>
+                    )
+                })}
+            </TableBody>
+        </Table>
+    );
 
     return (
         <>
@@ -191,104 +301,21 @@ export default function BookingManagementPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                       <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Booking ID</TableHead>
-                                    <TableHead>Customer</TableHead>
-                                    <TableHead>Artists</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Amount</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {bookings.map(booking => {
-                                    const assignedArtists = artists.filter(a => booking.artistIds.includes(a.id));
-                                    return (
-                                        <TableRow key={booking.id}>
-                                            <TableCell className="font-mono text-xs">{booking.id}</TableCell>
-                                            <TableCell>{booking.customerName}</TableCell>
-                                            <TableCell>
-                                                {assignedArtists.length > 0 ? (
-                                                    <div className="flex flex-col">
-                                                        {assignedArtists.map(artist => (
-                                                            <span key={artist.id}>{artist.name}</span>
-                                                        ))}
-                                                    </div>
-                                                ) : (
-                                                    <span className="text-muted-foreground">Not Assigned</span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>{booking.date.toLocaleDateString()}</TableCell>
-                                            <TableCell>₹{booking.amount}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={getStatusVariant(booking.status)}>
-                                                    {booking.status}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right space-x-2">
-                                                {booking.status === 'Pending Approval' && (
-                                                    <div className="flex gap-2 justify-end">
-                                                        <Button 
-                                                            variant="default"
-                                                            size="sm"
-                                                            onClick={() => handleApproveBooking(booking.id)}
-                                                            disabled={assignedArtists.length === 0}
-                                                        >
-                                                            Approve
-                                                        </Button>
-                                                        <Button 
-                                                            variant="destructive" 
-                                                            size="sm"
-                                                            onClick={() => handleCancelBooking(booking.id)}
-                                                        >
-                                                            Cancel
-                                                        </Button>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => handleOpenAssignModal(booking)}
-                                                        >
-                                                            Assign
-                                                        </Button>
-                                                    </div>
-                                                )}
-                                                {booking.status === 'Needs Assignment' && (
-                                                     <Button 
-                                                        variant="default"
-                                                        size="sm"
-                                                        onClick={() => handleOpenAssignModal(booking)}
-                                                    >
-                                                        Assign Artist(s)
-                                                    </Button>
-                                                )}
-                                                {booking.status === 'Confirmed' && (
-                                                     <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                                <MoreHorizontal className="h-4 w-4" />
-                                                                <span className="sr-only">Toggle menu</span>
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                            <DropdownMenuItem onSelect={() => handleOpenAssignModal(booking)}>
-                                                                Change Artists
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onSelect={() => handleCancelBooking(booking.id)}>
-                                                                Cancel Booking
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                )}
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })}
-                            </TableBody>
-                        </Table>
+                       <Tabs defaultValue="all">
+                            <TabsList>
+                                <TabsTrigger value="all">All Bookings</TabsTrigger>
+                                <TabsTrigger value="disputed">
+                                    <AlertOctagon className="mr-2 h-4 w-4" />
+                                    Disputed Bookings
+                                </TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="all" className="mt-4">
+                                {renderTable(bookings.filter(b => b.status !== 'Disputed'))}
+                            </TabsContent>
+                            <TabsContent value="disputed" className="mt-4">
+                                 {renderTable(bookings.filter(b => b.status === 'Disputed'))}
+                            </TabsContent>
+                        </Tabs>
                     </CardContent>
                 </Card>
             </main>
@@ -306,7 +333,3 @@ export default function BookingManagementPage() {
         </>
     );
 }
-
-    
-
-    

@@ -23,7 +23,7 @@ export type Booking = {
   date: Date;
   service: string;
   amount: number;
-  status: 'Completed' | 'Confirmed' | 'Cancelled' | 'Pending Approval' | 'Needs Assignment';
+  status: 'Completed' | 'Confirmed' | 'Cancelled' | 'Pending Approval' | 'Needs Assignment' | 'Disputed';
 };
 
 export type Review = {
@@ -41,4 +41,12 @@ export type Notification = {
   message: string;
   timestamp: string;
   isRead: boolean;
+};
+
+export type Promotion = {
+    id: string;
+    code: string;
+    discount: number; // Percentage
+    expiryDate: string;
+    isActive: boolean;
 };
