@@ -11,10 +11,12 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
-import { Shield, ArrowLeft, DollarSign, BarChart, Star, Users, Briefcase, Calendar as CalendarIcon, Image as ImageIcon, Download } from 'lucide-react';
+import { Shield, ArrowLeft, DollarSign, BarChart, Star, Users, Briefcase, Calendar as CalendarIcon, Image as ImageIcon, Download, ChevronDown } from 'lucide-react';
 import type { Artist, Booking, Review } from '@/types';
 import { artists as initialArtists } from '@/lib/data';
 import NextImage from 'next/image';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { exportToExcel, exportToPdf } from '@/lib/export';
 
 // Mock data for a single artist's details - in a real app, this would be fetched
 const mockBookings: Booking[] = [
@@ -63,7 +65,7 @@ export default function ArtistDetailPage() {
         }
     }, [router, artistId, toast]);
 
-    const handleDownload = () => {
+    const handleDownload = (format: 'json' | 'pdf' | 'excel') => {
         if (!artist) return;
 
         const dataToDownload = {
@@ -72,20 +74,26 @@ export default function ArtistDetailPage() {
             reviews,
         };
 
-        const dataStr = JSON.stringify(dataToDownload, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `artist-details-${artist.id}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        if (format === 'json') {
+            const dataStr = JSON.stringify(dataToDownload, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `artist-details-${artist.id}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } else if (format === 'pdf') {
+            exportToPdf(dataToDownload);
+        } else if (format === 'excel') {
+            exportToExcel([dataToDownload]);
+        }
 
         toast({
             title: "Download Started",
-            description: `Details for ${artist.name} are being downloaded.`,
+            description: `Details for ${artist.name} are being downloaded as a ${format.toUpperCase()} file.`,
         });
     };
 
@@ -106,7 +114,20 @@ export default function ArtistDetailPage() {
                     Artist Management
                 </h1>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={handleDownload}><Download className="mr-2 h-4 w-4"/> Download Details</Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">
+                                <Download className="mr-2 h-4 w-4"/>
+                                Download
+                                <ChevronDown className="ml-2 h-4 w-4"/>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onSelect={() => handleDownload('json')}>JSON</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleDownload('pdf')}>PDF</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => handleDownload('excel')}>Excel</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                     <Link href="/admin">
                         <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Dashboard</Button>
                     </Link>

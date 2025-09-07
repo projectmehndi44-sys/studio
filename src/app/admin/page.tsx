@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, MapPin, Image as ImageIcon, Users, Bell, User, Eye, Download } from "lucide-react";
+import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, MapPin, Image as ImageIcon, Users, Bell, User, Eye, Download, ChevronDown } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -29,6 +29,7 @@ import { artists as initialArtists } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Artist } from '@/types';
 import { Checkbox } from '@/components/ui/checkbox';
+import { exportToExcel } from '@/lib/export';
 
 // Define a type for pending artist data, which might be slightly different
 type PendingArtist = {
@@ -187,7 +188,7 @@ export default function AdminPage() {
         }
     };
 
-    const handleDownloadSelected = () => {
+    const handleDownloadSelected = (format: 'json' | 'excel') => {
         const artistsToDownload = approvedArtists.filter(a => selectedArtistIds.includes(a.id));
         
         if (artistsToDownload.length === 0) {
@@ -199,20 +200,26 @@ export default function AdminPage() {
             return;
         }
 
-        const dataStr = JSON.stringify(artistsToDownload, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `selected-artists-${new Date().toISOString()}.json`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        if (format === 'json') {
+            const dataStr = JSON.stringify(artistsToDownload, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `selected-artists-${new Date().toISOString()}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } else if (format === 'excel') {
+            // We map to the format expected by our export utility
+            const excelData = artistsToDownload.map(artist => ({ artist, bookings: [], reviews: [] }));
+            exportToExcel(excelData, `selected-artists-${new Date().toISOString()}`);
+        }
         
         toast({
             title: "Download Started",
-            description: `Downloading details for ${artistsToDownload.length} artist(s).`,
+            description: `Downloading details for ${artistsToDownload.length} artist(s) as a ${format.toUpperCase()} file.`,
         });
         setSelectedArtistIds([]);
     };
@@ -393,10 +400,19 @@ export default function AdminPage() {
                                                 View and manage all approved artists. {selectedArtistIds.length} of {approvedArtists.length} selected.
                                             </CardDescription>
                                         </div>
-                                        <Button onClick={handleDownloadSelected} disabled={selectedArtistIds.length === 0}>
-                                            <Download className="mr-2 h-4 w-4" />
-                                            Download Selected ({selectedArtistIds.length})
-                                        </Button>
+                                         <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button disabled={selectedArtistIds.length === 0}>
+                                                    <Download className="mr-2 h-4 w-4" />
+                                                    Download Selected ({selectedArtistIds.length})
+                                                    <ChevronDown className="ml-2 h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onSelect={() => handleDownloadSelected('json')}>JSON</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => handleDownloadSelected('excel')}>Excel</DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </CardHeader>
                                     <CardContent>
                                     <Table>
