@@ -1,3 +1,4 @@
+
 import type { SVGProps } from 'react';
 
 export function MehndiIcon(props: SVGProps<SVGSVGElement>) {
@@ -14,14 +15,22 @@ export function MehndiIcon(props: SVGProps<SVGSVGElement>) {
       strokeLinejoin="round"
       {...props}
     >
-        <path d="M12.65,6.58C12.26,6.22 11.7,6 11.1,6C10,6 9.2,6.8 9.2,7.8C9.2,8.45 9.53,9.02 10.05,9.41" />
-        <path d="M15.05,9.41C15.57,9.02 15.9,8.45 15.9,7.8C15.9,6.8 15.1,6 14,6C13.4,6 12.84,6.22 12.45,6.58" />
-        <path d="M10.8,11.58C10.41,11.22 9.85,11 9.25,11C8.15,11 7.35,11.8 7.35,12.8C7.35,13.45 7.68,14.02 8.2,14.41" />
-        <path d="M15,18.5C15,20.43 13.43,22 11.5,22C9.57,22 8,20.43 8,18.5C8,16.57 9.57,15 11.5,15C13.43,15 15,16.57 15,18.5Z" />
-        <path d="M19.95,11.5C19.95,12.89 19.04,14.05 17.75,14.44" />
-        <path d="M4.05,11.5C4.05,12.89 4.96,14.05 6.25,14.44" />
-        <path d="M15.55,14.41C16.07,14.02 16.4,13.45 16.4,12.8C16.4,11.8 15.6,11 14.5,11C13.9,11 13.34,11.22 12.95,11.58" />
-        <path d="M11.5,2C11.5,2 7.5,4 7.5,9H15.5C15.5,4 11.5,2 11.5,2Z" />
+      <path d="M2.28 12.33c.03-1.39.81-2.93 2.1-4.22 1.28-1.29 2.82-2.1 4.21-2.13" />
+      <path d="M16.59 2.31c1.4.03 2.94.81 4.23 2.1 1.29 1.28 2.1 2.82 2.13 4.21" />
+      <path d="m7.86 15.37-1.33 1.33a2.5 2.5 0 1 0 3.54 3.54l1.32-1.32" />
+      <path d="m11.5 12-2.22 2.22" />
+      <path d="m16.14 8.63 1.33-1.33a2.5 2.5 0 1 0-3.54-3.54l-1.32 1.32" />
+      <path d="m12.5 12 2.22-2.22" />
+      <path d="M4.14 19.53c-1.29-1.28-2.08-2.82-2.1-4.21" />
+      <path d="M21.72 12.33c-.03 1.39-.81 2.93-2.1 4.22" />
+      <path d="m14 17-1 1" />
+      <path d="m11 14-1 1" />
+      <path d="M12 21.88a1.88 1.88 0 0 0 1.88-1.88" />
+      <path d="M12 2.12a1.88 1.88 0 0 0-1.88 1.88" />
+      <path d="m17 10 1-1" />
+      <path d="m7 10-1-1" />
+      <path d="M2.12 12a1.88 1.88 0 0 0 1.88 1.88" />
+      <path d="M21.88 12a1.88 1.88 0 0 0-1.88-1.88" />
     </svg>
   );
 }
@@ -64,7 +73,7 @@ export function MakeupIcon(props: SVGProps<SVGSVGElement>) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
       {...props}
@@ -86,7 +95,7 @@ export function PhotographyIcon(props: SVGProps<SVGSVGElement>) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
       {...props}
