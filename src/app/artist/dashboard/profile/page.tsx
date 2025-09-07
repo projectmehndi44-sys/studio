@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { Trash2, Upload, UserCircle, Briefcase, Tag, Lock, Image as ImageIcon, DollarSign } from 'lucide-react';
+import { Trash2, Upload, UserCircle, Briefcase, Tag, Lock, Image as ImageIcon, IndianRupee } from 'lucide-react';
 import NextImage from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -299,7 +299,7 @@ export default function ArtistProfilePage() {
                                                     <FormItem>
                                                         <FormLabel>Base Price for Mehndi</FormLabel>
                                                         <div className="relative">
-                                                            <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                            <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                                             <FormControl><Input type="number" placeholder="2500" {...field} className="pl-8" /></FormControl>
                                                         </div>
                                                         <FormMessage />
@@ -311,7 +311,7 @@ export default function ArtistProfilePage() {
                                                     <FormItem>
                                                         <FormLabel>Base Price for Makeup</FormLabel>
                                                         <div className="relative">
-                                                            <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                            <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                                             <FormControl><Input type="number" placeholder="5000" {...field} className="pl-8" /></FormControl>
                                                         </div>
                                                         <FormMessage />

@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Package, PlusCircle, Trash2, Edit, Upload, DollarSign, Tag } from 'lucide-react';
+import { Package, PlusCircle, Trash2, Edit, Upload, IndianRupee, Tag } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import type { MehndiPackage } from '@/types';
 import { packages as initialPackages } from '@/lib/packages-data';
@@ -145,7 +145,7 @@ export default function PackageManagementPage() {
                                         <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Describe the package..." {...field} /></FormControl><FormMessage /></FormItem>
                                     )} />
                                     <FormField control={form.control} name="price" render={({ field }) => (
-                                        <FormItem><FormLabel>Price</FormLabel><div className="relative"><DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/><FormControl><Input type="number" placeholder="5000" {...field} className="pl-8"/></FormControl></div><FormMessage /></FormItem>
+                                        <FormItem><FormLabel>Price</FormLabel><div className="relative"><IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/><FormControl><Input type="number" placeholder="5000" {...field} className="pl-8"/></FormControl></div><FormMessage /></FormItem>
                                     )} />
                                     <FormField control={form.control} name="tags" render={({ field }) => (
                                         <FormItem><FormLabel>Tags</FormLabel><div className="relative"><Tag className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/><FormControl><Input placeholder="e.g., Organic Henna, Both Sides" {...field} className="pl-8"/></FormControl></div><FormMessage /></FormItem>

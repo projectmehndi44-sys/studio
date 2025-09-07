@@ -5,7 +5,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { DollarSign, MapPin, Paintbrush, Star } from 'lucide-react';
+import { IndianRupee, MapPin, Paintbrush, Star } from 'lucide-react';
 import { MehndiIcon } from '@/components/icons';
 
 interface ArtistCardProps {
@@ -56,8 +56,8 @@ export function ArtistCard({ artist, onBookingRequest }: ArtistCardProps) {
       <CardFooter className="p-4 bg-background/50 flex justify-between items-center">
         <div className="flex flex-col">
             <div className="flex items-center text-lg font-bold text-primary">
-                <DollarSign className="w-4 h-4 mr-1" />
-                <span>₹{artist.charge.toLocaleString()}</span>
+                <IndianRupee className="w-4 h-4 mr-1" />
+                <span>{artist.charge.toLocaleString()}</span>
             </div>
             <div className="flex items-center text-amber-500">
                 <Star className="w-4 h-4 mr-1 fill-current" />

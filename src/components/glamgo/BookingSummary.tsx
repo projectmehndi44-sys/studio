@@ -50,5 +50,3 @@ export function BookingSummary({ packages }: BookingSummaryProps) {
         </Card>
     );
 }
-
-    

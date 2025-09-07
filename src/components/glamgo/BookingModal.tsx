@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
-import { Calendar as CalendarIcon, Clock, DollarSign, User, Package as PackageIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, IndianRupee, User, Package as PackageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -103,7 +103,7 @@ export function BookingModal({ artist, pkg: selectedPackage, isOpen, onOpenChang
                     {selectedPackage && <PackageIcon className="w-5 h-5 text-muted-foreground" />}
                     <span className="font-semibold text-muted-foreground">{artist ? "Artist's Base Charge" : "Package Price"}</span>
                 </div>
-                <span className="font-bold text-lg text-primary flex items-center"><DollarSign className="w-4 h-4 mr-1"/>₹{bookingCharge.toLocaleString()}</span>
+                <span className="font-bold text-lg text-primary flex items-center"><IndianRupee className="w-4 h-4 mr-1"/>{bookingCharge.toLocaleString()}</span>
             </div>
 
              <div className="grid grid-cols-4 items-center gap-4">
