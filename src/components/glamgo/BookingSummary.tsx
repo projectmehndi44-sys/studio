@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -65,7 +66,7 @@ export function BookingSummary({ packages, artist, serviceDates }: BookingSummar
                         <Info className="h-4 w-4" />
                         <AlertTitle>Multi-Day Booking</AlertTitle>
                         <AlertDescription>
-                            An admin or artist will contact you to decide the final price. Please proceed by paying the base price to confirm your booking.
+                           You have chosen multiple days. An admin or artist will contact you to decide the final price. Please proceed by paying the base price to confirm your booking.
                         </AlertDescription>
                     </Alert>
                 )}
