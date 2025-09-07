@@ -4,7 +4,12 @@
 import * as React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Artist, Booking } from '@/types';
-import { DollarSign, BarChart, Users, Star } from 'lucide-react';
+import { DollarSign, BarChart, Users, Star, Briefcase } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+
 
 interface ArtistDashboardPageProps {
     artist: Artist;
@@ -17,12 +22,26 @@ export default function ArtistDashboardPage({ artist, bookings }: ArtistDashboar
         return <div className="flex items-center justify-center min-h-full">Loading Dashboard...</div>;
     }
 
-    // Mock data for dashboard widgets
+    // Dashboard widgets data
     const completedBookings = bookings.filter(b => b.status === 'Completed');
     const totalRevenue = completedBookings.reduce((sum, b) => sum + b.amount, 0);
     const totalBookings = bookings.length;
     const averageRating = artist.rating;
-    const upcomingBookings = bookings.filter(b => b.status === 'Confirmed' && new Date(b.date) > new Date()).length;
+    const upcomingBookingsCount = bookings.filter(b => b.status === 'Confirmed' && new Date(b.date) > new Date()).length;
+
+    // Recent activity data
+    const recentBookings = [...bookings].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+
+     const getStatusVariant = (status: Booking['status']) => {
+        switch (status) {
+            case 'Completed': return 'default';
+            case 'Confirmed': return 'secondary';
+            case 'Pending Approval': return 'outline';
+            case 'Cancelled': return 'destructive';
+            case 'Disputed': return 'destructive';
+            default: return 'outline';
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -70,11 +89,51 @@ export default function ArtistDashboardPage({ artist, bookings }: ArtistDashboar
                         <BarChart className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{upcomingBookings}</div>
-                        <p className="text-xs text-muted-foreground">In the next 30 days</p>
+                        <div className="text-2xl font-bold">{upcomingBookingsCount}</div>
+                        <p className="text-xs text-muted-foreground">Confirmed bookings</p>
                     </CardContent>
                 </Card>
             </div>
+            
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle className="flex items-center gap-2"><Briefcase /> Recent Activity</CardTitle>
+                        <CardDescription>Your last 5 bookings are shown here.</CardDescription>
+                    </div>
+                     <Link href="/artist/dashboard/bookings">
+                        <Button variant="outline" size="sm">View All</Button>
+                    </Link>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Customer</TableHead>
+                                <TableHead>Date</TableHead>
+                                <TableHead>Service</TableHead>
+                                <TableHead>Status</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {recentBookings.length > 0 ? recentBookings.map(booking => (
+                                <TableRow key={booking.id}>
+                                    <TableCell>{booking.customerName}</TableCell>
+                                    <TableCell>{new Date(booking.date).toLocaleDateString()}</TableCell>
+                                    <TableCell>{booking.service}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
+                                    </TableCell>
+                                </TableRow>
+                            )) : (
+                                <TableRow>
+                                    <TableCell colSpan={4} className="text-center">You have no booking history yet.</TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
         </div>
     )
 }

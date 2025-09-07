@@ -18,9 +18,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { Trash2, Upload } from 'lucide-react';
+import { Trash2, Upload, UserCircle, Briefcase, Tag, Lock, Image as ImageIcon } from 'lucide-react';
 import NextImage from 'next/image';
 import { Badge } from '@/components/ui/badge';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
 const profileSchema = z.object({
@@ -69,7 +70,6 @@ export default function ArtistProfilePage({ artist: initialArtistData }: ArtistP
     const getArtists = (): Artist[] => {
          const storedArtists = localStorage.getItem('artists');
          const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
-         // Combine initial and stored, ensuring no duplicates and stored takes precedence
          const allArtistsMap = new Map<string, Artist>();
          initialArtists.forEach(a => allArtistsMap.set(a.id, a));
          localArtists.forEach(a => allArtistsMap.set(a.id, a));
@@ -77,13 +77,9 @@ export default function ArtistProfilePage({ artist: initialArtistData }: ArtistP
     }
     
     const saveArtists = (artists: Artist[]) => {
-        // We only want to save the artists that are not part of the initial static data,
-        // unless they have been modified.
         const artistsToStore = artists.filter(a => {
             const initialArtist = initialArtists.find(ia => ia.id === a.id);
-            // If the artist is not in the initial list, save it.
             if (!initialArtist) return true;
-            // If the artist is in the initial list, only save it if it has changed.
             return JSON.stringify(initialArtist) !== JSON.stringify(a);
         });
 
@@ -207,7 +203,7 @@ export default function ArtistProfilePage({ artist: initialArtistData }: ArtistP
             allArtists[artistIndex] = updatedArtist;
             
             saveArtists(allArtists);
-            setArtist(updatedArtist);
+setArtist(updatedArtist);
 
             toast({ title: `${files.length} image(s) added to your gallery.` });
         }
@@ -227,125 +223,126 @@ export default function ArtistProfilePage({ artist: initialArtistData }: ArtistP
             </Card>
             
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                     <Card>
-                        <CardHeader><CardTitle>Profile Information</CardTitle></CardHeader>
-                        <CardContent className="grid md:grid-cols-2 gap-6">
-                            <FormField control={form.control} name="name" render={({ field }) => (
-                                <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                             <FormField control={form.control} name="location" render={({ field }) => (
-                                <FormItem><FormLabel>Location</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                            <div className="space-y-2">
-                                <Label>Email</Label>
-                                <Input value={artist.email} disabled />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Phone</Label>
-                                <Input value={artist.phone} disabled />
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader><CardTitle>Services & Pricing</CardTitle></CardHeader>
-                        <CardContent className="space-y-6">
-                             <FormField
-                                control={form.control}
-                                name="services"
-                                render={() => (
-                                <FormItem>
-                                    <FormLabel>Services Offered</FormLabel>
-                                     <div className="flex gap-4 items-center">
-                                        <FormField
-                                            control={form.control}
-                                            name="services"
-                                            render={({ field }) => (
-                                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                                <FormControl><Checkbox checked={field.value?.includes('mehndi')} onCheckedChange={(checked) => {
-                                                    return checked ? field.onChange([...field.value, 'mehndi']) : field.onChange(field.value?.filter(v => v !== 'mehndi'))
-                                                }} /></FormControl>
-                                                <FormLabel className="font-normal">Mehndi</FormLabel>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <Accordion type="multiple" defaultValue={['item-1', 'item-2']} className="w-full space-y-4">
+                        <AccordionItem value="item-1">
+                            <Card>
+                                <CardHeader>
+                                    <AccordionTrigger className="w-full justify-between p-0 hover:no-underline">
+                                        <CardTitle className="flex items-center gap-2 text-lg"><UserCircle /> Basic Information</CardTitle>
+                                    </AccordionTrigger>
+                                </CardHeader>
+                                <AccordionContent>
+                                    <CardContent className="grid md:grid-cols-2 gap-6 pt-2">
+                                        <FormField control={form.control} name="name" render={({ field }) => (
+                                            <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                        )} />
+                                        <FormField control={form.control} name="location" render={({ field }) => (
+                                            <FormItem><FormLabel>Location</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                        )} />
+                                        <div className="space-y-2">
+                                            <Label>Email</Label>
+                                            <Input value={artist.email} disabled />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Phone</Label>
+                                            <Input value={artist.phone} disabled />
+                                        </div>
+                                    </CardContent>
+                                </AccordionContent>
+                            </Card>
+                        </AccordionItem>
+                        
+                        <AccordionItem value="item-2">
+                             <Card>
+                                <CardHeader>
+                                    <AccordionTrigger className="w-full justify-between p-0 hover:no-underline">
+                                        <CardTitle className="flex items-center gap-2 text-lg"><Briefcase /> Services & Pricing</CardTitle>
+                                    </AccordionTrigger>
+                                </CardHeader>
+                                <AccordionContent>
+                                    <CardContent className="space-y-6 pt-2">
+                                        <FormField control={form.control} name="services" render={() => (
+                                            <FormItem><FormLabel>Services Offered</FormLabel>
+                                                <div className="flex gap-4 items-center">
+                                                    <FormField control={form.control} name="services" render={({ field }) => (
+                                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                                            <FormControl><Checkbox checked={field.value?.includes('mehndi')} onCheckedChange={(checked) => { return checked ? field.onChange([...field.value, 'mehndi']) : field.onChange(field.value?.filter(v => v !== 'mehndi')) }} /></FormControl>
+                                                            <FormLabel className="font-normal">Mehndi</FormLabel>
+                                                        </FormItem>
+                                                    )} />
+                                                    <FormField control={form.control} name="services" render={({ field }) => (
+                                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                                            <FormControl><Checkbox checked={field.value?.includes('makeup')} onCheckedChange={(checked) => { return checked ? field.onChange([...field.value, 'makeup']) : field.onChange(field.value?.filter(v => v !== 'makeup')) }} /></FormControl>
+                                                            <FormLabel className="font-normal">Makeup</FormLabel>
+                                                        </FormItem>
+                                                    )} />
+                                                </div>
+                                                <FormMessage />
                                             </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name="services"
-                                            render={({ field }) => (
-                                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                                <FormControl><Checkbox checked={field.value?.includes('makeup')} onCheckedChange={(checked) => {
-                                                    return checked ? field.onChange([...field.value, 'makeup']) : field.onChange(field.value?.filter(v => v !== 'makeup'))
-                                                }} /></FormControl>
-                                                <FormLabel className="font-normal">Makeup</FormLabel>
+                                        )} />
+                                        <FormField control={form.control} name="charge" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Base Charge (per session): ₹{field.value?.toLocaleString()}</FormLabel>
+                                                <FormControl><Slider min={500} max={20000} step={500} value={[field.value]} onValueChange={(vals) => field.onChange(vals[0])} /></FormControl>
                                             </FormItem>
-                                            )}
-                                        />
-                                    </div>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                            <FormField control={form.control} name="charge" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Base Charge (per session): ₹{field.value?.toLocaleString()}</FormLabel>
-                                    <FormControl>
-                                        <Slider
-                                            min={500}
-                                            max={20000}
-                                            step={500}
-                                            value={[field.value]}
-                                            onValueChange={(vals) => field.onChange(vals[0])}
-                                        />
-                                    </FormControl>
-                                </FormItem>
-                            )} />
-                        </CardContent>
-                    </Card>
-                    
-                     <Card>
-                        <CardHeader><CardTitle>Style Tags</CardTitle><CardDescription>Add tags that describe your work (e.g., 'bridal', 'minimalist').</CardDescription></CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center gap-2">
-                                <Input 
-                                    value={tagInput}
-                                    onChange={(e) => setTagInput(e.target.value)}
-                                    placeholder="Add a new tag"
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            handleAddTag();
-                                        }
-                                    }}
-                                />
-                                <Button type="button" onClick={handleAddTag}>Add Tag</Button>
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {fields.map((field, index) => (
-                                    <Badge key={field.id} variant="secondary" className="flex items-center gap-1">
-                                         {field.value}
-                                        <button type="button" onClick={() => remove(index)} className="rounded-full hover:bg-muted-foreground/20 p-0.5">
-                                           <Trash2 className="h-3 w-3" />
-                                        </button>
-                                    </Badge>
-                                ))}
-                             </div>
-                        </CardContent>
-                    </Card>
+                                        )} />
+                                    </CardContent>
+                                </AccordionContent>
+                            </Card>
+                        </AccordionItem>
 
-                     <Card>
-                        <CardHeader><CardTitle>Change Password</CardTitle><CardDescription>Leave blank to keep your current password.</CardDescription></CardHeader>
-                        <CardContent className="grid md:grid-cols-2 gap-6">
-                             <FormField control={form.control} name="password" render={({ field }) => (
-                                <FormItem><FormLabel>New Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                             <FormField control={form.control} name="confirmPassword" render={({ field }) => (
-                                <FormItem><FormLabel>Confirm New Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                        </CardContent>
-                    </Card>
+                        <AccordionItem value="item-3">
+                             <Card>
+                                <CardHeader>
+                                     <AccordionTrigger className="w-full justify-between p-0 hover:no-underline">
+                                        <CardTitle className="flex items-center gap-2 text-lg"><Tag /> Style Tags</CardTitle>
+                                     </AccordionTrigger>
+                                    <CardDescription>Add tags that describe your work (e.g., 'bridal', 'minimalist').</CardDescription>
+                                </CardHeader>
+                                <AccordionContent>
+                                    <CardContent className="space-y-4 pt-2">
+                                        <div className="flex items-center gap-2">
+                                            <Input value={tagInput} onChange={(e) => setTagInput(e.target.value)} placeholder="Add a new tag" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddTag(); } }} />
+                                            <Button type="button" onClick={handleAddTag}>Add Tag</Button>
+                                        </div>
+                                        <div className="flex flex-wrap gap-2">
+                                            {fields.map((field, index) => (
+                                                <Badge key={field.id} variant="secondary" className="flex items-center gap-1">
+                                                    {field.value}
+                                                    <button type="button" onClick={() => remove(index)} className="rounded-full hover:bg-muted-foreground/20 p-0.5">
+                                                    <Trash2 className="h-3 w-3" />
+                                                    </button>
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </AccordionContent>
+                            </Card>
+                        </AccordionItem>
 
+                        <AccordionItem value="item-4">
+                             <Card>
+                                <CardHeader>
+                                    <AccordionTrigger className="w-full justify-between p-0 hover:no-underline">
+                                        <CardTitle className="flex items-center gap-2 text-lg"><Lock /> Change Password</CardTitle>
+                                    </AccordionTrigger>
+                                     <CardDescription>Leave blank to keep your current password.</CardDescription>
+                                </CardHeader>
+                                <AccordionContent>
+                                    <CardContent className="grid md:grid-cols-2 gap-6 pt-2">
+                                        <FormField control={form.control} name="password" render={({ field }) => (
+                                            <FormItem><FormLabel>New Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )} />
+                                        <FormField control={form.control} name="confirmPassword" render={({ field }) => (
+                                            <FormItem><FormLabel>Confirm New Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )} />
+                                    </CardContent>
+                                </AccordionContent>
+                            </Card>
+                        </AccordionItem>
+
+                    </Accordion>
                     <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>Save Profile Changes</Button>
                 </form>
             </Form>
@@ -354,7 +351,7 @@ export default function ArtistProfilePage({ artist: initialArtistData }: ArtistP
 
              <Card>
                 <CardHeader>
-                    <CardTitle>Manage Images</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><ImageIcon /> Manage Images</CardTitle>
                     <CardDescription>Update your profile picture and work gallery.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -396,5 +393,3 @@ export default function ArtistProfilePage({ artist: initialArtistData }: ArtistP
         </div>
     );
 }
-
-    
