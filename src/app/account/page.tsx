@@ -68,7 +68,7 @@ export default function AccountPage() {
                     <CardHeader className="flex flex-row items-center gap-4">
                          <Avatar className="h-16 w-16">
                             <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${customer.name}`} />
-                            <AvatarFallback>{customer.name.charAt(0).toUpperCase()}</AvatarFallback>
+                            <AvatarFallback>{customer.name ? customer.name.charAt(0).toUpperCase() : 'C'}</AvatarFallback>
                         </Avatar>
                         <div>
                             <CardTitle className="text-2xl">{customer.name}</CardTitle>
