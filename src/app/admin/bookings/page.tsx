@@ -175,6 +175,9 @@ export default function BookingManagementPage() {
             title: `Artists Assigned`,
             description: `${assignedArtistIds.length} artist(s) have been assigned to booking ${bookingId}.`,
         });
+        
+        // This is a crucial step to make sure other components are aware of the change
+        window.dispatchEvent(new Event('storage'));
     };
 
     const getStatusVariant = (status: Booking['status']) => {

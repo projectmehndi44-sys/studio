@@ -117,7 +117,7 @@ export default function ArtistDashboardLayout({
         }
 
         // Fetch and manage all data here
-        const storedBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || JSON.stringify(initialBookings)).map((b: any) => ({...b, date: new Date(b.date)}));
+        const storedBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || JSON.stringify(initialBookings)).map((b: any) => ({...b, date: new Date(b.date), serviceDates: b.serviceDates.map((d: string) => new Date(d))}));
         setAllBookings(storedBookings);
 
         const currentArtistBookings = storedBookings.filter(b => b.artistIds.includes(currentArtistId));
