@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Palette, Home } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import type { Artist } from '@/types';
+import { artists as initialArtists } from '@/lib/data';
 
 export default function ArtistLoginPage() {
     const router = useRouter();
@@ -29,14 +30,27 @@ export default function ArtistLoginPage() {
     const [confirmNewPassword, setConfirmNewPassword] = React.useState('');
     const [verifiedArtist, setVerifiedArtist] = React.useState<Artist | null>(null);
 
+    const getApprovedArtists = (): Artist[] => {
+        const storedArtists = localStorage.getItem('artists');
+        const localArtists = storedArtists ? JSON.parse(storedArtists) : [];
+        // Combine initial artists with those from local storage, ensuring no duplicates.
+        const allArtists = [...initialArtists];
+        localArtists.forEach((localArtist: Artist) => {
+            if (!allArtists.some(a => a.id === localArtist.id)) {
+                allArtists.push(localArtist);
+            }
+        });
+        return allArtists;
+    };
+
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
         setTimeout(() => {
-            const approvedArtists: Artist[] = JSON.parse(localStorage.getItem('artists') || '[]');
+            const approvedArtists = getApprovedArtists();
             const artist = approvedArtists.find(
-                (a: any) => a.email === email && a.password === password
+                (a: Artist) => a.email === email && a.password === password
             );
 
             if (artist) {
@@ -70,7 +84,7 @@ export default function ArtistLoginPage() {
 
     const handleForgotPasswordEmailSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const approvedArtists: Artist[] = JSON.parse(localStorage.getItem('artists') || '[]');
+        const approvedArtists = getApprovedArtists();
         const artist = approvedArtists.find(a => a.email === forgotPasswordEmail);
 
         if (artist) {
@@ -114,12 +128,14 @@ export default function ArtistLoginPage() {
             return;
         }
 
-        const approvedArtists: Artist[] = JSON.parse(localStorage.getItem('artists') || '[]');
+        const approvedArtists: Artist[] = getApprovedArtists();
         const artistIndex = approvedArtists.findIndex(a => a.id === verifiedArtist!.id);
         
         if (artistIndex > -1) {
             approvedArtists[artistIndex].password = newPassword;
-            localStorage.setItem('artists', JSON.stringify(approvedArtists));
+            // Only update localStorage, as initialArtists is a constant
+            const localArtists = JSON.parse(localStorage.getItem('artists') || '[]').map((a: Artist) => a.id === verifiedArtist!.id ? {...a, password: newPassword} : a);
+            localStorage.setItem('artists', JSON.stringify(localArtists));
             
             toast({
                 title: 'Password Reset Successful',
