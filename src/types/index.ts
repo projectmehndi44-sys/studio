@@ -17,10 +17,10 @@ export type Artist = {
   password?: string;
   profilePicture: string;
   workImages: string[];
-  services: ('mehendi' | 'makeup' | 'photography')[];
+  services: ('mehndi' | 'makeup' | 'photography')[];
   location: string;
   charges: {
-      mehendi?: number;
+      mehndi?: number;
       makeup?: number;
       photography?: number;
   };
@@ -64,6 +64,10 @@ export type Booking = {
   instagramId?: string;
   referencePhoto?: string;
   guestMehndi?: {
+    included: boolean;
+    expectedCount: number;
+  };
+  guestMakeup?: {
     included: boolean;
     expectedCount: number;
   };

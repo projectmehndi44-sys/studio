@@ -56,6 +56,9 @@ export default function BookingPage() {
     const [includeGuestMehndi, setIncludeGuestMehndi] = React.useState(false);
     const [guestCount, setGuestCount] = React.useState(1);
 
+    const [includeGuestMakeup, setIncludeGuestMakeup] = React.useState(false);
+    const [guestMakeupCount, setGuestMakeupCount] = React.useState(1);
+
     const primaryServiceType = React.useMemo(() => {
         if (selectedArtist) return selectedArtist.services[0];
         if (selectedPackages.length > 0) return selectedPackages[0].service;
@@ -188,6 +191,10 @@ export default function BookingPage() {
             guestMehndi: {
                 included: includeGuestMehndi,
                 expectedCount: includeGuestMehndi ? guestCount : 0,
+            },
+            guestMakeup: {
+                included: includeGuestMakeup,
+                expectedCount: includeGuestMakeup ? guestMakeupCount : 0,
             }
         };
 
@@ -293,19 +300,21 @@ export default function BookingPage() {
                     </Card>
 
                     {/* Add-ons */}
-                    {primaryServiceType === 'mehndi' && !selectedArtist && (
+                    {(primaryServiceType === 'mehndi' || primaryServiceType === 'makeup') && !selectedArtist && (
                     <Card>
                         <CardHeader>
                             <CardTitle>Add-ons</CardTitle>
                         </CardHeader>
                         <CardContent>
-                             <div className="flex items-center justify-between p-4 border rounded-lg">
-                                <div>
-                                    <Label htmlFor="guest-mehndi-switch" className="text-base font-semibold">Would you like to include Guest Mehndi Services?</Label>
+                            {primaryServiceType === 'mehndi' && (
+                                <div className="flex items-center justify-between p-4 border rounded-lg">
+                                    <div>
+                                        <Label htmlFor="guest-mehndi-switch" className="text-base font-semibold">Would you like to include Guest Mehndi Services?</Label>
+                                    </div>
+                                    <Switch id="guest-mehndi-switch" checked={includeGuestMehndi} onCheckedChange={setIncludeGuestMehndi}/>
                                 </div>
-                                <Switch id="guest-mehndi-switch" checked={includeGuestMehndi} onCheckedChange={setIncludeGuestMehndi}/>
-                            </div>
-                            {includeGuestMehndi && (
+                            )}
+                            {includeGuestMehndi && primaryServiceType === 'mehndi' && (
                                 <div className="mt-4 flex flex-col md:flex-row items-center gap-4 p-4 border rounded-lg bg-secondary/30">
                                     <Image src="https://picsum.photos/400/400?random=310" alt="Guest Mehndi" width={120} height={120} className="rounded-lg object-cover" data-ai-hint="guest mehndi"/>
                                     <div className="flex-1 space-y-4">
@@ -316,6 +325,31 @@ export default function BookingPage() {
                                                 <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setGuestCount(Math.max(1, guestCount - 1))}><Minus className="h-4 w-4"/></Button>
                                                 <span className="font-bold text-lg w-10 text-center">{guestCount}</span>
                                                 <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setGuestCount(guestCount + 1)}><Plus className="h-4 w-4"/></Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                             {primaryServiceType === 'makeup' && (
+                                <div className="flex items-center justify-between p-4 border rounded-lg mt-4">
+                                    <div>
+                                        <Label htmlFor="guest-makeup-switch" className="text-base font-semibold">Would you like to include Guest Makeup Services?</Label>
+                                    </div>
+                                    <Switch id="guest-makeup-switch" checked={includeGuestMakeup} onCheckedChange={setIncludeGuestMakeup}/>
+                                </div>
+                            )}
+                            {includeGuestMakeup && primaryServiceType === 'makeup' && (
+                                <div className="mt-4 flex flex-col md:flex-row items-center gap-4 p-4 border rounded-lg bg-secondary/30">
+                                    <Image src="https://picsum.photos/400/400?random=311" alt="Guest Makeup" width={120} height={120} className="rounded-lg object-cover" data-ai-hint="guest makeup"/>
+                                    <div className="flex-1 space-y-4">
+                                        <p className="text-sm text-muted-foreground">Party makeup for guests starts at ₹2,500 per person. The final amount depends on the chosen look and will be confirmed by the assigned artist.</p>
+                                        <div className="flex items-center gap-4">
+                                            <Label>Expected Guest No.</Label>
+                                            <div className="flex items-center gap-2 border rounded-full p-1">
+                                                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setGuestMakeupCount(Math.max(1, guestMakeupCount - 1))}><Minus className="h-4 w-4"/></Button>
+                                                <span className="font-bold text-lg w-10 text-center">{guestMakeupCount}</span>
+                                                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setGuestMakeupCount(guestMakeupCount + 1)}><Plus className="h-4 w-4"/></Button>
                                             </div>
                                         </div>
                                     </div>
