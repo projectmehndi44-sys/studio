@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, Users, Eye, Download, ChevronDown, Calendar as CalendarIcon, Briefcase, Settings, DollarSign, BarChart, RefreshCw, Star } from "lucide-react";
+import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, Users, Eye, Download, ChevronDown, Calendar as CalendarIcon, Briefcase, Settings, DollarSign, BarChart, RefreshCw, Star, Bell } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -672,3 +672,5 @@ export default function AdminPage() {
         </div>
     );
 }
+
+    
