@@ -47,7 +47,7 @@ import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carouse
 import Autoplay from "embla-carousel-autoplay"
 import Image from 'next/image';
 import { Packages } from '@/components/glamgo/Packages';
-import { MehndiIcon } from '@/components/icons';
+import { MehndiIcon, MakeupIcon, PhotographyIcon } from '@/components/icons';
 import { useSearchParams } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -122,7 +122,7 @@ export default function Home() {
     // Check for logged-in customer
     const customerId = localStorage.getItem('currentCustomerId');
     if (customerId) {
-        const allCustomers: Customer[] = JSON.parse(localStorage.getItem('customers') || '[]');
+        const allCustomers: Customer[] = JSON.parse(localStorage.getItem('customers') || JSON.stringify([]));
         const currentCustomer = allCustomers.find(c => c.id === customerId);
         if (currentCustomer) {
             setIsCustomerLoggedIn(true);
@@ -412,9 +412,9 @@ export default function Home() {
 
         <Tabs defaultValue="mehndi" className="w-full mt-8">
             <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto">
-                <TabsTrigger value="mehndi" onClick={() => applyFilters('mehndi')}><MehndiIcon className="mr-2"/>Mehndi</TabsTrigger>
-                <TabsTrigger value="makeup" onClick={() => applyFilters('makeup')}><Palette className="mr-2"/>Makeup</TabsTrigger>
-                <TabsTrigger value="photography" disabled><Camera className="mr-2"/>Photography (Soon)</TabsTrigger>
+                <TabsTrigger value="mehndi" onClick={() => applyFilters('mehndi')}><MehndiIcon className="mr-2 h-6 w-6"/>Mehndi</TabsTrigger>
+                <TabsTrigger value="makeup" onClick={() => applyFilters('makeup')}><MakeupIcon className="mr-2 h-6 w-6"/>Makeup</TabsTrigger>
+                <TabsTrigger value="photography" disabled><PhotographyIcon className="mr-2 h-6 w-6"/>Photography (Soon)</TabsTrigger>
             </TabsList>
             <TabsContent value="mehndi">
                 <ArtistFinder service="mehndi" />

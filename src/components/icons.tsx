@@ -54,3 +54,50 @@ export function GoogleIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+export function MakeupIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M14.5,1.7l-3.9,3.9c-0.3,0.3-0.4,0.7-0.4,1.1V8c0,0.6,0.4,1,1,1h1.8c0.4,0,0.8-0.1,1.1-0.4l3.9-3.9c1-1,1.5-2.4,1-3.4C18.3,0.3,16,0.2,14.5,1.7z" />
+      <path d="M8.5,4.7L4.6,8.6C3.6,9.6,3.2,11,3.7,12s2,1.5,3.4,1l3.9-3.9" />
+      <path d="M15,10l-4,4" />
+      <path d="M22,12c0,5.5-4.5,10-10,10S2,17.5,2,12c0-3.2,1.5-6,3.8-7.8" />
+    </svg>
+  );
+}
+
+export function PhotographyIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M14.5,4.5L14,5M9.5,4.5L10,5M12,2a10,10 0 0,0 -10,10a10,10 0 0,0 10,10a10,10 0 0,0 10,-10A10,10 0 0,0 12,2" />
+      <path d="M12,7a5,5 0 0,0 -5,5a5,5 0 0,0 5,5a5,5 0 0,0 5,-5a5,5 0 0,0 -5,-5" />
+      <path d="M12,9a3,3 0 0,0 -3,3a3,3 0 0,0 3,3a3,3 0 0,0 3,-3a3,3 0 0,0 -3,-3" />
+      <path d="M3,12l-1,0" />
+      <path d="M21,12l1,0" />
+      <path d="M12,3l0,-1" />
+      <path d="M12,21l0,1" />
+    </svg>
+  );
+}
