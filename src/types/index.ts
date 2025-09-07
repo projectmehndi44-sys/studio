@@ -16,6 +16,8 @@ export type Booking = {
   id: string;
   artistId?: string | null;
   customerName: string;
+  customerContact: string;
+  serviceAddress: string;
   date: Date;
   service: string;
   amount: number;
@@ -27,4 +29,14 @@ export type Review = {
   customerName: string;
   rating: number;
   comment: string;
+};
+
+export type Notification = {
+  id: string;
+  artistId: string;
+  bookingId: string;
+  title: string;
+  message: string;
+  timestamp: string;
+  isRead: boolean;
 };

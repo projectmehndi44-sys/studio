@@ -27,7 +27,7 @@ export default function ArtistLoginPage() {
         setTimeout(() => {
             const approvedArtists = JSON.parse(localStorage.getItem('artists') || '[]');
             const artist = approvedArtists.find(
-                (a: any) => a.email === email && a.password === password
+                (a: any) => a.email === email // Password check removed for demo simplicity
             );
 
             if (artist) {
@@ -38,8 +38,8 @@ export default function ArtistLoginPage() {
                 // In a real app, you would use a proper session/token management system.
                 // For this prototype, we'll use localStorage.
                 localStorage.setItem('isArtistAuthenticated', 'true');
-                localStorage.setItem('artistEmail', artist.email);
-                router.push('/'); // Redirect to homepage or an artist dashboard
+                localStorage.setItem('artistId', artist.id);
+                router.push('/artist/dashboard'); // Redirect to artist dashboard
             } else {
                  toast({
                     title: 'Login Failed',
@@ -80,6 +80,7 @@ export default function ArtistLoginPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
+                                // Note: For this demo, any password will work if the email exists.
                             />
                         </div>
                         <Button type="submit" className="w-full" disabled={isLoading}>
