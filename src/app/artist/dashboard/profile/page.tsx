@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Artist } from '@/types';
@@ -20,6 +20,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Separator } from '@/components/ui/separator';
 import { Trash2, Upload } from 'lucide-react';
 import NextImage from 'next/image';
+import { Badge } from '@/components/ui/badge';
 
 
 const profileSchema = z.object({
@@ -154,8 +155,18 @@ export default function ArtistProfilePage() {
     
     const handleAddTag = () => {
         if (tagInput.trim() !== '') {
-            append({ value: tagInput.trim() });
-            setTagInput('');
+            // Check if the tag already exists
+            const currentTags = form.getValues('styleTags').map(tag => tag.value.toLowerCase());
+            if (!currentTags.includes(tagInput.trim().toLowerCase())) {
+                append({ value: tagInput.trim() });
+                setTagInput('');
+            } else {
+                toast({
+                    title: "Tag exists",
+                    description: "This style tag has already been added.",
+                    variant: "destructive"
+                });
+            }
         }
     };
 
@@ -271,7 +282,16 @@ export default function ArtistProfilePage() {
                             <div className="flex flex-wrap gap-2">
                                 {fields.map((field, index) => (
                                     <Badge key={field.id} variant="secondary" className="flex items-center gap-1">
-                                        {field.value}
+                                         <Controller
+                                            control={form.control}
+                                            name={`styleTags.${index}.value`}
+                                            render={({ field: controllerField }) => (
+                                                <Input 
+                                                    {...controllerField}
+                                                    className="w-auto bg-transparent border-none h-auto p-0 focus-visible:ring-0"
+                                                />
+                                            )}
+                                        />
                                         <button type="button" onClick={() => remove(index)} className="rounded-full hover:bg-muted-foreground/20 p-0.5">
                                            <Trash2 className="h-3 w-3" />
                                         </button>
