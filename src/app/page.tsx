@@ -153,9 +153,9 @@ export default function Home() {
         toast({ title: "Already in cart", description: `${pkg.name} is already in your selection.`, variant: "default" });
         return;
     }
+    toast({ title: "Package Added!", description: `${pkg.name} has been added to your selection.` });
     setCart(currentCart => {
       const newCart = [...currentCart, pkg];
-      toast({ title: "Package Added!", description: `${pkg.name} has been added to your selection.` });
       return newCart;
     });
   };
@@ -177,10 +177,12 @@ export default function Home() {
     setCustomer(customer);
     setIsCustomerLoginModalOpen(false);
     setIsCustomerRegistrationModalOpen(false);
-    toast({
-      title: 'Login Successful',
-      description: `Welcome back, ${customer.name}! You can now search for artists.`,
-    });
+    setTimeout(() => {
+        toast({
+            title: 'Login Successful',
+            description: `Welcome back, ${customer.name}! You can now search for artists.`,
+        });
+    }, 0);
   }
 
   const handleCustomerLogout = () => {
