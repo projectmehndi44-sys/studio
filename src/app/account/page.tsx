@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { Booking, Customer } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut } from 'lucide-react';
+import { LogOut, Briefcase, CalendarCheck2, History } from 'lucide-react';
 import { allBookings as initialBookings, initialCustomers } from '@/lib/data';
 
 export default function AccountPage() {
@@ -68,7 +68,7 @@ export default function AccountPage() {
     return (
         <div className="bg-muted/40 min-h-screen">
             <header className="bg-background border-b p-4 flex justify-between items-center">
-                 <h1 className="text-2xl font-bold text-primary">My Account</h1>
+                 <h1 className="text-2xl font-bold text-primary">My Dashboard</h1>
                  <Button variant="outline" onClick={() => router.push('/')}>Back to Home</Button>
             </header>
             <main className="p-4 md:p-8 max-w-6xl mx-auto space-y-8">
@@ -83,7 +83,12 @@ export default function AccountPage() {
                             <CardDescription>{customer.email || customer.phone}</CardDescription>
                         </div>
                     </CardHeader>
-                    <CardFooter>
+                    <CardFooter className="flex justify-between items-center">
+                        <div className="flex gap-4">
+                            <div className="flex items-center text-sm text-muted-foreground"><CalendarCheck2 className="mr-2 h-4 w-4 text-green-500" /> <span>{upcomingBookings.length} Upcoming Bookings</span></div>
+                            <div className="flex items-center text-sm text-muted-foreground"><History className="mr-2 h-4 w-4 text-blue-500" /> <span>{pastBookings.length} Past Bookings</span></div>
+                             <div className="flex items-center text-sm text-muted-foreground"><Briefcase className="mr-2 h-4 w-4 text-purple-500" /> <span>{bookings.length} Total Bookings</span></div>
+                        </div>
                          <Button variant="ghost" onClick={handleLogout}><LogOut className="mr-2 h-4 w-4"/> Logout</Button>
                     </CardFooter>
                 </Card>
