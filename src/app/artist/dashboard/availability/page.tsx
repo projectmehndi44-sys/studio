@@ -16,15 +16,15 @@ interface ArtistAvailabilityPageProps {
     setArtist: React.Dispatch<React.SetStateAction<Artist | null>>;
 }
 
-export default function ArtistAvailabilityPage({ artist: initialArtist, setArtist }: ArtistAvailabilityPageProps) {
+export default function ArtistAvailabilityPage({ artist: initialArtistData, setArtist }: ArtistAvailabilityPageProps) {
     const { toast } = useToast();
     const [unavailableDates, setUnavailableDates] = React.useState<Date[]>([]);
     
     React.useEffect(() => {
-        if (initialArtist?.unavailableDates) {
-            setUnavailableDates(initialArtist.unavailableDates.map(d => new Date(d)));
+        if (initialArtistData?.unavailableDates) {
+            setUnavailableDates(initialArtistData.unavailableDates.map(d => new Date(d)));
         }
-    }, [initialArtist]);
+    }, [initialArtistData]);
     
     const getArtists = (): Artist[] => {
          const storedArtists = localStorage.getItem('artists');
@@ -47,14 +47,14 @@ export default function ArtistAvailabilityPage({ artist: initialArtist, setArtis
 
     const handleSave = () => {
         const allArtists = getArtists();
-        const artistIndex = allArtists.findIndex(a => a.id === initialArtist.id);
+        const artistIndex = allArtists.findIndex(a => a.id === initialArtistData.id);
         
         if (artistIndex === -1) {
             toast({ title: "Error", description: "Could not find your profile to update.", variant: "destructive" });
             return;
         }
 
-        // Convert dates to timezone-agnostic format
+        // Convert dates to timezone-agnostic format 'yyyy-MM-dd'
         const datesToSave = unavailableDates.map(d => formatISO(d, { representation: 'date' }));
         const updatedArtist = { ...allArtists[artistIndex], unavailableDates: datesToSave };
         

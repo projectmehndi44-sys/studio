@@ -11,12 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from '@/components/ui/badge';
 import type { Customer } from '@/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-
-const initialCustomers: Customer[] = [
-    { id: 'cust_101', name: 'Priya Patel', email: 'priya.p@email.com', phone: '9123456780' },
-    { id: 'cust_102', name: 'Amit Singh', email: 'amit.singh@email.com', phone: '9098765432' },
-    { id: 'cust_103', name: 'Sunita Rao', email: 'sunita.r@email.com', phone: '9988776655' }
-];
+import { initialCustomers } from '@/lib/data';
 
 type CustomerWithStatus = Customer & { status: 'Active' | 'Suspended'; registeredOn: string; };
 
@@ -25,22 +20,26 @@ export default function CustomerManagementPage() {
     const { toast } = useToast();
     const [customers, setCustomers] = React.useState<CustomerWithStatus[]>([]);
 
+    const fetchCustomers = React.useCallback(() => {
+        const storedCustomers = JSON.parse(localStorage.getItem('customers') || JSON.stringify(initialCustomers));
+        // Add mock status and registration date for UI
+        setCustomers(storedCustomers.map((c: Customer) => ({
+            ...c,
+            status: c.name.includes('Sunita') ? 'Suspended' : 'Active', // Mocked status
+            registeredOn: new Date(Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 30).toLocaleDateString() // Mocked date
+        })));
+    }, []);
+
     React.useEffect(() => {
         const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
         if (isAdminAuthenticated !== 'true') {
             router.push('/admin/login');
+        } else {
+            fetchCustomers();
+            window.addEventListener('storage', fetchCustomers);
+            return () => window.removeEventListener('storage', fetchCustomers);
         }
-
-        const storedCustomers = JSON.parse(localStorage.getItem('customers') || '[]');
-        const allCustomers = [...initialCustomers.filter(c => !storedCustomers.some((sc: Customer) => sc.id === c.id)), ...storedCustomers];
-        
-        // Add mock status and registration date for UI
-        setCustomers(allCustomers.map(c => ({
-            ...c,
-            status: c.name.includes('Sunita') ? 'Suspended' : 'Active',
-            registeredOn: new Date(Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 30).toLocaleDateString()
-        })));
-    }, [router]);
+    }, [router, fetchCustomers]);
     
     const handleAction = (action: string, customerId: string) => {
         toast({

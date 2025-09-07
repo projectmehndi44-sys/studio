@@ -3,7 +3,7 @@ export type TeamMember = {
     id: string;
     name: string;
     username: string;
-    password?: 'Abhi@123';
+    password?: string;
     role: 'admin' | 'team-member';
 };
 

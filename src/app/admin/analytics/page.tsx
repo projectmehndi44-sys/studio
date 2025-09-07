@@ -4,34 +4,32 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, BarChart, PieChart, Users, Map } from 'lucide-react';
+import { BarChart, PieChart, Map } from 'lucide-react';
 import type { Booking } from '@/types';
 import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Pie, Cell } from 'recharts';
 import { BarChart as BarChartComponent, PieChart as PieChartComponent } from 'recharts';
+import { allBookings as initialBookings } from '@/lib/data';
 
-
-const allBookings: Booking[] = [
-    { id: 'book_01', artistIds: ['1'], customerName: 'Priya Patel', customerContact: "9876543210", serviceAddress: "address, Maharashtra", date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed' },
-    { id: 'book_02', artistIds: ['2'], customerName: 'Anjali Sharma', customerContact: "9876543211", serviceAddress: "address, Delhi", date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed' },
-    { id: 'book_03', artistIds: ['3'], customerName: 'Sneha Reddy', customerContact: "9876543212", serviceAddress: "address, Karnataka", date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Pending Approval' },
-    { id: 'book_04', artistIds: ['1'], customerName: 'Meera Iyer', customerContact: "9876543213", serviceAddress: "address, Maharashtra", date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed' },
-    { id: 'book_05', artistIds: [], customerName: 'Rohan Gupta', customerContact: "9876543214", serviceAddress: "address, Maharashtra", date: new Date('2024-08-12'), service: 'Mehndi Package', amount: 1800, status: 'Needs Assignment' },
-    { id: 'book_06', artistIds: ['4'], customerName: 'Kavita Singh', customerContact: "9876543215", serviceAddress: "address, Gujarat", date: new Date('2024-06-15'), service: 'Minimalist Mehndi', amount: 2200, status: 'Completed' },
-];
 
 export default function AnalyticsPage() {
     const router = useRouter();
     const [bookings, setBookings] = React.useState<Booking[]>([]);
+
+    const fetchBookings = React.useCallback(() => {
+        const storedBookings = localStorage.getItem('bookings');
+        const currentBookings = storedBookings ? JSON.parse(storedBookings) : initialBookings;
+        setBookings(currentBookings.map((b: any) => ({...b, date: new Date(b.date)})));
+    }, []);
 
     React.useEffect(() => {
         const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
         if (isAdminAuthenticated !== 'true') {
             router.push('/admin/login');
         }
-
-        const storedBookings = localStorage.getItem('bookings');
-        setBookings(storedBookings ? JSON.parse(storedBookings).map((b: any) => ({...b, date: new Date(b.date)})) : allBookings);
-    }, [router]);
+        fetchBookings();
+        window.addEventListener('storage', fetchBookings);
+        return () => window.removeEventListener('storage', fetchBookings);
+    }, [router, fetchBookings]);
     
     // --- Chart Data Processing ---
 
@@ -67,7 +65,7 @@ export default function AnalyticsPage() {
 
     // 3. Bookings by Location (State)
     const locationData = bookings.reduce((acc, booking) => {
-        const state = booking.serviceAddress.split(',').pop()?.trim() || 'Unknown';
+        const state = booking.state || 'Unknown';
         if (!acc[state]) {
             acc[state] = { name: state, bookings: 0 };
         }

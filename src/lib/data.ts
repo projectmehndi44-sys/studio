@@ -1,5 +1,5 @@
 
-import type { Artist } from '@/types';
+import type { Artist, Booking, Customer, MehndiPackage, Promotion, TeamMember } from '@/types';
 
 export const artists: Artist[] = [
   {
@@ -19,6 +19,7 @@ export const artists: Artist[] = [
     charge: 2500,
     rating: 4.9,
     styleTags: ['bridal', 'arabic', 'intricate'],
+    unavailableDates: [],
   },
   {
     id: '2',
@@ -37,6 +38,7 @@ export const artists: Artist[] = [
     charge: 5000,
     rating: 4.8,
     styleTags: ['glam', 'natural', 'wedding'],
+    unavailableDates: [],
   },
   {
     id: '3',
@@ -55,6 +57,7 @@ export const artists: Artist[] = [
     charge: 7000,
     rating: 5.0,
     styleTags: ['luxury', 'traditional', 'modern'],
+    unavailableDates: [],
   },
   {
     id: '4',
@@ -73,6 +76,7 @@ export const artists: Artist[] = [
     charge: 1800,
     rating: 4.7,
     styleTags: ['minimalist', 'floral', 'indian'],
+    unavailableDates: [],
   },
   {
     id: '5',
@@ -91,6 +95,7 @@ export const artists: Artist[] = [
     charge: 4500,
     rating: 4.9,
     styleTags: ['dewy', 'bold', 'party'],
+    unavailableDates: [],
   },
   {
     id: '6',
@@ -109,6 +114,7 @@ export const artists: Artist[] = [
     charge: 6500,
     rating: 4.8,
     styleTags: ['airbrush', 'arabic', 'fusion'],
+    unavailableDates: [],
   },
     {
     id: '7',
@@ -127,6 +133,7 @@ export const artists: Artist[] = [
     charge: 3000,
     rating: 4.9,
     styleTags: ['traditional', 'peacock', 'detailed'],
+    unavailableDates: [],
   },
   {
     id: '8',
@@ -145,13 +152,14 @@ export const artists: Artist[] = [
     charge: 5500,
     rating: 4.7,
     styleTags: ['south indian', 'bridal', 'temple'],
+    unavailableDates: [],
   },
   {
     id: 'abhi@gmail.com',
     name: 'Abhi',
     email: 'abhi@gmail.com',
     phone: '9999999999',
-    password: '123456789',
+    password: 'Password@123',
     profilePicture: 'https://picsum.photos/200/200?random=9',
     workImages: [
       'https://picsum.photos/600/400?random=91',
@@ -163,5 +171,28 @@ export const artists: Artist[] = [
     charge: 4000,
     rating: 4.8,
     styleTags: ['modern', 'fusion', 'party'],
+    unavailableDates: [],
   },
+];
+
+export const initialCustomers: Customer[] = [
+    { id: 'cust_101', name: 'Priya Patel', email: 'priya.p@email.com', phone: '9123456780' },
+    { id: 'cust_102', name: 'Amit Singh', email: 'amit.singh@email.com', phone: '9098765432' },
+    { id: 'cust_103', name: 'Sunita Rao', email: 'sunita.r@email.com', phone: '9988776655' }
+];
+
+export const allBookings: Booking[] = [
+    { id: 'book_01', customerId: 'cust_101', artistIds: ['1'], customerName: 'Priya Patel', customerContact: '9876543210', eventType: 'Wedding', serviceAddress: '123, Rose Villa, Bandra West, Mumbai', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed', paidOut: true, eventDate: new Date('2024-07-22'), state: 'Maharashtra', district: 'Mumbai', location: 'Bandra West' },
+    { id: 'book_02', customerId: 'cust_102', artistIds: ['2'], customerName: 'Anjali Sharma', customerContact: '9876543211', eventType: 'Party', serviceAddress: '456, Sunshine Apts, Saket, New Delhi', date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed', paidOut: false, eventDate: new Date('2024-07-25'), state: 'Delhi', district: 'South Delhi', location: 'Saket' },
+    { id: 'book_03', customerId: 'cust_103', artistIds: ['3'], customerName: 'Sneha Reddy', customerContact: '9876543212', eventType: 'Wedding', serviceAddress: '789, Tech Park, Koramangala, Bangalore', date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Pending Approval', paidOut: false, eventDate: new Date('2024-08-07'), state: 'Karnataka', district: 'Bengaluru Urban', location: 'Koramangala' },
+    { id: 'book_04', customerId: 'cust_101', artistIds: ['1'], customerName: 'Meera Iyer', customerContact: '9876543213', eventType: 'Engagement', serviceAddress: '321, Lakeview, Powai, Mumbai', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed', paidOut: false, eventDate: new Date('2024-08-11'), state: 'Maharashtra', district: 'Mumbai Suburban', location: 'Powai' },
+    { id: 'book_05', customerId: 'cust_104', artistIds: [], customerName: 'Rohan Gupta', customerContact: '9876543214', eventType: 'Festival', serviceAddress: '654, MG Road, Pune', date: new Date('2024-08-12'), service: 'Mehndi Package', amount: 1800, status: 'Needs Assignment', paidOut: false, eventDate: new Date('2024-08-13'), state: 'Maharashtra', district: 'Pune', location: 'MG Road' },
+    { id: 'book_06', customerId: 'cust_105', artistIds: ['4'], customerName: 'Kavita Singh', customerContact: '9876543215', eventType: 'Wedding', serviceAddress: '987, Cyber City, Gurgaon', date: new Date('2024-08-15'), service: 'Minimalist Mehndi', amount: 2200, status: 'Completed', paidOut: false, eventDate: new Date('2024-08-18'), state: 'Haryana', district: 'Gurugram', location: 'Cyber City' },
+    { id: 'book_07', customerId: 'cust_106', artistIds: ['5'], customerName: 'Divya Kumar', customerContact: '9876543216', eventType: 'Wedding', serviceAddress: '111, Jubilee Hills, Hyderabad', date: new Date('2024-07-28'), service: 'Bridal Makeup', amount: 9000, status: 'Disputed', paidOut: false, eventDate: new Date('2024-07-30'), state: 'Telangana', district: 'Hyderabad', location: 'Jubilee Hills' },
+];
+
+export const initialPromotions: Promotion[] = [
+    { id: 'promo_1', code: 'WELCOME10', discount: 10, expiryDate: '2024-12-31', isActive: true },
+    { id: 'promo_2', code: 'FESTIVE20', discount: 20, expiryDate: '2024-10-31', isActive: true },
+    { id: 'promo_3', code: 'SUMMER15', discount: 15, expiryDate: '2024-06-30', isActive: false },
 ];

@@ -57,30 +57,36 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
   }
 
   React.useEffect(() => {
-    if (booking?.artistIds) {
+    if (booking?.artistIds && isOpen) {
       setSelectedArtistIds(booking.artistIds.filter(id => id !== null) as string[]);
     } else {
       setSelectedArtistIds([]);
     }
-  }, [booking]);
+  }, [booking, isOpen]);
 
   const unavailableArtistIds = React.useMemo(() => {
     if (!booking) return new Set();
     
     const unavailableIds = new Set<string>();
+    const bookingDate = new Date(booking.date);
 
     // Add artists who are already booked on the same day
     allBookings
         .filter(b => 
             b.id !== booking.id &&
-            isSameDay(new Date(b.date), new Date(booking.date)) &&
+            isSameDay(new Date(b.date), bookingDate) &&
             (b.status === 'Confirmed' || b.status === 'Completed') 
         )
         .forEach(b => b.artistIds.forEach(id => id && unavailableIds.add(id)));
 
     // Add artists who have marked the day as unavailable
     artists.forEach(artist => {
-        if (artist.unavailableDates?.some(dateStr => isSameDay(new Date(dateStr), new Date(booking.date)))) {
+        if (artist.unavailableDates?.some(dateStr => {
+            // Dates are stored as 'YYYY-MM-DD'. We need to parse them correctly, accounting for timezone.
+            const [year, month, day] = dateStr.split('-').map(Number);
+            const unavailableDate = new Date(year, month - 1, day);
+            return isSameDay(unavailableDate, bookingDate);
+        })) {
             unavailableIds.add(artist.id);
         }
     });
@@ -93,7 +99,7 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-primary font-bold text-2xl">{booking.artistIds.length > 0 ? 'Change' : 'Assign'} Artists</DialogTitle>
+          <DialogTitle className="text-primary font-bold text-2xl">{booking.artistIds && booking.artistIds.length > 0 ? 'Change' : 'Assign'} Artists</DialogTitle>
           <DialogDescription>
             Select one or more available artists for booking #{booking.id}.
           </DialogDescription>
@@ -131,11 +137,11 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
             <div className='text-sm'>
               <p><span className='font-semibold'>Customer:</span> {booking.customerName}</p>
               <p><span className='font-semibold'>Service:</span> {booking.service}</p>
-              <p><span className='font-semibold'>Date:</span> {booking.date.toLocaleDateString()}</p>
+              <p><span className='font-semibold'>Date:</span> {new Date(booking.date).toLocaleDateString()}</p>
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" className="bg-accent hover:bg-accent/90 w-full">{booking.artistIds.length > 0 ? 'Update Assignment' : 'Assign Artists'}</Button>
+            <Button type="submit" className="bg-accent hover:bg-accent/90 w-full">{booking.artistIds && booking.artistIds.length > 0 ? 'Update Assignment' : 'Assign Artists'}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

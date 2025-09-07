@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { LayoutDashboard, Briefcase, Bell, User, LogOut, Palette, CalendarOff } from 'lucide-react';
 import type { Artist, Booking, Notification } from '@/types';
-import { artists as initialArtists } from '@/lib/data';
+import { artists as initialArtists, allBookings as initialBookings } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -29,9 +29,9 @@ const NavLink = ({ href, pathname, icon: Icon, label }: { href: string; pathname
 );
 
 const BottomNavLink = ({ href, pathname, icon: Icon, label }: { href: string; pathname: string; icon: React.ElementType, label: string }) => (
-    <Link href={href} className={cn("flex flex-col items-center gap-1 p-2 rounded-md", pathname === href ? 'text-primary' : 'text-muted-foreground')}>
+    <Link href={href} className={cn("flex flex-col items-center justify-center gap-1 p-2 rounded-md h-full", pathname === href ? 'text-primary bg-primary/10' : 'text-muted-foreground')}>
         <Icon className="h-6 w-6" />
-        <span className="text-xs">{label}</span>
+        <span className="text-xs font-medium">{label}</span>
     </Link>
 )
 
@@ -46,8 +46,6 @@ export default function ArtistDashboardLayout({
     const pathname = usePathname();
     const isMobile = useIsMobile();
     const [artist, setArtist] = React.useState<Artist | null>(null);
-    const [bookings, setBookings] = React.useState<Booking[]>([]);
-    const [notifications, setNotifications] = React.useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = React.useState(0);
     const [artistId, setArtistId] = React.useState<string | null>(null);
 
@@ -82,14 +80,9 @@ export default function ArtistDashboardLayout({
             handleLogout();
             return;
         }
-
-        const storedBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || '[]').map((b: any) => ({...b, date: new Date(b.date)}));
-        const artistBookings = storedBookings.filter(b => b.artistIds.includes(currentArtistId));
-        setBookings(artistBookings);
         
         const allNotifications: Notification[] = JSON.parse(localStorage.getItem('notifications') || '[]');
         const artistNotifications = allNotifications.filter((n: Notification) => n.artistId === currentArtistId);
-        setNotifications(artistNotifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
         setUnreadCount(artistNotifications.filter((n: Notification) => !n.isRead).length);
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -121,25 +114,19 @@ export default function ArtistDashboardLayout({
     
     const childrenWithProps = React.Children.map(children, child => {
         if (React.isValidElement(child)) {
-            const props: any = { artist }; 
-            if (pathname === '/artist/dashboard') {
-                props.bookings = bookings;
+            const props: any = { artist, artistId }; 
+            if (pathname.includes('/artist/dashboard/bookings')) {
+                props.artistId = artistId;
             }
-            if (pathname === '/artist/dashboard/bookings') {
-                props.bookings = bookings;
-                props.setBookings = setBookings;
-            }
-             if (pathname === '/artist/dashboard/availability') {
+             if (pathname.includes('/artist/dashboard/availability')) {
                 props.artist = artist;
                 props.setArtist = setArtist;
             }
-            if (pathname === '/artist/dashboard/notifications') {
-                 props.notifications = notifications;
-                 props.setNotifications = setNotifications;
+            if (pathname.includes('/artist/dashboard/notifications')) {
                  props.artistId = artistId;
                  props.setUnreadCount = setUnreadCount;
             }
-            if (pathname === '/artist/dashboard/profile') {
+            if (pathname.includes('/artist/dashboard/profile')) {
                 props.setArtist = setArtist;
             }
             return React.cloneElement(child, props);
@@ -200,11 +187,11 @@ export default function ArtistDashboardLayout({
              <div className="flex flex-col">
                  <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
                     <div className='flex-1'>
-                        <h1 className='font-semibold text-lg'>{navLinks.find(l => l.href.startsWith(pathname))?.label || 'Notifications'}</h1>
+                        <h1 className='font-semibold text-lg'>{navLinks.find(l => pathname.startsWith(l.href))?.label || 'Notifications'}</h1>
                     </div>
                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="relative">
+                            <Button variant="ghost" size="icon" className="relative" onClick={() => router.push('/artist/dashboard/notifications')}>
                                 <Bell className="h-5 w-5"/>
                                  {unreadCount > 0 && (
                                     <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-xs flex items-center justify-center text-white border-2 border-background">
@@ -213,11 +200,6 @@ export default function ArtistDashboardLayout({
                                 )}
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuItem onSelect={() => router.push('/artist/dashboard/notifications')}>
-                                You have {unreadCount} unread notifications.
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
                     </DropdownMenu>
                 </header>
                 <main className="flex-1 p-4 lg:p-6 bg-background pb-20 md:pb-6">

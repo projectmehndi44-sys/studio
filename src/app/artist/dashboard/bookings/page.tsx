@@ -8,24 +8,32 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { Booking } from '@/types';
+import { allBookings as initialBookings } from '@/lib/data';
 
 interface ArtistBookingsPageProps {
-    bookings: Booking[];
-    setBookings: React.Dispatch<React.SetStateAction<Booking[]>>;
+    artistId: string;
 }
 
-export default function ArtistBookingsPage({ bookings, setBookings }: ArtistBookingsPageProps) {
+export default function ArtistBookingsPage({ artistId }: ArtistBookingsPageProps) {
     const { toast } = useToast();
+    const [bookings, setBookings] = React.useState<Booking[]>([]);
+
+    const fetchBookings = React.useCallback(() => {
+        const allBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || JSON.stringify(initialBookings)).map((b: any) => ({...b, date: new Date(b.date)}));
+        const artistBookings = allBookings.filter(b => b.artistIds.includes(artistId));
+        setBookings(artistBookings.sort((a,b) => b.date.getTime() - a.date.getTime()));
+    }, [artistId]);
+    
+    React.useEffect(() => {
+        fetchBookings();
+        window.addEventListener('storage', fetchBookings);
+        return () => window.removeEventListener('storage', fetchBookings);
+    }, [fetchBookings]);
+
 
     const handleStatusUpdate = (bookingId: string, status: 'Completed') => {
         // This function simulates updating the booking status.
         // In a real app, this would be a server action that updates your database.
-        const updatedArtistBookings = bookings.map(b => 
-            b.id === bookingId ? { ...b, status } : b
-        );
-        setBookings(updatedArtistBookings); // Update the local state for the artist's view
-
-        // To ensure the Admin portal gets the update, we need to update the master list in localStorage
         const allBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || '[]').map((b: any) => ({...b, date: new Date(b.date)}));
         const newAllBookings = allBookings.map((b: Booking) => 
             b.id === bookingId ? { ...b, status } : b

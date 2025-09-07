@@ -5,6 +5,7 @@ import * as React from 'react';
 import type { Booking, Notification } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { allBookings as initialBookings } from '@/lib/data';
 
 interface NotificationCardProps {
     notification: Notification;
@@ -39,28 +40,35 @@ function NotificationCard({ notification, allBookings, onMarkAsRead }: Notificat
 }
 
 interface ArtistNotificationsPageProps {
-    notifications: Notification[];
-    setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
     artistId: string;
     setUnreadCount: React.Dispatch<React.SetStateAction<number>>;
 }
 
-export default function ArtistNotificationsPage({ notifications, setNotifications, artistId, setUnreadCount }: ArtistNotificationsPageProps) {
+export default function ArtistNotificationsPage({ artistId, setUnreadCount }: ArtistNotificationsPageProps) {
     
     const [allBookings, setAllBookings] = React.useState<Booking[]>([]);
+    const [notifications, setNotifications] = React.useState<Notification[]>([]);
+
+    const fetchNotifications = React.useCallback(() => {
+        const storedBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || JSON.stringify(initialBookings)).map((b: any) => ({...b, date: new Date(b.date)}));
+        setAllBookings(storedBookings);
+
+        const allNotifications: Notification[] = JSON.parse(localStorage.getItem('notifications') || '[]');
+        const artistNotifications = allNotifications.filter(n => n.artistId === artistId);
+        setNotifications(artistNotifications.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+        setUnreadCount(artistNotifications.filter(n => !n.isRead).length);
+    }, [artistId, setUnreadCount]);
 
     React.useEffect(() => {
-        const storedBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || '[]').map((b: any) => ({...b, date: new Date(b.date)}));
-        setAllBookings(storedBookings);
-    }, []);
+        fetchNotifications();
+        window.addEventListener('storage', fetchNotifications);
+        return () => window.removeEventListener('storage', fetchNotifications);
+    }, [fetchNotifications]);
 
     const updateNotifications = (updated: Notification[]) => {
         const allNotifications: Notification[] = JSON.parse(localStorage.getItem('notifications') || '[]');
         const otherArtistsNotifications = allNotifications.filter(n => n.artistId !== artistId);
         localStorage.setItem('notifications', JSON.stringify([...updated, ...otherArtistsNotifications]));
-
-        setNotifications(updated);
-        setUnreadCount(updated.filter(n => !n.isRead).length);
         window.dispatchEvent(new Event('storage'));
     }
     

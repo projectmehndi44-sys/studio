@@ -10,28 +10,34 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { Booking, Customer } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut } from 'lucide-react';
+import { allBookings as initialBookings, initialCustomers } from '@/lib/data';
 
 export default function AccountPage() {
     const router = useRouter();
     const [customer, setCustomer] = React.useState<Customer | null>(null);
     const [bookings, setBookings] = React.useState<Booking[]>([]);
 
-    React.useEffect(() => {
+    const fetchCustomerData = React.useCallback(() => {
         const customerId = localStorage.getItem('currentCustomerId');
         if (!customerId) {
             router.push('/');
             return;
         }
 
-        const allCustomers: Customer[] = JSON.parse(localStorage.getItem('customers') || '[]');
+        const allCustomers: Customer[] = JSON.parse(localStorage.getItem('customers') || JSON.stringify(initialCustomers));
         const currentCustomer = allCustomers.find(c => c.id === customerId);
         setCustomer(currentCustomer || null);
 
-        const allBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || '[]').map((b: any) => ({...b, date: new Date(b.date)}));
+        const allBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || JSON.stringify(initialBookings)).map((b: any) => ({...b, date: new Date(b.date)}));
         const customerBookings = allBookings.filter(b => b.customerId === customerId);
         setBookings(customerBookings.sort((a,b) => b.date.getTime() - a.date.getTime()));
-
     }, [router]);
+    
+    React.useEffect(() => {
+        fetchCustomerData();
+        window.addEventListener('storage', fetchCustomerData);
+        return () => window.removeEventListener('storage', fetchCustomerData);
+    }, [fetchCustomerData]);
     
     const handleLogout = () => {
         localStorage.removeItem('currentCustomerId');

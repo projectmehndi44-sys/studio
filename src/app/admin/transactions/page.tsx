@@ -14,12 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { exportTransactionsToExcel, exportTransactionsToPdf } from '@/lib/export';
-
-const allBookings: Booking[] = [
-    { id: 'book_01', customerId: 'cust_101', artistIds: ['1'], customerName: 'Priya Patel', customerContact: "9876543210", eventType: 'Wedding', serviceAddress: "address", date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed', paidOut: true, eventDate: new Date('2024-07-22'), state: 'Maharashtra', district: 'Mumbai', location: 'Bandra West' },
-    { id: 'book_02', customerId: 'cust_102', artistIds: ['2'], customerName: 'Anjali Sharma', customerContact: "9876543211", eventType: 'Party', serviceAddress: "address", date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed', paidOut: false, eventDate: new Date('2024-07-25'), state: 'Delhi', district: 'South Delhi', location: 'Saket' },
-    { id: 'book_03', customerId: 'cust_103', artistIds: ['3'], customerName: 'Sneha Reddy', customerContact: "9876543212", eventType: 'Wedding', serviceAddress: "address", date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Pending Approval', paidOut: false, eventDate: new Date('2024-08-07'), state: 'Karnataka', district: 'Bengaluru Urban', location: 'Koramangala' },
-];
+import { allBookings as initialBookings } from '@/lib/data';
 
 export default function TransactionsPage() {
     const router = useRouter();
@@ -28,14 +23,9 @@ export default function TransactionsPage() {
     const [filteredTransactions, setFilteredTransactions] = React.useState<Transaction[]>([]);
     const [dateRange, setDateRange] = React.useState<{from: Date | undefined, to: Date | undefined}>({ from: undefined, to: undefined });
 
-    React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
-        if (isAdminAuthenticated !== 'true') {
-            router.push('/admin/login');
-        }
-
+    const fetchTransactions = React.useCallback(() => {
         const storedBookings = localStorage.getItem('bookings');
-        const currentBookings: Booking[] = storedBookings ? JSON.parse(storedBookings).map((b: any) => ({...b, date: new Date(b.date)})) : allBookings;
+        const currentBookings: Booking[] = storedBookings ? JSON.parse(storedBookings).map((b: any) => ({...b, date: new Date(b.date)})) : initialBookings;
 
         const storedPayoutHistory = localStorage.getItem('payoutHistory');
         const currentPayoutHistory: PayoutHistory[] = storedPayoutHistory ? JSON.parse(storedPayoutHistory).map((p:any) => ({...p, paymentDate: new Date(p.paymentDate)})) : [];
@@ -69,8 +59,17 @@ export default function TransactionsPage() {
         allTransactions.sort((a,b) => b.date.getTime() - a.date.getTime());
         setTransactions(allTransactions);
         setFilteredTransactions(allTransactions);
+    }, []);
 
-    }, [router]);
+    React.useEffect(() => {
+        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
+        if (isAdminAuthenticated !== 'true') {
+            router.push('/admin/login');
+        }
+        fetchTransactions();
+        window.addEventListener('storage', fetchTransactions);
+        return () => window.removeEventListener('storage', fetchTransactions);
+    }, [router, fetchTransactions]);
 
     const handleTransactionFilter = (filterType: 'all' | 'month' | 'year' | 'custom') => {
         const now = new Date();
@@ -212,4 +211,3 @@ export default function TransactionsPage() {
         </>
     );
 }
-

@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { IndianRupee, MoreHorizontal, Download, FileText } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Booking, Artist, Payout, PayoutHistory } from '@/types';
-import { artists as initialArtists } from '@/lib/data';
+import { artists as initialArtists, allBookings as initialBookings } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -17,21 +17,10 @@ import { Terminal } from 'lucide-react';
 import { exportPayoutToPdf, generateGstInvoice } from '@/lib/export';
 
 
-const allBookings: Booking[] = [
-    { id: 'book_01', artistIds: ['1'], customerName: 'Priya Patel', customerContact: '9876543210', serviceAddress: '123, Rose Villa, Bandra West, Mumbai', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed', paidOut: true },
-    { id: 'book_02', artistIds: ['2'], customerName: 'Anjali Sharma', customerContact: '9876543211', serviceAddress: '456, Sunshine Apts, Saket, New Delhi', date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed', paidOut: false },
-    { id: 'book_03', artistIds: ['3'], customerName: 'Sneha Reddy', customerContact: '9876543212', serviceAddress: '789, Tech Park, Koramangala, Bangalore', date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Pending Approval', paidOut: false },
-    { id: 'book_04', artistIds: ['1'], customerName: 'Meera Iyer', customerContact: '9876543213', serviceAddress: '321, Lakeview, Powai, Mumbai', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed', paidOut: false },
-    { id: 'book_05', artistIds: [], customerName: 'Rohan Gupta', customerContact: '9876543214', serviceAddress: '654, MG Road, Pune', date: new Date('2024-08-12'), service: 'Mehndi Package', amount: 1800, status: 'Needs Assignment', paidOut: false },
-    { id: 'book_06', artistIds: ['4'], customerName: 'Kavita Singh', customerContact: '9876543215', serviceAddress: '987, Cyber City, Gurgaon', date: new Date('2024-08-15'), service: 'Minimalist Mehndi', amount: 2200, status: 'Completed', paidOut: false },
-    { id: 'book_07', artistIds: ['5'], customerName: 'Divya Kumar', customerContact: '9876543216', serviceAddress: '111, Jubilee Hills, Hyderabad', date: new Date('2024-07-28'), service: 'Bridal Makeup', amount: 9000, status: 'Completed', paidOut: true },
-];
-
-
 export default function PayoutManagementPage() {
     const router = useRouter();
     const { toast } = useToast();
-    const [artists] = React.useState<Artist[]>(initialArtists);
+    const [artists, setArtists] = React.useState<Artist[]>(initialArtists);
     const [bookings, setBookings] = React.useState<Booking[]>([]);
     const [payouts, setPayouts] = React.useState<Payout[]>([]);
     const [payoutHistory, setPayoutHistory] = React.useState<PayoutHistory[]>([]);
@@ -73,27 +62,37 @@ export default function PayoutManagementPage() {
         Object.values(payoutMap).forEach(payout => {
             payout.platformFees = payout.grossRevenue * platformFeePercentage;
             payout.gst = payout.grossRevenue * 0.18; // GST on artist's gross revenue
-            payout.netPayout = payout.grossRevenue - payout.platformFees - payout.gst;
+            payout.netPayout = payout.grossRevenue - payout.platformFees; // We'll assume GST is handled separately and not deducted from payout
         });
 
         setPayouts(Object.values(payoutMap));
 
     }, [bookings, artists]);
 
-     React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
-        if (isAdminAuthenticated !== 'true') {
-            router.push('/admin/login');
-        }
-
+     const fetchData = React.useCallback(() => {
         const storedBookings = localStorage.getItem('bookings');
-        const currentBookings = storedBookings ? JSON.parse(storedBookings).map((b: any) => ({...b, date: new Date(b.date)})) : allBookings;
+        const currentBookings = storedBookings ? JSON.parse(storedBookings).map((b: any) => ({...b, date: new Date(b.date)})) : initialBookings;
         setBookings(currentBookings);
         
         const storedPayoutHistory = localStorage.getItem('payoutHistory');
         setPayoutHistory(storedPayoutHistory ? JSON.parse(storedPayoutHistory) : []);
         
-    }, [router]);
+        const storedArtists = localStorage.getItem('artists');
+        setArtists(storedArtists ? JSON.parse(storedArtists) : initialArtists);
+    }, []);
+
+    React.useEffect(() => {
+        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
+        if (isAdminAuthenticated !== 'true') {
+            router.push('/admin/login');
+        }
+        fetchData();
+        window.addEventListener('storage', fetchData);
+
+        return () => {
+            window.removeEventListener('storage', fetchData);
+        }
+    }, [router, fetchData]);
 
     React.useEffect(() => {
         calculatePayouts();
@@ -118,6 +117,8 @@ export default function PayoutManagementPage() {
         const updatedHistory = [newHistoryRecord, ...payoutHistory];
         setPayoutHistory(updatedHistory);
         localStorage.setItem('payoutHistory', JSON.stringify(updatedHistory));
+        
+        window.dispatchEvent(new Event('storage'));
 
         toast({
             title: "Payout Marked as Paid",
@@ -154,7 +155,6 @@ export default function PayoutManagementPage() {
                                             <TableHead>Completed Bookings</TableHead>
                                             <TableHead>Gross Revenue</TableHead>
                                             <TableHead>Platform Fees</TableHead>
-                                            <TableHead>GST (18%)</TableHead>
                                             <TableHead className="font-bold text-primary">Net Payout</TableHead>
                                             <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
@@ -166,7 +166,6 @@ export default function PayoutManagementPage() {
                                                 <TableCell>{payout.totalBookings}</TableCell>
                                                 <TableCell>₹{payout.grossRevenue.toLocaleString()}</TableCell>
                                                 <TableCell>- ₹{payout.platformFees.toLocaleString()}</TableCell>
-                                                <TableCell>- ₹{payout.gst.toLocaleString()}</TableCell>
                                                 <TableCell className="font-bold text-green-600">₹{payout.netPayout.toLocaleString()}</TableCell>
                                                 <TableCell className="text-right space-x-2">
                                                     <Button onClick={() => handleMarkAsPaid(payout)}>Mark as Paid</Button>
