@@ -9,20 +9,32 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Save } from 'lucide-react';
 import { artists as initialArtists } from '@/lib/data';
-import { formatISO } from 'date-fns';
+import { formatISO, isSameDay } from 'date-fns';
 import { useArtistPortal } from '../layout';
+import { Badge } from '@/components/ui/badge';
 
 
 export default function ArtistAvailabilityPage() {
-    const { artist, setArtist } = useArtistPortal();
+    const { artist, setArtist, artistBookings } = useArtistPortal();
     const { toast } = useToast();
     const [unavailableDates, setUnavailableDates] = React.useState<Date[]>([]);
     
     React.useEffect(() => {
         if (artist?.unavailableDates) {
-            setUnavailableDates(artist.unavailableDates.map(d => new Date(d)));
+            // Dates from storage are strings, convert them back to Date objects, accounting for timezone.
+            const savedDates = artist.unavailableDates.map(dateStr => {
+                const [year, month, day] = dateStr.split('-').map(Number);
+                return new Date(year, month - 1, day);
+            });
+            setUnavailableDates(savedDates);
         }
     }, [artist]);
+
+    const bookedDates = React.useMemo(() => {
+        return artistBookings
+            .filter(b => b.status === 'Confirmed' || b.status === 'Completed')
+            .map(b => new Date(b.date));
+    }, [artistBookings]);
     
     const getArtists = (): Artist[] => {
          const storedArtists = localStorage.getItem('artists');
@@ -54,7 +66,7 @@ export default function ArtistAvailabilityPage() {
             return;
         }
 
-        // Convert dates to timezone-agnostic format 'yyyy-MM-dd'
+        // Convert dates to timezone-agnostic format 'yyyy-MM-dd' for storage
         const datesToSave = unavailableDates.map(d => formatISO(d, { representation: 'date' }));
         const updatedArtist = { ...allArtists[artistIndex], unavailableDates: datesToSave };
         
@@ -67,13 +79,34 @@ export default function ArtistAvailabilityPage() {
             description: "Your calendar has been updated successfully.",
         });
     };
+    
+    const handleDayClick = (day: Date, modifiers: { booked?: boolean }) => {
+        // Prevent changing dates that are already booked
+        if (modifiers.booked) {
+             toast({
+                title: "Date is Booked",
+                description: "You cannot change availability for a date with a confirmed booking.",
+                variant: "destructive"
+            });
+            return;
+        }
+        
+        // Add or remove the date from the unavailable list
+        const isUnavailable = unavailableDates.some(d => isSameDay(d, day));
+        if (isUnavailable) {
+            setUnavailableDates(prev => prev.filter(d => !isSameDay(d, day)));
+        } else {
+            setUnavailableDates(prev => [...prev, day]);
+        }
+    };
+
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Manage Your Availability</CardTitle>
                 <CardDescription>
-                    Select dates you are unavailable. Customers won't be able to book you on these days, and admins won't assign you to bookings.
+                   Click on a date to toggle its status. Booked dates cannot be changed.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -81,10 +114,33 @@ export default function ArtistAvailabilityPage() {
                     <Calendar
                         mode="multiple"
                         selected={unavailableDates}
-                        onSelect={setUnavailableDates}
+                        onDayClick={handleDayClick}
+                        modifiers={{ 
+                            booked: bookedDates,
+                            available: { from: new Date(), disabled: [...bookedDates, ...unavailableDates] }
+                        }}
+                        modifiersClassNames={{
+                            selected: 'bg-red-500 text-white hover:bg-red-600 focus:bg-red-600',
+                            booked: 'bg-orange-500 text-white cursor-not-allowed',
+                            available: 'bg-green-100'
+                        }}
                         className="rounded-md border"
                         disabled={{ before: new Date() }}
                     />
+                </div>
+                 <div className="flex justify-center gap-4 pt-4 border-t">
+                    <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full bg-green-100 border"></div>
+                        <span className="text-sm">Available</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full bg-red-500"></div>
+                        <span className="text-sm">Unavailable</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-full bg-orange-500"></div>
+                        <span className="text-sm">Booked</span>
+                    </div>
                 </div>
                  <Button onClick={handleSave} className="w-full">
                     <Save className="mr-2 h-4 w-4" /> Save Availability
