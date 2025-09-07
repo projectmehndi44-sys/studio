@@ -24,6 +24,7 @@ export type Booking = {
   service: string;
   amount: number;
   status: 'Completed' | 'Confirmed' | 'Cancelled' | 'Pending Approval' | 'Needs Assignment' | 'Disputed';
+  paidOut?: boolean;
 };
 
 export type Review = {
@@ -50,3 +51,19 @@ export type Promotion = {
     expiryDate: string;
     isActive: boolean;
 };
+
+export type Payout = {
+  artistId: string;
+  artistName: string;
+  totalBookings: number;
+  grossRevenue: number;
+  platformFees: number;
+  gst: number;
+  netPayout: number;
+  bookingIds: string[];
+};
+
+export type PayoutHistory = Payout & {
+  id: string;
+  paymentDate: string;
+}
