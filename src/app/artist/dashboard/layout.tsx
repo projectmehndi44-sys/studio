@@ -7,6 +7,8 @@ import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { LayoutDashboard, Briefcase, Bell, User, LogOut, Palette } from 'lucide-react';
 import type { Artist } from '@/types';
+import { artists as initialArtists } from '@/lib/data';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ArtistDashboardLayout({
   children,
@@ -14,6 +16,7 @@ export default function ArtistDashboardLayout({
   children: React.ReactNode
 }) {
     const router = useRouter();
+    const { toast } = useToast();
     const pathname = usePathname();
     const [artist, setArtist] = React.useState<Artist | null>(null);
 
@@ -25,19 +28,23 @@ export default function ArtistDashboardLayout({
             router.push('/artist/login');
             return;
         }
+        
+        const localArtists: Artist[] = JSON.parse(localStorage.getItem('artists') || '[]');
+        const allArtists: Artist[] = [...initialArtists, ...localArtists.filter(la => !initialArtists.some(ia => ia.id === la.id))];
 
-        const allArtists = JSON.parse(localStorage.getItem('artists') || '[]');
         const currentArtist = allArtists.find((a: Artist) => a.id === artistId);
         
         if (currentArtist) {
             setArtist(currentArtist);
         } else {
-            // This case might happen if the artist was deleted but the session remains
-            localStorage.removeItem('isArtistAuthenticated');
-            localStorage.removeItem('artistId');
-            router.push('/artist/login');
+            toast({
+                title: "Login Error",
+                description: "Could not find your artist profile. Please log in again.",
+                variant: "destructive"
+            });
+            handleLogout();
         }
-    }, [router]);
+    }, [router, toast]);
 
     const handleLogout = () => {
         localStorage.removeItem('isArtistAuthenticated');
