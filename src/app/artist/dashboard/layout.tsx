@@ -6,9 +6,17 @@ import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
 import { LayoutDashboard, Briefcase, Bell, User, LogOut, Palette } from 'lucide-react';
-import type { Artist } from '@/types';
+import type { Artist, Booking, Notification } from '@/types';
 import { artists as initialArtists } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
+
+// Mock data that would be fetched for the logged-in artist
+const allBookings: Booking[] = [
+    { id: 'book_01', artistId: '1', customerName: 'Priya Patel', customerContact: '9876543210', serviceAddress: '123, Rose Villa, Bandra West, Mumbai', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed' },
+    { id: 'book_04', artistId: '1', customerName: 'Meera Iyer', customerContact: '9876543213', serviceAddress: '321, Lakeview, Powai, Mumbai', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed' },
+    { id: 'book_07', artistId: '1', customerName: 'Neha Desai', customerContact: '9876543216', serviceAddress: '555, Juhu Beach, Mumbai', date: new Date('2024-08-20'), service: 'Bridal Package', amount: 9500, status: 'Confirmed' },
+    { id: 'book_08', artistId: '2', customerName: 'Anika Verma', customerContact: '9876543217', serviceAddress: '777, CP, New Delhi', date: new Date('2024-08-22'), service: 'Reception Makeup', amount: 6000, status: 'Confirmed' },
+];
 
 export default function ArtistDashboardLayout({
   children,
@@ -19,20 +27,23 @@ export default function ArtistDashboardLayout({
     const { toast } = useToast();
     const pathname = usePathname();
     const [artist, setArtist] = React.useState<Artist | null>(null);
+    const [bookings, setBookings] = React.useState<Booking[]>([]);
+    const [notifications, setNotifications] = React.useState<Notification[]>([]);
+    const [unreadCount, setUnreadCount] = React.useState(0);
+    const [artistId, setArtistId] = React.useState<string | null>(null);
 
     const fetchArtistData = React.useCallback(() => {
-        const isArtistAuthenticated = localStorage.getItem('isArtistAuthenticated');
-        const artistId = localStorage.getItem('artistId');
-
-        if (isArtistAuthenticated !== 'true' || !artistId) {
+        const currentArtistId = localStorage.getItem('artistId');
+        if (!currentArtistId) {
             router.push('/artist/login');
             return;
         }
+        setArtistId(currentArtistId);
         
+        // Fetch Artist Profile
         const localArtists: Artist[] = JSON.parse(localStorage.getItem('artists') || '[]');
         const allArtists: Artist[] = [...initialArtists, ...localArtists.filter(la => !initialArtists.some(ia => ia.id === la.id))];
-
-        const currentArtist = allArtists.find((a: Artist) => a.id === artistId);
+        const currentArtist = allArtists.find((a: Artist) => a.id === currentArtistId);
         
         if (currentArtist) {
             setArtist(currentArtist);
@@ -43,16 +54,35 @@ export default function ArtistDashboardLayout({
                 variant: "destructive"
             });
             handleLogout();
+            return;
         }
+
+        // Fetch Bookings
+        const localBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || '[]');
+        const artistBookings = [...allBookings, ...localBookings].filter(b => b.artistId === currentArtistId);
+        setBookings(artistBookings);
+        
+        // Fetch Notifications
+        const allNotifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+        const artistNotifications = allNotifications.filter((n: Notification) => n.artistId === currentArtistId);
+        setNotifications(artistNotifications);
+        setUnreadCount(artistNotifications.filter((n: Notification) => !n.isRead).length);
+
     }, [router, toast]);
 
     React.useEffect(() => {
+        const isArtistAuthenticated = localStorage.getItem('isArtistAuthenticated');
+        if (isArtistAuthenticated !== 'true') {
+            router.push('/artist/login');
+            return;
+        }
+        
         fetchArtistData();
         window.addEventListener('storage', fetchArtistData);
         return () => {
             window.removeEventListener('storage', fetchArtistData);
         };
-    }, [fetchArtistData]);
+    }, [fetchArtistData, router]);
 
     const handleLogout = () => {
         localStorage.removeItem('isArtistAuthenticated');
@@ -63,11 +93,18 @@ export default function ArtistDashboardLayout({
     if (!artist) {
         return <div className="flex items-center justify-center min-h-screen">Loading Artist Portal...</div>;
     }
+    
+    const childrenWithProps = React.Children.map(children, child => {
+        if (React.isValidElement(child)) {
+            return React.cloneElement(child, { artist, bookings, notifications, setNotifications, setUnreadCount, artistId } as any);
+        }
+        return child;
+    });
 
     const navLinks = [
         { href: '/artist/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/artist/dashboard/bookings', label: 'Bookings', icon: Briefcase },
-        { href: '/artist/dashboard/notifications', label: 'Notifications', icon: Bell },
+        { href: '/artist/dashboard/notifications', label: 'Notifications', icon: Bell, badge: unreadCount },
         { href: '/artist/dashboard/profile', label: 'Profile', icon: User },
     ]
 
@@ -80,9 +117,14 @@ export default function ArtistDashboardLayout({
                 </div>
                  <nav className="flex flex-col gap-2 text-lg font-medium">
                     {navLinks.map(link => (
-                        <Link key={link.href} href={link.href} className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${pathname === link.href ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-primary'}`}>
+                        <Link key={link.href} href={link.href} className={`relative flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${pathname === link.href ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-primary'}`}>
                             <link.icon className="h-5 w-5" />
                             {link.label}
+                             {link.badge && link.badge > 0 && (
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-red-500 text-xs flex items-center justify-center text-white">
+                                    {link.badge}
+                                </span>
+                            )}
                         </Link>
                     ))}
                 </nav>
@@ -93,7 +135,7 @@ export default function ArtistDashboardLayout({
                 </div>
             </aside>
             <main className="flex-1 p-6 bg-background">
-                {children}
+                {childrenWithProps}
             </main>
         </div>
     );

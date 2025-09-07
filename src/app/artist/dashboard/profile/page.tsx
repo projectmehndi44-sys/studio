@@ -38,10 +38,14 @@ const profileSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
-export default function ArtistProfilePage() {
+interface ArtistProfilePageProps {
+    artist: Artist; // Passed from layout
+}
+
+export default function ArtistProfilePage({ artist: initialArtistData }: ArtistProfilePageProps) {
     const router = useRouter();
     const { toast } = useToast();
-    const [artist, setArtist] = React.useState<Artist | null>(null);
+    const [artist, setArtist] = React.useState<Artist | null>(initialArtistData);
     const [tagInput, setTagInput] = React.useState('');
     
     const form = useForm<ProfileFormValues>({
@@ -77,30 +81,18 @@ export default function ArtistProfilePage() {
     };
 
     React.useEffect(() => {
-        const isArtistAuthenticated = localStorage.getItem('isArtistAuthenticated');
-        const artistId = localStorage.getItem('artistId');
-
-        if (isArtistAuthenticated !== 'true' || !artistId) {
-            router.push('/artist/login');
-            return;
-        }
-
-        const allArtists = getArtists();
-        const currentArtist = allArtists.find(a => a.id === artistId);
-        
-        if (currentArtist) {
-            setArtist(currentArtist);
+        if (artist) {
             form.reset({
-                name: currentArtist.name,
-                location: currentArtist.location,
-                charge: currentArtist.charge,
-                services: currentArtist.services,
-                styleTags: currentArtist.styleTags.map(tag => ({ value: tag })),
+                name: artist.name,
+                location: artist.location,
+                charge: artist.charge,
+                services: artist.services,
+                styleTags: artist.styleTags.map(tag => ({ value: tag })),
             });
         } else {
-            router.push('/artist/login');
+             router.push('/artist/login');
         }
-    }, [router, form]);
+    }, [artist, router, form]);
 
     const onSubmit = (data: ProfileFormValues) => {
         if (!artist) return;
@@ -282,16 +274,7 @@ export default function ArtistProfilePage() {
                             <div className="flex flex-wrap gap-2">
                                 {fields.map((field, index) => (
                                     <Badge key={field.id} variant="secondary" className="flex items-center gap-1">
-                                         <Controller
-                                            control={form.control}
-                                            name={`styleTags.${index}.value`}
-                                            render={({ field: controllerField }) => (
-                                                <Input 
-                                                    {...controllerField}
-                                                    className="w-auto bg-transparent border-none h-auto p-0 focus-visible:ring-0"
-                                                />
-                                            )}
-                                        />
+                                         {field.value}
                                         <button type="button" onClick={() => remove(index)} className="rounded-full hover:bg-muted-foreground/20 p-0.5">
                                            <Trash2 className="h-3 w-3" />
                                         </button>

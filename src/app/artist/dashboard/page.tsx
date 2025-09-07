@@ -2,46 +2,27 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Artist } from '@/types';
-import { artists as initialArtists } from '@/lib/data';
+import type { Artist, Booking } from '@/types';
 import { DollarSign, BarChart, Users, Star } from 'lucide-react';
 
-export default function ArtistDashboardPage() {
-    const router = useRouter();
-    const [artist, setArtist] = React.useState<Artist | null>(null);
+interface ArtistDashboardPageProps {
+    artist: Artist;
+    bookings: Booking[];
+}
 
-    React.useEffect(() => {
-        const isArtistAuthenticated = localStorage.getItem('isArtistAuthenticated');
-        const artistId = localStorage.getItem('artistId');
-
-        if (isArtistAuthenticated !== 'true' || !artistId) {
-            router.push('/artist/login');
-            return;
-        }
-        
-        const localArtists: Artist[] = JSON.parse(localStorage.getItem('artists') || '[]');
-        const allArtists: Artist[] = [...initialArtists, ...localArtists.filter(la => !initialArtists.some(ia => ia.id === la.id))];
-
-        const currentArtist = allArtists.find((a: Artist) => a.id === artistId);
-        
-        if (currentArtist) {
-            setArtist(currentArtist);
-        } else {
-            router.push('/artist/login');
-        }
-    }, [router]);
+export default function ArtistDashboardPage({ artist, bookings }: ArtistDashboardPageProps) {
+    
+    // Mock data for dashboard widgets
+    const completedBookings = bookings.filter(b => b.status === 'Completed');
+    const totalRevenue = completedBookings.reduce((sum, b) => sum + b.amount, 0);
+    const totalBookings = bookings.length;
+    const averageRating = artist.rating;
+    const upcomingBookings = bookings.filter(b => b.status === 'Confirmed' && new Date(b.date) > new Date()).length;
 
     if (!artist) {
         return <div className="flex items-center justify-center min-h-full">Loading Dashboard...</div>;
     }
-
-    // Mock data for dashboard widgets
-    const totalRevenue = 52350;
-    const totalBookings = 12;
-    const averageRating = 4.9;
-    const upcomingBookings = 3;
 
     return (
         <div className="space-y-6">
@@ -94,7 +75,6 @@ export default function ArtistDashboardPage() {
                     </CardContent>
                 </Card>
             </div>
-            {/* We can add charts or recent activity feeds here in the future */}
         </div>
     )
 }

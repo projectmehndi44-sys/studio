@@ -2,8 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import type { Artist, Booking, Notification } from '@/types';
+import type { Booking, Notification } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -17,10 +16,17 @@ const allBookings: Booking[] = [
     { id: 'book_06', artistId: '4', customerName: 'Kavita Singh', customerContact: '9876543215', serviceAddress: '987, Cyber City, Gurgaon', date: new Date('2024-08-15'), service: 'Minimalist Mehndi', amount: 2200, status: 'Pending Approval' },
 ];
 
-function NotificationCard({ notification }: { notification: Notification }) {
+interface NotificationCardProps {
+    notification: Notification;
+    onMarkAsRead: (id: string) => void;
+}
+
+function NotificationCard({ notification, onMarkAsRead }: NotificationCardProps) {
     const booking = allBookings.find(b => b.id === notification.bookingId);
     return (
-        <div className={`p-4 rounded-lg border-l-4 ${notification.isRead ? 'bg-muted/50 border-transparent' : 'bg-primary/10 border-primary'}`}>
+        <div 
+            onClick={() => !notification.isRead && onMarkAsRead(notification.id)}
+            className={`p-4 rounded-lg border-l-4 transition-colors ${notification.isRead ? 'bg-muted/50 border-transparent' : 'bg-primary/10 border-primary cursor-pointer hover:bg-primary/20'}`}>
             <div className="flex justify-between items-start">
                 <div>
                     <h4 className="font-bold">{notification.title}</h4>
@@ -40,33 +46,32 @@ function NotificationCard({ notification }: { notification: Notification }) {
     )
 }
 
-export default function ArtistNotificationsPage() {
-    const router = useRouter();
-    const [artist, setArtist] = React.useState<Artist | null>(null);
-    const [notifications, setNotifications] = React.useState<Notification[]>([]);
-     const [artistId, setArtistId] = React.useState<string|null>(null);
+interface ArtistNotificationsPageProps {
+    notifications: Notification[];
+    setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
+    artistId: string;
+    setUnreadCount: React.Dispatch<React.SetStateAction<number>>;
+}
 
-    React.useEffect(() => {
-        const isArtistAuthenticated = localStorage.getItem('isArtistAuthenticated');
-        const currentArtistId = localStorage.getItem('artistId');
-        setArtistId(currentArtistId);
+export default function ArtistNotificationsPage({ notifications, setNotifications, artistId, setUnreadCount }: ArtistNotificationsPageProps) {
 
-        if (isArtistAuthenticated !== 'true' || !currentArtistId) {
-            router.push('/artist/login');
-        } else {
-             const allNotifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-             const artistNotifications = allNotifications.filter((n: Notification) => n.artistId === currentArtistId);
-             setNotifications(artistNotifications);
-        }
-    }, [router]);
+    const updateNotifications = (updated: Notification[]) => {
+        const allNotifications: Notification[] = JSON.parse(localStorage.getItem('notifications') || '[]');
+        const otherArtistsNotifications = allNotifications.filter(n => n.artistId !== artistId);
+        localStorage.setItem('notifications', JSON.stringify([...updated, ...otherArtistsNotifications]));
+
+        setNotifications(updated);
+        setUnreadCount(updated.filter(n => !n.isRead).length);
+    }
+    
+    const markOneAsRead = (id: string) => {
+        const updated = notifications.map(n => n.id === id ? { ...n, isRead: true } : n);
+        updateNotifications(updated);
+    }
 
     const markAllAsRead = () => {
-        const allNotifications: Notification[] = JSON.parse(localStorage.getItem('notifications') || '[]');
-        const updatedNotifications = allNotifications.map((n: Notification) => 
-            n.artistId === artistId ? { ...n, isRead: true } : n
-        );
-        localStorage.setItem('notifications', JSON.stringify(updatedNotifications));
-        setNotifications(updatedNotifications.filter((n: Notification) => n.artistId === artistId));
+        const updated = notifications.map(n => ({...n, isRead: true}));
+        updateNotifications(updated);
     };
 
     return (
@@ -81,7 +86,7 @@ export default function ArtistNotificationsPage() {
             <CardContent className="space-y-4">
                 {notifications.length > 0 ? (
                     notifications.map(notif => (
-                        <NotificationCard key={notif.id} notification={notif} />
+                        <NotificationCard key={notif.id} notification={notif} onMarkAsRead={markOneAsRead} />
                     ))
                 ) : (
                     <p className="text-muted-foreground text-center py-8">You have no new notifications.</p>

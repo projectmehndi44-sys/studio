@@ -2,53 +2,32 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import type { Artist, Booking } from '@/types';
-import { artists as initialArtists } from '@/lib/data';
+import type { Booking } from '@/types';
 
-// Mock data that would be fetched for the logged-in artist
-const allBookings: Booking[] = [
-    { id: 'book_01', artistId: '1', customerName: 'Priya Patel', customerContact: '9876543210', serviceAddress: '123, Rose Villa, Bandra West, Mumbai', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed' },
-    { id: 'book_04', artistId: '1', customerName: 'Meera Iyer', customerContact: '9876543213', serviceAddress: '321, Lakeview, Powai, Mumbai', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed' },
-    { id: 'book_07', artistId: '1', customerName: 'Neha Desai', customerContact: '9876543216', serviceAddress: '555, Juhu Beach, Mumbai', date: new Date('2024-08-20'), service: 'Bridal Package', amount: 9500, status: 'Confirmed' },
-    { id: 'book_08', artistId: '2', customerName: 'Anika Verma', customerContact: '9876543217', serviceAddress: '777, CP, New Delhi', date: new Date('2024-08-22'), service: 'Reception Makeup', amount: 6000, status: 'Confirmed' },
-];
+interface ArtistBookingsPageProps {
+    bookings: Booking[];
+    setBookings: React.Dispatch<React.SetStateAction<Booking[]>>;
+}
 
-
-export default function ArtistBookingsPage() {
-    const router = useRouter();
+export default function ArtistBookingsPage({ bookings, setBookings }: ArtistBookingsPageProps) {
     const { toast } = useToast();
-    const [artist, setArtist] = React.useState<Artist | null>(null);
-    const [bookings, setBookings] = React.useState<Booking[]>([]);
-
-    React.useEffect(() => {
-        const isArtistAuthenticated = localStorage.getItem('isArtistAuthenticated');
-        const artistId = localStorage.getItem('artistId');
-
-        if (isArtistAuthenticated !== 'true' || !artistId) {
-            router.push('/artist/login');
-            return;
-        }
-
-        const localArtists: Artist[] = JSON.parse(localStorage.getItem('artists') || '[]');
-        const allArtists: Artist[] = [...initialArtists, ...localArtists.filter(la => !initialArtists.some(ia => ia.id === la.id))];
-        const currentArtist = allArtists.find(a => a.id === artistId);
-        setArtist(currentArtist || null);
-
-        const localBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || '[]');
-        const artistBookings = [...allBookings, ...localBookings].filter(b => b.artistId === artistId);
-        setBookings(artistBookings);
-
-    }, [router]);
 
     const handleStatusUpdate = (bookingId: string, status: 'Confirmed' | 'Completed') => {
-        // This is a mock function. In a real app, this would be a server action.
-        setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status } : b));
+        // In a real app, this would be a server action.
+        const updatedBookings = bookings.map(b => b.id === bookingId ? { ...b, status } : b);
+        
+        // Persist to localStorage to simulate backend
+        const allBookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+        const newAllBookings = allBookings.map((b: Booking) => b.id === bookingId ? { ...b, status } : b);
+        localStorage.setItem('bookings', JSON.stringify(newAllBookings));
+
+        setBookings(updatedBookings);
+        
         toast({
             title: "Booking Updated",
             description: `Booking #${bookingId} has been marked as ${status}.`
@@ -64,10 +43,6 @@ export default function ArtistBookingsPage() {
             default: return 'outline';
         }
     };
-
-     if (!artist) {
-        return <div className="flex items-center justify-center min-h-full">Loading Bookings...</div>;
-    }
 
     return (
         <Card>
