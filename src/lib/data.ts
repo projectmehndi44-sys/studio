@@ -1,9 +1,4 @@
 
-
-
-
-
-
 import type { Artist, Booking, Customer, ServicePackage, Promotion, Review } from '@/types';
 
 export const artists: Artist[] = [
@@ -171,26 +166,6 @@ export const artists: Artist[] = [
     unavailableDates: [],
   },
   {
-    id: 'abhi@gmail.com',
-    name: 'Abhi',
-    email: 'abhi@gmail.com',
-    phone: '9999999999',
-    password: '123456',
-    profilePicture: 'https://picsum.photos/200/200?random=9',
-    workImages: [
-      'https://picsum.photos/600/400?random=91',
-      'https://picsum.photos/600/400?random=92',
-      'https://picsum.photos/600/400?random=93',
-    ],
-    services: ['mehndi', 'makeup'],
-    location: 'Mumbai, India',
-    charge: 4000,
-    charges: { mehndi: 2000, makeup: 2000 },
-    rating: 4.8,
-    styleTags: ['modern', 'fusion', 'party'],
-    unavailableDates: [],
-  },
-  {
     id: '9',
     name: 'Rohan Sharma',
     email: 'rohan.sharma@example.com',
@@ -228,6 +203,27 @@ export const artists: Artist[] = [
     rating: 4.8,
     styleTags: ['destination wedding', 'candid', 'natural'],
     unavailableDates: [],
+  },
+  {
+    id: 'abhi@gmail.com',
+    name: 'Abhi',
+    email: 'abhi@gmail.com',
+    phone: '9999999999',
+    password: '123456',
+    profilePicture: 'https://picsum.photos/200/200?random=99',
+    workImages: [
+      'https://picsum.photos/600/400?random=991',
+      'https://picsum.photos/600/400?random=992',
+      'https://picsum.photos/600/400?random=993',
+    ],
+    services: ['mehndi', 'makeup'],
+    location: 'Mumbai, India',
+    charge: 4000,
+    charges: { mehndi: 2000, makeup: 2000 },
+    rating: 4.8,
+    styleTags: ['modern', 'fusion', 'party'],
+    unavailableDates: [],
+    reviews: []
   }
 ];
 
