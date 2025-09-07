@@ -28,7 +28,6 @@ import {
   LogIn,
   UserPlus,
   Palette,
-  ShieldCheck,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -85,7 +84,7 @@ export default function Home() {
 
   const [location, setLocation] = React.useState('');
   const [serviceType, setServiceType] = React.useState('all');
-  const [priceRange, setPriceRange] = React.useState([10000]);
+  const [priceRange, setPriceRange] = React.useState([20000]);
   const [availabilityDate, setAvailabilityDate] = React.useState<
     Date | undefined
   >();
@@ -147,7 +146,7 @@ export default function Home() {
   }, [isCustomerLoggedIn]);
 
 
-  const applyFilters = () => {
+  const applyFilters = React.useCallback(() => {
     if (!isCustomerLoggedIn) {
       setFilteredArtists([]);
       return;
@@ -177,17 +176,17 @@ export default function Home() {
     }
 
     setFilteredArtists(artists);
-  };
+  }, [location, serviceType, priceRange, availabilityDate, isCustomerLoggedIn]);
   
   React.useEffect(() => {
     applyFilters();
-  }, [location, serviceType, priceRange, availabilityDate, isCustomerLoggedIn]);
+  }, [applyFilters]);
 
 
   const resetFilters = () => {
     setLocation('');
     setServiceType('all');
-    setPriceRange([10000]);
+    setPriceRange([20000]);
     setAvailabilityDate(undefined);
   };
 

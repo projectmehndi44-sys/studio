@@ -6,10 +6,8 @@ import Link from 'next/link';
 import {
   Sparkles,
   User,
-  Palette,
   ShieldCheck,
   LogOut,
-  LogIn,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,7 +18,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 
@@ -36,7 +33,6 @@ export function Header({
   customer,
 }: HeaderProps) {
   const router = useRouter();
-  const { toast } = useToast();
 
   return (
     <header className="flex items-center justify-between w-full px-4 md:px-8 py-2 bg-background/80 backdrop-blur-sm sticky top-0 z-40 border-b">
@@ -52,6 +48,7 @@ export function Header({
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
+                   <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${customer?.name}`} alt={customer?.name} />
                   <AvatarFallback>
                     {customer?.name.charAt(0).toUpperCase()}
                   </AvatarFallback>
@@ -86,5 +83,3 @@ export function Header({
     </header>
   );
 }
-
-    

@@ -131,5 +131,3 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
     </Dialog>
   );
 }
-
-    
