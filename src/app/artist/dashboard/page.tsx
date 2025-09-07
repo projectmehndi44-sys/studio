@@ -20,20 +20,23 @@ export default function ArtistDashboardPage({ artist }: ArtistDashboardPageProps
     const [bookings, setBookings] = React.useState<Booking[]>([]);
 
     const fetchArtistData = React.useCallback(() => {
+        if (!artist) return;
         const allBookingsData: Booking[] = JSON.parse(localStorage.getItem('bookings') || JSON.stringify(initialBookings));
         const artistBookings = allBookingsData
             .map(b => ({ ...b, date: new Date(b.date) }))
             .filter(b => b.artistIds.includes(artist.id));
         setBookings(artistBookings);
-    }, [artist.id]);
+    }, [artist]);
 
     React.useEffect(() => {
-        fetchArtistData();
-        window.addEventListener('storage', fetchArtistData);
-        return () => {
-            window.removeEventListener('storage', fetchArtistData);
-        };
-    }, [fetchArtistData]);
+        if (artist) {
+            fetchArtistData();
+            window.addEventListener('storage', fetchArtistData);
+            return () => {
+                window.removeEventListener('storage', fetchArtistData);
+            };
+        }
+    }, [artist, fetchArtistData]);
     
     if (!artist || !bookings) {
         return <div className="flex items-center justify-center min-h-full">Loading Dashboard...</div>;
