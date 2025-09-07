@@ -137,9 +137,9 @@ export default function AdminPage() {
         
         // Add to approved artists list
         const newArtist: Artist = {
-            id: artistToApprove.id,
+            id: artistToApprove.id, // Using email as a unique ID for this prototype
             name: artistToApprove.name,
-            email: artistToApprove.email, // Make sure email is carried over
+            email: artistToApprove.email, 
             profilePicture: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 100)}`,
             workImages: [
                 `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
@@ -163,7 +163,7 @@ export default function AdminPage() {
 
         toast({
             title: "Artist Approved",
-            description: `A notification has been sent to ${artistToApprove.name}'s app, email, and phone, informing them of the approval. They can now log in.`,
+            description: `Welcome! A notification has been sent to ${artistToApprove.name}'s app, email, and phone, informing them of the approval. They can now log in.`,
         });
     };
 
