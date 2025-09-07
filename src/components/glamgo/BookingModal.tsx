@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -16,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
-import { Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, DollarSign } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -89,6 +90,11 @@ export function BookingModal({ artist, isOpen, onOpenChange }: BookingModalProps
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto px-2">
+            <div className="flex items-center justify-between p-2 rounded-lg bg-muted">
+                <span className="font-semibold text-muted-foreground">Base Charge</span>
+                <span className="font-bold text-lg text-primary flex items-center"><DollarSign className="w-4 h-4 mr-1"/>₹{artist.charge.toLocaleString()}</span>
+            </div>
+
              <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">
                 Name

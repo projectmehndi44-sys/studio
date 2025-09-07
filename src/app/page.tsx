@@ -268,14 +268,14 @@ export default function Home() {
                       <div className="flex items-center gap-4">
                         <Slider
                           id="price"
-                          max={10000}
+                          max={20000}
                           min={500}
                           step={500}
                           value={priceRange}
                           onValueChange={setPriceRange}
                         />
                         <span className="text-sm font-medium text-foreground/80 w-24 text-right">
-                          ₹{priceRange[0]}
+                          ₹{priceRange[0].toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -428,7 +428,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
-
-    

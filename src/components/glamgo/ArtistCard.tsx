@@ -1,3 +1,4 @@
+
 import type { Artist } from '@/types';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,7 +57,7 @@ export function ArtistCard({ artist, onBookingRequest }: ArtistCardProps) {
         <div className="flex flex-col">
             <div className="flex items-center text-lg font-bold text-primary">
                 <DollarSign className="w-4 h-4 mr-1" />
-                <span>{artist.charge}</span>
+                <span>₹{artist.charge.toLocaleString()}</span>
             </div>
             <div className="flex items-center text-amber-500">
                 <Star className="w-4 h-4 mr-1 fill-current" />

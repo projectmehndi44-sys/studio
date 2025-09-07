@@ -18,7 +18,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { X, Trash2, Upload } from 'lucide-react';
+import { Trash2, Upload } from 'lucide-react';
 import NextImage from 'next/image';
 
 
@@ -41,6 +41,7 @@ export default function ArtistProfilePage() {
     const router = useRouter();
     const { toast } = useToast();
     const [artist, setArtist] = React.useState<Artist | null>(null);
+    const [tagInput, setTagInput] = React.useState('');
     
     const form = useForm<ProfileFormValues>({
         resolver: zodResolver(profileSchema),
@@ -150,6 +151,14 @@ export default function ArtistProfilePage() {
             toast({ title: "Profile picture updated!" });
         }
     };
+    
+    const handleAddTag = () => {
+        if (tagInput.trim() !== '') {
+            append({ value: tagInput.trim() });
+            setTagInput('');
+        }
+    };
+
 
     if (!artist) {
         return <div className="flex items-center justify-center min-h-full">Loading Profile...</div>;
@@ -245,33 +254,30 @@ export default function ArtistProfilePage() {
                      <Card>
                         <CardHeader><CardTitle>Style Tags</CardTitle><CardDescription>Add tags that describe your work (e.g., 'bridal', 'minimalist').</CardDescription></CardHeader>
                         <CardContent className="space-y-4">
-                            {fields.map((field, index) => (
-                                <div key={field.id} className="flex items-center gap-2">
-                                    <FormField
-                                        control={form.control}
-                                        name={`styleTags.${index}.value`}
-                                        render={({ field }) => (
-                                            <FormItem className="flex-1">
-                                                <FormControl>
-                                                    <Input {...field} placeholder="e.g. Bridal"/>
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            ))}
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => append({ value: '' })}
-                            >
-                                Add Tag
-                            </Button>
+                            <div className="flex items-center gap-2">
+                                <Input 
+                                    value={tagInput}
+                                    onChange={(e) => setTagInput(e.target.value)}
+                                    placeholder="Add a new tag"
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            handleAddTag();
+                                        }
+                                    }}
+                                />
+                                <Button type="button" onClick={handleAddTag}>Add Tag</Button>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                                {fields.map((field, index) => (
+                                    <Badge key={field.id} variant="secondary" className="flex items-center gap-1">
+                                        {field.value}
+                                        <button type="button" onClick={() => remove(index)} className="rounded-full hover:bg-muted-foreground/20 p-0.5">
+                                           <Trash2 className="h-3 w-3" />
+                                        </button>
+                                    </Badge>
+                                ))}
+                             </div>
                         </CardContent>
                     </Card>
 
