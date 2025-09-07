@@ -1,5 +1,6 @@
 
 
+
 export type ArtistPackage = {
   id: string;
   name: string;
@@ -19,7 +20,11 @@ export type Artist = {
   workImages: string[];
   services: ('mehndi' | 'makeup')[];
   location: string;
-  charge: number;
+  charges: {
+      mehndi?: number;
+      makeup?: number;
+  };
+  charge: number; // Keep for backward compatibility, but favor `charges`
   rating: number;
   styleTags: string[];
   unavailableDates?: string[]; // ISO date strings

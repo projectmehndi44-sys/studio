@@ -14,11 +14,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Slider } from '@/components/ui/slider';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { Trash2, Upload, UserCircle, Briefcase, Tag, Lock, Image as ImageIcon } from 'lucide-react';
+import { Trash2, Upload, UserCircle, Briefcase, Tag, Lock, Image as ImageIcon, DollarSign } from 'lucide-react';
 import NextImage from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -28,7 +26,10 @@ import { useArtistPortal } from '../layout';
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters."),
   location: z.string().min(2, "Location is required."),
-  charge: z.number().min(0),
+  charges: z.object({
+    mehndi: z.coerce.number().min(0).optional(),
+    makeup: z.coerce.number().min(0).optional(),
+  }),
   services: z.array(z.string()).min(1, "At least one service must be selected."),
   styleTags: z.array(z.object({ value: z.string().min(1, "Tag cannot be empty.") })),
   password: z.string().optional().or(z.literal('')),
@@ -36,6 +37,13 @@ const profileSchema = z.object({
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
+}).refine(data => {
+    if (data.services.includes('mehndi') && (data.charges.mehndi === undefined || data.charges.mehndi <= 0)) return false;
+    if (data.services.includes('makeup') && (data.charges.makeup === undefined || data.charges.makeup <= 0)) return false;
+    return true;
+}, {
+    message: "A base price is required for each selected service.",
+    path: ["charges"],
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -51,7 +59,10 @@ export default function ArtistProfilePage() {
         defaultValues: {
             name: '',
             location: '',
-            charge: 0,
+            charges: {
+                mehndi: 0,
+                makeup: 0,
+            },
             services: [],
             styleTags: [],
             password: '',
@@ -63,6 +74,8 @@ export default function ArtistProfilePage() {
         control: form.control,
         name: "styleTags"
     });
+
+    const watchServices = form.watch('services');
 
     const getArtists = (): Artist[] => {
          const storedArtists = localStorage.getItem('artists');
@@ -89,7 +102,7 @@ export default function ArtistProfilePage() {
             form.reset({
                 name: artist.name,
                 location: artist.location,
-                charge: artist.charge,
+                charges: artist.charges,
                 services: artist.services,
                 styleTags: artist.styleTags.map(tag => ({ value: tag })),
             });
@@ -113,7 +126,7 @@ export default function ArtistProfilePage() {
             ...allArtists[artistIndex],
             name: data.name,
             location: data.location,
-            charge: data.charge,
+            charges: data.charges,
             services: data.services as ('mehndi' | 'makeup')[],
             styleTags: data.styleTags.map(tag => tag.value),
         };
@@ -260,30 +273,54 @@ export default function ArtistProfilePage() {
                                 <AccordionContent>
                                     <CardContent className="space-y-6 pt-2">
                                         <FormField control={form.control} name="services" render={() => (
-                                            <FormItem><FormLabel>Services Offered</FormLabel>
+                                            <FormItem>
+                                                <FormLabel>Services Offered</FormLabel>
                                                 <div className="flex gap-4 items-center">
                                                     <FormField control={form.control} name="services" render={({ field }) => (
                                                         <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                                            <FormControl><Checkbox checked={field.value?.includes('mehndi')} onCheckedChange={(checked) => { return checked ? field.onChange([...field.value, 'mehndi']) : field.onChange(field.value?.filter(v => v !== 'mehndi')) }} /></FormControl>
-                                                            <FormLabel className="font-normal">Mehndi</FormLabel>
+                                                            <FormControl><input type="checkbox" checked={field.value?.includes('mehndi')} onChange={(e) => { field.onChange(e.target.checked ? [...field.value, 'mehndi'] : field.value?.filter(v => v !== 'mehndi')) }} className="hidden" id="service-mehndi"/></FormControl>
+                                                            <Label htmlFor="service-mehndi" className="flex items-center gap-2 cursor-pointer rounded-md border p-2 hover:bg-muted/50 data-[state=checked]:bg-accent/20 data-[state=checked]:border-accent"><input type="checkbox" className="h-4 w-4 accent-primary" checked={field.value?.includes('mehndi')} readOnly/> Mehndi</Label>
                                                         </FormItem>
                                                     )} />
-                                                    <FormField control={form.control} name="services" render={({ field }) => (
+                                                     <FormField control={form.control} name="services" render={({ field }) => (
                                                         <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                                            <FormControl><Checkbox checked={field.value?.includes('makeup')} onCheckedChange={(checked) => { return checked ? field.onChange([...field.value, 'makeup']) : field.onChange(field.value?.filter(v => v !== 'makeup')) }} /></FormControl>
-                                                            <FormLabel className="font-normal">Makeup</FormLabel>
+                                                            <FormControl><input type="checkbox" checked={field.value?.includes('makeup')} onChange={(e) => { field.onChange(e.target.checked ? [...field.value, 'makeup'] : field.value?.filter(v => v !== 'makeup')) }} className="hidden" id="service-makeup" /></FormControl>
+                                                            <Label htmlFor="service-makeup" className="flex items-center gap-2 cursor-pointer rounded-md border p-2 hover:bg-muted/50 data-[state=checked]:bg-accent/20 data-[state=checked]:border-accent"><input type="checkbox" className="h-4 w-4 accent-primary" checked={field.value?.includes('makeup')} readOnly /> Makeup</Label>
                                                         </FormItem>
                                                     )} />
                                                 </div>
                                                 <FormMessage />
                                             </FormItem>
                                         )} />
-                                        <FormField control={form.control} name="charge" render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Base Charge (per session): ₹{field.value?.toLocaleString()}</FormLabel>
-                                                <FormControl><Slider min={500} max={20000} step={500} value={[field.value]} onValueChange={(vals) => field.onChange(vals[0])} /></FormControl>
-                                            </FormItem>
-                                        )} />
+                                        
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            {watchServices.includes('mehndi') && (
+                                                 <FormField control={form.control} name="charges.mehndi" render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Base Price for Mehndi</FormLabel>
+                                                        <div className="relative">
+                                                            <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                            <FormControl><Input type="number" placeholder="2500" {...field} className="pl-8" /></FormControl>
+                                                        </div>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )} />
+                                            )}
+                                           {watchServices.includes('makeup') && (
+                                                <FormField control={form.control} name="charges.makeup" render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Base Price for Makeup</FormLabel>
+                                                        <div className="relative">
+                                                            <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                            <FormControl><Input type="number" placeholder="5000" {...field} className="pl-8" /></FormControl>
+                                                        </div>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )} />
+                                          )}
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">Note: Your base price should be inclusive of 18% GST.</p>
+                                        
                                     </CardContent>
                                 </AccordionContent>
                             </Card>

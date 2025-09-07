@@ -58,11 +58,12 @@ export default function PayoutManagementPage() {
             });
         });
 
-        // Calculate fees and net payout
+        // Calculate fees and net payout based on new logic
         Object.values(payoutMap).forEach(payout => {
-            payout.platformFees = payout.grossRevenue * platformFeePercentage;
-            payout.gst = payout.grossRevenue * 0.18; // GST on artist's gross revenue
-            payout.netPayout = payout.grossRevenue - payout.platformFees; // We'll assume GST is handled separately and not deducted from payout
+            const taxableAmount = payout.grossRevenue / 1.18;
+            payout.gst = payout.grossRevenue - taxableAmount;
+            payout.platformFees = taxableAmount * platformFeePercentage;
+            payout.netPayout = taxableAmount - payout.platformFees;
         });
 
         setPayouts(Object.values(payoutMap));
@@ -137,7 +138,7 @@ export default function PayoutManagementPage() {
                         <IndianRupee className="w-6 h-6 text-primary"/> Payout Management
                     </CardTitle>
                     <CardDescription>
-                        Calculate and manage payouts for artists based on their completed bookings.
+                        Calculate and manage payouts for artists based on their completed bookings. Base prices are inclusive of 18% GST.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -165,8 +166,8 @@ export default function PayoutManagementPage() {
                                                 <TableCell className="font-medium">{payout.artistName}</TableCell>
                                                 <TableCell>{payout.totalBookings}</TableCell>
                                                 <TableCell>₹{payout.grossRevenue.toLocaleString()}</TableCell>
-                                                <TableCell>- ₹{payout.platformFees.toLocaleString()}</TableCell>
-                                                <TableCell className="font-bold text-green-600">₹{payout.netPayout.toLocaleString()}</TableCell>
+                                                <TableCell>- ₹{payout.platformFees.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
+                                                <TableCell className="font-bold text-green-600">₹{payout.netPayout.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
                                                 <TableCell className="text-right space-x-2">
                                                     <Button onClick={() => handleMarkAsPaid(payout)}>Mark as Paid</Button>
                                                     <DropdownMenu>
@@ -220,7 +221,7 @@ export default function PayoutManagementPage() {
                                                 <TableCell>{new Date(history.paymentDate).toLocaleString()}</TableCell>
                                                 <TableCell className="font-medium">{history.artistName}</TableCell>
                                                 <TableCell>{history.totalBookings}</TableCell>
-                                                <TableCell>₹{history.netPayout.toLocaleString()}</TableCell>
+                                                <TableCell>₹{history.netPayout.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
                                                 <TableCell className="text-right">
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>

@@ -1,4 +1,5 @@
 
+
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -33,7 +34,8 @@ export const exportToPdf = (data: ArtistExportData) => {
             ['Email', artist.email || 'N/A'],
             ['Location', artist.location],
             ['Services', artist.services.join(', ')],
-            ['Base Charge', `₹${artist.charge}`],
+            ['Mehndi Base Charge', `₹${artist.charges.mehndi?.toLocaleString() || 'N/A'}`],
+            ['Makeup Base Charge', `₹${artist.charges.makeup?.toLocaleString() || 'N/A'}`],
             ['Rating', `${artist.rating} / 5`],
         ],
         theme: 'striped',
@@ -105,7 +107,8 @@ export const exportToExcel = (data: ArtistExportData[], filename = 'artists-expo
                 Email: artist.email || 'N/A',
                 Location: artist.location,
                 Services: artist.services.join(', '),
-                Charge: artist.charge,
+                'Mehndi Base Charge': artist.charges.mehndi,
+                'Makeup Base Charge': artist.charges.makeup,
                 Rating: artist.rating,
                 StyleTags: artist.styleTags.join(', '),
             }
@@ -156,7 +159,8 @@ export const exportPayoutToPdf = (payout: Payout | PayoutHistory) => {
   const doc = new jsPDF();
   const isHistory = 'paymentDate' in payout;
   const paymentDate = isHistory ? new Date(payout.paymentDate).toLocaleString() : 'N/A';
-  const platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10');
+
+  const taxableAmount = payout.grossRevenue / 1.18;
 
   doc.setFontSize(20);
   doc.text('Payout Summary', 14, 22);
@@ -168,11 +172,12 @@ export const exportPayoutToPdf = (payout: Payout | PayoutHistory) => {
     startY: 45,
     head: [['Description', 'Amount']],
     body: [
-      ['Gross Revenue from Bookings', `₹${payout.grossRevenue.toLocaleString()}`],
+      ['Gross Revenue from Bookings (Incl. GST)', `₹${payout.grossRevenue.toLocaleString()}`],
       ['Total Bookings Included', payout.totalBookings.toString()],
-      { content: 'Deductions', styles: { fontStyle: 'bold' } },
-      [`Platform Fees (${platformFeePercentage}%)`, `- ₹${payout.platformFees.toLocaleString()}`],
-      ['GST on Services (18%)', `- ₹${payout.gst.toLocaleString()}`],
+      { content: 'Breakdown', styles: { fontStyle: 'bold' } },
+      ['Taxable Amount (Pre-GST)', `₹${taxableAmount.toLocaleString(undefined, {maximumFractionDigits: 2})}`],
+      ['GST on Services (18%)', `₹${payout.gst.toLocaleString(undefined, {maximumFractionDigits: 2})}`],
+      ['Platform Fees (on taxable amount)', `- ₹${payout.platformFees.toLocaleString(undefined, {maximumFractionDigits: 2})}`],
     ],
     foot: [
         [{ content: 'Net Payout Amount', styles: { fontStyle: 'bold' } }, { content: `₹${payout.netPayout.toLocaleString()}`, styles: { fontStyle: 'bold' } }],
@@ -193,7 +198,8 @@ export const exportPayoutToPdf = (payout: Payout | PayoutHistory) => {
 export const generateGstInvoice = (payout: Payout | PayoutHistory) => {
     const doc = new jsPDF();
     const gstin = localStorage.getItem('platformGstin') || 'Not Set';
-    const platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10');
+    const taxableAmount = payout.grossRevenue / 1.18;
+    const platformFee = payout.platformFees;
 
     // Invoice Header
     doc.setFontSize(24);
@@ -213,15 +219,14 @@ export const generateGstInvoice = (payout: Payout | PayoutHistory) => {
     doc.text(`Date: ${invoiceDate}`, 196, 66, { align: 'right' });
 
     // Invoice Table
-    const commissionFee = payout.platformFees;
-    const gstOnCommission = commissionFee * 0.18;
-    const totalFee = commissionFee + gstOnCommission;
+    const gstOnCommission = platformFee * 0.18;
+    const totalFee = platformFee + gstOnCommission;
 
     autoTable(doc, {
         startY: 80,
         head: [['#', 'Service Description', 'Taxable Amount', 'GST Rate', 'GST Amount', 'Total']],
         body: [
-            ['1', `Platform Commission Fee (${platformFeePercentage}%)`, `₹${commissionFee.toLocaleString()}`, '18%', `₹${gstOnCommission.toLocaleString(undefined, {minimumFractionDigits: 2})}`, `₹${totalFee.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
+            ['1', `Platform Commission Fee`, `₹${platformFee.toLocaleString()}`, '18%', `₹${gstOnCommission.toLocaleString(undefined, {minimumFractionDigits: 2})}`, `₹${totalFee.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
         ],
         foot: [
             ['', '', '', '', 'Total', `₹${totalFee.toLocaleString(undefined, {minimumFractionDigits: 2})}`]

@@ -1,5 +1,6 @@
 
 
+
 import type { Artist, Booking, Customer, MehndiPackage, Promotion, Review } from '@/types';
 
 export const artists: Artist[] = [
@@ -18,6 +19,7 @@ export const artists: Artist[] = [
     services: ['mehndi'],
     location: 'Mumbai, India',
     charge: 2500,
+    charges: { mehndi: 2500 },
     rating: 4.9,
     styleTags: ['bridal', 'arabic', 'intricate'],
     unavailableDates: [],
@@ -44,6 +46,7 @@ export const artists: Artist[] = [
     services: ['makeup'],
     location: 'Delhi, India',
     charge: 5000,
+    charges: { makeup: 5000 },
     rating: 4.8,
     styleTags: ['glam', 'natural', 'wedding'],
     unavailableDates: [],
@@ -63,6 +66,7 @@ export const artists: Artist[] = [
     services: ['mehndi', 'makeup'],
     location: 'Bangalore, India',
     charge: 7000,
+    charges: { mehndi: 3000, makeup: 4000 },
     rating: 5.0,
     styleTags: ['luxury', 'traditional', 'modern'],
     unavailableDates: [],
@@ -82,6 +86,7 @@ export const artists: Artist[] = [
     services: ['mehndi'],
     location: 'Ahmedabad, India',
     charge: 1800,
+    charges: { mehndi: 1800 },
     rating: 4.7,
     styleTags: ['minimalist', 'floral', 'indian'],
     unavailableDates: [],
@@ -101,6 +106,7 @@ export const artists: Artist[] = [
     services: ['makeup'],
     location: 'Hyderabad, India',
     charge: 4500,
+    charges: { makeup: 4500 },
     rating: 4.9,
     styleTags: ['dewy', 'bold', 'party'],
     unavailableDates: [],
@@ -120,6 +126,7 @@ export const artists: Artist[] = [
     services: ['mehndi', 'makeup'],
     location: 'Pune, India',
     charge: 6500,
+    charges: { mehndi: 3000, makeup: 3500 },
     rating: 4.8,
     styleTags: ['airbrush', 'arabic', 'fusion'],
     unavailableDates: [],
@@ -139,6 +146,7 @@ export const artists: Artist[] = [
     services: ['mehndi'],
     location: 'Kolkata, India',
     charge: 3000,
+    charges: { mehndi: 3000 },
     rating: 4.9,
     styleTags: ['traditional', 'peacock', 'detailed'],
     unavailableDates: [],
@@ -158,6 +166,7 @@ export const artists: Artist[] = [
     services: ['makeup'],
     location: 'Chennai, India',
     charge: 5500,
+    charges: { makeup: 5500 },
     rating: 4.7,
     styleTags: ['south indian', 'bridal', 'temple'],
     unavailableDates: [],
@@ -177,6 +186,7 @@ export const artists: Artist[] = [
     services: ['mehndi', 'makeup'],
     location: 'Mumbai, India',
     charge: 4000,
+    charges: { mehndi: 2000, makeup: 2000 },
     rating: 4.8,
     styleTags: ['modern', 'fusion', 'party'],
     unavailableDates: [],

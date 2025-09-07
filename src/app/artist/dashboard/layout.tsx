@@ -5,7 +5,8 @@ import * as React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Briefcase, Bell, User, LogOut, Palette, CalendarOff, IndianRupee, Package, Star } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { LayoutDashboard, Briefcase, Bell, User, LogOut, Palette, CalendarOff, IndianRupee, Package, Star, PanelLeft } from 'lucide-react';
 import type { Artist, Booking, Notification } from '@/types';
 import { artists as initialArtists, allBookings as initialBookings } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
@@ -41,25 +42,23 @@ export const useArtistPortal = () => {
 };
 
 
-const NavLink = ({ href, pathname, icon: Icon, label }: { href: string; pathname: string; icon: React.ElementType, label: string}) => (
+const NavLink = ({ href, pathname, icon: Icon, label, onClick }: { href: string; pathname: string; icon: React.ElementType, label: string, onClick?: () => void }) => (
     <Link 
         href={href} 
-        className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${pathname.startsWith(href) ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-primary'}`}
+        onClick={onClick}
+        className={cn('flex items-center gap-3 rounded-lg px-3 py-2 transition-all', 
+          pathname === href ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-primary'
+        )}
     >
         <Icon className="h-5 w-5" />
         {label}
     </Link>
 );
 
-const BottomNavLink = ({ href, pathname, icon: Icon, label, unreadCount }: { href: string; pathname: string; icon: React.ElementType, label: string, unreadCount?: number }) => (
-    <Link href={href} className={cn("relative flex flex-col items-center justify-center gap-1 p-2 rounded-md h-full", pathname.startsWith(href) ? 'text-primary bg-primary/10' : 'text-muted-foreground')}>
+const BottomNavLink = ({ href, pathname, icon: Icon, label }: { href: string; pathname: string; icon: React.ElementType, label: string }) => (
+    <Link href={href} className={cn("relative flex flex-col items-center justify-center gap-1 p-2 rounded-md h-full w-full", pathname === href ? 'text-primary bg-primary/10' : 'text-muted-foreground')}>
         <Icon className="h-6 w-6" />
         <span className="text-xs font-medium">{label}</span>
-         {label === 'Notifications' && unreadCount && unreadCount > 0 && (
-            <span className="absolute top-1 right-4 h-4 w-4 rounded-full bg-red-500 text-xs flex items-center justify-center text-white border-2 border-background">
-                {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-        )}
     </Link>
 )
 
@@ -80,6 +79,7 @@ export default function ArtistDashboardLayout({
     const [artistBookings, setArtistBookings] = React.useState<Booking[]>([]);
     const [notifications, setNotifications] = React.useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = React.useState(0);
+    const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
 
     const getArtists = (): Artist[] => {
@@ -152,57 +152,62 @@ export default function ArtistDashboardLayout({
         return <div className="flex items-center justify-center min-h-screen">Loading Artist Portal...</div>;
     }
 
-    const navLinks = [
+    const mainNavLinks = [
         { href: '/artist/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/artist/dashboard/bookings', label: 'Bookings', icon: Briefcase },
-        { href: '/artist/dashboard/packages', label: 'Packages', icon: Package },
         { href: '/artist/dashboard/availability', label: 'Availability', icon: CalendarOff },
-        { href: '/artist/dashboard/payouts', label: 'Payouts', icon: IndianRupee },
-        { href: '/artist/dashboard/reviews', label: 'Reviews', icon: Star },
         { href: '/artist/dashboard/profile', label: 'Profile', icon: User },
     ];
+
+    const sidebarNavLinks = [
+        { href: '/artist/dashboard/packages', label: 'Packages', icon: Package },
+        { href: '/artist/dashboard/payouts', label: 'Payouts', icon: IndianRupee },
+        { href: '/artist/dashboard/reviews', label: 'Reviews', icon: Star },
+        { href: '/artist/dashboard/notifications', label: 'Notifications', icon: Bell },
+    ];
     
-    const bottomNavLinks = [
-        { href: '/artist/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { href: '/artist/dashboard/bookings', label: 'Bookings', icon: Briefcase },
-        { href: '/artist/dashboard/notifications', label: 'Inbox', icon: Bell, unreadCount },
-        { href: '/artist/dashboard/profile', label: 'Profile', icon: User },
-    ]
+    const bottomNavLinks = mainNavLinks;
 
     const getPageTitle = () => {
-        const currentLink = navLinks.find(l => pathname === l.href);
+        const allLinks = [...mainNavLinks, ...sidebarNavLinks];
+        const currentLink = allLinks.find(l => pathname === l.href);
         if (currentLink) return currentLink.label;
         if (pathname.startsWith('/artist/dashboard/notifications')) return 'Notifications';
         return 'Dashboard';
     }
-    
-    const SidebarNav = () => (
-        <div className='flex flex-col h-full'>
-             <div className="flex items-center gap-2 text-2xl font-bold text-primary mb-8 px-4 pt-4">
+
+    const NavContent = () => (
+        <>
+            <div className="flex items-center gap-2 text-2xl font-bold text-primary mb-8 px-4 pt-4">
                 <Palette className="w-8 h-8" />
                 <span>Artist Portal</span>
             </div>
              <nav className="flex flex-col gap-2 text-lg font-medium px-4">
-                {navLinks.map(link => (
-                    <NavLink key={link.href} {...link} pathname={pathname}/>
+                {mainNavLinks.map(link => (
+                    <NavLink key={link.href} {...link} pathname={pathname} onClick={() => setIsSidebarOpen(false)} />
                 ))}
-                 <Link href='/artist/dashboard/notifications' className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${pathname === '/artist/dashboard/notifications' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-primary'}`}>
-                    <Bell className="h-5 w-5" />
-                    Notifications
-                    {unreadCount > 0 && (
-                        <span className="ml-auto h-5 w-5 rounded-full bg-red-500 text-xs flex items-center justify-center text-white">
-                            {unreadCount > 9 ? '9+' : unreadCount}
-                        </span>
-                    )}
-                </Link>
             </nav>
+            <div className="mt-4 pt-4 border-t mx-4">
+                <nav className="flex flex-col gap-2 text-lg font-medium">
+                    {sidebarNavLinks.map(link => (
+                         <NavLink key={link.href} {...link} pathname={pathname} onClick={() => setIsSidebarOpen(false)}>
+                            {link.label === 'Notifications' && unreadCount > 0 && (
+                                <span className="ml-auto h-5 w-5 rounded-full bg-red-500 text-xs flex items-center justify-center text-white">
+                                    {unreadCount > 9 ? '9+' : unreadCount}
+                                </span>
+                            )}
+                        </NavLink>
+                    ))}
+                </nav>
+            </div>
              <div className={cn("mt-auto p-4 border-t border-border")}>
                 <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" /> Logout
                 </Button>
             </div>
-        </div>
+        </>
     );
+
     
     const BottomNav = () => (
          <div className="fixed bottom-0 left-0 right-0 h-16 bg-background border-t shadow-lg md:hidden z-50">
@@ -227,11 +232,27 @@ export default function ArtistDashboardLayout({
     return (
         <ArtistPortalContext.Provider value={contextValue}>
             <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-                <aside className="hidden border-r bg-muted/40 md:block">
-                   <SidebarNav />
+                <aside className="hidden border-r bg-muted/40 md:flex flex-col">
+                   <NavContent />
                 </aside>
                  <div className="flex flex-col">
                      <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+                         <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+                            <SheetTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="shrink-0 md:hidden"
+                                >
+                                    <PanelLeft className="h-5 w-5" />
+                                    <span className="sr-only">Toggle navigation menu</span>
+                                </Button>
+                            </SheetTrigger>
+                            <SheetContent side="left" className="flex flex-col p-0">
+                                <NavContent />
+                            </SheetContent>
+                        </Sheet>
+
                         <div className='flex-1'>
                             <h1 className='font-semibold text-lg'>{getPageTitle()}</h1>
                         </div>
