@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -20,19 +21,24 @@ export default function ArtistPayoutsPage() {
     const platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10') / 100;
 
     const calculatePayouts = React.useCallback(() => {
+        if (!artist) return;
         // Bookings that are completed but not yet paid out
         const pendingPayouts = artistBookings.filter(b => b.status === 'Completed' && !b.paidOut);
         setPayouts(pendingPayouts);
         
         const totalPendingGross = pendingPayouts.reduce((sum, b) => sum + b.amount, 0);
-        setPendingAmount(totalPendingGross * (1 - platformFeePercentage));
+        
+        const taxableAmount = totalPendingGross / 1.18;
+        const platformFee = taxableAmount * platformFeePercentage;
+        setPendingAmount(taxableAmount - platformFee);
+
 
         // Fetch this artist's payout history from localStorage
         const allPayoutHistory: PayoutHistory[] = JSON.parse(localStorage.getItem('payoutHistory') || '[]');
         const artistHistory = allPayoutHistory.filter(p => p.artistId === artist?.id);
         setPayoutHistory(artistHistory.sort((a,b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()));
 
-    }, [artistBookings, artist?.id, platformFeePercentage]);
+    }, [artistBookings, artist, platformFeePercentage]);
 
     React.useEffect(() => {
         calculatePayouts();
@@ -82,7 +88,7 @@ export default function ArtistPayoutsPage() {
                                             </TableBody>
                                         </Table>
                                         <div className="mt-4 text-right font-bold text-lg text-primary">
-                                            Total Pending Payout: ₹{pendingAmount.toLocaleString()}
+                                            Total Pending Payout: ₹{pendingAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                                         </div>
                                     </>
                                 ) : (
@@ -119,7 +125,7 @@ export default function ArtistPayoutsPage() {
                                                 <TableRow key={payout.id}>
                                                     <TableCell>{new Date(payout.paymentDate).toLocaleDateString()}</TableCell>
                                                     <TableCell>{payout.totalBookings}</TableCell>
-                                                    <TableCell>₹{payout.netPayout.toLocaleString()}</TableCell>
+                                                    <TableCell>₹{payout.netPayout.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
                                                     <TableCell><Badge>Paid</Badge></TableCell>
                                                 </TableRow>
                                             ))}

@@ -13,7 +13,6 @@ import { Shield, Home } from 'lucide-react';
 import { teamMembers as initialTeamMembers, TeamMember } from '@/lib/team-data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-
 export default function AdminLoginPage() {
     const router = useRouter();
     const { toast } = useToast();

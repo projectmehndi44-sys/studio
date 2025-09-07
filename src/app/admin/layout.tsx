@@ -36,7 +36,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
 
-
 const NavLink = ({ href, pathname, icon: Icon, label }: { href: string; pathname: string; icon: React.ElementType, label: string }) => (
     <Link
         href={href}
@@ -49,7 +48,6 @@ const NavLink = ({ href, pathname, icon: Icon, label }: { href: string; pathname
         {label}
     </Link>
 );
-
 
 export default function AdminLayout({
     children,
@@ -158,7 +156,7 @@ export default function AdminLayout({
                             <Button variant="secondary" size="icon" className="rounded-full">
                                 <Avatar className='h-8 w-8'>
                                     <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${adminName}`} alt={adminName} />
-                                    <AvatarFallback>{adminName.charAt(0)}</AvatarFallback>
+                                    <AvatarFallback>{adminName ? adminName.charAt(0) : 'A'}</AvatarFallback>
                                 </Avatar>
                                 <span className="sr-only">Toggle user menu</span>
                             </Button>

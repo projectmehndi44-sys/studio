@@ -26,7 +26,8 @@ export default function AccountPage() {
             return;
         }
 
-        const allCustomers: Customer[] = JSON.parse(localStorage.getItem('customers') || JSON.stringify(initialCustomers));
+        const allCustomersData = localStorage.getItem('customers');
+        const allCustomers: Customer[] = allCustomersData ? JSON.parse(allCustomersData) : initialCustomers;
         const currentCustomer = allCustomers.find(c => c.id === customerId);
         setCustomer(currentCustomer || null);
 

@@ -16,9 +16,10 @@ import { AssignArtistModal } from '@/components/glamgo/AssignArtistModal';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
-
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 export default function BookingManagementPage() {
+    useAdminAuth();
     const router = useRouter();
     const { toast } = useToast();
     const [bookings, setBookings] = React.useState<Booking[]>([]);
@@ -26,23 +27,27 @@ export default function BookingManagementPage() {
     const [isAssignModalOpen, setIsAssignModalOpen] = React.useState(false);
     const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
 
-    const fetchData = React.useCallback(() => {
+    const getArtists = React.useCallback((): Artist[] => {
         const storedArtists = localStorage.getItem('artists');
-        setArtists(storedArtists ? JSON.parse(storedArtists) : initialArtists);
+        const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
+        const allArtistsMap = new Map<string, Artist>();
+        initialArtists.forEach(a => allArtistsMap.set(a.id, a));
+        localArtists.forEach(a => allArtistsMap.set(a.id, a));
+        return Array.from(allArtistsMap.values());
+    }, []);
+
+    const fetchData = React.useCallback(() => {
+        setArtists(getArtists());
 
         const storedBookings = localStorage.getItem('bookings');
         setBookings(storedBookings ? JSON.parse(storedBookings).map((b: any) => ({...b, date: new Date(b.date), eventDate: b.eventDate ? new Date(b.eventDate) : new Date(b.date), serviceDates: b.serviceDates.map((d: string) => new Date(d)) })) : initialBookings);
-    }, []);
+    }, [getArtists]);
 
     React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
-        if (isAdminAuthenticated !== 'true') {
-            router.push('/admin/login');
-        }
         fetchData();
         window.addEventListener('storage', fetchData);
         return () => window.removeEventListener('storage', fetchData);
-    }, [router, fetchData]);
+    }, [fetchData]);
     
     const sendNotification = (artistId: string, booking: Booking, title: string, message: string) => {
         const existingNotifications = JSON.parse(localStorage.getItem('notifications') || '[]');
@@ -56,7 +61,6 @@ export default function BookingManagementPage() {
             isRead: false,
         };
         localStorage.setItem('notifications', JSON.stringify([newNotification, ...existingNotifications]));
-        window.dispatchEvent(new Event('storage'));
     };
 
     const updateBookingStatus = (bookingId: string, status: Booking['status'], artistIds?: string[]) => {
@@ -65,8 +69,6 @@ export default function BookingManagementPage() {
             ? { ...b, status, artistIds: artistIds !== undefined ? artistIds : b.artistIds } 
             : b
         );
-        setBookings(updatedBookings);
-        // Persist to localStorage to notify other clients
         localStorage.setItem('bookings', JSON.stringify(updatedBookings));
         window.dispatchEvent(new Event('storage'));
     };
@@ -176,8 +178,6 @@ export default function BookingManagementPage() {
             description: `${assignedArtistIds.length} artist(s) have been assigned to booking ${bookingId}.`,
         });
         
-        // This is a crucial step to make sure other components are aware of the change
-        window.dispatchEvent(new Event('storage'));
     };
 
     const getStatusVariant = (status: Booking['status']) => {
@@ -207,7 +207,7 @@ export default function BookingManagementPage() {
             </TableHeader>
             <TableBody>
                 {filteredBookings.map(booking => {
-                    const assignedArtists = artists.filter(a => booking.artistIds.includes(a.id));
+                    const assignedArtists = artists.filter(a => booking.artistIds && booking.artistIds.includes(a.id));
                     return (
                         <TableRow key={booking.id}>
                             <TableCell className="font-mono text-xs">{booking.id}</TableCell>

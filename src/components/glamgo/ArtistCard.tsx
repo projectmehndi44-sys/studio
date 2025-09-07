@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { IndianRupee, MapPin, Paintbrush, Star } from 'lucide-react';
-import { MehndiIcon, PhotographyIcon } from '@/components/icons';
+import { MakeupIcon, MehndiIcon, PhotographyIcon } from '@/components/icons';
 
 interface ArtistCardProps {
   artist: Artist;
@@ -18,7 +18,7 @@ const getServiceIcon = (service: Artist['services'][number]) => {
         case 'mehndi':
             return <MehndiIcon className="w-3.5 h-3.5" />;
         case 'makeup':
-            return <Paintbrush className="w-3.5 h-3.5" />;
+            return <MakeupIcon className="w-3.5 h-3.5" />;
         case 'photography':
             return <PhotographyIcon className="w-3.5 h-3.5" />;
         default:
@@ -27,6 +27,9 @@ const getServiceIcon = (service: Artist['services'][number]) => {
 }
 
 export function ArtistCard({ artist, onBookingRequest }: ArtistCardProps) {
+  const primaryService = artist.services[0];
+  const baseCharge = artist.charges?.[primaryService] || artist.charge;
+
   return (
     <Card className="overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-2xl hover:border-accent">
       <CardHeader className="p-0">
@@ -70,7 +73,7 @@ export function ArtistCard({ artist, onBookingRequest }: ArtistCardProps) {
         <div className="flex flex-col">
             <div className="flex items-center text-lg font-bold text-primary">
                 <IndianRupee className="w-4 h-4 mr-1" />
-                <span>{(artist.charges?.mehndi || artist.charges?.makeup || artist.charges?.photography || artist.charge).toLocaleString()}</span>
+                <span>{baseCharge.toLocaleString()}</span>
             </div>
             <div className="flex items-center text-amber-500">
                 <Star className="w-4 h-4 mr-1 fill-current" />

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -12,16 +13,19 @@ import { Badge } from '@/components/ui/badge';
 import type { Customer } from '@/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { initialCustomers } from '@/lib/data';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 type CustomerWithStatus = Customer & { status: 'Active' | 'Suspended'; registeredOn: string; };
 
 export default function CustomerManagementPage() {
+    useAdminAuth();
     const router = useRouter();
     const { toast } = useToast();
     const [customers, setCustomers] = React.useState<CustomerWithStatus[]>([]);
 
     const fetchCustomers = React.useCallback(() => {
-        const storedCustomers = JSON.parse(localStorage.getItem('customers') || JSON.stringify(initialCustomers));
+        const storedCustomersData = localStorage.getItem('customers');
+        const storedCustomers = storedCustomersData ? JSON.parse(storedCustomersData) : initialCustomers;
         // Add mock status and registration date for UI
         setCustomers(storedCustomers.map((c: Customer) => ({
             ...c,
@@ -31,15 +35,10 @@ export default function CustomerManagementPage() {
     }, []);
 
     React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
-        if (isAdminAuthenticated !== 'true') {
-            router.push('/admin/login');
-        } else {
-            fetchCustomers();
-            window.addEventListener('storage', fetchCustomers);
-            return () => window.removeEventListener('storage', fetchCustomers);
-        }
-    }, [router, fetchCustomers]);
+        fetchCustomers();
+        window.addEventListener('storage', fetchCustomers);
+        return () => window.removeEventListener('storage', fetchCustomers);
+    }, [fetchCustomers]);
     
     const handleAction = (action: string, customerId: string) => {
         toast({

@@ -111,7 +111,8 @@ export default function Home() {
     // Check for logged-in customer
     const customerId = localStorage.getItem('currentCustomerId');
     if (customerId) {
-        const allCustomers: Customer[] = JSON.parse(localStorage.getItem('customers') || JSON.stringify([]));
+        const storedCustomers = localStorage.getItem('customers');
+        const allCustomers: Customer[] = storedCustomers ? JSON.parse(storedCustomers) : [];
         const currentCustomer = allCustomers.find(c => c.id === customerId);
         if (currentCustomer) {
             setIsCustomerLoggedIn(true);
@@ -145,7 +146,7 @@ export default function Home() {
 
   React.useEffect(() => {
     const packageIds = searchParams.get('packages')?.split(',') || [];
-    if (packageIds.length > 0) {
+    if (packageIds.length > 0 && allPackages.length > 0) {
       const selectedPackages = allPackages.filter(p => packageIds.includes(p.id));
       setCart(selectedPackages);
     }
@@ -234,7 +235,8 @@ export default function Home() {
         );
     }
 
-    currentArtists = currentArtists.filter((artist) => (artist.charges?.[serviceType as 'mehndi' | 'makeup' | 'photography'] || artist.charge) <= priceRange[0]);
+    const priceKey = serviceType as keyof Artist['charges'];
+    currentArtists = currentArtists.filter((artist) => (artist.charges?.[priceKey] || artist.charge) <= priceRange[0]);
 
     setFilteredArtists(currentArtists);
   }, [location, serviceType, priceRange, artists, selectedStyles]);

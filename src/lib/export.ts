@@ -34,8 +34,8 @@ export const exportToPdf = (data: ArtistExportData) => {
             ['Email', artist.email || 'N/A'],
             ['Location', artist.location],
             ['Services', artist.services.join(', ')],
-            ['Mehndi Base Charge', `₹${artist.charges.mehndi?.toLocaleString() || 'N/A'}`],
-            ['Makeup Base Charge', `₹${artist.charges.makeup?.toLocaleString() || 'N/A'}`],
+            ['Mehndi Base Charge', `₹${artist.charges?.mehndi?.toLocaleString() || 'N/A'}`],
+            ['Makeup Base Charge', `₹${artist.charges?.makeup?.toLocaleString() || 'N/A'}`],
             ['Rating', `${artist.rating} / 5`],
         ],
         theme: 'striped',
@@ -107,8 +107,8 @@ export const exportToExcel = (data: ArtistExportData[], filename = 'artists-expo
                 Email: artist.email || 'N/A',
                 Location: artist.location,
                 Services: artist.services.join(', '),
-                'Mehndi Base Charge': artist.charges.mehndi,
-                'Makeup Base Charge': artist.charges.makeup,
+                'Mehndi Base Charge': artist.charges?.mehndi,
+                'Makeup Base Charge': artist.charges?.makeup,
                 Rating: artist.rating,
                 StyleTags: artist.styleTags.join(', '),
             }
@@ -256,10 +256,13 @@ export const exportTransactionsToPdf = (transactions: Transaction[]) => {
 
   doc.setFontSize(22);
   doc.text('Transaction Report', 14, 20);
-  doc.setFontSize(12);
-  doc.text(`Date Range: ${transactions[transactions.length-1].date.toLocaleDateString()} - ${transactions[0].date.toLocaleDateString()}`, 14, 28);
-  doc.text(`Total Revenue: +₹${totalRevenue.toLocaleString()}`, 14, 34);
-  doc.text(`Total Payouts: -₹${Math.abs(totalPayouts).toLocaleString()}`, 14, 40);
+  
+  if (transactions.length > 0) {
+      doc.setFontSize(12);
+      doc.text(`Date Range: ${transactions[transactions.length-1].date.toLocaleDateString()} - ${transactions[0].date.toLocaleDateString()}`, 14, 28);
+      doc.text(`Total Revenue: +₹${totalRevenue.toLocaleString()}`, 14, 34);
+      doc.text(`Total Payouts: -₹${Math.abs(totalPayouts).toLocaleString()}`, 14, 40);
+  }
 
   autoTable(doc, {
     startY: 50,
@@ -274,11 +277,13 @@ export const exportTransactionsToPdf = (transactions: Transaction[]) => {
     headStyles: { fillColor: '#34495e' },
     didDrawCell: (data) => {
         if (data.section === 'body' && data.column.index === 3) {
-            const text = data.cell.text[0];
-            if (text.startsWith('+')) {
-                doc.setTextColor(39, 174, 96); // green
-            } else if (text.startsWith('-')) {
-                 doc.setTextColor(192, 57, 43); // red
+            if (data.cell.text && data.cell.text[0]) {
+                const text = data.cell.text[0];
+                if (text.startsWith('+')) {
+                    doc.setTextColor(39, 174, 96); // green
+                } else if (text.startsWith('-')) {
+                    doc.setTextColor(192, 57, 43); // red
+                }
             }
         }
     }
