@@ -13,13 +13,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { X, Image as ImageIcon, Trash2, Upload } from 'lucide-react';
+import { X, Trash2, Upload } from 'lucide-react';
 import NextImage from 'next/image';
 
 
@@ -246,24 +245,33 @@ export default function ArtistProfilePage() {
                      <Card>
                         <CardHeader><CardTitle>Style Tags</CardTitle><CardDescription>Add tags that describe your work (e.g., 'bridal', 'minimalist').</CardDescription></CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex flex-wrap gap-2">
                             {fields.map((field, index) => (
-                                <div key={field.id} className="flex items-center gap-1 bg-secondary text-secondary-foreground rounded-full px-3 py-1 text-sm">
-                                    <span>{form.watch(`styleTags.${index}.value`)}</span>
-                                    <Button type="button" variant="ghost" size="icon" className="h-5 w-5 rounded-full" onClick={() => remove(index)}>
-                                        <X className="h-3 w-3" />
+                                <div key={field.id} className="flex items-center gap-2">
+                                    <FormField
+                                        control={form.control}
+                                        name={`styleTags.${index}.value`}
+                                        render={({ field }) => (
+                                            <FormItem className="flex-1">
+                                                <FormControl>
+                                                    <Input {...field} placeholder="e.g. Bridal"/>
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
+                                        <X className="h-4 w-4" />
                                     </Button>
                                 </div>
                             ))}
-                            </div>
-                             <Button type="button" variant="outline" size="sm" onClick={() => append({ value: '' })}>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => append({ value: '' })}
+                            >
                                 Add Tag
                             </Button>
-                            {fields.map((field, index) => (
-                                <FormField key={field.id} control={form.control} name={`styleTags.${index}.value`} render={({ field }) => (
-                                    <FormItem className="hidden"><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                                )}/>
-                            ))}
                         </CardContent>
                     </Card>
 
