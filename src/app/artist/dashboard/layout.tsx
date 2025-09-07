@@ -20,7 +20,7 @@ export default function ArtistDashboardLayout({
     const pathname = usePathname();
     const [artist, setArtist] = React.useState<Artist | null>(null);
 
-    React.useEffect(() => {
+    const fetchArtistData = React.useCallback(() => {
         const isArtistAuthenticated = localStorage.getItem('isArtistAuthenticated');
         const artistId = localStorage.getItem('artistId');
 
@@ -45,6 +45,14 @@ export default function ArtistDashboardLayout({
             handleLogout();
         }
     }, [router, toast]);
+
+    React.useEffect(() => {
+        fetchArtistData();
+        window.addEventListener('storage', fetchArtistData);
+        return () => {
+            window.removeEventListener('storage', fetchArtistData);
+        };
+    }, [fetchArtistData]);
 
     const handleLogout = () => {
         localStorage.removeItem('isArtistAuthenticated');

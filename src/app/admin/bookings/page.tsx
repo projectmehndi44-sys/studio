@@ -56,6 +56,7 @@ export default function BookingManagementPage() {
             isRead: false,
         };
         localStorage.setItem('notifications', JSON.stringify([newNotification, ...existingNotifications]));
+        window.dispatchEvent(new Event('storage'));
     };
 
     const updateBookingStatus = (bookingId: string, status: Booking['status'], artistId?: string | null) => {
