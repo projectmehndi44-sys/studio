@@ -89,9 +89,20 @@ export default function ArtistDashboardLayout({
     // Clone children and pass down the fetched data as props
     const childrenWithProps = React.Children.map(children, child => {
         if (React.isValidElement(child)) {
-            const props: any = { artist, bookings, notifications, setNotifications, setUnreadCount, artistId };
+            const props: any = {};
+            if (pathname === '/artist/dashboard') {
+                props.artist = artist;
+                props.bookings = bookings;
+            }
             if (pathname === '/artist/dashboard/bookings') {
+                props.bookings = bookings;
                 props.setBookings = setBookings;
+            }
+            if (pathname === '/artist/dashboard/notifications') {
+                 props.notifications = notifications;
+                 props.setNotifications = setNotifications;
+                 props.artistId = artistId;
+                 props.setUnreadCount = setUnreadCount;
             }
              if (pathname.startsWith('/artist/dashboard/profile')) {
                 props.artist = artist;

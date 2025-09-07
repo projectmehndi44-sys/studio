@@ -54,20 +54,6 @@ export default function ArtistNotificationsPage({ notifications, setNotification
         setAllBookings(storedBookings);
     }, []);
 
-    if (!notifications || !allBookings) {
-        return (
-             <Card>
-                <CardHeader>
-                    <CardTitle>Notifications</CardTitle>
-                    <CardDescription>Updates about your bookings and account.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p>Loading notifications...</p>
-                </CardContent>
-            </Card>
-        )
-    }
-    
     const updateNotifications = (updated: Notification[]) => {
         const allNotifications: Notification[] = JSON.parse(localStorage.getItem('notifications') || '[]');
         const otherArtistsNotifications = allNotifications.filter(n => n.artistId !== artistId);
@@ -87,6 +73,20 @@ export default function ArtistNotificationsPage({ notifications, setNotification
         const updated = notifications.map(n => ({...n, isRead: true}));
         updateNotifications(updated);
     };
+
+    if (!notifications || !allBookings) {
+        return (
+             <Card>
+                <CardHeader>
+                    <CardTitle>Notifications</CardTitle>
+                    <CardDescription>Updates about your bookings and account.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p>Loading notifications...</p>
+                </CardContent>
+            </Card>
+        )
+    }
 
     return (
         <Card>
