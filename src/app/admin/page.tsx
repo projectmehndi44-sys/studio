@@ -287,7 +287,7 @@ export default function AdminPage() {
                             </Card>
                              <Card>
                                 <CardHeader>
-                                    <CardTitle>Notifications</CardTitle>
+                                    <CardTitle>Manage Bookings</CardTitle>
                                      <CardDescription>
                                         You have {pendingBookingCount} pending booking(s).
                                     </CardDescription>
@@ -295,8 +295,8 @@ export default function AdminPage() {
                                 <CardContent className="flex items-center gap-2">
                                      <Link href="/admin/bookings">
                                         <Button>
-                                            <Bell className="mr-2 h-4 w-4" />
-                                            View Bookings
+                                            <Briefcase className="mr-2 h-4 w-4" />
+                                            View All Bookings
                                         </Button>
                                      </Link>
                                      {pendingBookingCount > 0 && 
@@ -306,16 +306,16 @@ export default function AdminPage() {
                             </Card>
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>My Profile</CardTitle>
+                                    <CardTitle>Notifications</CardTitle>
                                     <CardDescription>
-                                        Update your admin account details and password.
+                                        Send alerts to artists and customers.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <Link href="/admin/profile">
+                                    <Link href="/admin/notifications">
                                         <Button>
-                                            <User className="mr-2 h-4 w-4" />
-                                            Manage Profile
+                                            <Bell className="mr-2 h-4 w-4" />
+                                            Send Notification
                                         </Button>
                                     </Link>
                                 </CardContent>
@@ -630,12 +630,6 @@ export default function AdminPage() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="grid gap-4">
-                                <Link href="/admin/bookings">
-                                    <Button variant="outline" className="w-full justify-start gap-2">
-                                        <Briefcase />
-                                        Manage Bookings
-                                    </Button>
-                                </Link>
                                <Link href="/admin/locations">
                                     <Button variant="outline" className="w-full justify-start gap-2">
                                         <MapPin />
@@ -646,6 +640,12 @@ export default function AdminPage() {
                                     <Button variant="outline" className="w-full justify-start gap-2">
                                         <ImageIcon />
                                         Manage Images
+                                    </Button>
+                                </Link>
+                                 <Link href="/admin/profile">
+                                    <Button variant="outline" className="w-full justify-start gap-2">
+                                        <User />
+                                        Manage Profile
                                     </Button>
                                 </Link>
                             </CardContent>
