@@ -24,21 +24,18 @@ import { Terminal, Upload } from 'lucide-react';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { INDIA_LOCATIONS } from '@/lib/india-locations';
+import { Separator } from '../ui/separator';
 
 
 const passwordSchema = z.string()
-  .min(6, { message: 'Password must be at least 6 characters long.' })
-  .max(8, { message: 'Password must be at most 8 characters long.' })
-  .regex(/[A-Z]/, { message: 'Password must contain at least one uppercase letter.' })
-  .regex(/[a-z]/, { message: 'Password must contain at least one lowercase letter.' })
-  .regex(/[^A-Za-z0-9]/, { message: 'Password must contain at least one symbol.' });
+  .min(6, { message: 'Password must be at least 6 characters long.' });
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const registrationSchema = z.object({
   fullName: z.string().min(1, { message: 'Full name is required.' }),
-  aadharAddress: z.string().min(1, { message: 'Aadhar address is required.' }),
+  aadharAddress: z.string().min(1, { message: 'Aadhaar address is required.' }),
   presentAddress: z.string().min(1, { message: 'Present address is required.' }),
   state: z.string().min(1, { message: 'Please select a state.' }),
   district: z.string().min(1, { message: 'Please select a district.' }),
@@ -108,7 +105,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
   }, [isOpen]);
 
   const selectedState = form.watch('state');
-  const districts = selectedState ? INDIA_LOCATIONS[selectedState] : [];
+  const districts = selectedState ? allAvailableLocations[selectedState] : [];
 
   const onSubmit = (data: RegistrationFormValues) => {
     const existingPending = JSON.parse(localStorage.getItem('pendingArtists') || '[]');
@@ -189,7 +186,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
         ) : (
             <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="max-h-[60vh] overflow-y-auto pr-4">
+                <div className="max-h-[60vh] overflow-y-auto pr-4 -mr-4 space-y-6">
                    {availableStates.length === 0 ? (
                         <Alert variant="destructive">
                             <Terminal className="h-4 w-4" />
@@ -199,107 +196,120 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                             </AlertDescription>
                         </Alert>
                    ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-                        <FormField control={form.control} name="fullName" render={({ field }) => (
-                            <FormItem className="md:col-span-2"><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>
+                    <>
+                    {/* Personal Details Section */}
+                    <div className="space-y-4">
+                        <h3 className="font-semibold text-lg text-primary">Personal Details</h3>
+                         <FormField control={form.control} name="fullName" render={({ field }) => (
+                            <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-
-                        <FormField control={form.control} name="aadharAddress" render={({ field }) => (
-                             <FormItem className="md:col-span-2"><FormLabel>Address (As per Aadhaar)</FormLabel><FormControl><Textarea placeholder="Enter your official address" {...field} /></FormControl><FormMessage /></FormItem>
-                        )} />
-
-                        <FormField control={form.control} name="presentAddress" render={({ field }) => (
-                            <FormItem className="md:col-span-2"><FormLabel>Present Address</FormLabel><FormControl><Textarea placeholder="Enter your current residential address" {...field} /></FormControl><FormMessage /></FormItem>
-                        )} />
-
-                        <FormField control={form.control} name="state" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>State</FormLabel>
-                                <Select onValueChange={(value) => {
-                                    field.onChange(value);
-                                    form.setValue('district', '');
-                                }} defaultValue={field.value}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField control={form.control} name="email" render={({ field }) => (
+                                <FormItem><FormLabel>Email Address</FormLabel><FormControl><Input type="email" placeholder="your.email@example.com" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name="phone" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Phone Number</FormLabel>
+                                    <div className="flex gap-2">
                                     <FormControl>
-                                        <SelectTrigger><SelectValue placeholder="Select an available state" /></SelectTrigger>
+                                        <Input type="tel" placeholder="9876543210" {...field} disabled={isOtpSent} />
                                     </FormControl>
-                                    <SelectContent>
-                                        {availableStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-                        
-                        <FormField control={form.control} name="district" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>District</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value} disabled={!selectedState}>
-                                    <FormControl>
-                                        <SelectTrigger><SelectValue placeholder="Select a district" /></SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                                 { !selectedState && <FormDescription>Please select a state first.</FormDescription> }
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-
-                        <FormField control={form.control} name="locality" render={({ field }) => (
-                             <FormItem className="md:col-span-2">
-                                <FormLabel>Locality / Area</FormLabel>
-                                <FormControl><Input placeholder="e.g., Koregaon Park" {...field} /></FormControl>
-                                <FormDescription>Your primary service locality.</FormDescription>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-
-
-                        <FormField control={form.control} name="servingAreas" render={({ field }) => (
-                             <FormItem className="md:col-span-2"><FormLabel>Other Serving Areas</FormLabel><FormControl><Input placeholder="e.g., South Mumbai, Navi Mumbai, Thane" {...field} /></FormControl><FormDescription>Comma-separated list of other areas you serve.</FormDescription><FormMessage /></FormItem>
-                        )} />
-
-                         <FormField control={form.control} name="email" render={({ field }) => (
-                            <FormItem><FormLabel>Email Address (will be your username)</FormLabel><FormControl><Input type="email" placeholder="your.email@example.com" {...field} /></FormControl><FormMessage /></FormItem>
-                        )} />
-                        
-                        <FormField control={form.control} name="phone" render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Phone Number</FormLabel>
-                                <div className="flex gap-2">
-                                <FormControl>
-                                    <Input type="tel" placeholder="9876543210" {...field} disabled={isOtpSent} />
-                                </FormControl>
-                                <Button type="button" onClick={handlePhoneVerify} disabled={isVerifyingOtp || isOtpSent} className="flex-shrink-0">
-                                    {isVerifyingOtp ? 'Sending...' : (isOtpSent ? 'Verified' : 'Verify')}
-                                </Button>
-                                </div>
-                                <FormMessage />
-                            </FormItem>
-                        )} />
-
+                                    <Button type="button" onClick={handlePhoneVerify} disabled={isVerifyingOtp || isOtpSent} className="flex-shrink-0">
+                                        {isVerifyingOtp ? 'Sending...' : (isOtpSent ? 'Verified' : 'Verify')}
+                                    </Button>
+                                    </div>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                        </div>
                          {isOtpSent && (
-                            <div className="space-y-2 md:col-span-2">
+                            <div className="space-y-2">
                                <Label htmlFor="otp">Enter OTP</Label>
                                <Input id="otp" placeholder="Enter 6-digit OTP" />
                                <p className="text-xs text-muted-foreground">For this demo, any OTP will work. In a real app, this would be validated.</p>
                             </div>
                         )}
-
-                        <FormField control={form.control} name="password" render={({ field }) => (
-                             <FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormField control={form.control} name="aadharAddress" render={({ field }) => (
+                             <FormItem><FormLabel>Address (As per Aadhaar)</FormLabel><FormControl><Textarea placeholder="Enter your official address" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-
-                        <FormField control={form.control} name="confirmPassword" render={({ field }) => (
-                            <FormItem><FormLabel>Confirm Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
+                        <FormField control={form.control} name="presentAddress" render={({ field }) => (
+                            <FormItem><FormLabel>Present Address</FormLabel><FormControl><Textarea placeholder="Enter your current residential address" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        
-                        <FormField
+                    </div>
+
+                    <Separator/>
+
+                    {/* Service Location Section */}
+                     <div className="space-y-4">
+                        <h3 className="font-semibold text-lg text-primary">Service Location</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <FormField control={form.control} name="state" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>State</FormLabel>
+                                    <Select onValueChange={(value) => { field.onChange(value); form.setValue('district', ''); }} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger><SelectValue placeholder="Select an available state" /></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {availableStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="district" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>District</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value} disabled={!selectedState}>
+                                        <FormControl>
+                                            <SelectTrigger><SelectValue placeholder="Select a district" /></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                     { !selectedState && <FormDescription>Please select a state first.</FormDescription> }
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                        </div>
+                        <FormField control={form.control} name="locality" render={({ field }) => (
+                             <FormItem>
+                                <FormLabel>Primary Locality / Area</FormLabel>
+                                <FormControl><Input placeholder="e.g., Koregaon Park" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )} />
+                        <FormField control={form.control} name="servingAreas" render={({ field }) => (
+                             <FormItem><FormLabel>Other Serving Areas</FormLabel><FormControl><Input placeholder="e.g., South Mumbai, Navi Mumbai, Thane" {...field} /></FormControl><FormDescription>Comma-separated list of other areas you serve.</FormDescription><FormMessage /></FormItem>
+                        )} />
+                    </div>
+
+                    <Separator />
+                    
+                    {/* Account Security */}
+                     <div className="space-y-4">
+                        <h3 className="font-semibold text-lg text-primary">Account Security</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <FormField control={form.control} name="password" render={({ field }) => (
+                                <FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name="confirmPassword" render={({ field }) => (
+                                <FormItem><FormLabel>Confirm Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                        </div>
+                    </div>
+                    
+                    <Separator/>
+
+                    {/* Portfolio */}
+                     <div className="space-y-4">
+                         <h3 className="font-semibold text-lg text-primary">Portfolio</h3>
+                         <FormField
                             control={form.control}
                             name="workImages"
                             render={({ field }) => (
-                                <FormItem className="md:col-span-2">
+                                <FormItem>
                                     <FormLabel>Work Images</FormLabel>
                                     <FormControl>
                                         <div className="relative border-2 border-dashed border-muted-foreground/50 rounded-lg p-4 text-center hover:border-accent cursor-pointer">
@@ -319,12 +329,11 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                                 </FormItem>
                             )}
                         />
-                       
-                        <FormField
+                         <FormField
                             control={form.control}
                             name="agreed"
                             render={({ field }) => (
-                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow md:col-span-2">
+                                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow">
                                 <FormControl>
                                     <Checkbox
                                     checked={field.value}
@@ -340,7 +349,8 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                                 </FormItem>
                             )}
                         />
-                    </div>
+                     </div>
+                    </>
                    )}
                 </div>
             <DialogFooter>
