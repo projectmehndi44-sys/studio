@@ -14,12 +14,12 @@ export type Artist = {
 
 export type Booking = {
   id: string;
-  artistId?: string;
+  artistId?: string | null;
   customerName: string;
   date: Date;
   service: string;
   amount: number;
-  status: 'Completed' | 'Confirmed' | 'Cancelled';
+  status: 'Completed' | 'Confirmed' | 'Cancelled' | 'Pending Approval' | 'Needs Assignment';
 };
 
 export type Review = {

@@ -48,9 +48,10 @@ type PendingArtist = {
 const allBookings: Booking[] = [
     { id: 'book_01', artistId: '1', customerName: 'Priya Patel', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed' },
     { id: 'book_02', artistId: '2', customerName: 'Anjali Sharma', date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed' },
-    { id: 'book_03', artistId: '3', customerName: 'Sneha Reddy', date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Confirmed' },
+    { id: 'book_03', artistId: '3', customerName: 'Sneha Reddy', date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Pending Approval' },
     { id: 'book_04', artistId: '1', customerName: 'Meera Iyer', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed' },
-    { id: 'book_05', artistId: '4', customerName: 'Rohan Gupta', date: new Date('2024-08-05'), service: 'Minimalist Mehndi', amount: 1800, status: 'Confirmed' },
+    { id: 'book_05', artistId: null, customerName: 'Rohan Gupta', date: new Date('2024-08-12'), service: 'Mehndi Package', amount: 1800, status: 'Needs Assignment' },
+    { id: 'book_06', artistId: '4', customerName: 'Kavita Singh', date: new Date('2024-08-15'), service: 'Minimalist Mehndi', amount: 2200, status: 'Pending Approval' },
 ];
 
 
@@ -235,7 +236,18 @@ export default function AdminPage() {
         setSelectedArtistIds([]);
     };
 
-    const bookedDates = bookings.map(b => b.date);
+    const getStatusVariant = (status: Booking['status']) => {
+        switch (status) {
+            case 'Completed': return 'default';
+            case 'Confirmed': return 'default';
+            case 'Pending Approval': return 'secondary';
+            case 'Needs Assignment': return 'destructive';
+            case 'Cancelled': return 'destructive';
+            default: return 'outline';
+        }
+    };
+
+    const bookedDates = bookings.filter(b => b.status === 'Confirmed' || b.status === 'Completed').map(b => b.date);
 
     return (
         <div className="flex min-h-screen w-full flex-col bg-muted/40">
@@ -566,11 +578,11 @@ export default function AdminPage() {
                                                     return (
                                                         <TableRow key={booking.id}>
                                                             <TableCell>{booking.customerName}</TableCell>
-                                                            <TableCell>{artist ? artist.name : 'N/A'}</TableCell>
+                                                            <TableCell>{artist ? artist.name : <span className="text-muted-foreground">N/A</span>}</TableCell>
                                                             <TableCell>{booking.date.toLocaleDateString()}</TableCell>
                                                             <TableCell>₹{booking.amount}</TableCell>
                                                             <TableCell>
-                                                                <Badge variant={booking.status === 'Completed' ? 'default' : 'secondary'}>
+                                                                <Badge variant={getStatusVariant(booking.status)}>
                                                                     {booking.status}
                                                                 </Badge>
                                                             </TableCell>
