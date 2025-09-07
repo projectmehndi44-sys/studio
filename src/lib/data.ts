@@ -1,9 +1,13 @@
+
 import type { Artist } from '@/types';
 
 export const artists: Artist[] = [
   {
     id: '1',
     name: 'Aisha Mehmood',
+    email: 'aisha.mehmood@example.com',
+    phone: '9876543210',
+    password: 'Password@123',
     profilePicture: 'https://picsum.photos/200/200?random=1',
     workImages: [
       'https://picsum.photos/600/400?random=11',
@@ -19,6 +23,9 @@ export const artists: Artist[] = [
   {
     id: '2',
     name: 'Priya Sharma',
+    email: 'priya.sharma@example.com',
+    phone: '9876543211',
+    password: 'Password@123',
     profilePicture: 'https://picsum.photos/200/200?random=2',
     workImages: [
       'https://picsum.photos/600/400?random=21',
@@ -34,6 +41,9 @@ export const artists: Artist[] = [
   {
     id: '3',
     name: 'Rani Kaur',
+    email: 'rani.kaur@example.com',
+    phone: '9876543212',
+    password: 'Password@123',
     profilePicture: 'https://picsum.photos/200/200?random=3',
     workImages: [
       'https://picsum.photos/600/400?random=31',
@@ -49,6 +59,9 @@ export const artists: Artist[] = [
   {
     id: '4',
     name: 'Sunita Patel',
+    email: 'sunita.patel@example.com',
+    phone: '9876543213',
+    password: 'Password@123',
     profilePicture: 'https://picsum.photos/200/200?random=4',
     workImages: [
       'https://picsum.photos/600/400?random=41',
@@ -64,6 +77,9 @@ export const artists: Artist[] = [
   {
     id: '5',
     name: 'Fatima Khan',
+    email: 'fatima.khan@example.com',
+    phone: '9876543214',
+    password: 'Password@123',
     profilePicture: 'https://picsum.photos/200/200?random=5',
     workImages: [
       'https://picsum.photos/600/400?random=51',
@@ -79,6 +95,9 @@ export const artists: Artist[] = [
   {
     id: '6',
     name: 'Geeta Singh',
+    email: 'geeta.singh@example.com',
+    phone: '9876543215',
+    password: 'Password@123',
     profilePicture: 'https://picsum.photos/200/200?random=6',
     workImages: [
       'https://picsum.photos/600/400?random=61',
@@ -94,6 +113,9 @@ export const artists: Artist[] = [
     {
     id: '7',
     name: 'Zara Begum',
+    email: 'zara.begum@example.com',
+    phone: '9876543216',
+    password: 'Password@123',
     profilePicture: 'https://picsum.photos/200/200?random=7',
     workImages: [
       'https://picsum.photos/600/400?random=71',
@@ -109,6 +131,9 @@ export const artists: Artist[] = [
   {
     id: '8',
     name: 'Simran Reddy',
+    email: 'simran.reddy@example.com',
+    phone: '9876543217',
+    password: 'Password@123',
     profilePicture: 'https://picsum.photos/200/200?random=8',
     workImages: [
       'https://picsum.photos/600/400?random=81',
@@ -120,5 +145,23 @@ export const artists: Artist[] = [
     charge: 5500,
     rating: 4.7,
     styleTags: ['south indian', 'bridal', 'temple'],
+  },
+  {
+    id: 'abhi@gmail.com',
+    name: 'Abhi',
+    email: 'abhi@gmail.com',
+    phone: '9999999999',
+    password: 'Abhi@123',
+    profilePicture: 'https://picsum.photos/200/200?random=9',
+    workImages: [
+      'https://picsum.photos/600/400?random=91',
+      'https://picsum.photos/600/400?random=92',
+      'https://picsum.photos/600/400?random=93',
+    ],
+    services: ['mehndi', 'makeup'],
+    location: 'Mumbai, India',
+    charge: 4000,
+    rating: 4.8,
+    styleTags: ['modern', 'fusion', 'party'],
   },
 ];
