@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, MapPin, Image as ImageIcon, Users, Bell, User } from "lucide-react";
+import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, MapPin, Image as ImageIcon, Users, Bell, User, Eye } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -117,6 +117,7 @@ export default function AdminPage() {
         const newArtist: Artist = {
             id: artistToApprove.id,
             name: artistToApprove.name,
+            email: artistToApprove.email, // Make sure email is carried over
             profilePicture: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 100)}`,
             workImages: [
                 `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
@@ -133,7 +134,7 @@ export default function AdminPage() {
 
         // Remove from pending list
         const updatedPendingArtists = pendingArtists.filter(p => p.id !== artistId);
-        localStorage.setItem('pendingArtists', JSON.stringify(updatedPendingArtists));
+        localStorage.setItem('pendingArtists', JSON.stringify(updatedPendingArtists.map(({ id, ...rest }) => rest)));
         
         // Update state
         fetchArtists();
@@ -150,7 +151,7 @@ export default function AdminPage() {
 
         // Remove from pending list
         const updatedPendingArtists = pendingArtists.filter(p => p.id !== artistId);
-        localStorage.setItem('pendingArtists', JSON.stringify(updatedPendingArtists));
+        localStorage.setItem('pendingArtists', JSON.stringify(updatedPendingArtists.map(({ id, ...rest }) => rest)));
         
         fetchArtists();
         
@@ -265,8 +266,8 @@ export default function AdminPage() {
                         <Tabs defaultValue="approvals">
                              <TabsList>
                                 <TabsTrigger value="approvals">Artist Approvals</TabsTrigger>
+                                <TabsTrigger value="artists">Artist Management</TabsTrigger>
                                 <TabsTrigger value="customers">Customer Management</TabsTrigger>
-                                <TabsTrigger value="artists">All Data Control</TabsTrigger>
                             </TabsList>
                             <TabsContent value="approvals">
                                 <Card>
@@ -335,6 +336,80 @@ export default function AdminPage() {
                                     </CardContent>
                                 </Card>
                             </TabsContent>
+                             <TabsContent value="artists">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Artist Management</CardTitle>
+                                        <CardDescription>
+                                            View and manage all approved artists.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                    <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Artist</TableHead>
+                                                    <TableHead>Location</TableHead>
+                                                    <TableHead>Services</TableHead>
+                                                    <TableHead>Charge</TableHead>
+                                                    <TableHead>Rating</TableHead>
+                                                    <TableHead>Status</TableHead>
+                                                    <TableHead>
+                                                        <span className="sr-only">Actions</span>
+                                                    </TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {allArtistsWithStatus.map((artist) => (
+                                                    <TableRow key={artist.id}>
+                                                        <TableCell className="font-medium flex items-center gap-2">
+                                                            <Avatar>
+                                                                <AvatarImage src={artist.profilePicture} alt={artist.name} />
+                                                                <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
+                                                            </Avatar>
+                                                            {artist.name}
+                                                        </TableCell>
+                                                        <TableCell>{artist.location}</TableCell>
+                                                        <TableCell className="capitalize">{artist.services.join(', ')}</TableCell>
+                                                        <TableCell>₹{artist.charge}</TableCell>
+                                                        <TableCell>{artist.rating}</TableCell>
+                                                        <TableCell>
+                                                            <Badge>
+                                                                {artist.status}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                                        <MoreHorizontal className="h-4 w-4" />
+                                                                        <span className="sr-only">Toggle menu</span>
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                                     <DropdownMenuItem onSelect={() => router.push(`/admin/artists/${artist.id}`)}>
+                                                                        <Eye className="mr-2 h-4 w-4" />
+                                                                        View Details
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onSelect={() => handleAction('Edit', 'Artist', artist.id)}>
+                                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                                        Edit
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onSelect={() => handleAction('Delete', 'Artist', artist.id)}>
+                                                                        <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                                                                        Delete
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </CardContent>
+                                </Card>
+                             </TabsContent>
                              <TabsContent value="customers">
                                  <Card>
                                     <CardHeader>
@@ -387,76 +462,6 @@ export default function AdminPage() {
                                                                         Suspend
                                                                     </DropdownMenuItem>
                                                                     <DropdownMenuItem onSelect={() => handleAction('Delete', 'Customer', customer.id)}>
-                                                                        <Trash2 className="mr-2 h-4 w-4 text-red-500" />
-                                                                        Delete
-                                                                    </DropdownMenuItem>
-                                                                </DropdownMenuContent>
-                                                            </DropdownMenu>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </CardContent>
-                                </Card>
-                             </TabsContent>
-                             <TabsContent value="artists">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>All Data Control - Artists</CardTitle>
-                                        <CardDescription>
-                                            Manage all approved artists from this central hub.
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                    <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Artist</TableHead>
-                                                    <TableHead>Location</TableHead>
-                                                    <TableHead>Services</TableHead>
-                                                    <TableHead>Charge</TableHead>
-                                                    <TableHead>Rating</TableHead>
-                                                    <TableHead>Status</TableHead>
-                                                    <TableHead>
-                                                        <span className="sr-only">Actions</span>
-                                                    </TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {allArtistsWithStatus.map((artist) => (
-                                                    <TableRow key={artist.id}>
-                                                        <TableCell className="font-medium flex items-center gap-2">
-                                                            <Avatar>
-                                                                <AvatarImage src={artist.profilePicture} alt={artist.name} />
-                                                                <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
-                                                            </Avatar>
-                                                            {artist.name}
-                                                        </TableCell>
-                                                        <TableCell>{artist.location}</TableCell>
-                                                        <TableCell className="capitalize">{artist.services.join(', ')}</TableCell>
-                                                        <TableCell>₹{artist.charge}</TableCell>
-                                                        <TableCell>{artist.rating}</TableCell>
-                                                        <TableCell>
-                                                            <Badge>
-                                                                {artist.status}
-                                                            </Badge>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild>
-                                                                    <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                                        <MoreHorizontal className="h-4 w-4" />
-                                                                        <span className="sr-only">Toggle menu</span>
-                                                                    </Button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end">
-                                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                                    <DropdownMenuItem onSelect={() => handleAction('Edit', 'Artist', artist.id)}>
-                                                                        <Pencil className="mr-2 h-4 w-4" />
-                                                                        Edit
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem onSelect={() => handleAction('Delete', 'Artist', artist.id)}>
                                                                         <Trash2 className="mr-2 h-4 w-4 text-red-500" />
                                                                         Delete
                                                                     </DropdownMenuItem>
