@@ -51,13 +51,14 @@ export default function PackageManagementPage() {
             router.push('/admin/login');
         }
         
-        const storedPackages = localStorage.getItem('mehndiPackages');
+        const storedPackages = localStorage.getItem('servicePackages');
         setPackages(storedPackages ? JSON.parse(storedPackages) : initialPackages);
     }, [router]);
     
     const savePackages = (updatedPackages: ServicePackage[]) => {
         setPackages(updatedPackages);
-        localStorage.setItem('mehndiPackages', JSON.stringify(updatedPackages));
+        localStorage.setItem('servicePackages', JSON.stringify(updatedPackages));
+        window.dispatchEvent(new Event('storage'));
     }
 
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {

@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/table";
 import { artists as initialArtists, allBookings as initialBookings } from '@/lib/data';
 import type { Artist, Booking } from '@/types';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 export default function AdminPage() {
@@ -155,7 +156,21 @@ export default function AdminPage() {
                                     return (
                                         <TableRow key={booking.id}>
                                             <TableCell>{booking.customerName}</TableCell>
-                                            <TableCell>{assignedArtists.length > 0 ? assignedArtists.map(a => a.name).join(', ') : <span className="text-muted-foreground">N/A</span>}</TableCell>
+                                            <TableCell>
+                                                {assignedArtists.length > 0 ? (
+                                                     <div className="flex flex-col gap-1">
+                                                        {assignedArtists.map(a => (
+                                                            <div key={a.id} className="flex items-center gap-2">
+                                                                <Avatar className="h-6 w-6">
+                                                                    <AvatarImage src={a.profilePicture} alt={a.name}/>
+                                                                    <AvatarFallback>{a.name.charAt(0)}</AvatarFallback>
+                                                                </Avatar>
+                                                                <span>{a.name}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : <span className="text-muted-foreground">N/A</span>}
+                                            </TableCell>
                                             <TableCell>{new Date(booking.date).toLocaleDateString()}</TableCell>
                                             <TableCell>₹{booking.amount}</TableCell>
                                             <TableCell>

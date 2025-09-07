@@ -5,35 +5,19 @@
 import * as React from 'react';
 import type { Artist, ServicePackage, Customer } from '@/types';
 import { artists as initialArtists } from '@/lib/data';
-import { packages as allPackages } from '@/lib/packages-data';
+import { packages as initialPackages } from '@/lib/packages-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
-import { Calendar } from '@/components/ui/calendar';
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import {
-  Calendar as CalendarIcon,
   Search,
   LogIn,
   UserPlus,
   Palette,
   ShoppingBag,
-  Camera,
 } from 'lucide-react';
-import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/glamgo/Header';
 import { ArtistCard } from '@/components/glamgo/ArtistCard';
@@ -76,6 +60,7 @@ const backgroundImages = [
 export default function Home() {
   const searchParams = useSearchParams();
   const [artists, setArtists] = React.useState<Artist[]>([]);
+  const [allPackages, setAllPackages] = React.useState<ServicePackage[]>([]);
   const [filteredArtists, setFilteredArtists] =
     React.useState<Artist[]>([]);
   const [selectedArtist, setSelectedArtist] = React.useState<Artist | null>(
@@ -96,11 +81,8 @@ export default function Home() {
 
   // Filter state
   const [location, setLocation] = React.useState('');
-  const [serviceType, setServiceType] = React.useState<'mehendi' | 'makeup' | 'photography' | 'all'>('mehendi');
+  const [serviceType, setServiceType] = React.useState<'mehndi' | 'makeup' | 'photography' | 'all'>('mehndi');
   const [priceRange, setPriceRange] = React.useState([20000]);
-  const [availabilityDate, setAvailabilityDate] = React.useState<
-    Date | undefined
-  >();
   const [selectedStyles, setSelectedStyles] = React.useState<string[]>([]);
 
   const [currentBgIndex, setCurrentBgIndex] = React.useState(0);
@@ -114,12 +96,16 @@ export default function Home() {
   }, [artists, serviceType]);
 
 
-  React.useEffect(() => {
+  const fetchData = React.useCallback(() => {
     // Load artists from localStorage
     const storedArtists = localStorage.getItem('artists');
     const localArtists = storedArtists ? JSON.parse(storedArtists) : [];
     const allApproved = [...initialArtists.filter(a => !localArtists.some((la: Artist) => la.id === a.id)), ...localArtists];
     setArtists(allApproved);
+
+    // Load packages from localStorage
+    const storedPackages = localStorage.getItem('servicePackages');
+    setAllPackages(storedPackages ? JSON.parse(storedPackages) : initialPackages);
 
     // Check for logged-in customer
     const customerId = localStorage.getItem('currentCustomerId');
@@ -134,13 +120,22 @@ export default function Home() {
         setIsCustomerLoggedIn(false);
         setCustomer(null);
     }
+  }, []);
+
+  React.useEffect(() => {
+    fetchData();
 
     const intervalId = setInterval(() => {
       setCurrentBgIndex((prevIndex) => (prevIndex + 1) % backgroundImages.length);
     }, 5000); // Change image every 5 seconds
+    
+    window.addEventListener('storage', fetchData);
 
-    return () => clearInterval(intervalId);
-  }, []);
+    return () => {
+        clearInterval(intervalId);
+        window.removeEventListener('storage', fetchData);
+    };
+  }, [fetchData]);
   
   React.useEffect(() => {
     applyFilters();
@@ -153,7 +148,7 @@ export default function Home() {
       const selectedPackages = allPackages.filter(p => packageIds.includes(p.id));
       setCart(selectedPackages);
     }
-  }, [searchParams]);
+  }, [searchParams, allPackages]);
 
   const handleBookingRequest = (artist: Artist) => {
     if (!isCustomerLoggedIn) {
@@ -251,7 +246,6 @@ export default function Home() {
   const resetFilters = () => {
     setLocation('');
     setPriceRange([20000]);
-    setAvailabilityDate(undefined);
     setSelectedStyles([]);
   };
   
@@ -261,7 +255,7 @@ export default function Home() {
       )
   }
 
-  const ArtistFinder = ({ service }: { service: 'mehendi' | 'makeup' | 'photography' | 'all' }) => {
+  const ArtistFinder = ({ service }: { service: 'mehndi' | 'makeup' | 'photography' | 'all' }) => {
       const filteredPackages = allPackages.filter(p => p.service === service);
       
       return (
@@ -411,14 +405,14 @@ export default function Home() {
           </div>
         )}
 
-        <Tabs defaultValue="mehendi" className="w-full mt-8" onValueChange={(value) => setServiceType(value as 'mehendi' | 'makeup' | 'photography' | 'all')}>
+        <Tabs defaultValue="mehndi" className="w-full mt-8" onValueChange={(value) => setServiceType(value as 'mehndi' | 'makeup' | 'photography')}>
             <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto">
-                <TabsTrigger value="mehendi"><MehndiIcon className="mr-2 h-6 w-6"/>Mehendi</TabsTrigger>
+                <TabsTrigger value="mehndi"><MehndiIcon className="mr-2 h-6 w-6"/>Mehendi</TabsTrigger>
                 <TabsTrigger value="makeup"><MakeupIcon className="mr-2 h-6 w-6"/>Makeup</TabsTrigger>
                 <TabsTrigger value="photography"><PhotographyIcon className="mr-2 h-6 w-6"/>Photography</TabsTrigger>
             </TabsList>
-            <TabsContent value="mehendi">
-                <ArtistFinder service="mehendi" />
+            <TabsContent value="mehndi">
+                <ArtistFinder service="mehndi" />
             </TabsContent>
             <TabsContent value="makeup">
                 <ArtistFinder service="makeup" />
