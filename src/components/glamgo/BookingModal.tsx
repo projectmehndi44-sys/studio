@@ -21,7 +21,7 @@ import { Calendar as CalendarIcon, Clock, IndianRupee, User, Package as PackageI
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import Image from 'next/image';
 
 interface BookingModalProps {
   artist: Artist | null;
@@ -93,10 +93,7 @@ export function BookingModal({ artist, pkg: selectedPackage, isOpen, onOpenChang
         <DialogHeader>
           <DialogTitle className="text-primary font-bold text-2xl flex items-center gap-2">
             {artist && (
-                <Avatar className="h-9 w-9">
-                    <AvatarImage src={artist.profilePicture} alt={artist.name} />
-                    <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
-                </Avatar>
+                <Image className="h-9 w-9 rounded-full object-cover" src={artist.profilePicture} alt={artist.name} width={36} height={36} />
             )}
             Book {bookingTargetName}
             </DialogTitle>
