@@ -21,11 +21,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
+import type { Customer } from '@/types';
 
 interface HeaderProps {
   isCustomerLoggedIn: boolean;
   onCustomerLogout: () => void;
-  customer: { name: string } | null;
+  customer: Customer | null;
 }
 
 export function Header({
@@ -44,17 +45,17 @@ export function Header({
         </h1>
       </Link>
       <div className="flex items-center gap-2">
-        {isCustomerLoggedIn ? (
+        {isCustomerLoggedIn && customer ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
-                   <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${customer?.name}`} alt={customer?.name} />
+                   <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${customer.name}`} alt={customer.name} />
                   <AvatarFallback>
-                    {customer?.name.charAt(0).toUpperCase()}
+                    {customer.name ? customer.name.charAt(0).toUpperCase() : '?'}
                   </AvatarFallback>
                 </Avatar>
-                <span>{customer?.name}</span>
+                <span>{customer.name}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
