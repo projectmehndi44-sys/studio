@@ -412,7 +412,7 @@ export default function Home() {
 
         <Tabs defaultValue="mehndi" className="w-full mt-8">
             <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto">
-                <TabsTrigger value="mehndi" onClick={() => applyFilters('mehndi')}><MehndiIcon className="mr-2 h-6 w-6"/>Mehndi</TabsTrigger>
+                <TabsTrigger value="mehndi" onClick={() => applyFilters('mehndi')}><MehndiIcon className="mr-2 h-6 w-6"/>Mehendi</TabsTrigger>
                 <TabsTrigger value="makeup" onClick={() => applyFilters('makeup')}><MakeupIcon className="mr-2 h-6 w-6"/>Makeup</TabsTrigger>
                 <TabsTrigger value="photography" disabled><PhotographyIcon className="mr-2 h-6 w-6"/>Photography (Soon)</TabsTrigger>
             </TabsList>
