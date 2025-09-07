@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, Users, Eye, Download, ChevronDown, Calendar as CalendarIcon, Briefcase, Settings, DollarSign, BarChart, RefreshCw, Star, Bell, AlertOctagon, IndianRupee, FileSpreadsheet } from "lucide-react";
+import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, Users, Eye, Download, ChevronDown, Calendar as CalendarIcon, Briefcase, Settings, DollarSign, BarChart, RefreshCw, Star, Bell, AlertOctagon, IndianRupee, FileSpreadsheet, Package } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -414,7 +414,7 @@ export default function AdminPage() {
                 </header>
                 <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
                     <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
-                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
+                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5">
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Manage Bookings</CardTitle>
@@ -432,6 +432,22 @@ export default function AdminPage() {
                                      {pendingBookingCount > 0 && 
                                         <Badge variant="destructive">{pendingBookingCount}</Badge>
                                      }
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle>Package Management</CardTitle>
+                                    <CardDescription>
+                                        Create & manage packages.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Link href="/admin/packages">
+                                        <Button>
+                                            <Package className="mr-2 h-4 w-4" />
+                                            Manage Packages
+                                        </Button>
+                                    </Link>
                                 </CardContent>
                             </Card>
                             <Card>
