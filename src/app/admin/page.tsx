@@ -267,12 +267,32 @@ export default function AdminPage() {
     const bookedDates = bookings.filter(b => b.status === 'Confirmed' || b.status === 'Completed').map(b => new Date(b.date));
 
     // Revenue Calculations
-    const completedBookings = bookings.filter(b => b.status === 'Completed');
-    const totalRevenue = completedBookings.reduce((sum, b) => sum + b.amount, 0);
-    const platformFee = totalRevenue * 0.10; // 10% commission
-    const refunds = 500; // Mocked data
-    const netPayout = totalRevenue - platformFee;
-    const netProfit = platformFee - refunds;
+    const calculateRevenue = (filteredBookings: Booking[]) => {
+        const completed = filteredBookings.filter(b => b.status === 'Completed');
+        const totalRevenue = completed.reduce((sum, b) => sum + b.amount, 0);
+        const platformFee = totalRevenue * 0.10; // 10% commission
+        const gst = platformFee * 0.18; // 18% GST on platform fees
+        const refunds = 500; // Mocked data for now
+        const netPayout = totalRevenue - platformFee;
+        const netProfit = platformFee - refunds;
+
+        return { totalRevenue, platformFee, gst, netPayout, refunds, netProfit };
+    };
+    
+    const overallRevenue = calculateRevenue(bookings);
+
+    const getMonthYear = (date: Date) => new Date(date).toLocaleString('default', { month: 'long', year: 'numeric' });
+    const currentMonthYear = getMonthYear(new Date());
+    const lastMonth = new Date();
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    const lastMonthYear = getMonthYear(lastMonth);
+
+    const currentMonthBookings = bookings.filter(b => getMonthYear(new Date(b.date)) === currentMonthYear);
+    const lastMonthBookings = bookings.filter(b => getMonthYear(new Date(b.date)) === lastMonthYear);
+
+    const currentMonthRevenue = calculateRevenue(currentMonthBookings);
+    const lastMonthRevenue = calculateRevenue(lastMonthBookings);
+    
 
     return (
         <div className="flex min-h-screen w-full flex-col bg-muted/40">
@@ -642,29 +662,63 @@ export default function AdminPage() {
                         </Card>
                        <Card>
                             <CardHeader>
-                                <CardTitle>Revenue</CardTitle>
-                                <CardDescription>Financial overview of your platform.</CardDescription>
+                                <CardTitle>Overall Revenue</CardTitle>
+                                <CardDescription>Financial overview for all time.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="flex justify-between items-center border-b pb-2">
                                     <span className="text-muted-foreground flex items-center gap-2"><DollarSign /> Total Revenue</span>
-                                    <span className="font-bold text-lg">₹{totalRevenue.toLocaleString()}</span>
+                                    <span className="font-bold text-lg">₹{overallRevenue.totalRevenue.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between items-center border-b pb-2">
+                                    <span className="text-muted-foreground flex items-center gap-2"><BarChart /> Platform Fees (10%)</span>
+                                    <span className="font-bold text-lg">₹{overallRevenue.platformFee.toLocaleString()}</span>
                                 </div>
                                  <div className="flex justify-between items-center border-b pb-2">
-                                    <span className="text-muted-foreground flex items-center gap-2"><BarChart /> Platform Fees (10%)</span>
-                                    <span className="font-bold text-lg">₹{platformFee.toLocaleString()}</span>
+                                    <span className="text-muted-foreground flex items-center gap-2"><BarChart /> GST (18%)</span>
+                                    <span className="font-bold text-lg">₹{overallRevenue.gst.toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between items-center border-b pb-2">
                                     <span className="text-muted-foreground flex items-center gap-2"><Users /> Net Payout to Artists</span>
-                                    <span className="font-bold text-lg">₹{netPayout.toLocaleString()}</span>
+                                    <span className="font-bold text-lg">₹{overallRevenue.netPayout.toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between items-center border-b pb-2">
                                     <span className="text-muted-foreground flex items-center gap-2"><RefreshCw /> Refunds Processed</span>
-                                    <span className="font-bold text-lg text-amber-600">- ₹{refunds.toLocaleString()}</span>
+                                    <span className="font-bold text-lg text-amber-600">- ₹{overallRevenue.refunds.toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between items-center pt-2 bg-muted -mx-6 px-6 py-3 rounded-b-lg">
                                     <span className="font-bold text-primary flex items-center gap-2"><Star /> Net Profit</span>
-                                    <span className="font-extrabold text-xl text-green-600">₹{netProfit.toLocaleString()}</span>
+                                    <span className="font-extrabold text-xl text-green-600">₹{overallRevenue.netProfit.toLocaleString()}</span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                         <Card>
+                            <CardHeader>
+                                <CardTitle>Monthly Revenue</CardTitle>
+                                <CardDescription>This Month vs. Last Month</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-2">
+                                    <h4 className="font-semibold text-center text-primary">{currentMonthYear}</h4>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-muted-foreground">Revenue:</span>
+                                        <span className="font-bold">₹{currentMonthRevenue.totalRevenue.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-muted-foreground">Profit:</span>
+                                        <span className="font-bold">₹{currentMonthRevenue.netProfit.toLocaleString()}</span>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <h4 className="font-semibold text-center text-primary">{lastMonthYear}</h4>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-muted-foreground">Revenue:</span>
+                                        <span className="font-bold">₹{lastMonthRevenue.totalRevenue.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-muted-foreground">Profit:</span>
+                                        <span className="font-bold">₹{lastMonthRevenue.netProfit.toLocaleString()}</span>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
