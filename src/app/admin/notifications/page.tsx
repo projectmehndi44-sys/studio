@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Bell, Send, Upload, Image as ImageIcon, Users, User } from 'lucide-react';
+import { Shield, Bell, Send, Upload, Image as ImageIcon, Users, User, ArrowLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { artists } from '@/lib/data';
 
@@ -76,7 +76,7 @@ export default function NotificationPage() {
                     Admin Portal
                 </h1>
                 <Link href="/admin">
-                     <Button variant="outline">Back to Dashboard</Button>
+                     <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Dashboard</Button>
                 </Link>
             </header>
             <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8">

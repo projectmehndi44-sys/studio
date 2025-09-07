@@ -46,12 +46,12 @@ type PendingArtist = {
 
 // Mock data for bookings across all artists for the master calendar
 const allBookings: Booking[] = [
-    { id: 'book_01', artistId: '1', customerName: 'Priya Patel', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed' },
-    { id: 'book_02', artistId: '2', customerName: 'Anjali Sharma', date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed' },
-    { id: 'book_03', artistId: '3', customerName: 'Sneha Reddy', date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Pending Approval' },
-    { id: 'book_04', artistId: '1', customerName: 'Meera Iyer', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed' },
-    { id: 'book_05', artistId: null, customerName: 'Rohan Gupta', date: new Date('2024-08-12'), service: 'Mehndi Package', amount: 1800, status: 'Needs Assignment' },
-    { id: 'book_06', artistId: '4', customerName: 'Kavita Singh', date: new Date('2024-08-15'), service: 'Minimalist Mehndi', amount: 2200, status: 'Pending Approval' },
+    { id: 'book_01', artistId: '1', customerName: 'Priya Patel', customerContact: "9876543210", serviceAddress: "address", date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed' },
+    { id: 'book_02', artistId: '2', customerName: 'Anjali Sharma', customerContact: "9876543211", serviceAddress: "address", date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed' },
+    { id: 'book_03', artistId: '3', customerName: 'Sneha Reddy', customerContact: "9876543212", serviceAddress: "address", date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Pending Approval' },
+    { id: 'book_04', artistId: '1', customerName: 'Meera Iyer', customerContact: "9876543213", serviceAddress: "address", date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed' },
+    { id: 'book_05', artistId: null, customerName: 'Rohan Gupta', customerContact: "9876543214", serviceAddress: "address", date: new Date('2024-08-12'), service: 'Mehndi Package', amount: 1800, status: 'Needs Assignment' },
+    { id: 'book_06', artistId: '4', customerName: 'Kavita Singh', customerContact: "9876543215", serviceAddress: "address", date: new Date('2024-08-15'), service: 'Minimalist Mehndi', amount: 2200, status: 'Pending Approval' },
 ];
 
 
@@ -61,10 +61,10 @@ export default function AdminPage() {
     const [approvedArtists, setApprovedArtists] = React.useState<Artist[]>([]);
     const [pendingArtists, setPendingArtists] = React.useState<PendingArtist[]>([]);
     const [selectedArtistIds, setSelectedArtistIds] = React.useState<string[]>([]);
-    const [bookings] = React.useState<Booking[]>(allBookings);
+    const [bookings, setBookings] = React.useState<Booking[]>(allBookings);
+    const [pendingBookingCount, setPendingBookingCount] = React.useState(0);
 
-
-    const fetchArtists = React.useCallback(() => {
+    const fetchAdminData = React.useCallback(() => {
         // Fetch approved artists
         const storedArtists = localStorage.getItem('artists');
         setApprovedArtists(storedArtists ? JSON.parse(storedArtists) : initialArtists);
@@ -73,6 +73,13 @@ export default function AdminPage() {
         const storedPending = localStorage.getItem('pendingArtists');
         const pending = storedPending ? JSON.parse(storedPending) : [];
         setPendingArtists(pending.map((p: any) => ({...p, id: p.email, date: new Date(p.submissionDate).toLocaleDateString(), name: p.fullName, location: `${p.district}, ${p.state}` })));
+        
+        // Fetch and count pending bookings
+        const storedBookings = localStorage.getItem('bookings');
+        const currentBookings = storedBookings ? JSON.parse(storedBookings) : allBookings;
+        setBookings(currentBookings);
+        const pendingCount = currentBookings.filter((b: Booking) => b.status === 'Pending Approval' || b.status === 'Needs Assignment').length;
+        setPendingBookingCount(pendingCount);
 
     }, []);
 
@@ -81,12 +88,12 @@ export default function AdminPage() {
         if (isAdminAuthenticated !== 'true') {
             router.push('/admin/login');
         } else {
-            fetchArtists();
+            fetchAdminData();
              // Listen for storage changes to update lists
-            window.addEventListener('storage', fetchArtists);
-            return () => window.removeEventListener('storage', fetchArtists);
+            window.addEventListener('storage', fetchAdminData);
+            return () => window.removeEventListener('storage', fetchAdminData);
         }
-    }, [router, fetchArtists]);
+    }, [router, fetchAdminData]);
 
     const handleLogout = () => {
         localStorage.removeItem('isAdminAuthenticated');
@@ -152,7 +159,7 @@ export default function AdminPage() {
         localStorage.setItem('pendingArtists', JSON.stringify(updatedPendingArtists.map(({ id, ...rest }) => rest)));
         
         // Update state
-        fetchArtists();
+        fetchAdminData();
 
         toast({
             title: "Artist Approved",
@@ -168,7 +175,7 @@ export default function AdminPage() {
         const updatedPendingArtists = pendingArtists.filter(p => p.id !== artistId);
         localStorage.setItem('pendingArtists', JSON.stringify(updatedPendingArtists.map(({ id, ...rest }) => rest)));
         
-        fetchArtists();
+        fetchAdminData();
         
         toast({
             title: "Artist Rejected",
@@ -247,7 +254,7 @@ export default function AdminPage() {
         }
     };
 
-    const bookedDates = bookings.filter(b => b.status === 'Confirmed' || b.status === 'Completed').map(b => b.date);
+    const bookedDates = bookings.filter(b => b.status === 'Confirmed' || b.status === 'Completed').map(b => new Date(b.date));
 
     return (
         <div className="flex min-h-screen w-full flex-col bg-muted/40">
@@ -281,17 +288,20 @@ export default function AdminPage() {
                              <Card>
                                 <CardHeader>
                                     <CardTitle>Notifications</CardTitle>
-                                    <CardDescription>
-                                       Send notifications to artists and customers.
+                                     <CardDescription>
+                                        You have {pendingBookingCount} pending booking(s).
                                     </CardDescription>
                                 </CardHeader>
-                                <CardContent>
-                                    <Link href="/admin/notifications">
+                                <CardContent className="flex items-center gap-2">
+                                     <Link href="/admin/bookings">
                                         <Button>
                                             <Bell className="mr-2 h-4 w-4" />
-                                            Send Notifications
+                                            View Bookings
                                         </Button>
-                                    </Link>
+                                     </Link>
+                                     {pendingBookingCount > 0 && 
+                                        <Badge variant="destructive">{pendingBookingCount}</Badge>
+                                     }
                                 </CardContent>
                             </Card>
                             <Card>
@@ -579,7 +589,7 @@ export default function AdminPage() {
                                                         <TableRow key={booking.id}>
                                                             <TableCell>{booking.customerName}</TableCell>
                                                             <TableCell>{artist ? artist.name : <span className="text-muted-foreground">N/A</span>}</TableCell>
-                                                            <TableCell>{booking.date.toLocaleDateString()}</TableCell>
+                                                            <TableCell>{new Date(booking.date).toLocaleDateString()}</TableCell>
                                                             <TableCell>₹{booking.amount}</TableCell>
                                                             <TableCell>
                                                                 <Badge variant={getStatusVariant(booking.status)}>
