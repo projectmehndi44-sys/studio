@@ -4,6 +4,7 @@
 import * as React from 'react';
 import type { Artist, MehndiPackage } from '@/types';
 import { artists as allArtists } from '@/lib/data';
+import { packages as allPackages } from '@/lib/packages-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
