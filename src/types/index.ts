@@ -1,4 +1,5 @@
 
+
 export type ArtistPackage = {
   id: string;
   name: string;
@@ -16,11 +17,12 @@ export type Artist = {
   password?: string;
   profilePicture: string;
   workImages: string[];
-  services: ('mehndi' | 'makeup')[];
+  services: ('mehendi' | 'makeup' | 'photography')[];
   location: string;
   charges: {
-      mehndi?: number;
+      mehendi?: number;
       makeup?: number;
+      photography?: number;
   };
   charge: number; // Keep for backward compatibility, but favor `charges`
   rating: number;
@@ -119,7 +121,7 @@ export type Transaction = {
 export type ServicePackage = {
     id: string;
     name: string;
-    service: 'mehndi' | 'makeup' | 'photography';
+    service: 'mehendi' | 'makeup' | 'photography';
     description: string;
     price: number;
     image: string;

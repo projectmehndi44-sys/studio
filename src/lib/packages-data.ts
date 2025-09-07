@@ -1,12 +1,13 @@
 
 
-import type { MehndiPackage } from '@/types';
 
-export const packages: MehndiPackage[] = [
+import type { ServicePackage } from '@/types';
+
+export const packages: ServicePackage[] = [
   {
     id: 'pkg_bridal_01',
-    name: 'Bridal Mehndi',
-    service: 'mehndi',
+    name: 'Bridal Mehendi',
+    service: 'mehendi',
     description: 'Covers both hands on both sides up to elbow length. Intricate and detailed designs perfect for the bride.',
     price: 5000,
     image: 'https://picsum.photos/600/400?random=301',
@@ -14,8 +15,8 @@ export const packages: MehndiPackage[] = [
   },
   {
     id: 'pkg_semibridal_02',
-    name: 'Semi Bridal Mehndi',
-    service: 'mehndi',
+    name: 'Semi Bridal Mehendi',
+    service: 'mehendi',
     description: 'A perfect balance of tradition and elegance.',
     price: 4000,
     image: 'https://picsum.photos/600/400?random=302',
@@ -23,17 +24,17 @@ export const packages: MehndiPackage[] = [
   },
   {
     id: 'pkg_bridalfeet_03',
-    name: 'Bridal Feet Mehndi',
-    service: 'mehndi',
-    description: 'Complements the bridal hand mehndi.',
+    name: 'Bridal Feet Mehendi',
+    service: 'mehendi',
+    description: 'Complements the bridal hand mehendi.',
     price: 2000,
     image: 'https://picsum.photos/600/400?random=303',
     tags: ['Organic Henna'],
   },
   {
     id: 'pkg_feet_04',
-    name: 'Feet Mehndi',
-    service: 'mehndi',
+    name: 'Feet Mehendi',
+    service: 'mehendi',
     description: 'Covers toes and mid-portion, no sides included. Simple and elegant for any occasion.',
     price: 1000,
     image: 'https://picsum.photos/600/400?random=304',
@@ -41,8 +42,8 @@ export const packages: MehndiPackage[] = [
   },
   {
     id: 'pkg_megabridal_05',
-    name: 'Mega Bridal Feet Mehndi',
-    service: 'mehndi',
+    name: 'Mega Bridal Feet Mehendi',
+    service: 'mehendi',
     description: 'Extensive coverage for the feet, including toes, mid-portion, and all four sides with heavy designs.',
     price: 5000,
     image: 'https://picsum.photos/600/400?random=305',
@@ -50,8 +51,8 @@ export const packages: MehndiPackage[] = [
   },
   {
     id: 'pkg_wrist_06',
-    name: 'Wrist Length Mehndi',
-    service: 'mehndi',
+    name: 'Wrist Length Mehendi',
+    service: 'mehendi',
     description: 'Covers both hands on both sides up to the wrist. Ideal for guests and smaller functions.',
     price: 3000,
     image: 'https://picsum.photos/600/400?random=306',
@@ -74,5 +75,23 @@ export const packages: MehndiPackage[] = [
     price: 4500,
     image: 'https://picsum.photos/600/400?random=308',
     tags: ['Glam', 'Evening Look'],
+  },
+   {
+    id: 'pkg_prewedding_photo_09',
+    name: 'Pre-Wedding Shoot',
+    service: 'photography',
+    description: 'A 4-hour pre-wedding photography session at a location of your choice. Includes 50 edited photos.',
+    price: 25000,
+    image: 'https://picsum.photos/600/400?random=309',
+    tags: ['Candid', 'Romantic', 'Outdoor'],
+  },
+  {
+    id: 'pkg_event_photo_10',
+    name: 'Event Coverage',
+    service: 'photography',
+    description: 'Full coverage for a 6-hour event. Ideal for weddings, engagements, or corporate events.',
+    price: 40000,
+    image: 'https://picsum.photos/600/400?random=310',
+    tags: ['Wedding', 'Candid', 'Full Coverage'],
   },
 ];

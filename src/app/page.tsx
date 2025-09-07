@@ -3,7 +3,7 @@
 'use client';
 
 import * as React from 'react';
-import type { Artist, MehndiPackage, Customer } from '@/types';
+import type { Artist, ServicePackage, Customer } from '@/types';
 import { artists as initialArtists } from '@/lib/data';
 import { packages as allPackages } from '@/lib/packages-data';
 import { Button } from '@/components/ui/button';
@@ -90,13 +90,13 @@ export default function Home() {
   const [isCustomerLoggedIn, setIsCustomerLoggedIn] = React.useState(false);
   const [customer, setCustomer] = React.useState<Customer | null>(null);
 
-  const [cart, setCart] = React.useState<MehndiPackage[]>([]);
+  const [cart, setCart] = React.useState<ServicePackage[]>([]);
 
   const { toast } = useToast();
 
   // Filter state
   const [location, setLocation] = React.useState('');
-  const [serviceType, setServiceType] = React.useState<'mehndi' | 'makeup' | 'all'>('mehndi');
+  const [serviceType, setServiceType] = React.useState<'mehendi' | 'makeup' | 'photography' | 'all'>('mehendi');
   const [priceRange, setPriceRange] = React.useState([20000]);
   const [availabilityDate, setAvailabilityDate] = React.useState<
     Date | undefined
@@ -165,7 +165,7 @@ export default function Home() {
     setIsBookingModalOpen(true);
   };
   
-  const handleAddToCart = (pkg: MehndiPackage) => {
+  const handleAddToCart = (pkg: ServicePackage) => {
     if (!isCustomerLoggedIn) {
         setIsCustomerLoginModalOpen(true);
         toast({ title: 'Please Login', description: 'You need to be logged in to add packages to your booking.' });
@@ -261,7 +261,7 @@ export default function Home() {
       )
   }
 
-  const ArtistFinder = ({ service }: { service: 'mehndi' | 'makeup' | 'all' }) => {
+  const ArtistFinder = ({ service }: { service: 'mehendi' | 'makeup' | 'photography' | 'all' }) => {
       const filteredPackages = allPackages.filter(p => p.service === service);
       
       return (
@@ -411,20 +411,20 @@ export default function Home() {
           </div>
         )}
 
-        <Tabs defaultValue="mehendi" className="w-full mt-8" onValueChange={(value) => setServiceType(value as 'mehndi' | 'makeup' | 'all')}>
+        <Tabs defaultValue="mehendi" className="w-full mt-8" onValueChange={(value) => setServiceType(value as 'mehendi' | 'makeup' | 'photography' | 'all')}>
             <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto">
-                <TabsTrigger value="mehndi"><MehndiIcon className="mr-2 h-6 w-6"/>Mehendi</TabsTrigger>
+                <TabsTrigger value="mehendi"><MehndiIcon className="mr-2 h-6 w-6"/>Mehendi</TabsTrigger>
                 <TabsTrigger value="makeup"><MakeupIcon className="mr-2 h-6 w-6"/>Makeup</TabsTrigger>
-                <TabsTrigger value="photography" disabled><PhotographyIcon className="mr-2 h-6 w-6"/>Photography (Soon)</TabsTrigger>
+                <TabsTrigger value="photography"><PhotographyIcon className="mr-2 h-6 w-6"/>Photography</TabsTrigger>
             </TabsList>
-            <TabsContent value="mehndi">
-                <ArtistFinder service="mehndi" />
+            <TabsContent value="mehendi">
+                <ArtistFinder service="mehendi" />
             </TabsContent>
             <TabsContent value="makeup">
                 <ArtistFinder service="makeup" />
             </TabsContent>
             <TabsContent value="photography">
-                {/* Placeholder for photography */}
+                 <ArtistFinder service="photography" />
             </TabsContent>
         </Tabs>
 
