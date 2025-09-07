@@ -2,7 +2,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import type { Artist, Booking, Review, Payout, PayoutHistory } from '@/types';
+import type { Artist, Booking, Review, Payout, PayoutHistory, Transaction } from '@/types';
 
 type ArtistExportData = {
     artist: Artist;
@@ -238,4 +238,63 @@ export const generateGstInvoice = (payout: Payout | PayoutHistory) => {
     doc.text('This is a computer-generated invoice and does not require a signature.', 105, finalY + 20, { align: 'center' });
 
     doc.save(`gst-invoice-${invoiceId}.pdf`);
+};
+
+/**
+ * Exports a list of transactions to a PDF file.
+ * @param transactions - The array of transactions to export.
+ */
+export const exportTransactionsToPdf = (transactions: Transaction[]) => {
+  const doc = new jsPDF();
+  const totalRevenue = transactions.filter(t => t.type === 'Revenue').reduce((sum, t) => sum + t.amount, 0);
+  const totalPayouts = transactions.filter(t => t.type === 'Payout').reduce((sum, t) => sum + t.amount, 0);
+
+  doc.setFontSize(22);
+  doc.text('Transaction Report', 14, 20);
+  doc.setFontSize(12);
+  doc.text(`Date Range: ${transactions[transactions.length-1].date.toLocaleDateString()} - ${transactions[0].date.toLocaleDateString()}`, 14, 28);
+  doc.text(`Total Revenue: +₹${totalRevenue.toLocaleString()}`, 14, 34);
+  doc.text(`Total Payouts: -₹${Math.abs(totalPayouts).toLocaleString()}`, 14, 40);
+
+  autoTable(doc, {
+    startY: 50,
+    head: [['Date', 'Type', 'Description', 'Amount']],
+    body: transactions.map(t => [
+      t.date.toLocaleDateString(),
+      t.type,
+      t.description,
+      t.amount > 0 ? `+₹${t.amount.toLocaleString()}` : `-₹${Math.abs(t.amount).toLocaleString()}`
+    ]),
+    theme: 'striped',
+    headStyles: { fillColor: '#34495e' },
+    didDrawCell: (data) => {
+        if (data.section === 'body' && data.column.index === 3) {
+            const text = data.cell.text[0];
+            if (text.startsWith('+')) {
+                doc.setTextColor(39, 174, 96); // green
+            } else if (text.startsWith('-')) {
+                 doc.setTextColor(192, 57, 43); // red
+            }
+        }
+    }
+  });
+
+  doc.save('transaction-report.pdf');
+};
+
+
+/**
+ * Exports a list of transactions to an Excel file.
+ * @param transactions - The array of transactions to export.
+ */
+export const exportTransactionsToExcel = (transactions: Transaction[]) => {
+  const worksheet = XLSX.utils.json_to_sheet(transactions.map(t => ({
+    Date: t.date.toLocaleDateString(),
+    Type: t.type,
+    Description: t.description,
+    Amount: t.amount,
+  })));
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Transactions');
+  XLSX.writeFile(workbook, 'transaction-report.xlsx');
 };

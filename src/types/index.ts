@@ -54,7 +54,7 @@ export type Promotion = {
 
 export type Payout = {
   artistId: string;
-  artistName: string;
+  artistName:string;
   totalBookings: number;
   grossRevenue: number;
   platformFees: number;
@@ -67,3 +67,12 @@ export type PayoutHistory = Payout & {
   id: string;
   paymentDate: string;
 }
+
+export type Transaction = {
+  id: string;
+  date: Date;
+  type: 'Revenue' | 'Payout' | 'Refund';
+  description: string;
+  amount: number;
+  relatedId: string;
+};

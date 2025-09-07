@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, Users, Eye, Download, ChevronDown, Calendar as CalendarIcon, Briefcase, Settings, DollarSign, BarChart, RefreshCw, Star, Bell, AlertOctagon, IndianRupee } from "lucide-react";
+import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, Users, Eye, Download, ChevronDown, Calendar as CalendarIcon, Briefcase, Settings, DollarSign, BarChart, RefreshCw, Star, Bell, AlertOctagon, IndianRupee, FileSpreadsheet } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -27,10 +27,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { artists as initialArtists } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { Artist, Booking } from '@/types';
+import type { Artist, Booking, Transaction, PayoutHistory } from '@/types';
 import { Checkbox } from '@/components/ui/checkbox';
-import { exportToExcel } from '@/lib/export';
+import { exportToExcel, exportTransactionsToExcel, exportTransactionsToPdf } from '@/lib/export';
 import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Define a type for pending artist data, which might be slightly different
 type PendingArtist = {
@@ -63,6 +67,11 @@ export default function AdminPage() {
     const [pendingArtists, setPendingArtists] = React.useState<PendingArtist[]>([]);
     const [selectedArtistIds, setSelectedArtistIds] = React.useState<string[]>([]);
     const [bookings, setBookings] = React.useState<Booking[]>([]);
+    const [payoutHistory, setPayoutHistory] = React.useState<PayoutHistory[]>([]);
+    const [transactions, setTransactions] = React.useState<Transaction[]>([]);
+    const [filteredTransactions, setFilteredTransactions] = React.useState<Transaction[]>([]);
+    const [dateRange, setDateRange] = React.useState<{from: Date | undefined, to: Date | undefined}>({ from: undefined, to: undefined });
+
     const [pendingBookingCount, setPendingBookingCount] = React.useState(0);
     const [financials, setFinancials] = React.useState({
         overall: { totalRevenue: 0, platformFee: 0, gst: 0, netPayout: 0, refunds: 0, netProfit: 0 },
@@ -95,6 +104,10 @@ export default function AdminPage() {
         const pendingCount = currentBookings.filter((b: Booking) => b.status === 'Pending Approval' || b.status === 'Needs Assignment').length;
         setPendingBookingCount(pendingCount);
 
+        const storedPayoutHistory = localStorage.getItem('payoutHistory');
+        const currentPayoutHistory = storedPayoutHistory ? JSON.parse(storedPayoutHistory).map((p:any) => ({...p, paymentDate: new Date(p.paymentDate)})) : [];
+        setPayoutHistory(currentPayoutHistory);
+
     }, []);
 
     React.useEffect(() => {
@@ -118,7 +131,7 @@ export default function AdminPage() {
             const completed = filteredBookings.filter(b => b.status === 'Completed');
             const totalRevenue = completed.reduce((sum, b) => sum + b.amount, 0);
             const platformFee = totalRevenue * platformFeePercentage;
-            const gst = totalRevenue * 0.18; // 18% GST on artist's gross service value
+            const gst = totalRevenue * 0.18; // GST on artist's gross service value
             const refunds = refundFee; // Mocked data for now
             const netPayout = totalRevenue - platformFee - gst; // Artist payout after commission and GST
             const netProfit = platformFee - refunds; // Platform profit is the commission minus refunds
@@ -142,6 +155,44 @@ export default function AdminPage() {
         });
 
     }, [bookings]);
+
+    // Effect for compiling transactions
+    React.useEffect(() => {
+        const allTransactions: Transaction[] = [];
+
+        // 1. Revenue from completed bookings
+        bookings.filter(b => b.status === 'Completed').forEach(b => {
+            allTransactions.push({
+                id: `rev-${b.id}`,
+                date: new Date(b.date),
+                type: 'Revenue',
+                description: `Booking #${b.id} for ${b.service}`,
+                amount: b.amount,
+                relatedId: b.id,
+            });
+        });
+
+        // 2. Payouts to artists
+        payoutHistory.forEach(p => {
+            allTransactions.push({
+                id: `payout-${p.id}`,
+                date: new Date(p.paymentDate),
+                type: 'Payout',
+                description: `Payout to ${p.artistName}`,
+                amount: -p.netPayout,
+                relatedId: p.id,
+            });
+        });
+
+        // 3. Refunds (mocked for now)
+        // Add refund logic here if it becomes available
+
+        allTransactions.sort((a,b) => b.date.getTime() - a.date.getTime());
+        setTransactions(allTransactions);
+        setFilteredTransactions(allTransactions); // Initially show all
+
+    }, [bookings, payoutHistory]);
+
 
     const handleLogout = () => {
         localStorage.removeItem('isAdminAuthenticated');
@@ -305,6 +356,46 @@ export default function AdminPage() {
         }
     };
 
+    const handleTransactionFilter = (filterType: 'all' | 'month' | 'year' | 'custom') => {
+        const now = new Date();
+        let filtered = transactions;
+
+        if (filterType === 'month') {
+            const start = startOfMonth(now);
+            const end = endOfMonth(now);
+            filtered = transactions.filter(t => t.date >= start && t.date <= end);
+        } else if (filterType === 'year') {
+            const start = startOfYear(now);
+            const end = endOfYear(now);
+            filtered = transactions.filter(t => t.date >= start && t.date <= end);
+        } else if (filterType === 'custom' && dateRange.from && dateRange.to) {
+             filtered = transactions.filter(t => t.date >= dateRange.from! && t.date <= dateRange.to!);
+        }
+
+        setFilteredTransactions(filtered);
+    }
+    
+    const handleDownloadTransactions = (format: 'pdf' | 'excel') => {
+        if(filteredTransactions.length === 0){
+             toast({
+                title: "No transactions to export",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        if(format === 'pdf') {
+            exportTransactionsToPdf(filteredTransactions);
+        } else {
+            exportTransactionsToExcel(filteredTransactions);
+        }
+
+        toast({
+            title: "Download Started",
+            description: `Downloading ${filteredTransactions.length} transaction(s) as a ${format.toUpperCase()} file.`,
+        });
+    }
+
     const bookedDates = bookings.filter(b => b.status === 'Confirmed' || b.status === 'Completed').map(b => new Date(b.date));
     const currentMonthYear = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
     const lastMonth = new Date();
@@ -399,6 +490,7 @@ export default function AdminPage() {
                                 <TabsTrigger value="artists">Artist Management</TabsTrigger>
                                 <TabsTrigger value="customers">Customer Management</TabsTrigger>
                                 <TabsTrigger value="bookings">All Bookings</TabsTrigger>
+                                <TabsTrigger value="transactions">Transactions</TabsTrigger>
                             </TabsList>
                             <TabsContent value="approvals">
                                 <Card>
@@ -671,6 +763,91 @@ export default function AdminPage() {
                                                         </TableRow>
                                                     )
                                                 })}
+                                            </TableBody>
+                                        </Table>
+                                    </CardContent>
+                                </Card>
+                            </TabsContent>
+                            <TabsContent value="transactions">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Transaction History</CardTitle>
+                                        <CardDescription>
+                                            A log of all financial activities on the platform.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="flex flex-wrap items-center gap-4 mb-4 p-4 border rounded-lg bg-muted/50">
+                                            <h3 className="font-semibold text-sm mr-4">Filter by:</h3>
+                                            <div className="flex items-center gap-2">
+                                                <Button variant="outline" size="sm" onClick={() => handleTransactionFilter('all')}>All</Button>
+                                                <Button variant="outline" size="sm" onClick={() => handleTransactionFilter('month')}>This Month</Button>
+                                                <Button variant="outline" size="sm" onClick={() => handleTransactionFilter('year')}>This Year</Button>
+                                            </div>
+                                             <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant="outline" size="sm" className="w-[280px] justify-start text-left font-normal">
+                                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                                        {dateRange.from ? (
+                                                            dateRange.to ? (
+                                                                <>
+                                                                    {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
+                                                                </>
+                                                            ) : (
+                                                                format(dateRange.from, "LLL dd, y")
+                                                            )
+                                                        ) : (
+                                                            <span>Pick a date range</span>
+                                                        )}
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0" align="start">
+                                                    <Calendar
+                                                        initialFocus
+                                                        mode="range"
+                                                        defaultMonth={dateRange.from}
+                                                        selected={dateRange}
+                                                        onSelect={(range) => { setDateRange(range || {from: undefined, to: undefined}); handleTransactionFilter('custom'); }}
+                                                        numberOfMonths={2}
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                            <div className="flex items-center gap-2 ml-auto">
+                                                <Button variant="outline" size="sm" onClick={() => handleDownloadTransactions('pdf')}>
+                                                    <Download className="mr-2" /> PDF
+                                                </Button>
+                                                <Button variant="outline" size="sm" onClick={() => handleDownloadTransactions('excel')}>
+                                                     <FileSpreadsheet className="mr-2" /> Excel
+                                                </Button>
+                                            </div>
+                                        </div>
+                                         <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Date</TableHead>
+                                                    <TableHead>Type</TableHead>
+                                                    <TableHead>Description</TableHead>
+                                                    <TableHead className="text-right">Amount</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {filteredTransactions.map(t => (
+                                                    <TableRow key={t.id}>
+                                                        <TableCell>{t.date.toLocaleDateString()}</TableCell>
+                                                        <TableCell>
+                                                            <Badge variant={t.type === 'Revenue' ? 'default' : 'secondary'}>{t.type}</Badge>
+                                                        </TableCell>
+                                                        <TableCell>{t.description}</TableCell>
+                                                        <TableCell className={`text-right font-mono ${t.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                            {t.amount > 0 ? `+₹${t.amount.toLocaleString()}` : `-₹${Math.abs(t.amount).toLocaleString()}`}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                                {filteredTransactions.length === 0 && (
+                                                    <TableRow>
+                                                        <TableCell colSpan={4} className="text-center text-muted-foreground">No transactions found for the selected period.</TableCell>
+                                                    </TableRow>
+                                                )}
                                             </TableBody>
                                         </Table>
                                     </CardContent>
