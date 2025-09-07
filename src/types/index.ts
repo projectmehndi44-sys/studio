@@ -3,6 +3,7 @@ export type Artist = {
   id: string;
   name: string;
   email: string;
+  password?: string;
   profilePicture: string;
   workImages: string[];
   services: ('mehndi' | 'makeup')[];

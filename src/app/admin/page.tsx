@@ -41,6 +41,7 @@ type PendingArtist = {
   location: string;
   date: string;
   status: 'Pending';
+  password?: string;
   [key: string]: any; // To accommodate other registration fields
 };
 
@@ -139,7 +140,8 @@ export default function AdminPage() {
         const newArtist: Artist = {
             id: artistToApprove.id, // Using email as a unique ID for this prototype
             name: artistToApprove.name,
-            email: artistToApprove.email, 
+            email: artistToApprove.email,
+            password: artistToApprove.password, // Pass the password
             profilePicture: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 100)}`,
             workImages: [
                 `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
