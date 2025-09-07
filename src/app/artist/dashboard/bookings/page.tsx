@@ -44,6 +44,20 @@ export default function ArtistBookingsPage({ bookings, setBookings }: ArtistBook
         }
     };
 
+    if (!bookings) {
+        return (
+             <Card>
+                <CardHeader>
+                    <CardTitle>Your Bookings</CardTitle>
+                    <CardDescription>Manage your upcoming and past bookings.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p>Loading bookings...</p>
+                </CardContent>
+            </Card>
+        )
+    }
+
     return (
         <Card>
             <CardHeader>
