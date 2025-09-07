@@ -92,12 +92,17 @@ export default function Home() {
   }, [artists, serviceType]);
 
 
-  const fetchData = React.useCallback(() => {
-    // Load artists from localStorage
+  const getArtists = React.useCallback((): Artist[] => {
     const storedArtists = localStorage.getItem('artists');
-    const localArtists = storedArtists ? JSON.parse(storedArtists) : [];
-    const allApproved = [...initialArtists.filter(a => !localArtists.some((la: Artist) => la.id === a.id)), ...localArtists];
-    setArtists(allApproved);
+    const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
+    const allArtistsMap = new Map<string, Artist>();
+    initialArtists.forEach(a => allArtistsMap.set(a.id, a));
+    localArtists.forEach(a => allArtistsMap.set(a.id, a));
+    return Array.from(allArtistsMap.values());
+  }, []);
+
+  const fetchData = React.useCallback(() => {
+    setArtists(getArtists());
 
     // Load packages from localStorage
     const storedPackages = localStorage.getItem('servicePackages');
@@ -116,7 +121,7 @@ export default function Home() {
         setIsCustomerLoggedIn(false);
         setCustomer(null);
     }
-  }, []);
+  }, [getArtists]);
 
   React.useEffect(() => {
     fetchData();
@@ -229,7 +234,7 @@ export default function Home() {
         );
     }
 
-    currentArtists = currentArtists.filter((artist) => artist.charge <= priceRange[0]);
+    currentArtists = currentArtists.filter((artist) => (artist.charges?.[serviceType as 'mehndi' | 'makeup' | 'photography'] || artist.charge) <= priceRange[0]);
 
     setFilteredArtists(currentArtists);
   }, [location, serviceType, priceRange, artists, selectedStyles]);
@@ -474,3 +479,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
