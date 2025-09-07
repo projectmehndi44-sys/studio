@@ -156,6 +156,7 @@ export const exportPayoutToPdf = (payout: Payout | PayoutHistory) => {
   const doc = new jsPDF();
   const isHistory = 'paymentDate' in payout;
   const paymentDate = isHistory ? new Date(payout.paymentDate).toLocaleString() : 'N/A';
+  const platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10');
 
   doc.setFontSize(20);
   doc.text('Payout Summary', 14, 22);
@@ -170,7 +171,7 @@ export const exportPayoutToPdf = (payout: Payout | PayoutHistory) => {
       ['Gross Revenue from Bookings', `₹${payout.grossRevenue.toLocaleString()}`],
       ['Total Bookings Included', payout.totalBookings.toString()],
       { content: 'Deductions', styles: { fontStyle: 'bold' } },
-      ['Platform Fees (10%)', `- ₹${payout.platformFees.toLocaleString()}`],
+      [`Platform Fees (${platformFeePercentage}%)`, `- ₹${payout.platformFees.toLocaleString()}`],
       ['GST on Services (18%)', `- ₹${payout.gst.toLocaleString()}`],
     ],
     foot: [
@@ -191,6 +192,8 @@ export const exportPayoutToPdf = (payout: Payout | PayoutHistory) => {
  */
 export const generateGstInvoice = (payout: Payout | PayoutHistory) => {
     const doc = new jsPDF();
+    const gstin = localStorage.getItem('platformGstin') || 'Not Set';
+    const platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10');
 
     // Invoice Header
     doc.setFontSize(24);
@@ -198,26 +201,30 @@ export const generateGstInvoice = (payout: Payout | PayoutHistory) => {
     doc.setFontSize(12);
     doc.text('MehendiFy Platform', 14, 30);
     doc.text('123 Glamour Lane, Mumbai, MH, 400001', 14, 36);
-    doc.text('GSTIN: 27ABCDE1234F1Z5', 14, 42);
+    doc.text(`GSTIN: ${gstin}`, 14, 42);
 
     doc.text(`Bill To: ${payout.artistName}`, 14, 60);
     // Add artist address if available
 
-    const invoiceId = `INV-${payout.id || Date.now()}`;
+    const invoiceId = `INV-${payout.artistId.substring(0,4)}-${Date.now()}`;
     const invoiceDate = 'paymentDate' in payout ? new Date(payout.paymentDate).toLocaleDateString() : new Date().toLocaleDateString();
 
     doc.text(`Invoice #: ${invoiceId}`, 196, 60, { align: 'right' });
     doc.text(`Date: ${invoiceDate}`, 196, 66, { align: 'right' });
 
     // Invoice Table
+    const commissionFee = payout.platformFees;
+    const gstOnCommission = commissionFee * 0.18;
+    const totalFee = commissionFee + gstOnCommission;
+
     autoTable(doc, {
         startY: 80,
         head: [['#', 'Service Description', 'Taxable Amount', 'GST Rate', 'GST Amount', 'Total']],
         body: [
-            ['1', 'Platform Commission Fee', `₹${payout.platformFees.toLocaleString()}`, '18%', `₹${(payout.platformFees * 0.18).toLocaleString()}`, `₹${(payout.platformFees * 1.18).toLocaleString()}`],
+            ['1', `Platform Commission Fee (${platformFeePercentage}%)`, `₹${commissionFee.toLocaleString()}`, '18%', `₹${gstOnCommission.toLocaleString(undefined, {minimumFractionDigits: 2})}`, `₹${totalFee.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
         ],
         foot: [
-            ['', '', '', '', 'Total', `₹${(payout.platformFees * 1.18).toLocaleString()}`]
+            ['', '', '', '', 'Total', `₹${totalFee.toLocaleString(undefined, {minimumFractionDigits: 2})}`]
         ],
         theme: 'grid',
         headStyles: { fillColor: '#34495e' },

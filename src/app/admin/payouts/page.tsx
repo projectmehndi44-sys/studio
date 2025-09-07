@@ -39,6 +39,7 @@ export default function PayoutManagementPage() {
 
 
     const calculatePayouts = React.useCallback(() => {
+        const platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10') / 100;
         const payoutMap: Record<string, Payout> = {};
 
         // Only consider completed and not-yet-paid-out bookings for payout calculation
@@ -71,8 +72,8 @@ export default function PayoutManagementPage() {
 
         // Calculate fees and net payout
         Object.values(payoutMap).forEach(payout => {
-            payout.platformFees = payout.grossRevenue * 0.10;
-            payout.gst = payout.grossRevenue * 0.18;
+            payout.platformFees = payout.grossRevenue * platformFeePercentage;
+            payout.gst = payout.grossRevenue * 0.18; // GST on artist's gross revenue
             payout.netPayout = payout.grossRevenue - payout.platformFees - payout.gst;
         });
 
@@ -160,7 +161,7 @@ export default function PayoutManagementPage() {
                                                 <TableHead>Artist</TableHead>
                                                 <TableHead>Completed Bookings</TableHead>
                                                 <TableHead>Gross Revenue</TableHead>
-                                                <TableHead>Platform Fees (10%)</TableHead>
+                                                <TableHead>Platform Fees</TableHead>
                                                 <TableHead>GST (18%)</TableHead>
                                                 <TableHead className="font-bold text-primary">Net Payout</TableHead>
                                                 <TableHead className="text-right">Actions</TableHead>

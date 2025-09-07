@@ -64,6 +64,12 @@ export default function AdminPage() {
     const [selectedArtistIds, setSelectedArtistIds] = React.useState<string[]>([]);
     const [bookings, setBookings] = React.useState<Booking[]>([]);
     const [pendingBookingCount, setPendingBookingCount] = React.useState(0);
+    const [financials, setFinancials] = React.useState({
+        overall: { totalRevenue: 0, platformFee: 0, gst: 0, netPayout: 0, refunds: 0, netProfit: 0 },
+        currentMonth: { totalRevenue: 0, platformFee: 0, gst: 0, netPayout: 0, refunds: 0, netProfit: 0 },
+        lastMonth: { totalRevenue: 0, platformFee: 0, gst: 0, netPayout: 0, refunds: 0, netProfit: 0 },
+    });
+
 
     const fetchAdminData = React.useCallback(() => {
         // Fetch approved artists
@@ -102,6 +108,40 @@ export default function AdminPage() {
             return () => window.removeEventListener('storage', fetchAdminData);
         }
     }, [router, fetchAdminData]);
+
+     // Effect for calculating financials
+    React.useEffect(() => {
+        const calculateRevenue = (filteredBookings: Booking[]) => {
+            const platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10') / 100;
+            const refundFee = parseFloat(localStorage.getItem('platformRefundFee') || '500');
+
+            const completed = filteredBookings.filter(b => b.status === 'Completed');
+            const totalRevenue = completed.reduce((sum, b) => sum + b.amount, 0);
+            const platformFee = totalRevenue * platformFeePercentage;
+            const gst = totalRevenue * 0.18; // 18% GST on artist's gross service value
+            const refunds = refundFee; // Mocked data for now
+            const netPayout = totalRevenue - platformFee - gst; // Artist payout after commission and GST
+            const netProfit = platformFee - refunds; // Platform profit is the commission minus refunds
+
+            return { totalRevenue, platformFee, gst, netPayout, refunds, netProfit };
+        };
+        
+        const getMonthYear = (date: Date) => new Date(date).toLocaleString('default', { month: 'long', year: 'numeric' });
+        
+        const currentMonth = new Date();
+        const lastMonth = new Date();
+        lastMonth.setMonth(lastMonth.getMonth() - 1);
+
+        const currentMonthBookings = bookings.filter(b => getMonthYear(new Date(b.date)) === getMonthYear(currentMonth));
+        const lastMonthBookings = bookings.filter(b => getMonthYear(new Date(b.date)) === getMonthYear(lastMonth));
+
+        setFinancials({
+            overall: calculateRevenue(bookings),
+            currentMonth: calculateRevenue(currentMonthBookings),
+            lastMonth: calculateRevenue(lastMonthBookings),
+        });
+
+    }, [bookings]);
 
     const handleLogout = () => {
         localStorage.removeItem('isAdminAuthenticated');
@@ -266,33 +306,10 @@ export default function AdminPage() {
     };
 
     const bookedDates = bookings.filter(b => b.status === 'Confirmed' || b.status === 'Completed').map(b => new Date(b.date));
-
-    // Revenue Calculations
-    const calculateRevenue = (filteredBookings: Booking[]) => {
-        const completed = filteredBookings.filter(b => b.status === 'Completed');
-        const totalRevenue = completed.reduce((sum, b) => sum + b.amount, 0);
-        const platformFee = totalRevenue * 0.10; // 10% commission
-        const gst = totalRevenue * 0.18; // 18% GST on artist's gross service value
-        const refunds = 500; // Mocked data for now
-        const netPayout = totalRevenue - platformFee - gst; // Artist payout after commission and GST
-        const netProfit = platformFee - refunds; // Platform profit is the commission minus refunds
-
-        return { totalRevenue, platformFee, gst, netPayout, refunds, netProfit };
-    };
-    
-    const overallRevenue = calculateRevenue(bookings);
-
-    const getMonthYear = (date: Date) => new Date(date).toLocaleString('default', { month: 'long', year: 'numeric' });
-    const currentMonthYear = getMonthYear(new Date());
+    const currentMonthYear = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
     const lastMonth = new Date();
     lastMonth.setMonth(lastMonth.getMonth() - 1);
-    const lastMonthYear = getMonthYear(lastMonth);
-
-    const currentMonthBookings = bookings.filter(b => getMonthYear(new Date(b.date)) === currentMonthYear);
-    const lastMonthBookings = bookings.filter(b => getMonthYear(new Date(b.date)) === lastMonthYear);
-
-    const currentMonthRevenue = calculateRevenue(currentMonthBookings);
-    const lastMonthRevenue = calculateRevenue(lastMonthBookings);
+    const lastMonthYear = lastMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
     
 
     return (
@@ -685,27 +702,27 @@ export default function AdminPage() {
                             <CardContent className="space-y-4">
                                 <div className="flex justify-between items-center border-b pb-2">
                                     <span className="text-muted-foreground flex items-center gap-2"><DollarSign /> Total Revenue</span>
-                                    <span className="font-bold text-lg">₹{overallRevenue.totalRevenue.toLocaleString()}</span>
+                                    <span className="font-bold text-lg">₹{financials.overall.totalRevenue.toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between items-center border-b pb-2">
-                                    <span className="text-muted-foreground flex items-center gap-2"><BarChart /> Platform Fees (10%)</span>
-                                    <span className="font-bold text-lg">₹{overallRevenue.platformFee.toLocaleString()}</span>
+                                    <span className="text-muted-foreground flex items-center gap-2"><BarChart /> Platform Fees</span>
+                                    <span className="font-bold text-lg">₹{financials.overall.platformFee.toLocaleString()}</span>
                                 </div>
                                  <div className="flex justify-between items-center border-b pb-2">
                                     <span className="text-muted-foreground flex items-center gap-2"><BarChart /> GST on Revenue (18%)</span>
-                                    <span className="font-bold text-lg">₹{overallRevenue.gst.toLocaleString()}</span>
+                                    <span className="font-bold text-lg">₹{financials.overall.gst.toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between items-center border-b pb-2">
                                     <span className="text-muted-foreground flex items-center gap-2"><Users /> Net Payout to Artists</span>
-                                    <span className="font-bold text-lg">₹{overallRevenue.netPayout.toLocaleString()}</span>
+                                    <span className="font-bold text-lg">₹{financials.overall.netPayout.toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between items-center border-b pb-2">
                                     <span className="text-muted-foreground flex items-center gap-2"><RefreshCw /> Refunds Processed</span>
-                                    <span className="font-bold text-lg text-amber-600">- ₹{overallRevenue.refunds.toLocaleString()}</span>
+                                    <span className="font-bold text-lg text-amber-600">- ₹{financials.overall.refunds.toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between items-center pt-2 bg-muted -mx-6 px-6 py-3 rounded-b-lg">
                                     <span className="font-bold text-primary flex items-center gap-2"><Star /> Net Profit</span>
-                                    <span className="font-extrabold text-xl text-green-600">₹{overallRevenue.netProfit.toLocaleString()}</span>
+                                    <span className="font-extrabold text-xl text-green-600">₹{financials.overall.netProfit.toLocaleString()}</span>
                                 </div>
                             </CardContent>
                         </Card>
@@ -719,22 +736,22 @@ export default function AdminPage() {
                                     <h4 className="font-semibold text-center text-primary">{currentMonthYear}</h4>
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="text-muted-foreground">Revenue:</span>
-                                        <span className="font-bold">₹{currentMonthRevenue.totalRevenue.toLocaleString()}</span>
+                                        <span className="font-bold">₹{financials.currentMonth.totalRevenue.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="text-muted-foreground">Profit:</span>
-                                        <span className="font-bold">₹{currentMonthRevenue.netProfit.toLocaleString()}</span>
+                                        <span className="font-bold">₹{financials.currentMonth.netProfit.toLocaleString()}</span>
                                     </div>
                                 </div>
                                 <div className="space-y-2">
                                     <h4 className="font-semibold text-center text-primary">{lastMonthYear}</h4>
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="text-muted-foreground">Revenue:</span>
-                                        <span className="font-bold">₹{lastMonthRevenue.totalRevenue.toLocaleString()}</span>
+                                        <span className="font-bold">₹{financials.lastMonth.totalRevenue.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="text-muted-foreground">Profit:</span>
-                                        <span className="font-bold">₹{lastMonthRevenue.netProfit.toLocaleString()}</span>
+                                        <span className="font-bold">₹{financials.lastMonth.netProfit.toLocaleString()}</span>
                                     </div>
                                 </div>
                             </CardContent>
