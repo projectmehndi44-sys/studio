@@ -1,4 +1,5 @@
 
+
 export type Artist = {
   id: string;
   name: string;
@@ -75,4 +76,13 @@ export type Transaction = {
   description: string;
   amount: number;
   relatedId: string;
+};
+
+export type MehndiPackage = {
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    image: string;
+    tags: string[];
 };

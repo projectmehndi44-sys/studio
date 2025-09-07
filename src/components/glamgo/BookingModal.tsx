@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import type { Artist, Booking } from '@/types';
+import type { Artist, Booking, MehndiPackage } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -17,24 +17,29 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
-import { Calendar as CalendarIcon, Clock, DollarSign } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, DollarSign, User, Package as PackageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 interface BookingModalProps {
-  artist: Artist;
+  artist: Artist | null;
+  pkg: MehndiPackage | null;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }
 
-export function BookingModal({ artist, isOpen, onOpenChange }: BookingModalProps) {
+export function BookingModal({ artist, pkg: selectedPackage, isOpen, onOpenChange }: BookingModalProps) {
   const { toast } = useToast();
   const [date, setDate] = React.useState<Date | undefined>();
   const [time, setTime] = React.useState('');
   const [address, setAddress] = React.useState('');
   const [name, setName] = React.useState('');
   const [phone, setPhone] = React.useState('');
+
+  const bookingTargetName = artist?.name || selectedPackage?.name || '';
+  const bookingCharge = artist?.charge || selectedPackage?.price || 0;
+  const bookingService = selectedPackage ? selectedPackage.name : artist?.services.join(' & ') || 'Service';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,14 +55,16 @@ export function BookingModal({ artist, isOpen, onOpenChange }: BookingModalProps
     // In a real app, this would trigger a server action to create a booking
     const newBooking: Booking = {
         id: `book_${Date.now()}`,
-        artistIds: [artist.id],
+        // If booking a package, artistIds is empty. Admin will assign.
+        // If booking an artist, their ID is pre-filled.
+        artistIds: artist ? [artist.id] : [],
         customerName: name,
         customerContact: phone,
         serviceAddress: address,
         date: date,
-        service: artist.services.join(' & '), // Simple service name
-        amount: artist.charge,
-        status: 'Pending Approval'
+        service: bookingService,
+        amount: bookingCharge,
+        status: artist ? 'Pending Approval' : 'Needs Assignment'
     };
 
     // Save to localStorage to simulate backend and notify admin
@@ -68,7 +75,7 @@ export function BookingModal({ artist, isOpen, onOpenChange }: BookingModalProps
 
     toast({
       title: "Booking Request Sent!",
-      description: `Your request to book ${artist.name} has been sent. The admin will review it and you will be notified upon confirmation.`,
+      description: `Your request to book ${bookingTargetName} has been sent. The admin will review it and you will be notified upon confirmation.`,
     });
     onOpenChange(false);
     // Reset form
@@ -83,16 +90,20 @@ export function BookingModal({ artist, isOpen, onOpenChange }: BookingModalProps
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-primary font-bold text-2xl">Book {artist.name}</DialogTitle>
+          <DialogTitle className="text-primary font-bold text-2xl">Book {bookingTargetName}</DialogTitle>
           <DialogDescription>
-            Fill in the details below to request a booking. Your request will be sent to the admin for approval.
+            Fill in the details below to request a booking. Your request will be sent for approval.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto px-2">
-            <div className="flex items-center justify-between p-2 rounded-lg bg-muted">
-                <span className="font-semibold text-muted-foreground">Base Charge</span>
-                <span className="font-bold text-lg text-primary flex items-center"><DollarSign className="w-4 h-4 mr-1"/>₹{artist.charge.toLocaleString()}</span>
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted border">
+                <div className="flex items-center gap-2">
+                    {artist && <User className="w-5 h-5 text-muted-foreground" />}
+                    {selectedPackage && <PackageIcon className="w-5 h-5 text-muted-foreground" />}
+                    <span className="font-semibold text-muted-foreground">{artist ? "Artist's Base Charge" : "Package Price"}</span>
+                </div>
+                <span className="font-bold text-lg text-primary flex items-center"><DollarSign className="w-4 h-4 mr-1"/>₹{bookingCharge.toLocaleString()}</span>
             </div>
 
              <div className="grid grid-cols-4 items-center gap-4">
