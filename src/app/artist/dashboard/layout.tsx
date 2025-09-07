@@ -60,7 +60,7 @@ export default function ArtistDashboardLayout({
         setNotifications(artistNotifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
         setUnreadCount(artistNotifications.filter((n: Notification) => !n.isRead).length);
 
-    }, [router]);
+    }, [router, toast]);
 
     React.useEffect(() => {
         const isArtistAuthenticated = localStorage.getItem('isArtistAuthenticated');
@@ -92,6 +92,9 @@ export default function ArtistDashboardLayout({
             const props: any = { artist, bookings, notifications, setNotifications, setUnreadCount, artistId };
             if (pathname === '/artist/dashboard/bookings') {
                 props.setBookings = setBookings;
+            }
+             if (pathname.startsWith('/artist/dashboard/profile')) {
+                props.artist = artist;
             }
             return React.cloneElement(child, props);
         }

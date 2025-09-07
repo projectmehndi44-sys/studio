@@ -69,13 +69,24 @@ export default function ArtistProfilePage({ artist: initialArtistData }: ArtistP
     const getArtists = (): Artist[] => {
          const storedArtists = localStorage.getItem('artists');
          const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
-         const allArtists = [...initialArtists, ...localArtists.filter(la => !initialArtists.some(ia => ia.id === la.id))];
-         return allArtists;
+         // Combine initial and stored, ensuring no duplicates and stored takes precedence
+         const allArtistsMap = new Map<string, Artist>();
+         initialArtists.forEach(a => allArtistsMap.set(a.id, a));
+         localArtists.forEach(a => allArtistsMap.set(a.id, a));
+         return Array.from(allArtistsMap.values());
     }
     
     const saveArtists = (artists: Artist[]) => {
-         // Separate initial artists from localStorage-only artists
-        const artistsToStore = artists.filter(a => !initialArtists.some(ia => ia.id === a.id));
+        // We only want to save the artists that are not part of the initial static data,
+        // unless they have been modified.
+        const artistsToStore = artists.filter(a => {
+            const initialArtist = initialArtists.find(ia => ia.id === a.id);
+            // If the artist is not in the initial list, save it.
+            if (!initialArtist) return true;
+            // If the artist is in the initial list, only save it if it has changed.
+            return JSON.stringify(initialArtist) !== JSON.stringify(a);
+        });
+
         localStorage.setItem('artists', JSON.stringify(artistsToStore));
         window.dispatchEvent(new Event('storage'));
     };
@@ -100,7 +111,10 @@ export default function ArtistProfilePage({ artist: initialArtistData }: ArtistP
         const allArtists = getArtists();
         const artistIndex = allArtists.findIndex(a => a.id === artist.id);
 
-        if (artistIndex === -1) return;
+        if (artistIndex === -1) {
+            toast({ title: 'Error', description: 'Could not find your profile to update.', variant: 'destructive' });
+            return;
+        }
 
         const updatedArtist: Artist = {
             ...allArtists[artistIndex],
@@ -147,7 +161,6 @@ export default function ArtistProfilePage({ artist: initialArtistData }: ArtistP
     
     const handleAddTag = () => {
         if (tagInput.trim() !== '') {
-            // Check if the tag already exists
             const currentTags = form.getValues('styleTags').map(tag => tag.value.toLowerCase());
             if (!currentTags.includes(tagInput.trim().toLowerCase())) {
                 append({ value: tagInput.trim() });
@@ -161,7 +174,6 @@ export default function ArtistProfilePage({ artist: initialArtistData }: ArtistP
             }
         }
     };
-
 
     if (!artist) {
         return <div className="flex items-center justify-center min-h-full">Loading Profile...</div>;

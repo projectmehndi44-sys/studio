@@ -17,20 +17,27 @@ interface ArtistBookingsPageProps {
 export default function ArtistBookingsPage({ bookings, setBookings }: ArtistBookingsPageProps) {
     const { toast } = useToast();
 
-    const handleStatusUpdate = (bookingId: string, status: 'Confirmed' | 'Completed') => {
-        // In a real app, this would be a server action.
-        const updatedBookings = bookings.map(b => b.id === bookingId ? { ...b, status } : b);
-        
-        // Persist to localStorage to simulate backend
-        const allBookings = JSON.parse(localStorage.getItem('bookings') || '[]');
-        const newAllBookings = allBookings.map((b: Booking) => b.id === bookingId ? { ...b, status } : b);
+    const handleStatusUpdate = (bookingId: string, status: 'Completed') => {
+        // This function simulates updating the booking status.
+        // In a real app, this would be a server action that updates your database.
+        const updatedArtistBookings = bookings.map(b => 
+            b.id === bookingId ? { ...b, status } : b
+        );
+        setBookings(updatedArtistBookings); // Update the local state for the artist's view
+
+        // To ensure the Admin portal gets the update, we need to update the master list in localStorage
+        const allBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || '[]').map((b: any) => ({...b, date: new Date(b.date)}));
+        const newAllBookings = allBookings.map((b: Booking) => 
+            b.id === bookingId ? { ...b, status } : b
+        );
         localStorage.setItem('bookings', JSON.stringify(newAllBookings));
 
-        setBookings(updatedBookings);
+        // Dispatch a storage event to notify other open tabs (like the admin portal)
+        window.dispatchEvent(new Event('storage'));
         
         toast({
-            title: "Booking Updated",
-            description: `Booking #${bookingId} has been marked as ${status}.`
+            title: "Booking Updated!",
+            description: `Booking #${bookingId} has been marked as ${status}. Your payout will be processed in the next cycle.`
         });
     }
 
@@ -40,6 +47,7 @@ export default function ArtistBookingsPage({ bookings, setBookings }: ArtistBook
             case 'Confirmed': return 'secondary';
             case 'Pending Approval': return 'outline';
             case 'Cancelled': return 'destructive';
+            case 'Disputed': return 'destructive';
             default: return 'outline';
         }
     };
@@ -62,7 +70,7 @@ export default function ArtistBookingsPage({ bookings, setBookings }: ArtistBook
         <Card>
             <CardHeader>
                 <CardTitle>Your Bookings</CardTitle>
-                <CardDescription>Manage your upcoming and past bookings.</CardDescription>
+                <CardDescription>Manage your upcoming and past bookings. Mark bookings as 'Completed' once the service is done to request your payout.</CardDescription>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -73,7 +81,7 @@ export default function ArtistBookingsPage({ bookings, setBookings }: ArtistBook
                             <TableHead>Service</TableHead>
                             <TableHead>Location</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead>Action</TableHead>
+                            <TableHead className="text-right">Action</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -86,7 +94,7 @@ export default function ArtistBookingsPage({ bookings, setBookings }: ArtistBook
                                 <TableCell>
                                     <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="text-right">
                                     {booking.status === 'Confirmed' && (
                                         <Button size="sm" onClick={() => handleStatusUpdate(booking.id, 'Completed')}>
                                             Mark as Completed

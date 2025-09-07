@@ -8,11 +8,13 @@ import { Button } from '@/components/ui/button';
 
 interface NotificationCardProps {
     notification: Notification;
-    booking: Booking | undefined;
+    allBookings: Booking[];
     onMarkAsRead: (id: string) => void;
 }
 
-function NotificationCard({ notification, booking, onMarkAsRead }: NotificationCardProps) {
+function NotificationCard({ notification, allBookings, onMarkAsRead }: NotificationCardProps) {
+    const booking = allBookings.find(b => b.id === notification.bookingId);
+    
     return (
         <div 
             onClick={() => !notification.isRead && onMarkAsRead(notification.id)}
@@ -38,14 +40,21 @@ function NotificationCard({ notification, booking, onMarkAsRead }: NotificationC
 
 interface ArtistNotificationsPageProps {
     notifications: Notification[];
-    bookings: Booking[];
     setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
     artistId: string;
     setUnreadCount: React.Dispatch<React.SetStateAction<number>>;
 }
 
-export default function ArtistNotificationsPage({ notifications, bookings, setNotifications, artistId, setUnreadCount }: ArtistNotificationsPageProps) {
-    if (!notifications || !bookings) {
+export default function ArtistNotificationsPage({ notifications, setNotifications, artistId, setUnreadCount }: ArtistNotificationsPageProps) {
+    
+    const [allBookings, setAllBookings] = React.useState<Booking[]>([]);
+
+    React.useEffect(() => {
+        const storedBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || '[]').map((b: any) => ({...b, date: new Date(b.date)}));
+        setAllBookings(storedBookings);
+    }, []);
+
+    if (!notifications || !allBookings) {
         return (
              <Card>
                 <CardHeader>
@@ -66,6 +75,7 @@ export default function ArtistNotificationsPage({ notifications, bookings, setNo
 
         setNotifications(updated);
         setUnreadCount(updated.filter(n => !n.isRead).length);
+        window.dispatchEvent(new Event('storage'));
     }
     
     const markOneAsRead = (id: string) => {
@@ -90,8 +100,7 @@ export default function ArtistNotificationsPage({ notifications, bookings, setNo
             <CardContent className="space-y-4">
                 {notifications.length > 0 ? (
                     notifications.map(notif => {
-                        const booking = bookings.find(b => b.id === notif.bookingId);
-                        return <NotificationCard key={notif.id} notification={notif} booking={booking} onMarkAsRead={markOneAsRead} />
+                        return <NotificationCard key={notif.id} notification={notif} allBookings={allBookings} onMarkAsRead={markOneAsRead} />
                     })
                 ) : (
                     <p className="text-muted-foreground text-center py-8">You have no new notifications.</p>
