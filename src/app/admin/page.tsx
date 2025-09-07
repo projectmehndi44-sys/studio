@@ -272,10 +272,10 @@ export default function AdminPage() {
         const completed = filteredBookings.filter(b => b.status === 'Completed');
         const totalRevenue = completed.reduce((sum, b) => sum + b.amount, 0);
         const platformFee = totalRevenue * 0.10; // 10% commission
-        const gst = platformFee * 0.18; // 18% GST on platform fees
+        const gst = totalRevenue * 0.18; // 18% GST on artist's gross service value
         const refunds = 500; // Mocked data for now
-        const netPayout = totalRevenue - platformFee - gst; // GST is deducted from artist payout
-        const netProfit = platformFee - refunds; // GST is remitted, not profit
+        const netPayout = totalRevenue - platformFee - gst; // Artist payout after commission and GST
+        const netProfit = platformFee - refunds; // Platform profit is the commission minus refunds
 
         return { totalRevenue, platformFee, gst, netPayout, refunds, netProfit };
     };
@@ -676,7 +676,7 @@ export default function AdminPage() {
                                     <span className="font-bold text-lg">₹{overallRevenue.platformFee.toLocaleString()}</span>
                                 </div>
                                  <div className="flex justify-between items-center border-b pb-2">
-                                    <span className="text-muted-foreground flex items-center gap-2"><BarChart /> GST (18%) on Fees</span>
+                                    <span className="text-muted-foreground flex items-center gap-2"><BarChart /> GST on Revenue (18%)</span>
                                     <span className="font-bold text-lg">₹{overallRevenue.gst.toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between items-center border-b pb-2">
