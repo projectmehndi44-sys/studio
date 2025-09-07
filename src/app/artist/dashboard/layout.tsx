@@ -11,6 +11,7 @@ import { artists as initialArtists } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 
 const NavLink = ({ href, pathname, icon: Icon, label, badge, isMobile }: { href: string; pathname: string; icon: React.ElementType, label: string, badge?: number, isMobile?: boolean }) => (
@@ -110,9 +111,8 @@ export default function ArtistDashboardLayout({
     // Clone children and pass down the fetched data as props
     const childrenWithProps = React.Children.map(children, child => {
         if (React.isValidElement(child)) {
-            const props: any = {};
+            const props: any = { artist }; // artist is needed in multiple child routes
             if (pathname === '/artist/dashboard') {
-                props.artist = artist;
                 props.bookings = bookings;
             }
             if (pathname === '/artist/dashboard/bookings') {
@@ -124,9 +124,6 @@ export default function ArtistDashboardLayout({
                  props.setNotifications = setNotifications;
                  props.artistId = artistId;
                  props.setUnreadCount = setUnreadCount;
-            }
-             if (pathname.startsWith('/artist/dashboard/profile')) {
-                props.artist = artist;
             }
             return React.cloneElement(child, props);
         }
