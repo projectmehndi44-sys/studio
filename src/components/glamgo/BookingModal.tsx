@@ -50,7 +50,7 @@ export function BookingModal({ artist, isOpen, onOpenChange }: BookingModalProps
     // In a real app, this would trigger a server action to create a booking
     const newBooking: Booking = {
         id: `book_${Date.now()}`,
-        artistId: artist.id,
+        artistIds: [artist.id],
         customerName: name,
         customerContact: phone,
         serviceAddress: address,

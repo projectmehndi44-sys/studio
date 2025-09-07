@@ -16,7 +16,7 @@ export type Artist = {
 
 export type Booking = {
   id: string;
-  artistId?: string | null;
+  artistIds: (string | null)[];
   customerName: string;
   customerContact: string;
   serviceAddress: string;

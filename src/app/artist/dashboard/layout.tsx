@@ -12,10 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 
 // Mock data that would be fetched for the logged-in artist
 const allBookings: Booking[] = [
-    { id: 'book_01', artistId: '1', customerName: 'Priya Patel', customerContact: '9876543210', serviceAddress: '123, Rose Villa, Bandra West, Mumbai', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed' },
-    { id: 'book_04', artistId: '1', customerName: 'Meera Iyer', customerContact: '9876543213', serviceAddress: '321, Lakeview, Powai, Mumbai', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed' },
-    { id: 'book_07', artistId: '1', customerName: 'Neha Desai', customerContact: '9876543216', serviceAddress: '555, Juhu Beach, Mumbai', date: new Date('2024-08-20'), service: 'Bridal Package', amount: 9500, status: 'Confirmed' },
-    { id: 'book_08', artistId: '2', customerName: 'Anika Verma', customerContact: '9876543217', serviceAddress: '777, CP, New Delhi', date: new Date('2024-08-22'), service: 'Reception Makeup', amount: 6000, status: 'Confirmed' },
+    { id: 'book_01', artistIds: ['1'], customerName: 'Priya Patel', customerContact: '9876543210', serviceAddress: '123, Rose Villa, Bandra West, Mumbai', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed' },
+    { id: 'book_04', artistIds: ['1'], customerName: 'Meera Iyer', customerContact: '9876543213', serviceAddress: '321, Lakeview, Powai, Mumbai', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed' },
+    { id: 'book_07', artistIds: ['1'], customerName: 'Neha Desai', customerContact: '9876543216', serviceAddress: '555, Juhu Beach, Mumbai', date: new Date('2024-08-20'), service: 'Bridal Package', amount: 9500, status: 'Confirmed' },
+    { id: 'book_08', artistIds: ['2'], customerName: 'Anika Verma', customerContact: '9876543217', serviceAddress: '777, CP, New Delhi', date: new Date('2024-08-22'), service: 'Reception Makeup', amount: 6000, status: 'Confirmed' },
 ];
 
 export default function ArtistDashboardLayout({
@@ -59,7 +59,7 @@ export default function ArtistDashboardLayout({
 
         // Fetch Bookings
         const localBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || '[]');
-        const artistBookings = [...allBookings, ...localBookings].filter(b => b.artistId === currentArtistId);
+        const artistBookings = [...allBookings, ...localBookings].filter(b => b.artistIds.includes(currentArtistId));
         setBookings(artistBookings);
         
         // Fetch Notifications
@@ -96,6 +96,10 @@ export default function ArtistDashboardLayout({
     
     const childrenWithProps = React.Children.map(children, child => {
         if (React.isValidElement(child)) {
+            // Pass bookings and setBookings to the bookings page
+            if (pathname === '/artist/dashboard/bookings') {
+                return React.cloneElement(child, { bookings, setBookings } as any);
+            }
             return React.cloneElement(child, { artist, bookings, notifications, setNotifications, setUnreadCount, artistId } as any);
         }
         return child;

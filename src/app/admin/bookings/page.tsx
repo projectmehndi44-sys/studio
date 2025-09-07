@@ -17,12 +17,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 
 
 const allBookings: Booking[] = [
-    { id: 'book_01', artistId: '1', customerName: 'Priya Patel', customerContact: '9876543210', serviceAddress: '123, Rose Villa, Bandra West, Mumbai', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed' },
-    { id: 'book_02', artistId: '2', customerName: 'Anjali Sharma', customerContact: '9876543211', serviceAddress: '456, Sunshine Apts, Saket, New Delhi', date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed' },
-    { id: 'book_03', artistId: '3', customerName: 'Sneha Reddy', customerContact: '9876543212', serviceAddress: '789, Tech Park, Koramangala, Bangalore', date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Pending Approval' },
-    { id: 'book_04', artistId: '1', customerName: 'Meera Iyer', customerContact: '9876543213', serviceAddress: '321, Lakeview, Powai, Mumbai', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed' },
-    { id: 'book_05', artistId: null, customerName: 'Rohan Gupta', customerContact: '9876543214', serviceAddress: '654, MG Road, Pune', date: new Date('2024-08-12'), service: 'Mehndi Package', amount: 1800, status: 'Needs Assignment' },
-    { id: 'book_06', artistId: '4', customerName: 'Kavita Singh', customerContact: '9876543215', serviceAddress: '987, Cyber City, Gurgaon', date: new Date('2024-08-15'), service: 'Minimalist Mehndi', amount: 2200, status: 'Pending Approval' },
+    { id: 'book_01', artistIds: ['1'], customerName: 'Priya Patel', customerContact: '9876543210', serviceAddress: '123, Rose Villa, Bandra West, Mumbai', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed' },
+    { id: 'book_02', artistIds: ['2'], customerName: 'Anjali Sharma', customerContact: '9876543211', serviceAddress: '456, Sunshine Apts, Saket, New Delhi', date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed' },
+    { id: 'book_03', artistIds: ['3'], customerName: 'Sneha Reddy', customerContact: '9876543212', serviceAddress: '789, Tech Park, Koramangala, Bangalore', date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Pending Approval' },
+    { id: 'book_04', artistIds: ['1'], customerName: 'Meera Iyer', customerContact: '9876543213', serviceAddress: '321, Lakeview, Powai, Mumbai', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed' },
+    { id: 'book_05', artistIds: [], customerName: 'Rohan Gupta', customerContact: '9876543214', serviceAddress: '654, MG Road, Pune', date: new Date('2024-08-12'), service: 'Mehndi Package', amount: 1800, status: 'Needs Assignment' },
+    { id: 'book_06', artistIds: ['4'], customerName: 'Kavita Singh', customerContact: '9876543215', serviceAddress: '987, Cyber City, Gurgaon', date: new Date('2024-08-15'), service: 'Minimalist Mehndi', amount: 2200, status: 'Pending Approval' },
 ];
 
 export default function BookingManagementPage() {
@@ -47,7 +47,7 @@ export default function BookingManagementPage() {
     const sendNotification = (artistId: string, booking: Booking, title: string, message: string) => {
         const existingNotifications = JSON.parse(localStorage.getItem('notifications') || '[]');
         const newNotification: Notification = {
-            id: `notif_${Date.now()}`,
+            id: `notif_${Date.now()}_${artistId}`,
             artistId,
             bookingId: booking.id,
             title,
@@ -59,11 +59,11 @@ export default function BookingManagementPage() {
         window.dispatchEvent(new Event('storage'));
     };
 
-    const updateBookingStatus = (bookingId: string, status: Booking['status'], artistId?: string | null) => {
+    const updateBookingStatus = (bookingId: string, status: Booking['status'], artistIds?: (string | null)[]) => {
         setBookings(prevBookings => 
             prevBookings.map(b => 
                 b.id === bookingId 
-                ? { ...b, status, artistId: artistId !== undefined ? artistId : b.artistId } 
+                ? { ...b, status, artistIds: artistIds !== undefined ? artistIds : b.artistIds } 
                 : b
             )
         );
@@ -71,20 +71,24 @@ export default function BookingManagementPage() {
     
     const handleApproveBooking = (bookingId: string) => {
         const booking = bookings.find(b => b.id === bookingId);
-        if (!booking || !booking.artistId) return;
+        if (!booking || !booking.artistIds || booking.artistIds.length === 0) return;
 
         updateBookingStatus(bookingId, 'Confirmed');
         
-        sendNotification(
-            booking.artistId,
-            booking,
-            'Booking Approved!',
-            `Your booking for ${booking.service} with ${booking.customerName} has been approved by the admin.`
-        );
+        booking.artistIds.forEach(artistId => {
+            if (artistId) {
+                sendNotification(
+                    artistId,
+                    booking,
+                    'Booking Approved!',
+                    `Your booking for ${booking.service} with ${booking.customerName} has been approved by the admin.`
+                );
+            }
+        });
         
         toast({
             title: "Booking Approved",
-            description: `Booking ${bookingId} has been confirmed. A notification has been sent to the artist.`,
+            description: `Booking ${bookingId} has been confirmed. Notifications sent to assigned artists.`,
         });
     };
     
@@ -94,13 +98,17 @@ export default function BookingManagementPage() {
 
         updateBookingStatus(bookingId, 'Cancelled');
 
-        if(booking.artistId) {
-             sendNotification(
-                booking.artistId,
-                booking,
-                'Booking Cancelled',
-                `Your booking for ${booking.service} with ${booking.customerName} has been cancelled by the admin.`
-            );
+        if(booking.artistIds && booking.artistIds.length > 0) {
+            booking.artistIds.forEach(artistId => {
+                if (artistId) {
+                     sendNotification(
+                        artistId,
+                        booking,
+                        'Booking Cancelled',
+                        `Your booking for ${booking.service} with ${booking.customerName} has been cancelled by the admin.`
+                    );
+                }
+            });
         }
         
         toast({
@@ -115,23 +123,29 @@ export default function BookingManagementPage() {
         setIsAssignModalOpen(true);
     };
     
-    const handleAssignArtist = (bookingId: string, artistId: string, originalArtistId: string | null | undefined) => {
+    const handleAssignArtist = (bookingId: string, assignedArtistIds: string[]) => {
         const booking = bookings.find(b => b.id === bookingId);
-        const artist = artists.find(a => a.id === artistId);
-        if (!booking || !artist) return;
-
-        updateBookingStatus(bookingId, 'Confirmed', artistId);
+        if (!booking) return;
         
-        const title = originalArtistId ? 'Artist Changed' : 'New Booking Assigned!';
-        const message = originalArtistId
-            ? `The artist for booking #${bookingId} has been changed to you.`
-            : `You have been assigned a new booking for ${booking.service} with ${booking.customerName}.`;
+        const originalArtistIds = booking.artistIds;
+        updateBookingStatus(bookingId, 'Confirmed', assignedArtistIds);
+        
+        assignedArtistIds.forEach(artistId => {
+            const artist = artists.find(a => a.id === artistId);
+            if (!artist) return;
 
-        sendNotification(artistId, booking, title, message);
+            const isNewAssignment = !originalArtistIds.includes(artistId);
+            const title = isNewAssignment ? 'New Booking Assigned!' : 'Booking Updated';
+            const message = isNewAssignment
+                ? `You have been assigned a new booking for ${booking.service} with ${booking.customerName}.`
+                : `The details for booking #${bookingId} have been updated.`;
+
+            sendNotification(artistId, booking, title, message);
+        });
 
         toast({
-            title: `Artist ${originalArtistId ? 'Changed' : 'Assigned'}`,
-            description: `${artist?.name} has been assigned to booking ${bookingId}. A notification has been sent.`,
+            title: `Artists Assigned`,
+            description: `${assignedArtistIds.length} artist(s) have been assigned to booking ${bookingId}.`,
         });
     };
 
@@ -175,7 +189,7 @@ export default function BookingManagementPage() {
                                 <TableRow>
                                     <TableHead>Booking ID</TableHead>
                                     <TableHead>Customer</TableHead>
-                                    <TableHead>Artist</TableHead>
+                                    <TableHead>Artists</TableHead>
                                     <TableHead>Date</TableHead>
                                     <TableHead>Amount</TableHead>
                                     <TableHead>Status</TableHead>
@@ -184,12 +198,22 @@ export default function BookingManagementPage() {
                             </TableHeader>
                             <TableBody>
                                 {bookings.map(booking => {
-                                    const artist = artists.find(a => a.id === booking.artistId);
+                                    const assignedArtists = artists.filter(a => booking.artistIds.includes(a.id));
                                     return (
                                         <TableRow key={booking.id}>
                                             <TableCell className="font-mono text-xs">{booking.id}</TableCell>
                                             <TableCell>{booking.customerName}</TableCell>
-                                            <TableCell>{artist ? artist.name : <span className="text-muted-foreground">Not Assigned</span>}</TableCell>
+                                            <TableCell>
+                                                {assignedArtists.length > 0 ? (
+                                                    <div className="flex flex-col">
+                                                        {assignedArtists.map(artist => (
+                                                            <span key={artist.id}>{artist.name}</span>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-muted-foreground">Not Assigned</span>
+                                                )}
+                                            </TableCell>
                                             <TableCell>{booking.date.toLocaleDateString()}</TableCell>
                                             <TableCell>₹{booking.amount}</TableCell>
                                             <TableCell>
@@ -204,6 +228,7 @@ export default function BookingManagementPage() {
                                                             variant="default"
                                                             size="sm"
                                                             onClick={() => handleApproveBooking(booking.id)}
+                                                            disabled={assignedArtists.length === 0}
                                                         >
                                                             Approve
                                                         </Button>
@@ -214,6 +239,13 @@ export default function BookingManagementPage() {
                                                         >
                                                             Cancel
                                                         </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleOpenAssignModal(booking)}
+                                                        >
+                                                            Assign
+                                                        </Button>
                                                     </div>
                                                 )}
                                                 {booking.status === 'Needs Assignment' && (
@@ -222,7 +254,7 @@ export default function BookingManagementPage() {
                                                         size="sm"
                                                         onClick={() => handleOpenAssignModal(booking)}
                                                     >
-                                                        Assign Artist
+                                                        Assign Artist(s)
                                                     </Button>
                                                 )}
                                                 {booking.status === 'Confirmed' && (
@@ -236,7 +268,7 @@ export default function BookingManagementPage() {
                                                         <DropdownMenuContent align="end">
                                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                             <DropdownMenuItem onSelect={() => handleOpenAssignModal(booking)}>
-                                                                Change Artist
+                                                                Change Artists
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem onSelect={() => handleCancelBooking(booking.id)}>
                                                                 Cancel Booking

@@ -19,11 +19,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { exportToExcel, exportToPdf } from '@/lib/export';
 
 // Mock data for a single artist's details - in a real app, this would be fetched
-const mockBookings: Booking[] = [
-    { id: 'book_01', customerName: 'Priya Patel', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed' },
-    { id: 'book_02', customerName: 'Anjali Sharma', date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed' },
-    { id: 'book_03', customerName: 'Sneha Reddy', date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Confirmed' },
-    { id: 'book_04', customerName: 'Meera Iyer', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed' },
+const mockBookings: Omit<Booking, 'artistIds'>[] = [
+    { id: 'book_01', customerName: 'Priya Patel', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed', customerContact: '', serviceAddress: '' },
+    { id: 'book_02', customerName: 'Anjali Sharma', date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed', customerContact: '', serviceAddress: '' },
+    { id: 'book_03', customerName: 'Sneha Reddy', date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Confirmed', customerContact: '', serviceAddress: '' },
+    { id: 'book_04', customerName: 'Meera Iyer', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed', customerContact: '', serviceAddress: '' },
 ];
 
 const mockReviews: Review[] = [
@@ -39,7 +39,7 @@ export default function ArtistDetailPage() {
     const artistId = params.id as string;
 
     const [artist, setArtist] = React.useState<Artist | null>(null);
-    const [bookings] = React.useState<Booking[]>(mockBookings);
+    const [bookings] = React.useState<Omit<Booking, 'artistIds'>[]>(mockBookings);
     const [reviews] = React.useState<Review[]>(mockReviews);
 
     React.useEffect(() => {
@@ -70,7 +70,7 @@ export default function ArtistDetailPage() {
 
         const dataToDownload = {
             artist,
-            bookings,
+            bookings: mockBookings.map(b => ({...b, artistIds: [artistId]})),
             reviews,
         };
 
