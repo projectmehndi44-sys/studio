@@ -141,6 +141,7 @@ export default function AdminPage() {
             id: artistToApprove.id, // Using email as a unique ID for this prototype
             name: artistToApprove.name,
             email: artistToApprove.email,
+            phone: artistToApprove.phone,
             password: artistToApprove.password, // Pass the password
             profilePicture: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 100)}`,
             workImages: [

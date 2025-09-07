@@ -88,9 +88,7 @@ export default function ArtistLoginPage() {
     const handleForgotPasswordPhoneSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         // In a real app, an OTP would be sent. Here we just verify the number.
-        const artistToVerify = (JSON.parse(localStorage.getItem('pendingArtists') || '[]')).find((a: any) => a.email === verifiedArtist?.email);
-
-        if (artistToVerify && artistToVerify.phone === forgotPasswordPhone) {
+        if (verifiedArtist && verifiedArtist.phone === forgotPasswordPhone) {
             setForgotPasswordStep('reset');
              toast({
                 title: 'Phone Verified',
