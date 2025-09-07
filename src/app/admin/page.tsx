@@ -72,8 +72,13 @@ export default function AdminPage() {
 
         // Fetch pending artists
         const storedPending = localStorage.getItem('pendingArtists');
-        const pending = storedPending ? JSON.parse(storedPending) : [];
-        setPendingArtists(pending.map((p: any) => ({...p, id: p.email, date: new Date(p.submissionDate).toLocaleDateString(), name: p.fullName, location: `${p.district}, ${p.state}` })));
+        try {
+            const pending = storedPending ? JSON.parse(storedPending) : [];
+            setPendingArtists(pending.map((p: any) => ({...p, id: p.email, date: new Date(p.submissionDate).toLocaleDateString(), name: p.fullName, location: `${p.district}, ${p.state}` })));
+        } catch (e) {
+            console.error("Failed to parse pending artists:", e);
+            setPendingArtists([]);
+        }
         
         // Fetch and count pending bookings
         const storedBookings = localStorage.getItem('bookings');
@@ -159,14 +164,14 @@ export default function AdminPage() {
 
         // Remove from pending list
         const updatedPendingArtists = pendingArtists.filter(p => p.id !== artistId);
-        localStorage.setItem('pendingArtists', JSON.stringify(updatedPendingArtists.map(({ id, ...rest }) => rest)));
+        localStorage.setItem('pendingArtists', JSON.stringify(updatedPendingArtists));
         
         // Update state
         fetchAdminData();
 
         toast({
             title: "Artist Approved",
-            description: `Welcome! A notification has been sent to ${artistToApprove.name}'s app, email, and phone, informing them of the approval. They can now log in.`,
+            description: `Welcome! A notification has been sent to ${newArtist.name}'s app, email, and phone, informing them of the approval. They can now log in.`,
         });
     };
 

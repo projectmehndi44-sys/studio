@@ -119,8 +119,11 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
         return;
     }
     
+    // Omit workImages before saving to localStorage
+    const { workImages, ...dataToStore } = data;
+
     const newPendingArtist = {
-        ...data,
+        ...dataToStore,
         status: 'Pending',
         submissionDate: new Date().toISOString(),
     };
@@ -350,5 +353,3 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
     </Dialog>
   );
 }
-
-    
