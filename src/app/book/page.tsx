@@ -163,9 +163,7 @@ export default function BookingPage() {
         const packageTotal = selectedPackages.reduce((sum, p) => sum + p.price, 0);
         const artistTotal = selectedArtist ? selectedArtist.charge : 0;
         let finalAmount = packageTotal + artistTotal;
-        if (serviceDates.length > 1) {
-            finalAmount *= 0.9; // Apply 10% discount for multi-day bookings
-        }
+        
 
         // Create booking object
         const newBooking: Booking = {

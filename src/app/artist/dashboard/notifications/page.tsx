@@ -6,6 +6,7 @@ import type { Booking, Notification } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useArtistPortal } from '../layout';
+import { useRouter } from 'next/navigation';
 
 interface NotificationCardProps {
     notification: Notification;
@@ -14,11 +15,19 @@ interface NotificationCardProps {
 }
 
 function NotificationCard({ notification, allBookings, onMarkAsRead }: NotificationCardProps) {
+    const router = useRouter();
     const booking = allBookings.find(b => b.id === notification.bookingId);
     
+    const handleClick = () => {
+        if (!notification.isRead) {
+            onMarkAsRead(notification.id);
+        }
+        router.push('/artist/dashboard/bookings');
+    }
+
     return (
         <div 
-            onClick={() => !notification.isRead && onMarkAsRead(notification.id)}
+            onClick={handleClick}
             className={`p-4 rounded-lg border-l-4 transition-colors ${notification.isRead ? 'bg-muted/50 border-transparent' : 'bg-primary/10 border-primary cursor-pointer hover:bg-primary/20'}`}>
             <div className="flex justify-between items-start">
                 <div>

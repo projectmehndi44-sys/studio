@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -42,23 +43,25 @@ export const useArtistPortal = () => {
 };
 
 
-const NavLink = ({ href, pathname, icon: Icon, label, onClick }: { href: string; pathname: string; icon: React.ElementType, label: string, onClick?: () => void }) => (
+const NavLink = ({ href, pathname, icon: Icon, label, onClick, children }: { href: string; pathname: string; icon: React.ElementType, label: string, onClick?: () => void, children?: React.ReactNode }) => (
     <Link 
         href={href} 
         onClick={onClick}
         className={cn('flex items-center gap-3 rounded-lg px-3 py-2 transition-all', 
-          pathname === href ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-primary'
+          pathname.startsWith(href) ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-primary'
         )}
     >
         <Icon className="h-5 w-5" />
         {label}
+        {children}
     </Link>
 );
 
-const BottomNavLink = ({ href, pathname, icon: Icon, label }: { href: string; pathname: string; icon: React.ElementType, label: string }) => (
-    <Link href={href} className={cn("relative flex flex-col items-center justify-center gap-1 p-2 rounded-md h-full w-full", pathname === href ? 'text-primary bg-primary/10' : 'text-muted-foreground')}>
+const BottomNavLink = ({ href, pathname, icon: Icon, label, children }: { href: string; pathname: string; icon: React.ElementType, label: string, children?: React.ReactNode }) => (
+    <Link href={href} className={cn("relative flex flex-col items-center justify-center gap-1 p-2 rounded-md h-full w-full", pathname.startsWith(href) ? 'text-primary bg-primary/10' : 'text-muted-foreground')}>
         <Icon className="h-6 w-6" />
         <span className="text-xs font-medium">{label}</span>
+        {children}
     </Link>
 )
 
@@ -183,7 +186,7 @@ export default function ArtistDashboardLayout({
             </div>
              <nav className="flex flex-col gap-2 text-lg font-medium px-4">
                 {mainNavLinks.map(link => (
-                    <NavLink key={link.href} {...link} pathname={pathname} onClick={() => setIsSidebarOpen(false)} />
+                    <NavLink key={link.href} {...link} pathname={link.href === '/artist/dashboard' && pathname.startsWith('/artist/dashboard') ? pathname : link.href} onClick={() => setIsSidebarOpen(false)} />
                 ))}
             </nav>
             <div className="mt-4 pt-4 border-t mx-4">
@@ -212,7 +215,12 @@ export default function ArtistDashboardLayout({
          <div className="fixed bottom-0 left-0 right-0 h-16 bg-background border-t shadow-lg md:hidden z-50">
             <nav className="grid h-full grid-cols-4">
                 {bottomNavLinks.map(link => (
-                    <BottomNavLink key={link.href} {...link} pathname={pathname} />
+                    <BottomNavLink key={link.href} {...link} pathname={pathname} >
+                        {link.label === 'Notifications' && unreadCount > 0 && (
+                                <span className="absolute top-1 right-1/4 h-4 w-4 rounded-full bg-red-500 text-xs flex items-center justify-center text-white border-2 border-background">
+                                </span>
+                         )}
+                    </BottomNavLink>
                 ))}
             </nav>
         </div>
