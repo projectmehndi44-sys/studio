@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Shield, Users, MapPin, Image as ImageIcon, User, ArrowLeft, AreaChart, Tag, IndianRupee } from 'lucide-react';
+import { Shield, Users, MapPin, Image as ImageIcon, User, ArrowLeft, AreaChart, Tag } from 'lucide-react';
 
 export default function SettingsPage() {
     const router = useRouter();
@@ -21,7 +21,6 @@ export default function SettingsPage() {
     const settingsLinks = [
         { href: "/admin/analytics", icon: AreaChart, title: "Analytics Dashboard", description: "View charts and reports on platform performance." },
         { href: "/admin/promotions", icon: Tag, title: "Promotions Management", description: "Create and manage discount and promotional codes." },
-        { href: "/admin/payouts", icon: IndianRupee, title: "Payout Management", description: "Manage artist earnings, deductions, and payments." },
         { href: "/admin/team", icon: Users, title: "Team Management", description: "Add or manage team members and their roles." },
         { href: "/admin/locations", icon: MapPin, title: "Location Management", description: "Set the states and districts where you operate." },
         { href: "/admin/images", icon: ImageIcon, title: "Site Image Management", description: "Update homepage gallery and background images." },

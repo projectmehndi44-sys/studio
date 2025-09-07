@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, Users, Eye, Download, ChevronDown, Calendar as CalendarIcon, Briefcase, Settings, DollarSign, BarChart, RefreshCw, Star, Bell, AlertOctagon } from "lucide-react";
+import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, Users, Eye, Download, ChevronDown, Calendar as CalendarIcon, Briefcase, Settings, DollarSign, BarChart, RefreshCw, Star, Bell, AlertOctagon, IndianRupee } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -62,7 +62,7 @@ export default function AdminPage() {
     const [approvedArtists, setApprovedArtists] = React.useState<Artist[]>([]);
     const [pendingArtists, setPendingArtists] = React.useState<PendingArtist[]>([]);
     const [selectedArtistIds, setSelectedArtistIds] = React.useState<string[]>([]);
-    const [bookings, setBookings] = React.useState<Booking[]>(allBookings);
+    const [bookings, setBookings] = React.useState<Booking[]>([]);
     const [pendingBookingCount, setPendingBookingCount] = React.useState(0);
 
     const fetchAdminData = React.useCallback(() => {
@@ -307,7 +307,7 @@ export default function AdminPage() {
                 </header>
                 <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
                     <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
-                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Manage Bookings</CardTitle>
@@ -339,6 +339,22 @@ export default function AdminPage() {
                                         <Button>
                                             <Bell className="mr-2 h-4 w-4" />
                                             Send Notification
+                                        </Button>
+                                    </Link>
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle>Artist Payouts</CardTitle>
+                                    <CardDescription>
+                                       Manage artist earnings and payments.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Link href="/admin/payouts">
+                                        <Button>
+                                            <IndianRupee className="mr-2 h-4 w-4" />
+                                            Go to Payouts
                                         </Button>
                                     </Link>
                                 </CardContent>
