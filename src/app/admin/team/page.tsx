@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Users, PlusCircle, Trash2, MoreHorizontal, User } from 'lucide-react';
+import { Shield, Users, PlusCircle, Trash2, MoreHorizontal, User, ArrowLeft } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -131,33 +131,14 @@ export default function TeamManagementPage() {
             <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6 justify-between">
                 <h1 className="flex items-center gap-2 text-xl font-bold text-primary">
                     <Shield className="w-6 h-6" />
-                    Admin Portal
+                    Team Management
                 </h1>
-                <Link href="/admin">
-                     <Button variant="outline">Back to Dashboard</Button>
+                 <Link href="/admin/settings">
+                     <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Settings</Button>
                 </Link>
             </header>
             <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8">
-                 <div className="max-w-4xl mx-auto grid gap-6">
-                    <Card>
-                        <CardHeader className="flex flex-row justify-between items-center">
-                           <div>
-                             <CardTitle className="flex items-center gap-2">
-                               <Users className="w-6 h-6 text-primary"/> Team Management
-                            </CardTitle>
-                            <CardDescription>
-                                Add new team members and assign roles. Only admins can view this page.
-                            </CardDescription>
-                           </div>
-                             <Link href="/admin/profile">
-                                <Button variant="outline">
-                                    <User className="mr-2 h-4 w-4" />
-                                    Manage Your Profile
-                                </Button>
-                            </Link>
-                        </CardHeader>
-                    </Card>
-
+                 <div className="max-w-4xl mx-auto grid gap-6 py-6">
                     <Card>
                         <CardHeader>
                             <CardTitle>Add New Team Member</CardTitle>
