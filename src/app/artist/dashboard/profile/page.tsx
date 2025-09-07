@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Artist } from '@/types';
@@ -175,6 +175,44 @@ export default function ArtistProfilePage({ artist: initialArtistData }: ArtistP
         }
     };
 
+    const handleImageDelete = (imageSrc: string) => {
+        if (!artist) return;
+    
+        const updatedWorkImages = artist.workImages.filter(src => src !== imageSrc);
+        
+        const allArtists = getArtists();
+        const artistIndex = allArtists.findIndex(a => a.id === artist.id);
+        if (artistIndex === -1) return;
+
+        const updatedArtist = { ...allArtists[artistIndex], workImages: updatedWorkImages };
+        allArtists[artistIndex] = updatedArtist;
+
+        saveArtists(allArtists);
+        setArtist(updatedArtist);
+        
+        toast({ title: "Image deleted", variant: "destructive" });
+    };
+
+    const handleGalleryUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (files && files.length > 0 && artist) {
+            const newImageUrls = Array.from(files).map(file => URL.createObjectURL(file));
+
+            const allArtists = getArtists();
+            const artistIndex = allArtists.findIndex(a => a.id === artist.id);
+            if (artistIndex === -1) return;
+            
+            const updatedWorkImages = [...artist.workImages, ...newImageUrls];
+            const updatedArtist = { ...allArtists[artistIndex], workImages: updatedWorkImages };
+            allArtists[artistIndex] = updatedArtist;
+            
+            saveArtists(allArtists);
+            setArtist(updatedArtist);
+
+            toast({ title: `${files.length} image(s) added to your gallery.` });
+        }
+    };
+
     if (!artist) {
         return <div className="flex items-center justify-center min-h-full">Loading Profile...</div>;
     }
@@ -339,7 +377,7 @@ export default function ArtistProfilePage({ artist: initialArtistData }: ArtistP
                                <div key={index} className="relative group">
                                    <NextImage src={src} alt={`Work ${index + 1}`} width={200} height={150} className="rounded-md object-cover w-full aspect-[4/3]"/>
                                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                       <Button variant="destructive" size="icon" onClick={() => console.log("Delete image", index)}>
+                                       <Button variant="destructive" size="icon" onClick={() => handleImageDelete(src)}>
                                            <Trash2 className="h-4 w-4" />
                                        </Button>
                                    </div>
@@ -348,7 +386,7 @@ export default function ArtistProfilePage({ artist: initialArtistData }: ArtistP
                              <div className="relative border-2 border-dashed border-muted-foreground/50 rounded-lg aspect-[4/3] flex flex-col items-center justify-center text-center hover:border-accent">
                                 <Upload className="h-8 w-8 text-muted-foreground" />
                                 <p className="mt-2 text-xs text-muted-foreground">Upload More</p>
-                                <Input type="file" className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" multiple />
+                                <Input type="file" className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" multiple accept="image/*" onChange={handleGalleryUpload} />
                             </div>
                         </div>
                     </div>
@@ -358,3 +396,5 @@ export default function ArtistProfilePage({ artist: initialArtistData }: ArtistP
         </div>
     );
 }
+
+    
