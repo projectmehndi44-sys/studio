@@ -2,6 +2,7 @@
 
 
 
+
 export type ArtistPackage = {
   id: string;
   name: string;
@@ -122,6 +123,7 @@ export type Transaction = {
 export type MehndiPackage = {
     id: string;
     name: string;
+    service: 'mehndi' | 'makeup';
     description: string;
     price: number;
     image: string;

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -95,7 +96,7 @@ export default function Home() {
 
   // Filter state
   const [location, setLocation] = React.useState('');
-  const [serviceType, setServiceType] = React.useState('all');
+  const [serviceType, setServiceType] = React.useState<'mehndi' | 'makeup' | 'all'>('mehndi');
   const [priceRange, setPriceRange] = React.useState([20000]);
   const [availabilityDate, setAvailabilityDate] = React.useState<
     Date | undefined
@@ -106,9 +107,11 @@ export default function Home() {
   
   const allStyleTags = React.useMemo(() => {
     const tags = new Set<string>();
-    artists.forEach(artist => artist.styleTags.forEach(tag => tags.add(tag)));
+    artists
+      .filter(artist => serviceType === 'all' || artist.services.includes(serviceType))
+      .forEach(artist => artist.styleTags.forEach(tag => tags.add(tag)));
     return Array.from(tags);
-  }, [artists]);
+  }, [artists, serviceType]);
 
 
   React.useEffect(() => {
@@ -117,7 +120,6 @@ export default function Home() {
     const localArtists = storedArtists ? JSON.parse(storedArtists) : [];
     const allApproved = [...initialArtists.filter(a => !localArtists.some((la: Artist) => la.id === a.id)), ...localArtists];
     setArtists(allApproved);
-    setFilteredArtists(allApproved);
 
     // Check for logged-in customer
     const customerId = localStorage.getItem('currentCustomerId');
@@ -139,6 +141,11 @@ export default function Home() {
 
     return () => clearInterval(intervalId);
   }, []);
+  
+  React.useEffect(() => {
+    applyFilters();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [artists, serviceType]);
 
   React.useEffect(() => {
     const packageIds = searchParams.get('packages')?.split(',') || [];
@@ -210,27 +217,18 @@ export default function Home() {
     });
   };
 
-  React.useEffect(() => {
-    // Show all artists initially, filter will be applied on interaction
-    setFilteredArtists(artists);
-  }, [artists]);
-
-
-  const applyFilters = React.useCallback((service?: 'mehndi' | 'makeup') => {
+  const applyFilters = React.useCallback(() => {
     let currentArtists = artists;
 
-    const currentServiceType = service || serviceType;
-
+    if (serviceType !== 'all') {
+      currentArtists = currentArtists.filter(
+        (artist) => artist.services.includes(serviceType)
+      );
+    }
+    
     if (location) {
       currentArtists = currentArtists.filter((artist) =>
         artist.location.toLowerCase().includes(location.toLowerCase())
-      );
-    }
-
-    if (currentServiceType !== 'all') {
-      currentArtists = currentArtists.filter(
-        (artist) =>
-          artist.services.includes(currentServiceType)
       );
     }
     
@@ -252,7 +250,6 @@ export default function Home() {
 
   const resetFilters = () => {
     setLocation('');
-    setServiceType('all');
     setPriceRange([20000]);
     setAvailabilityDate(undefined);
     setSelectedStyles([]);
@@ -264,77 +261,81 @@ export default function Home() {
       )
   }
 
-  const ArtistFinder = ({ service }: { service?: 'mehndi' | 'makeup' }) => (
-    <div className="space-y-8">
-        <Packages onAddToCart={handleAddToCart} cart={cart}/>
-        
-        <Separator />
-        
-        <div>
-          <h2 className="text-center font-headline text-5xl text-primary mb-8">All Artists</h2>
-          <Card className="my-4 border-2 border-accent/20 shadow-lg bg-background/80 backdrop-blur-sm">
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 items-end">
-                <div className="space-y-2">
-                  <Label htmlFor="location">Location</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="location"
-                      placeholder="City or pin code..."
-                      className="pl-9"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                    />
+  const ArtistFinder = ({ service }: { service: 'mehndi' | 'makeup' | 'all' }) => {
+      const filteredPackages = allPackages.filter(p => p.service === service);
+      
+      return (
+        <div className="space-y-8">
+            <Packages onAddToCart={handleAddToCart} cart={cart} packages={filteredPackages} />
+            
+            <Separator />
+            
+            <div>
+              <h2 className="text-center font-headline text-5xl text-primary mb-8">All Artists</h2>
+              <Card className="my-4 border-2 border-accent/20 shadow-lg bg-background/80 backdrop-blur-sm">
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 items-end">
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Location</Label>
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="location"
+                          placeholder="City or pin code..."
+                          className="pl-9"
+                          value={location}
+                          onChange={(e) => setLocation(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                     <div className="space-y-2 lg:col-span-2">
+                      <Label htmlFor="price">Price Range (Max): <span className="font-bold text-primary">₹{priceRange[0].toLocaleString()}</span></Label>
+                      <Slider
+                          id="price"
+                          max={20000}
+                          min={500}
+                          step={500}
+                          value={priceRange}
+                          onValueChange={setPriceRange}
+                        />
+                    </div>
+                    <Button onClick={resetFilters} variant="ghost" className="w-full">
+                        Reset Filters
+                    </Button>
                   </div>
-                </div>
-                 <div className="space-y-2 lg:col-span-2">
-                  <Label htmlFor="price">Price Range (Max): <span className="font-bold text-primary">₹{priceRange[0].toLocaleString()}</span></Label>
-                  <Slider
-                      id="price"
-                      max={20000}
-                      min={500}
-                      step={500}
-                      value={priceRange}
-                      onValueChange={setPriceRange}
-                    />
-                </div>
-                <Button onClick={resetFilters} variant="ghost" className="w-full">
-                    Reset Filters
-                </Button>
-              </div>
-              <div className="mt-4 pt-4 border-t">
-                  <Label>Filter by Style</Label>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                      {allStyleTags.map(tag => (
-                          <div key={tag} className="flex items-center space-x-2">
-                              <Checkbox id={tag} checked={selectedStyles.includes(tag)} onCheckedChange={() => handleStyleChange(tag)} />
-                              <label htmlFor={tag} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 capitalize">{tag}</label>
-                          </div>
-                      ))}
+                  <div className="mt-4 pt-4 border-t">
+                      <Label>Filter by Style</Label>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                          {allStyleTags.map(tag => (
+                              <div key={tag} className="flex items-center space-x-2">
+                                  <Checkbox id={tag} checked={selectedStyles.includes(tag)} onCheckedChange={() => handleStyleChange(tag)} />
+                                  <label htmlFor={tag} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 capitalize">{tag}</label>
+                              </div>
+                          ))}
+                      </div>
                   </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {filteredArtists.length > 0 ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {filteredArtists.map((artist) => (
-                <ArtistCard
-                  key={artist.id}
-                  artist={artist}
-                  onBookingRequest={handleBookingRequest}
-                />
-              ))}
+                </CardContent>
+              </Card>
+    
+              {filteredArtists.length > 0 ? (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {filteredArtists.map((artist) => (
+                    <ArtistCard
+                      key={artist.id}
+                      artist={artist}
+                      onBookingRequest={handleBookingRequest}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-16">
+                  <p className="text-lg text-muted-foreground">No artists found matching your criteria.</p>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="text-center py-16">
-              <p className="text-lg text-muted-foreground">No artists found matching your criteria.</p>
-            </div>
-          )}
-        </div>
-      </div>
-  );
+          </div>
+      );
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col relative">
@@ -376,7 +377,7 @@ export default function Home() {
             </h1>
             <p className="mt-2 font-dancing-script text-2xl text-foreground/90">Artistry at Your Fingertips</p>
             <div className="mt-4 font-headline text-lg text-foreground/80 max-w-2xl mx-auto">
-              <p>Discover and book the most talented mehndi and makeup artists near you.</p>
+              <p>Discover and book the most talented mehendi and makeup artists near you.</p>
               <p>Your perfect look for any occasion is just a click away.</p>
             </div>
         </div>
@@ -410,10 +411,10 @@ export default function Home() {
           </div>
         )}
 
-        <Tabs defaultValue="mehndi" className="w-full mt-8">
+        <Tabs defaultValue="mehendi" className="w-full mt-8" onValueChange={(value) => setServiceType(value as 'mehndi' | 'makeup' | 'all')}>
             <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto">
-                <TabsTrigger value="mehndi" onClick={() => applyFilters('mehndi')}><MehndiIcon className="mr-2 h-6 w-6"/>Mehendi</TabsTrigger>
-                <TabsTrigger value="makeup" onClick={() => applyFilters('makeup')}><MakeupIcon className="mr-2 h-6 w-6"/>Makeup</TabsTrigger>
+                <TabsTrigger value="mehndi"><MehndiIcon className="mr-2 h-6 w-6"/>Mehendi</TabsTrigger>
+                <TabsTrigger value="makeup"><MakeupIcon className="mr-2 h-6 w-6"/>Makeup</TabsTrigger>
                 <TabsTrigger value="photography" disabled><PhotographyIcon className="mr-2 h-6 w-6"/>Photography (Soon)</TabsTrigger>
             </TabsList>
             <TabsContent value="mehndi">

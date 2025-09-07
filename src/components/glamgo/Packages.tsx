@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -8,24 +9,28 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MehndiIcon } from '@/components/icons';
-import { packages as allPackages } from '@/lib/packages-data';
 import type { MehndiPackage } from '@/types';
 import { Check, PackagePlus } from 'lucide-react';
 import Autoplay from "embla-carousel-autoplay"
 
 
 interface PackagesProps {
+    packages: MehndiPackage[];
     onAddToCart: (pkg: MehndiPackage) => void;
     cart: MehndiPackage[];
 }
 
-export function Packages({ onAddToCart, cart }: PackagesProps) {
+export function Packages({ packages, onAddToCart, cart }: PackagesProps) {
+    if (packages.length === 0) {
+        return null; // Don't render anything if there are no packages for this service
+    }
+
     return (
         <div className="py-12">
             <h2 className="text-center font-headline text-5xl text-primary mb-8">Our Packages</h2>
              <Carousel opts={{ align: "start", loop: true, }} plugins={[ Autoplay({ delay: 5000, }), ]} className="w-full max-w-7xl mx-auto" >
                 <CarouselContent>
-                    {allPackages.map((pkg) => {
+                    {packages.map((pkg) => {
                         const isInCart = cart.some(item => item.id === pkg.id);
                         return (
                             <CarouselItem key={pkg.id} className="md:basis-1/2 lg:basis-1/3 xl:basis-1/4">

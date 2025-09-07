@@ -1,10 +1,12 @@
 
+
 import type { MehndiPackage } from '@/types';
 
 export const packages: MehndiPackage[] = [
   {
     id: 'pkg_bridal_01',
     name: 'Bridal Mehndi',
+    service: 'mehndi',
     description: 'Covers both hands on both sides up to elbow length. Intricate and detailed designs perfect for the bride.',
     price: 5000,
     image: 'https://picsum.photos/600/400?random=301',
@@ -13,6 +15,7 @@ export const packages: MehndiPackage[] = [
   {
     id: 'pkg_semibridal_02',
     name: 'Semi Bridal Mehndi',
+    service: 'mehndi',
     description: 'A perfect balance of tradition and elegance.',
     price: 4000,
     image: 'https://picsum.photos/600/400?random=302',
@@ -21,6 +24,7 @@ export const packages: MehndiPackage[] = [
   {
     id: 'pkg_bridalfeet_03',
     name: 'Bridal Feet Mehndi',
+    service: 'mehndi',
     description: 'Complements the bridal hand mehndi.',
     price: 2000,
     image: 'https://picsum.photos/600/400?random=303',
@@ -29,6 +33,7 @@ export const packages: MehndiPackage[] = [
   {
     id: 'pkg_feet_04',
     name: 'Feet Mehndi',
+    service: 'mehndi',
     description: 'Covers toes and mid-portion, no sides included. Simple and elegant for any occasion.',
     price: 1000,
     image: 'https://picsum.photos/600/400?random=304',
@@ -37,6 +42,7 @@ export const packages: MehndiPackage[] = [
   {
     id: 'pkg_megabridal_05',
     name: 'Mega Bridal Feet Mehndi',
+    service: 'mehndi',
     description: 'Extensive coverage for the feet, including toes, mid-portion, and all four sides with heavy designs.',
     price: 5000,
     image: 'https://picsum.photos/600/400?random=305',
@@ -45,9 +51,28 @@ export const packages: MehndiPackage[] = [
   {
     id: 'pkg_wrist_06',
     name: 'Wrist Length Mehndi',
+    service: 'mehndi',
     description: 'Covers both hands on both sides up to the wrist. Ideal for guests and smaller functions.',
     price: 3000,
     image: 'https://picsum.photos/600/400?random=306',
     tags: ['Organic Henna'],
+  },
+  {
+    id: 'pkg_bridal_makeup_07',
+    name: 'Bridal Makeup',
+    service: 'makeup',
+    description: 'Complete bridal makeup including HD or airbrush techniques, hair styling, and draping.',
+    price: 15000,
+    image: 'https://picsum.photos/600/400?random=307',
+    tags: ['HD Makeup', 'Airbrush', 'Bridal'],
+  },
+  {
+    id: 'pkg_party_makeup_08',
+    name: 'Party Makeup',
+    service: 'makeup',
+    description: 'Get ready for any event with our glam party makeup. Includes eyes, base, and lips.',
+    price: 4500,
+    image: 'https://picsum.photos/600/400?random=308',
+    tags: ['Glam', 'Evening Look'],
   },
 ];
