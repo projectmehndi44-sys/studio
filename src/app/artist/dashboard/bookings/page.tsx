@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -10,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Booking } from '@/types';
 import { useArtistPortal } from '../layout';
 import { MapPin } from 'lucide-react';
+import { format } from 'date-fns';
 
 export default function ArtistBookingsPage() {
     const { artistBookings, allBookings } = useArtistPortal();
@@ -69,6 +71,7 @@ export default function ArtistBookingsPage() {
                         <TableRow>
                             <TableHead>Customer</TableHead>
                             <TableHead>Event Details</TableHead>
+                            <TableHead>Service Dates</TableHead>
                             <TableHead>Venue</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">Action</TableHead>
@@ -86,7 +89,16 @@ export default function ArtistBookingsPage() {
                                 <TableCell>
                                      <div className="flex flex-col">
                                         <span>{booking.eventType}</span>
-                                        <span className="text-xs text-muted-foreground">{new Date(booking.date).toLocaleDateString()}</span>
+                                        <span className="text-xs text-muted-foreground">{new Date(booking.eventDate).toLocaleDateString()}</span>
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex flex-col gap-1">
+                                        {booking.serviceDates.map((date, index) => (
+                                            <Badge key={index} variant="outline" className="text-xs">
+                                                {format(new Date(date), "PPP")}
+                                            </Badge>
+                                        ))}
                                     </div>
                                 </TableCell>
                                 <TableCell>

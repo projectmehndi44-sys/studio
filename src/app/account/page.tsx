@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -11,6 +12,7 @@ import type { Booking, Customer } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, Briefcase, CalendarCheck2, History } from 'lucide-react';
 import { allBookings as initialBookings, initialCustomers } from '@/lib/data';
+import { format } from 'date-fns';
 
 export default function AccountPage() {
     const router = useRouter();
@@ -29,7 +31,7 @@ export default function AccountPage() {
         setCustomer(currentCustomer || null);
 
         const allBookingsData = localStorage.getItem('bookings');
-        const allBookings: Booking[] = (allBookingsData ? JSON.parse(allBookingsData) : initialBookings).map((b: any) => ({...b, date: new Date(b.date)}));
+        const allBookings: Booking[] = (allBookingsData ? JSON.parse(allBookingsData) : initialBookings).map((b: any) => ({...b, date: new Date(b.date), serviceDates: b.serviceDates.map((d:string) => new Date(d)) }));
         
         const customerBookings = allBookings.filter(b => b.customerId === customerId);
         setBookings(customerBookings.sort((a,b) => b.date.getTime() - a.date.getTime()));
@@ -65,6 +67,41 @@ export default function AccountPage() {
     const upcomingBookings = bookings.filter(b => new Date(b.date) >= new Date() && (b.status === 'Confirmed' || b.status === 'Pending Approval' || b.status === 'Needs Assignment'));
     const pastBookings = bookings.filter(b => new Date(b.date) < new Date() || b.status === 'Completed' || b.status === 'Cancelled' || b.status === 'Disputed');
 
+    const renderBookingTable = (bookingsToShow: Booking[]) => (
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Service</TableHead>
+                    <TableHead>Service Dates</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {bookingsToShow.length > 0 ? bookingsToShow.map(booking => (
+                    <TableRow key={booking.id}>
+                        <TableCell className="font-medium">{booking.service}</TableCell>
+                        <TableCell>
+                            <div className="flex flex-col gap-1">
+                                {booking.serviceDates.map((date, index) => (
+                                    <Badge key={index} variant="outline" className="text-xs">
+                                        {format(date, "PPP")}
+                                    </Badge>
+                                ))}
+                            </div>
+                        </TableCell>
+                        <TableCell>₹{booking.amount.toLocaleString(undefined, {maximumFractionDigits: 0})}</TableCell>
+                        <TableCell><Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge></TableCell>
+                    </TableRow>
+                )) : (
+                    <TableRow>
+                        <TableCell colSpan={4} className="text-center text-muted-foreground">You have no bookings in this category.</TableCell>
+                    </TableRow>
+                )}
+            </TableBody>
+        </Table>
+    );
+
     return (
         <div className="bg-muted/40 min-h-screen">
             <header className="bg-background border-b p-4 flex justify-between items-center">
@@ -99,30 +136,7 @@ export default function AccountPage() {
                         <CardDescription>These are your future bookings. You will be notified of any status changes.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                         <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Service</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Amount</TableHead>
-                                    <TableHead>Status</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {upcomingBookings.length > 0 ? upcomingBookings.map(booking => (
-                                    <TableRow key={booking.id}>
-                                        <TableCell className="font-medium">{booking.service}</TableCell>
-                                        <TableCell>{booking.date.toLocaleDateString()}</TableCell>
-                                        <TableCell>₹{booking.amount.toLocaleString()}</TableCell>
-                                        <TableCell><Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge></TableCell>
-                                    </TableRow>
-                                )) : (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="text-center text-muted-foreground">You have no upcoming bookings.</TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                         {renderBookingTable(upcomingBookings)}
                     </CardContent>
                 </Card>
 
@@ -132,30 +146,7 @@ export default function AccountPage() {
                         <CardDescription>A history of all your past bookings with us.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                         <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Service</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Amount</TableHead>
-                                    <TableHead>Status</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {pastBookings.length > 0 ? pastBookings.map(booking => (
-                                    <TableRow key={booking.id}>
-                                        <TableCell className="font-medium">{booking.service}</TableCell>
-                                        <TableCell>{booking.date.toLocaleDateString()}</TableCell>
-                                        <TableCell>₹{booking.amount.toLocaleString()}</TableCell>
-                                        <TableCell><Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge></TableCell>
-                                    </TableRow>
-                                )) : (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="text-center text-muted-foreground">You have no past bookings.</TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                        {renderBookingTable(pastBookings)}
                     </CardContent>
                 </Card>
 

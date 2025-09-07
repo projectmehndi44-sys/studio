@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -68,21 +69,23 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
     if (!booking) return new Set();
     
     const unavailableIds = new Set<string>();
-    const bookingDate = new Date(booking.date);
+    const bookingDates = booking.serviceDates.map(d => new Date(d));
 
-    // Add artists who are already booked on the same day
+    // Add artists who are already booked on any of the same days
     allBookings
         .filter(b => 
             b.id !== booking.id &&
-            isSameDay(new Date(b.date), bookingDate) &&
-            (b.status === 'Confirmed' || b.status === 'Completed') 
+            (b.status === 'Confirmed' || b.status === 'Completed') &&
+            b.serviceDates.some(bookedDate => 
+                bookingDates.some(bookingDate => isSameDay(new Date(bookedDate), bookingDate)))
         )
         .forEach(b => b.artistIds.forEach(id => id && unavailableIds.add(id)));
 
-    // Add artists who have marked the day as unavailable
+    // Add artists who have marked any of the days as unavailable
     artists.forEach(artist => {
-        // Dates are stored as 'YYYY-MM-DD'. We need to parse them correctly.
-        if (artist.unavailableDates?.some(dateStr => isSameDay(parseISO(dateStr), bookingDate))) {
+        if (artist.unavailableDates?.some(unavailableDateStr => 
+            bookingDates.some(bookingDate => isSameDay(parseISO(unavailableDateStr), bookingDate))
+        )) {
             unavailableIds.add(artist.id);
         }
     });
@@ -133,7 +136,7 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
             <div className='text-sm'>
               <p><span className='font-semibold'>Customer:</span> {booking.customerName}</p>
               <p><span className='font-semibold'>Service:</span> {booking.service}</p>
-              <p><span className='font-semibold'>Date:</span> {new Date(booking.date).toLocaleDateString()}</p>
+              <p><span className='font-semibold'>Date:</span> {booking.date.toLocaleDateString()}</p>
             </div>
           </div>
           <DialogFooter>

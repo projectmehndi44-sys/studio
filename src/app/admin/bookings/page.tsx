@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -14,6 +15,7 @@ import { artists as initialArtists, allBookings as initialBookings } from '@/lib
 import { AssignArtistModal } from '@/components/glamgo/AssignArtistModal';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { format } from 'date-fns';
 
 
 export default function BookingManagementPage() {
@@ -29,7 +31,7 @@ export default function BookingManagementPage() {
         setArtists(storedArtists ? JSON.parse(storedArtists) : initialArtists);
 
         const storedBookings = localStorage.getItem('bookings');
-        setBookings(storedBookings ? JSON.parse(storedBookings).map((b: Booking) => ({...b, date: new Date(b.date), eventDate: b.eventDate ? new Date(b.eventDate) : new Date(b.date) })) : initialBookings);
+        setBookings(storedBookings ? JSON.parse(storedBookings).map((b: any) => ({...b, date: new Date(b.date), eventDate: b.eventDate ? new Date(b.eventDate) : new Date(b.date), serviceDates: b.serviceDates.map((d: string) => new Date(d)) })) : initialBookings);
     }, []);
 
     React.useEffect(() => {
@@ -194,7 +196,7 @@ export default function BookingManagementPage() {
                     <TableHead>Booking ID</TableHead>
                     <TableHead>Customer</TableHead>
                     <TableHead>Artists</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead>Service Dates</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -218,7 +220,15 @@ export default function BookingManagementPage() {
                                     <span className="text-muted-foreground">Not Assigned</span>
                                 )}
                             </TableCell>
-                            <TableCell>{booking.date.toLocaleDateString()}</TableCell>
+                            <TableCell>
+                                <div className="flex flex-col gap-1">
+                                    {booking.serviceDates.map((date, index) => (
+                                        <Badge key={index} variant="outline" className="text-xs">
+                                            {format(new Date(date), "PPP")}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            </TableCell>
                             <TableCell>₹{booking.amount}</TableCell>
                             <TableCell>
                                 <Badge variant={getStatusVariant(booking.status)}>

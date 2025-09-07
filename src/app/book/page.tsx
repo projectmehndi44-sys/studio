@@ -43,7 +43,7 @@ export default function BookingPage() {
     const [phone, setPhone] = React.useState('');
     const [eventType, setEventType] = React.useState('');
     const [eventDate, setEventDate] = React.useState<Date>();
-    const [mehndiDate, setMehndiDate] = React.useState<Date>();
+    const [serviceDates, setServiceDates] = React.useState<Date[]>([]);
     const [time, setTime] = React.useState('');
     const [state, setState] = React.useState('');
     const [district, setDistrict] = React.useState('');
@@ -55,6 +55,21 @@ export default function BookingPage() {
     
     const [includeGuestMehndi, setIncludeGuestMehndi] = React.useState(false);
     const [guestCount, setGuestCount] = React.useState(1);
+
+    const primaryServiceType = React.useMemo(() => {
+        if (selectedArtist) return selectedArtist.services[0];
+        if (selectedPackages.length > 0) return selectedPackages[0].service;
+        return 'service';
+    }, [selectedArtist, selectedPackages]);
+
+    const dateLabel = React.useMemo(() => {
+        switch (primaryServiceType) {
+            case 'mehndi': return 'Date(s) for Mehendi*';
+            case 'makeup': return 'Date(s) for Makeup*';
+            case 'photography': return 'Date(s) for Photography*';
+            default: return 'Date(s) for Service*';
+        }
+    }, [primaryServiceType]);
     
     const getArtists = (): Artist[] => {
          const storedArtists = localStorage.getItem('artists');
@@ -110,7 +125,7 @@ export default function BookingPage() {
             phone &&
             eventType &&
             eventDate &&
-            mehndiDate &&
+            serviceDates.length > 0 &&
             time &&
             state &&
             district &&
@@ -141,6 +156,13 @@ export default function BookingPage() {
             router.push('/');
             return;
         }
+        
+        const packageTotal = selectedPackages.reduce((sum, p) => sum + p.price, 0);
+        const artistTotal = selectedArtist ? selectedArtist.charge : 0;
+        let finalAmount = packageTotal + artistTotal;
+        if (serviceDates.length > 1) {
+            finalAmount *= 0.9; // Apply 10% discount for multi-day bookings
+        }
 
         // Create booking object
         const newBooking: Booking = {
@@ -150,9 +172,10 @@ export default function BookingPage() {
             customerName: name,
             customerContact: phone,
             serviceAddress: address,
-            date: mehndiDate!,
+            serviceDates: serviceDates,
+            date: serviceDates[0], // Keep for backward compatibility / main date
             service: selectedArtist ? selectedArtist.services.join(' & ') : selectedPackages.map(p => p.name).join(', '),
-            amount: selectedArtist ? selectedArtist.charge : selectedPackages.reduce((sum, p) => sum + p.price, 0),
+            amount: finalAmount,
             status: selectedArtist ? 'Pending Approval' : 'Needs Assignment',
             eventType,
             eventDate: eventDate!,
@@ -270,7 +293,7 @@ export default function BookingPage() {
                     </Card>
 
                     {/* Add-ons */}
-                    {!selectedArtist && (
+                    {primaryServiceType === 'mehndi' && !selectedArtist && (
                     <Card>
                         <CardHeader>
                             <CardTitle>Add-ons</CardTitle>
@@ -334,17 +357,19 @@ export default function BookingPage() {
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Date of Event*</Label>
+                                    <Label>Primary Date of Event*</Label>
                                     <Popover>
                                         <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !eventDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger>
                                         <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={eventDate} onSelect={setEventDate} initialFocus/></PopoverContent>
                                     </Popover>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Date to Put Mehndi*</Label>
+                                    <Label>{dateLabel}</Label>
                                     <Popover>
-                                        <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !mehndiDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{mehndiDate ? format(mehndiDate, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={mehndiDate} onSelect={setMehndiDate} disabled={(date) => eventDate ? date > eventDate : false} initialFocus/></PopoverContent>
+                                        <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", serviceDates.length === 0 && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>
+                                        {serviceDates.length > 0 ? serviceDates.map(d => format(d, "PPP")).join(', ') : <span>Pick one or more dates</span>}
+                                        </Button></PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0"><Calendar mode="multiple" selected={serviceDates} onSelect={(dates) => setServiceDates(dates || [])} disabled={(date) => eventDate ? date > eventDate : false} initialFocus/></PopoverContent>
                                     </Popover>
                                 </div>
                                  <div className="space-y-2">
@@ -430,7 +455,7 @@ export default function BookingPage() {
                     </Card>
 
                      {/* Booking Summary */}
-                    <BookingSummary packages={selectedPackages} artist={selectedArtist}/>
+                    <BookingSummary packages={selectedPackages} artist={selectedArtist} serviceDates={serviceDates} />
 
                     {/* Policies */}
                     <div className="p-4 rounded-lg bg-green-50 border border-green-200 flex items-start gap-3">

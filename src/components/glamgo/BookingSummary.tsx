@@ -10,13 +10,18 @@ import { Separator } from '@/components/ui/separator';
 interface BookingSummaryProps {
     packages: ServicePackage[];
     artist: Artist | null;
+    serviceDates: Date[];
 }
 
-export function BookingSummary({ packages, artist }: BookingSummaryProps) {
+export function BookingSummary({ packages, artist, serviceDates }: BookingSummaryProps) {
     const packageTotal = packages.reduce((sum, pkg) => sum + pkg.price, 0);
     const artistTotal = artist ? artist.charge : 0;
-    const total = packageTotal + artistTotal;
+    const baseTotal = packageTotal + artistTotal;
     
+    const isMultiDay = serviceDates.length > 1;
+    const discount = isMultiDay ? baseTotal * 0.10 : 0;
+    const total = baseTotal - discount;
+
     // Assuming 18% GST is included in the price
     const subtotal = total / 1.18;
     const taxes = total - subtotal;
@@ -42,7 +47,13 @@ export function BookingSummary({ packages, artist }: BookingSummaryProps) {
                     )}
                 </div>
                 <Separator />
-                <div className="space-y-2 text-sm">
+                 <div className="space-y-2 text-sm">
+                    {isMultiDay && (
+                         <div className="flex justify-between text-green-600">
+                            <span>Multi-Day Discount (10%)</span>
+                            <span>- ₹{discount.toLocaleString()}</span>
+                        </div>
+                    )}
                      <div className="flex justify-between">
                         <span className="text-muted-foreground">Subtotal (Pre-tax)</span>
                         <span>₹{subtotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>

@@ -46,7 +46,8 @@ export type Booking = {
   customerName: string;
   customerContact: string;
   serviceAddress: string;
-  date: Date;
+  date: Date; // For backward compatibility & main date
+  serviceDates: Date[]; // For multi-day bookings
   service: string;
   amount: number;
   status: 'Completed' | 'Confirmed' | 'Cancelled' | 'Pending Approval' | 'Needs Assignment' | 'Disputed';
@@ -121,7 +122,7 @@ export type Transaction = {
 export type ServicePackage = {
     id: string;
     name: string;
-    service: 'mehendi' | 'makeup' | 'photography';
+    service: 'mehndi' | 'makeup' | 'photography';
     description: string;
     price: number;
     image: string;

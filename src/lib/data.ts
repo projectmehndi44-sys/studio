@@ -3,6 +3,7 @@
 
 
 
+
 import type { Artist, Booking, Customer, ServicePackage, Promotion, Review } from '@/types';
 
 export const artists: Artist[] = [
@@ -18,10 +19,10 @@ export const artists: Artist[] = [
       'https://picsum.photos/600/400?random=12',
       'https://picsum.photos/600/400?random=13',
     ],
-    services: ['mehendi'],
+    services: ['mehndi'],
     location: 'Mumbai, India',
     charge: 2500,
-    charges: { mehendi: 2500 },
+    charges: { mehndi: 2500 },
     rating: 4.9,
     styleTags: ['bridal', 'arabic', 'intricate'],
     unavailableDates: [],
@@ -61,10 +62,10 @@ export const artists: Artist[] = [
       'https://picsum.photos/600/400?random=32',
       'https://picsum.photos/600/400?random=33',
     ],
-    services: ['mehendi', 'makeup'],
+    services: ['mehndi', 'makeup'],
     location: 'Bangalore, India',
     charge: 7000,
-    charges: { mehendi: 3000, makeup: 4000 },
+    charges: { mehndi: 3000, makeup: 4000 },
     rating: 5.0,
     styleTags: ['luxury', 'traditional', 'modern'],
     unavailableDates: [],
@@ -81,10 +82,10 @@ export const artists: Artist[] = [
       'https://picsum.photos/600/400?random=42',
       'https://picsum.photos/600/400?random=43',
     ],
-    services: ['mehendi'],
+    services: ['mehndi'],
     location: 'Ahmedabad, India',
     charge: 1800,
-    charges: { mehendi: 1800 },
+    charges: { mehndi: 1800 },
     rating: 4.7,
     styleTags: ['minimalist', 'floral', 'indian'],
     unavailableDates: [],
@@ -121,10 +122,10 @@ export const artists: Artist[] = [
       'https://picsum.photos/600/400?random=62',
       'https://picsum.photos/600/400?random=63',
     ],
-    services: ['mehendi', 'makeup'],
+    services: ['mehndi', 'makeup'],
     location: 'Pune, India',
     charge: 6500,
-    charges: { mehendi: 3000, makeup: 3500 },
+    charges: { mehndi: 3000, makeup: 3500 },
     rating: 4.8,
     styleTags: ['airbrush', 'arabic', 'fusion'],
     unavailableDates: [],
@@ -141,10 +142,10 @@ export const artists: Artist[] = [
       'https://picsum.photos/600/400?random=72',
       'https://picsum.photos/600/400?random=73',
     ],
-    services: ['mehendi'],
+    services: ['mehndi'],
     location: 'Kolkata, India',
     charge: 3000,
-    charges: { mehendi: 3000 },
+    charges: { mehndi: 3000 },
     rating: 4.9,
     styleTags: ['traditional', 'peacock', 'detailed'],
     unavailableDates: [],
@@ -181,10 +182,10 @@ export const artists: Artist[] = [
       'https://picsum.photos/600/400?random=92',
       'https://picsum.photos/600/400?random=93',
     ],
-    services: ['mehendi', 'makeup'],
+    services: ['mehndi', 'makeup'],
     location: 'Mumbai, India',
     charge: 4000,
-    charges: { mehendi: 2000, makeup: 2000 },
+    charges: { mehndi: 2000, makeup: 2000 },
     rating: 4.8,
     styleTags: ['modern', 'fusion', 'party'],
     unavailableDates: [],
@@ -237,13 +238,13 @@ export const initialCustomers: Customer[] = [
 ];
 
 export const allBookings: Booking[] = [
-    { id: 'book_01', customerId: 'cust_101', artistIds: ['1'], customerName: 'Priya Patel', customerContact: '9876543210', eventType: 'Wedding', serviceAddress: '123, Rose Villa, Bandra West, Mumbai', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed', paidOut: true, eventDate: new Date('2024-07-22'), state: 'Maharashtra', district: 'Mumbai', location: 'Bandra West' },
-    { id: 'book_02', customerId: 'cust_102', artistIds: ['2'], customerName: 'Anjali Sharma', customerContact: '9876543211', eventType: 'Party', serviceAddress: '456, Sunshine Apts, Saket, New Delhi', date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed', paidOut: false, eventDate: new Date('2024-07-25'), state: 'Delhi', district: 'South Delhi', location: 'Saket' },
-    { id: 'book_03', customerId: 'cust_103', artistIds: ['3'], customerName: 'Sneha Reddy', customerContact: '9876543212', eventType: 'Wedding', serviceAddress: '789, Tech Park, Koramangala, Bangalore', date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Pending Approval', paidOut: false, eventDate: new Date('2024-08-07'), state: 'Karnataka', district: 'Bengaluru Urban', location: 'Koramangala' },
-    { id: 'book_04', customerId: 'cust_101', artistIds: ['1'], customerName: 'Meera Iyer', customerContact: '9876543213', eventType: 'Engagement', serviceAddress: '321, Lakeview, Powai, Mumbai', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed', paidOut: false, eventDate: new Date('2024-08-11'), state: 'Maharashtra', district: 'Mumbai Suburban', location: 'Powai' },
-    { id: 'book_05', customerId: 'cust_104', artistIds: [], customerName: 'Rohan Gupta', customerContact: '9876543214', eventType: 'Festival', serviceAddress: '654, MG Road, Pune', date: new Date('2024-08-12'), service: 'Mehndi Package', amount: 1800, status: 'Needs Assignment', paidOut: false, eventDate: new Date('2024-08-13'), state: 'Maharashtra', district: 'Pune', location: 'MG Road' },
-    { id: 'book_06', customerId: 'cust_105', artistIds: ['4'], customerName: 'Kavita Singh', customerContact: '9876543215', eventType: 'Wedding', serviceAddress: '987, Cyber City, Gurgaon', date: new Date('2024-08-15'), service: 'Minimalist Mehndi', amount: 2200, status: 'Completed', paidOut: false, eventDate: new Date('2024-08-18'), state: 'Haryana', district: 'Gurugram', location: 'Cyber City' },
-    { id: 'book_07', customerId: 'cust_106', artistIds: ['5'], customerName: 'Divya Kumar', customerContact: '9876543216', eventType: 'Wedding', serviceAddress: '111, Jubilee Hills, Hyderabad', date: new Date('2024-07-28'), service: 'Bridal Makeup', amount: 9000, status: 'Disputed', paidOut: false, eventDate: new Date('2024-07-30'), state: 'Telangana', district: 'Hyderabad', location: 'Jubilee Hills' },
+    { id: 'book_01', customerId: 'cust_101', artistIds: ['1'], customerName: 'Priya Patel', customerContact: '9876543210', eventType: 'Wedding', serviceAddress: '123, Rose Villa, Bandra West, Mumbai', serviceDates: [new Date('2024-07-20')], date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed', paidOut: true, eventDate: new Date('2024-07-22'), state: 'Maharashtra', district: 'Mumbai', location: 'Bandra West' },
+    { id: 'book_02', customerId: 'cust_102', artistIds: ['2'], customerName: 'Anjali Sharma', customerContact: '9876543211', eventType: 'Party', serviceAddress: '456, Sunshine Apts, Saket, New Delhi', serviceDates: [new Date('2024-07-25')], date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed', paidOut: false, eventDate: new Date('2024-07-25'), state: 'Delhi', district: 'South Delhi', location: 'Saket' },
+    { id: 'book_03', customerId: 'cust_103', artistIds: ['3'], customerName: 'Sneha Reddy', customerContact: '9876543212', eventType: 'Wedding', serviceAddress: '789, Tech Park, Koramangala, Bangalore', serviceDates: [new Date('2024-08-05')], date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Pending Approval', paidOut: false, eventDate: new Date('2024-08-07'), state: 'Karnataka', district: 'Bengaluru Urban', location: 'Koramangala' },
+    { id: 'book_04', customerId: 'cust_101', artistIds: ['1'], customerName: 'Meera Iyer', customerContact: '9876543213', eventType: 'Engagement', serviceAddress: '321, Lakeview, Powai, Mumbai', serviceDates: [new Date('2024-08-10')], date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed', paidOut: false, eventDate: new Date('2024-08-11'), state: 'Maharashtra', district: 'Mumbai Suburban', location: 'Powai' },
+    { id: 'book_05', customerId: 'cust_104', artistIds: [], customerName: 'Rohan Gupta', customerContact: '9876543214', eventType: 'Festival', serviceAddress: '654, MG Road, Pune', serviceDates: [new Date('2024-08-12')], date: new Date('2024-08-12'), service: 'Mehndi Package', amount: 1800, status: 'Needs Assignment', paidOut: false, eventDate: new Date('2024-08-13'), state: 'Maharashtra', district: 'Pune', location: 'MG Road' },
+    { id: 'book_06', customerId: 'cust_105', artistIds: ['4'], customerName: 'Kavita Singh', customerContact: '9876543215', eventType: 'Wedding', serviceAddress: '987, Cyber City, Gurgaon', serviceDates: [new Date('2024-08-15')], date: new Date('2024-08-15'), service: 'Minimalist Mehndi', amount: 2200, status: 'Completed', paidOut: false, eventDate: new Date('2024-08-18'), state: 'Haryana', district: 'Gurugram', location: 'Cyber City' },
+    { id: 'book_07', customerId: 'cust_106', artistIds: ['5'], customerName: 'Divya Kumar', customerContact: '9876543216', eventType: 'Wedding', serviceAddress: '111, Jubilee Hills, Hyderabad', serviceDates: [new Date('2024-07-28')], date: new Date('2024-07-28'), service: 'Bridal Makeup', amount: 9000, status: 'Disputed', paidOut: false, eventDate: new Date('2024-07-30'), state: 'Telangana', district: 'Hyderabad', location: 'Jubilee Hills' },
 ];
 
 export const initialPromotions: Promotion[] = [
