@@ -13,16 +13,16 @@ interface ArtistDashboardPageProps {
 
 export default function ArtistDashboardPage({ artist, bookings }: ArtistDashboardPageProps) {
     
+    if (!artist || !bookings) {
+        return <div className="flex items-center justify-center min-h-full">Loading Dashboard...</div>;
+    }
+
     // Mock data for dashboard widgets
     const completedBookings = bookings.filter(b => b.status === 'Completed');
     const totalRevenue = completedBookings.reduce((sum, b) => sum + b.amount, 0);
     const totalBookings = bookings.length;
     const averageRating = artist.rating;
     const upcomingBookings = bookings.filter(b => b.status === 'Confirmed' && new Date(b.date) > new Date()).length;
-
-    if (!artist) {
-        return <div className="flex items-center justify-center min-h-full">Loading Dashboard...</div>;
-    }
 
     return (
         <div className="space-y-6">
