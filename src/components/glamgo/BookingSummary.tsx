@@ -25,7 +25,7 @@ export function BookingSummary({ packages, artist, serviceDates }: BookingSummar
     }, []);
 
     const packageBaseTotal = packages.reduce((sum, pkg) => sum + pkg.price, 0);
-    const artistBaseTotal = artist ? artist.charge : 0;
+    const artistBaseTotal = artist ? (artist.charges?.mehndi || artist.charges?.makeup || artist.charge) : 0;
     const initialBaseTotal = packageBaseTotal + artistBaseTotal;
 
     const numDays = serviceDates.length;
@@ -35,15 +35,14 @@ export function BookingSummary({ packages, artist, serviceDates }: BookingSummar
         if (numDays === 0) return 0;
         if (numDays === 1) return initialBaseTotal;
         
-        let total = 0;
-        // Day 1 is always the base price (0% increment)
-        total += initialBaseTotal; 
+        // Start with the base price for Day 1
+        let total = initialBaseTotal; 
 
+        // Add only the increment amount for subsequent days
         for (let i = 1; i < numDays; i++) {
             // increment index for Day 2 is 0, for Day 3 is 1, etc.
-            // The increments array is for Day 2, Day 3,... up to Day 11
             const incrementPercentage = increments[i - 1] || 0;
-            total += initialBaseTotal * (1 + incrementPercentage / 100);
+            total += initialBaseTotal * (incrementPercentage / 100);
         }
         return total;
     }, [numDays, initialBaseTotal, increments]);
@@ -77,7 +76,7 @@ export function BookingSummary({ packages, artist, serviceDates }: BookingSummar
                     {artist && (
                          <div className="flex justify-between">
                             <span>{artist.name} (Base Charge)</span>
-                            <span>₹{artist.charge.toLocaleString()}</span>
+                            <span>₹{artistBaseTotal.toLocaleString()}</span>
                         </div>
                     )}
                      {numDays > 1 && (
