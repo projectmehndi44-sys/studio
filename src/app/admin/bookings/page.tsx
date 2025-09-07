@@ -7,12 +7,13 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Briefcase, ArrowLeft } from 'lucide-react';
+import { Shield, Briefcase, ArrowLeft, MoreHorizontal } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import type { Booking, Artist } from '@/types';
 import { artists as initialArtists } from '@/lib/data';
 import { AssignArtistModal } from '@/components/glamgo/AssignArtistModal';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 
 const allBookings: Booking[] = [
@@ -75,11 +76,12 @@ export default function BookingManagementPage() {
         setIsAssignModalOpen(true);
     };
     
-    const handleAssignArtist = (bookingId: string, artistId: string) => {
+    const handleAssignArtist = (bookingId: string, artistId: string, originalArtistId: string | null | undefined) => {
         updateBookingStatus(bookingId, 'Confirmed', artistId);
         const artist = artists.find(a => a.id === artistId);
+        
         toast({
-            title: "Artist Assigned",
+            title: `Artist ${originalArtistId ? 'Changed' : 'Assigned'}`,
             description: `${artist?.name} has been assigned to booking ${bookingId}.`,
         });
     };
@@ -115,7 +117,7 @@ export default function BookingManagementPage() {
                            <Briefcase className="w-6 h-6 text-primary"/> Booking Management
                         </CardTitle>
                         <CardDescription>
-                            Approve, assign, or cancel any booking on the platform.
+                            Approve, assign, change, or cancel any booking on the platform.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -148,13 +150,22 @@ export default function BookingManagementPage() {
                                             </TableCell>
                                             <TableCell className="text-right space-x-2">
                                                 {booking.status === 'Pending Approval' && (
-                                                     <Button 
-                                                        variant="default"
-                                                        size="sm"
-                                                        onClick={() => handleApproveBooking(booking.id)}
-                                                    >
-                                                        Approve
-                                                    </Button>
+                                                    <div className="flex gap-2 justify-end">
+                                                        <Button 
+                                                            variant="default"
+                                                            size="sm"
+                                                            onClick={() => handleApproveBooking(booking.id)}
+                                                        >
+                                                            Approve
+                                                        </Button>
+                                                        <Button 
+                                                            variant="destructive" 
+                                                            size="sm"
+                                                            onClick={() => handleCancelBooking(booking.id)}
+                                                        >
+                                                            Cancel
+                                                        </Button>
+                                                    </div>
                                                 )}
                                                 {booking.status === 'Needs Assignment' && (
                                                      <Button 
@@ -165,14 +176,24 @@ export default function BookingManagementPage() {
                                                         Assign Artist
                                                     </Button>
                                                 )}
-                                                {(booking.status === 'Confirmed' || booking.status === 'Pending Approval') && (
-                                                     <Button 
-                                                        variant="destructive" 
-                                                        size="sm"
-                                                        onClick={() => handleCancelBooking(booking.id)}
-                                                    >
-                                                        Cancel
-                                                    </Button>
+                                                {booking.status === 'Confirmed' && (
+                                                     <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                                <span className="sr-only">Toggle menu</span>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                            <DropdownMenuItem onSelect={() => handleOpenAssignModal(booking)}>
+                                                                Change Artist
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onSelect={() => handleCancelBooking(booking.id)}>
+                                                                Cancel Booking
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
                                                 )}
                                             </TableCell>
                                         </TableRow>

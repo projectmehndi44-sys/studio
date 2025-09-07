@@ -21,7 +21,7 @@ interface AssignArtistModalProps {
   artists: Artist[];
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onAssign: (bookingId: string, artistId: string) => void;
+  onAssign: (bookingId: string, artistId: string, originalArtistId: string | null | undefined) => void;
 }
 
 export function AssignArtistModal({ booking, artists, isOpen, onOpenChange, onAssign }: AssignArtistModalProps) {
@@ -38,15 +38,24 @@ export function AssignArtistModal({ booking, artists, isOpen, onOpenChange, onAs
       });
       return;
     }
-    onAssign(booking.id, selectedArtistId);
+    onAssign(booking.id, selectedArtistId, booking.artistId);
     onOpenChange(false);
   };
+
+  React.useEffect(() => {
+    // Pre-fill the dropdown if an artist is already assigned
+    if (booking?.artistId) {
+      setSelectedArtistId(booking.artistId);
+    } else {
+      setSelectedArtistId(null);
+    }
+  }, [booking]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle className="text-primary font-bold text-2xl">Assign Artist</DialogTitle>
+          <DialogTitle className="text-primary font-bold text-2xl">{booking.artistId ? 'Change' : 'Assign'} Artist</DialogTitle>
           <DialogDescription>
             Select an available artist for booking #{booking.id}.
           </DialogDescription>
@@ -55,7 +64,7 @@ export function AssignArtistModal({ booking, artists, isOpen, onOpenChange, onAs
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
               <Label>Select Artist</Label>
-              <Select onValueChange={setSelectedArtistId}>
+              <Select onValueChange={setSelectedArtistId} value={selectedArtistId ?? undefined}>
                 <SelectTrigger>
                   <SelectValue placeholder="Choose an artist" />
                 </SelectTrigger>
@@ -78,7 +87,7 @@ export function AssignArtistModal({ booking, artists, isOpen, onOpenChange, onAs
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" className="bg-accent hover:bg-accent/90 w-full">Assign Artist</Button>
+            <Button type="submit" className="bg-accent hover:bg-accent/90 w-full">{booking.artistId ? 'Change' : 'Assign'} Artist</Button>
           </DialogFooter>
         </form>
       </DialogContent>
