@@ -10,14 +10,6 @@ import type { Artist, Booking, Notification } from '@/types';
 import { artists as initialArtists } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 
-// Mock data that would be fetched for the logged-in artist
-const allBookings: Booking[] = [
-    { id: 'book_01', artistIds: ['1'], customerName: 'Priya Patel', customerContact: '9876543210', serviceAddress: '123, Rose Villa, Bandra West, Mumbai', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed' },
-    { id: 'book_04', artistIds: ['1'], customerName: 'Meera Iyer', customerContact: '9876543213', serviceAddress: '321, Lakeview, Powai, Mumbai', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed' },
-    { id: 'book_07', artistIds: ['1'], customerName: 'Neha Desai', customerContact: '9876543216', serviceAddress: '555, Juhu Beach, Mumbai', date: new Date('2024-08-20'), service: 'Bridal Package', amount: 9500, status: 'Confirmed' },
-    { id: 'book_08', artistIds: ['2'], customerName: 'Anika Verma', customerContact: '9876543217', serviceAddress: '777, CP, New Delhi', date: new Date('2024-08-22'), service: 'Reception Makeup', amount: 6000, status: 'Confirmed' },
-];
-
 export default function ArtistDashboardLayout({
   children,
 }: {
@@ -35,13 +27,12 @@ export default function ArtistDashboardLayout({
     const fetchArtistData = React.useCallback(() => {
         const currentArtistId = localStorage.getItem('artistId');
         if (!currentArtistId) {
-            // No need to toast here, just redirect.
             router.push('/artist/login');
             return;
         }
         setArtistId(currentArtistId);
         
-        // Fetch Artist Profile from both initial data and localStorage
+        // Fetch Artist Profile
         const storedArtists: Artist[] = JSON.parse(localStorage.getItem('artists') || '[]');
         const allArtists: Artist[] = [...initialArtists.filter(ia => !storedArtists.some(sa => sa.id === ia.id)), ...storedArtists];
         const currentArtist = allArtists.find((a: Artist) => a.id === currentArtistId);
@@ -58,15 +49,15 @@ export default function ArtistDashboardLayout({
             return;
         }
 
-        // Fetch Bookings from localStorage primarily, fallback to initial data
-        const storedBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || 'null') || allBookings;
+        // Fetch Bookings
+        const storedBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || '[]').map((b: any) => ({...b, date: new Date(b.date)}));
         const artistBookings = storedBookings.filter(b => b.artistIds.includes(currentArtistId));
         setBookings(artistBookings);
         
-        // Fetch Notifications from localStorage
+        // Fetch Notifications
         const allNotifications: Notification[] = JSON.parse(localStorage.getItem('notifications') || '[]');
         const artistNotifications = allNotifications.filter((n: Notification) => n.artistId === currentArtistId);
-        setNotifications(artistNotifications);
+        setNotifications(artistNotifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
         setUnreadCount(artistNotifications.filter((n: Notification) => !n.isRead).length);
 
     }, [router, toast]);
@@ -79,9 +70,7 @@ export default function ArtistDashboardLayout({
         }
         
         fetchArtistData();
-        // Set up the listener for storage events to keep data in sync
         window.addEventListener('storage', fetchArtistData);
-        // Clean up the listener when the component unmounts
         return () => {
             window.removeEventListener('storage', fetchArtistData);
         };
@@ -101,7 +90,6 @@ export default function ArtistDashboardLayout({
     const childrenWithProps = React.Children.map(children, child => {
         if (React.isValidElement(child)) {
             const props: any = { artist, bookings, notifications, setNotifications, setUnreadCount, artistId };
-             // Special case for bookings page to allow mutation
             if (pathname === '/artist/dashboard/bookings') {
                 props.setBookings = setBookings;
             }
@@ -149,5 +137,3 @@ export default function ArtistDashboardLayout({
         </div>
     );
 }
-
-    

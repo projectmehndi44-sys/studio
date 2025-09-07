@@ -67,7 +67,7 @@ export const exportToPdf = (data: ArtistExportData) => {
     autoTable(doc, {
         startY: 25,
         head: [['Customer', 'Date', 'Service', 'Amount', 'Status']],
-        body: bookings.map(b => [b.customerName, b.date.toLocaleDateString(), b.service, `₹${b.amount}`, b.status]),
+        body: bookings.map(b => [b.customerName, new Date(b.date).toLocaleDateString(), b.service, `₹${b.amount}`, b.status]),
         theme: 'grid',
     });
 
@@ -94,7 +94,7 @@ export const exportToPdf = (data: ArtistExportData) => {
 export const exportToExcel = (data: ArtistExportData[], filename = 'artists-export.xlsx') => {
     const wb = XLSX.utils.book_new();
 
-    data.forEach((artistData, index) => {
+    data.forEach((artistData) => {
         const { artist, bookings, reviews } = artistData;
 
         // Artist Profile Sheet
@@ -117,7 +117,7 @@ export const exportToExcel = (data: ArtistExportData[], filename = 'artists-expo
             const bookings_ws = XLSX.utils.json_to_sheet(
                 bookings.map(b => ({
                     Customer: b.customerName,
-                    Date: b.date.toLocaleDateString(),
+                    Date: new Date(b.date).toLocaleDateString(),
                     Service: b.service,
                     Amount: b.amount,
                     Status: b.status,
@@ -140,7 +140,7 @@ export const exportToExcel = (data: ArtistExportData[], filename = 'artists-expo
     });
 
     if (data.length === 0) {
-        const empty_ws = XLSX.utils.json_to_sheet([{ Message: "No artists selected to export." }]);
+        const empty_ws = XLSX.utils.json_to_sheet([{ Message: "No artists were selected to export." }]);
         XLSX.utils.book_append_sheet(wb, empty_ws, 'Export');
     }
 
