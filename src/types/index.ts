@@ -1,6 +1,7 @@
 
 
 
+
 export type ArtistPackage = {
   id: string;
   name: string;
@@ -28,7 +29,6 @@ export type Artist = {
   rating: number;
   styleTags: string[];
   unavailableDates?: string[]; // ISO date strings
-  packages?: ArtistPackage[]; // Artist-specific packages
   reviews?: Review[]; // Artist-specific reviews
 };
 

@@ -160,7 +160,6 @@ export default function ArtistDashboardLayout({
     ];
 
     const sidebarNavLinks = [
-        { href: '/artist/dashboard/packages', label: 'Packages', icon: Package },
         { href: '/artist/dashboard/payouts', label: 'Payouts', icon: IndianRupee },
         { href: '/artist/dashboard/reviews', label: 'Reviews', icon: Star },
         { href: '/artist/dashboard/notifications', label: 'Notifications', icon: Bell },

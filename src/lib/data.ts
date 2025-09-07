@@ -1,6 +1,7 @@
 
 
 
+
 import type { Artist, Booking, Customer, MehndiPackage, Promotion, Review } from '@/types';
 
 export const artists: Artist[] = [
@@ -23,10 +24,6 @@ export const artists: Artist[] = [
     rating: 4.9,
     styleTags: ['bridal', 'arabic', 'intricate'],
     unavailableDates: [],
-    packages: [
-        { id: 'ap_1_1', name: 'Standard Bridal', description: 'Elbow length, both hands.', price: 4500, image: 'https://picsum.photos/600/400?random=111', tags: ['bridal'] },
-        { id: 'ap_1_2', name: 'Guest Mehndi', description: 'Simple designs for guests.', price: 1500, image: 'https://picsum.photos/600/400?random=112', tags: ['guest'] },
-    ],
     reviews: [
         { id: 'ar_1_1', customerName: 'Priya Patel', rating: 5, comment: 'Amazing detailed work!' }
     ]
