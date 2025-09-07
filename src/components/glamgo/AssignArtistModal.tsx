@@ -16,16 +16,18 @@ import { useToast } from '@/hooks/use-toast';
 import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
 import { ScrollArea } from '../ui/scroll-area';
+import { Badge } from '../ui/badge';
 
 interface AssignArtistModalProps {
   booking: Booking;
   artists: Artist[];
+  allBookings: Booking[];
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onAssign: (bookingId: string, artistIds: string[]) => void;
 }
 
-export function AssignArtistModal({ booking, artists, isOpen, onOpenChange, onAssign }: AssignArtistModalProps) {
+export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpenChange, onAssign }: AssignArtistModalProps) {
   const { toast } = useToast();
   const [selectedArtistIds, setSelectedArtistIds] = React.useState<string[]>([]);
 
@@ -54,13 +56,27 @@ export function AssignArtistModal({ booking, artists, isOpen, onOpenChange, onAs
   }
 
   React.useEffect(() => {
-    // Pre-fill the checkboxes if artists are already assigned
     if (booking?.artistIds) {
       setSelectedArtistIds(booking.artistIds.filter(id => id !== null) as string[]);
     } else {
       setSelectedArtistIds([]);
     }
   }, [booking]);
+
+  const bookedArtistIds = React.useMemo(() => {
+    if (!booking || !allBookings) return new Set();
+
+    return new Set(
+        allBookings
+            .filter(b => 
+                b.id !== booking.id &&
+                new Date(b.date).toDateString() === new Date(booking.date).toDateString() &&
+                (b.status === 'Confirmed' || b.status === 'Completed') 
+            )
+            .flatMap(b => b.artistIds)
+    );
+  }, [booking, allBookings]);
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -77,19 +93,27 @@ export function AssignArtistModal({ booking, artists, isOpen, onOpenChange, onAs
               <Label>Select Artists</Label>
               <ScrollArea className="h-48 w-full rounded-md border p-4">
                  <div className="space-y-2">
-                    {artists.map(artist => (
+                    {artists.map(artist => {
+                       const isBooked = bookedArtistIds.has(artist.id);
+                       return (
                        <div key={artist.id} className="flex items-center space-x-2">
                            <Checkbox
                                 id={`artist-${artist.id}`}
                                 checked={selectedArtistIds.includes(artist.id)}
                                 onCheckedChange={(checked) => handleCheckboxChange(artist.id, checked)}
+                                disabled={isBooked}
                            />
-                           <Label htmlFor={`artist-${artist.id}`} className="font-normal w-full flex justify-between">
-                               <span>{artist.name}</span>
-                               <span className="text-xs text-muted-foreground">({artist.location})</span>
+                           <Label htmlFor={`artist-${artist.id}`} className={`font-normal w-full flex justify-between ${isBooked ? 'text-muted-foreground' : ''}`}>
+                               <span>{artist.name} <span className="text-xs text-muted-foreground">({artist.location})</span></span>
+                               {isBooked ? (
+                                    <Badge variant="destructive">Booked</Badge>
+                               ) : (
+                                    <Badge variant="secondary" className="bg-green-100 text-green-800">Available</Badge>
+                               )}
                            </Label>
                        </div>
-                    ))}
+                       )
+                    })}
                  </div>
               </ScrollArea>
             </div>
@@ -107,3 +131,5 @@ export function AssignArtistModal({ booking, artists, isOpen, onOpenChange, onAs
     </Dialog>
   );
 }
+
+    

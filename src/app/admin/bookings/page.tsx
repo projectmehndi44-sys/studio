@@ -42,6 +42,11 @@ export default function BookingManagementPage() {
         const storedArtists = localStorage.getItem('artists');
         setArtists(storedArtists ? JSON.parse(storedArtists) : initialArtists);
 
+        const storedBookings = localStorage.getItem('bookings');
+        if (storedBookings) {
+            setBookings(JSON.parse(storedBookings).map((b: Booking) => ({...b, date: new Date(b.date)})));
+        }
+
     }, [router]);
     
     const sendNotification = (artistId: string, booking: Booking, title: string, message: string) => {
@@ -294,11 +299,14 @@ export default function BookingManagementPage() {
                 onOpenChange={setIsAssignModalOpen}
                 booking={selectedBooking}
                 artists={artists}
+                allBookings={bookings}
                 onAssign={handleAssignArtist}
             />
         )}
         </>
     );
 }
+
+    
 
     
