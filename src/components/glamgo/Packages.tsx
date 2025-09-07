@@ -8,17 +8,26 @@ import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carouse
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MehndiIcon } from '@/components/icons';
-import type { MehndiPackage } from '@/types';
+import { MakeupIcon, MehndiIcon, PhotographyIcon } from '@/components/icons';
+import type { ServicePackage } from '@/types';
 import { Check, PackagePlus } from 'lucide-react';
 import Autoplay from "embla-carousel-autoplay"
 
-
 interface PackagesProps {
-    packages: MehndiPackage[];
-    onAddToCart: (pkg: MehndiPackage) => void;
-    cart: MehndiPackage[];
+    packages: ServicePackage[];
+    onAddToCart: (pkg: ServicePackage) => void;
+    cart: ServicePackage[];
 }
+
+const getServiceIcon = (service: ServicePackage['service']) => {
+    switch(service) {
+        case 'mehndi': return <MehndiIcon className="w-3.5 h-3.5"/>;
+        case 'makeup': return <MakeupIcon className="w-3.5 h-3.5"/>;
+        case 'photography': return <PhotographyIcon className="w-3.5 h-3.5"/>;
+        default: return null;
+    }
+}
+
 
 export function Packages({ packages, onAddToCart, cart }: PackagesProps) {
     if (packages.length === 0) {
@@ -45,7 +54,7 @@ export function Packages({ packages, onAddToCart, cart }: PackagesProps) {
                                             <div className="flex flex-wrap gap-1">
                                                 {pkg.tags.map(tag => (
                                                     <Badge key={tag} variant="secondary" className="gap-1.5 pl-2">
-                                                        <MehndiIcon className="w-3.5 h-3.5"/>
+                                                        {getServiceIcon(pkg.service)}
                                                         <span className="capitalize">{tag}</span>
                                                     </Badge>
                                                 ))}

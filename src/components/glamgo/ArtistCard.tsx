@@ -6,11 +6,24 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { IndianRupee, MapPin, Paintbrush, Star } from 'lucide-react';
-import { MehndiIcon } from '@/components/icons';
+import { MehndiIcon, PhotographyIcon } from '@/components/icons';
 
 interface ArtistCardProps {
   artist: Artist;
   onBookingRequest: (artist: Artist) => void;
+}
+
+const getServiceIcon = (service: Artist['services'][number]) => {
+    switch (service) {
+        case 'mehndi':
+            return <MehndiIcon className="w-3.5 h-3.5" />;
+        case 'makeup':
+            return <Paintbrush className="w-3.5 h-3.5" />;
+        case 'photography':
+            return <PhotographyIcon className="w-3.5 h-3.5" />;
+        default:
+            return null;
+    }
 }
 
 export function ArtistCard({ artist, onBookingRequest }: ArtistCardProps) {
@@ -47,7 +60,7 @@ export function ArtistCard({ artist, onBookingRequest }: ArtistCardProps) {
         <div className="flex flex-wrap gap-2 mb-4">
           {artist.services.map((service) => (
             <Badge key={service} variant="secondary" className="gap-1.5 pl-2">
-              {service === 'mehndi' ? <MehndiIcon className="w-3.5 h-3.5" /> : <Paintbrush className="w-3.5 h-3.5" />}
+              {getServiceIcon(service)}
               <span className="capitalize">{service}</span>
             </Badge>
           ))}
@@ -57,7 +70,7 @@ export function ArtistCard({ artist, onBookingRequest }: ArtistCardProps) {
         <div className="flex flex-col">
             <div className="flex items-center text-lg font-bold text-primary">
                 <IndianRupee className="w-4 h-4 mr-1" />
-                <span>{artist.charge.toLocaleString()}</span>
+                <span>{(artist.charges?.mehndi || artist.charges?.makeup || artist.charges?.photography || artist.charge).toLocaleString()}</span>
             </div>
             <div className="flex items-center text-amber-500">
                 <Star className="w-4 h-4 mr-1 fill-current" />
