@@ -1,17 +1,22 @@
 
+
 'use client';
 
 import * as React from 'react';
-import type { MehndiPackage } from '@/types';
+import type { ServicePackage, Artist } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 
 interface BookingSummaryProps {
-    packages: MehndiPackage[];
+    packages: ServicePackage[];
+    artist: Artist | null;
 }
 
-export function BookingSummary({ packages }: BookingSummaryProps) {
-    const total = packages.reduce((sum, pkg) => sum + pkg.price, 0);
+export function BookingSummary({ packages, artist }: BookingSummaryProps) {
+    const packageTotal = packages.reduce((sum, pkg) => sum + pkg.price, 0);
+    const artistTotal = artist ? artist.charge : 0;
+    const total = packageTotal + artistTotal;
+    
     // Assuming 18% GST is included in the price
     const subtotal = total / 1.18;
     const taxes = total - subtotal;
@@ -29,6 +34,12 @@ export function BookingSummary({ packages }: BookingSummaryProps) {
                             <span>₹{pkg.price.toLocaleString()}</span>
                         </div>
                     ))}
+                    {artist && (
+                         <div className="flex justify-between">
+                            <span>{artist.name} (Base Charge)</span>
+                            <span>₹{artist.charge.toLocaleString()}</span>
+                        </div>
+                    )}
                 </div>
                 <Separator />
                 <div className="space-y-2 text-sm">

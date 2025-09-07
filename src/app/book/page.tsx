@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -17,23 +18,24 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 
-import { packages as allPackages } from '@/lib/packages-data';
+import { packages as initialPackages } from '@/lib/packages-data';
+import { artists as initialArtists } from '@/lib/data';
 import { INDIA_LOCATIONS } from '@/lib/india-locations';
-import type { MehndiPackage, Booking } from '@/types';
+import type { ServicePackage, Booking, Artist } from '@/types';
 
-import { Calendar as CalendarIcon, ChevronLeft, Minus, Plus, Trash2, Upload, MapPin, Instagram, Info, CheckCircle, AlertCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, Minus, Plus, Trash2, Upload, MapPin, Instagram, CheckCircle, AlertCircle, User, IndianRupee } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { BookingSummary } from '@/components/glamgo/BookingSummary';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-
 
 export default function BookingPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { toast } = useToast();
 
-    const [selectedPackages, setSelectedPackages] = React.useState<MehndiPackage[]>([]);
+    const [selectedPackages, setSelectedPackages] = React.useState<ServicePackage[]>([]);
+    const [selectedArtist, setSelectedArtist] = React.useState<Artist | null>(null);
     const [availableLocations, setAvailableLocations] = React.useState<Record<string, string[]>>({});
     
     // Form state
@@ -53,28 +55,46 @@ export default function BookingPage() {
     
     const [includeGuestMehndi, setIncludeGuestMehndi] = React.useState(false);
     const [guestCount, setGuestCount] = React.useState(1);
+    
+    const getArtists = (): Artist[] => {
+         const storedArtists = localStorage.getItem('artists');
+         const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
+         const allArtistsMap = new Map<string, Artist>();
+         initialArtists.forEach(a => allArtistsMap.set(a.id, a));
+         localArtists.forEach(a => allArtistsMap.set(a.id, a));
+         return Array.from(allArtistsMap.values());
+    }
 
     React.useEffect(() => {
         const packageIds = searchParams.get('packages')?.split(',');
-        if (packageIds) {
-            const packages = allPackages.filter(p => packageIds.includes(p.id));
+        const artistId = searchParams.get('artistId');
+
+        if (packageIds && packageIds[0]) {
+            const packagesData = localStorage.getItem('servicePackages');
+            const allAvailablePackages = packagesData ? JSON.parse(packagesData) : initialPackages;
+            const packages = allAvailablePackages.filter((p: ServicePackage) => packageIds.includes(p.id));
             setSelectedPackages(packages);
+        }
+
+        if (artistId) {
+            const allArtists = getArtists();
+            const artist = allArtists.find(a => a.id === artistId);
+            setSelectedArtist(artist || null);
         }
 
         const savedLocations = localStorage.getItem('availableLocations');
         if (savedLocations) {
             setAvailableLocations(JSON.parse(savedLocations));
         } else {
-            // Fallback to all of India if not set by admin
             setAvailableLocations(INDIA_LOCATIONS);
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams]);
 
     const handleRemovePackage = (packageId: string) => {
         const updatedPackages = selectedPackages.filter(p => p.id !== packageId);
         setSelectedPackages(updatedPackages);
         
-        // Update URL without reloading page
         const newPackageIds = updatedPackages.map(p => p.id).join(',');
         if (newPackageIds) {
             router.replace(`/book?packages=${newPackageIds}`);
@@ -84,6 +104,7 @@ export default function BookingPage() {
     };
     
     const isFormValid = () => {
+        const hasSelection = selectedPackages.length > 0 || !!selectedArtist;
         return (
             name &&
             phone &&
@@ -96,7 +117,7 @@ export default function BookingPage() {
             location &&
             address &&
             mapLink &&
-            selectedPackages.length > 0
+            hasSelection
         );
     }
 
@@ -125,14 +146,14 @@ export default function BookingPage() {
         const newBooking: Booking = {
             id: `book_${Date.now()}`,
             customerId,
-            artistIds: [], // To be assigned by admin
+            artistIds: selectedArtist ? [selectedArtist.id] : [],
             customerName: name,
             customerContact: phone,
             serviceAddress: address,
             date: mehndiDate!,
-            service: selectedPackages.map(p => p.name).join(', '),
-            amount: selectedPackages.reduce((sum, p) => sum + p.price, 0),
-            status: 'Needs Assignment',
+            service: selectedArtist ? selectedArtist.services.join(' & ') : selectedPackages.map(p => p.name).join(', '),
+            amount: selectedArtist ? selectedArtist.charge : selectedPackages.reduce((sum, p) => sum + p.price, 0),
+            status: selectedArtist ? 'Pending Approval' : 'Needs Assignment',
             eventType,
             eventDate: eventDate!,
             state,
@@ -206,9 +227,26 @@ export default function BookingPage() {
                     {/* Selected Items */}
                     <Card>
                         <CardHeader>
-                            <CardTitle>Your Selected Packages ({selectedPackages.length})</CardTitle>
+                            <CardTitle>Your Selection</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
+                            {selectedArtist && (
+                                <div className="flex items-center justify-between p-2 border rounded-lg">
+                                    <div className="flex items-center gap-4">
+                                        <Image src={selectedArtist.profilePicture} alt={selectedArtist.name} width={64} height={64} className="rounded-full object-cover aspect-square"/>
+                                        <div>
+                                            <p className="font-semibold text-lg">{selectedArtist.name}</p>
+                                            <p className="text-sm text-muted-foreground">{selectedArtist.services.join(', ')}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center text-lg font-bold text-primary">
+                                        <IndianRupee className="w-4 h-4 mr-1"/>
+                                        <span>{selectedArtist.charge.toLocaleString()}</span>
+                                        <span className="text-sm text-muted-foreground ml-1">(base)</span>
+                                    </div>
+                                </div>
+                            )}
+
                             {selectedPackages.map(pkg => (
                                 <div key={pkg.id} className="flex items-center justify-between p-2 border rounded-lg">
                                     <div className="flex items-center gap-4">
@@ -223,13 +261,16 @@ export default function BookingPage() {
                                     </Button>
                                 </div>
                             ))}
-                             <Button variant="outline" className="w-full" asChild>
-                                <Link href={`/?packages=${selectedPackages.map(p => p.id).join(',')}`}>+ Add More Packages</Link>
-                             </Button>
+                            {!selectedArtist && (
+                                <Button variant="outline" className="w-full" asChild>
+                                    <Link href={`/?packages=${selectedPackages.map(p => p.id).join(',')}`}>+ Add More Packages</Link>
+                                </Button>
+                            )}
                         </CardContent>
                     </Card>
 
                     {/* Add-ons */}
+                    {!selectedArtist && (
                     <Card>
                         <CardHeader>
                             <CardTitle>Add-ons</CardTitle>
@@ -259,6 +300,7 @@ export default function BookingPage() {
                             )}
                         </CardContent>
                     </Card>
+                    )}
 
                     {/* Booking Details Form */}
                     <Card>
@@ -388,7 +430,7 @@ export default function BookingPage() {
                     </Card>
 
                      {/* Booking Summary */}
-                    <BookingSummary packages={selectedPackages} />
+                    <BookingSummary packages={selectedPackages} artist={selectedArtist}/>
 
                     {/* Policies */}
                     <div className="p-4 rounded-lg bg-green-50 border border-green-200 flex items-start gap-3">

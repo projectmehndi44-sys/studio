@@ -21,7 +21,6 @@ import {
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/glamgo/Header';
 import { ArtistCard } from '@/components/glamgo/ArtistCard';
-import { BookingModal } from '@/components/glamgo/BookingModal';
 import { ArtistRegistrationModal } from '@/components/glamgo/ArtistRegistrationModal';
 import { CustomerRegistrationModal } from '@/components/glamgo/CustomerRegistrationModal';
 import { CustomerLoginModal } from '@/components/glamgo/CustomerLoginModal';
@@ -33,7 +32,7 @@ import Autoplay from "embla-carousel-autoplay"
 import Image from 'next/image';
 import { Packages } from '@/components/glamgo/Packages';
 import { MehndiIcon, MakeupIcon, PhotographyIcon } from '@/components/icons';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -58,15 +57,12 @@ const backgroundImages = [
 
 
 export default function Home() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [artists, setArtists] = React.useState<Artist[]>([]);
   const [allPackages, setAllPackages] = React.useState<ServicePackage[]>([]);
   const [filteredArtists, setFilteredArtists] =
     React.useState<Artist[]>([]);
-  const [selectedArtist, setSelectedArtist] = React.useState<Artist | null>(
-    null
-  );
-  const [isBookingModalOpen, setIsBookingModalOpen] = React.useState(false);
   const [isArtistRegistrationModalOpen, setIsArtistRegistrationModalOpen] =
     React.useState(false);
   const [isCustomerRegistrationModalOpen, setIsCustomerRegistrationModalOpen] = React.useState(false);
@@ -156,8 +152,8 @@ export default function Home() {
         toast({ title: 'Please Login', description: 'You need to be logged in to book an artist.' });
         return;
     }
-    setSelectedArtist(artist);
-    setIsBookingModalOpen(true);
+    // Redirect to the detailed booking page with artist ID
+    router.push(`/book?artistId=${artist.id}`);
   };
   
   const handleAddToCart = (pkg: ServicePackage) => {
@@ -460,15 +456,6 @@ export default function Home() {
             </Carousel>
         </div>
 
-
-        {selectedArtist && (
-          <BookingModal
-            artist={selectedArtist}
-            pkg={null}
-            isOpen={isBookingModalOpen}
-            onOpenChange={setIsBookingModalOpen}
-          />
-        )}
         <ArtistRegistrationModal
             isOpen={isArtistRegistrationModalOpen}
             onOpenChange={setIsArtistRegistrationModalOpen}
