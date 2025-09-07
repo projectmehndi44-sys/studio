@@ -19,7 +19,7 @@ import { exportPayoutToPdf, generateGstInvoice } from '@/lib/export';
 
 
 const allBookings: Booking[] = [
-    { id: 'book_01', artistIds: ['1'], customerName: 'Priya Patel', customerContact: '9876543210', serviceAddress: '123, Rose Villa, Bandra West, Mumbai', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed', paidOut: false },
+    { id: 'book_01', artistIds: ['1'], customerName: 'Priya Patel', customerContact: '9876543210', serviceAddress: '123, Rose Villa, Bandra West, Mumbai', date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed', paidOut: true },
     { id: 'book_02', artistIds: ['2'], customerName: 'Anjali Sharma', customerContact: '9876543211', serviceAddress: '456, Sunshine Apts, Saket, New Delhi', date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed', paidOut: false },
     { id: 'book_03', artistIds: ['3'], customerName: 'Sneha Reddy', customerContact: '9876543212', serviceAddress: '789, Tech Park, Koramangala, Bangalore', date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Pending Approval', paidOut: false },
     { id: 'book_04', artistIds: ['1'], customerName: 'Meera Iyer', customerContact: '9876543213', serviceAddress: '321, Lakeview, Powai, Mumbai', date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed', paidOut: false },
@@ -172,8 +172,8 @@ export default function PayoutManagementPage() {
                                                     <TableCell className="font-medium">{payout.artistName}</TableCell>
                                                     <TableCell>{payout.totalBookings}</TableCell>
                                                     <TableCell>₹{payout.grossRevenue.toLocaleString()}</TableCell>
-                                                    <TableCell>₹{payout.platformFees.toLocaleString()}</TableCell>
-                                                    <TableCell>₹{payout.gst.toLocaleString()}</TableCell>
+                                                    <TableCell>- ₹{payout.platformFees.toLocaleString()}</TableCell>
+                                                    <TableCell>- ₹{payout.gst.toLocaleString()}</TableCell>
                                                     <TableCell className="font-bold text-green-600">₹{payout.netPayout.toLocaleString()}</TableCell>
                                                     <TableCell className="text-right space-x-2">
                                                         <Button onClick={() => handleMarkAsPaid(payout)}>Mark as Paid</Button>
