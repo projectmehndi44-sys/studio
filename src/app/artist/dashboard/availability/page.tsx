@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Save } from 'lucide-react';
 import { artists as initialArtists } from '@/lib/data';
-import { add, formatISO } from 'date-fns';
+import { formatISO } from 'date-fns';
 
 interface ArtistAvailabilityPageProps {
     artist: Artist;
