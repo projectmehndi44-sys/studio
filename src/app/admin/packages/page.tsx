@@ -13,16 +13,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Package, PlusCircle, Trash2, Edit, Upload, IndianRupee, Tag } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import type { MehndiPackage } from '@/types';
+import type { ServicePackage } from '@/types';
 import { packages as initialPackages } from '@/lib/packages-data';
 import NextImage from 'next/image';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const packageSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(3, 'Package name must be at least 3 characters.'),
   description: z.string().min(10, 'Description must be at least 10 characters.'),
   price: z.coerce.number().min(0, 'Price cannot be negative.'),
+  service: z.enum(['mehndi', 'makeup', 'photography'], { required_error: 'Please select a service category.' }),
   tags: z.string().optional(), // Comma-separated tags
   image: z.any(),
 });
@@ -32,14 +35,14 @@ type PackageFormValues = z.infer<typeof packageSchema>;
 export default function PackageManagementPage() {
     const router = useRouter();
     const { toast } = useToast();
-    const [packages, setPackages] = React.useState<MehndiPackage[]>([]);
-    const [editingPackage, setEditingPackage] = React.useState<MehndiPackage | null>(null);
+    const [packages, setPackages] = React.useState<ServicePackage[]>([]);
+    const [editingPackage, setEditingPackage] = React.useState<ServicePackage | null>(null);
     const [imagePreview, setImagePreview] = React.useState<string | null>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const form = useForm<PackageFormValues>({
         resolver: zodResolver(packageSchema),
-        defaultValues: { name: '', description: '', price: 0, tags: '', image: null },
+        defaultValues: { name: '', description: '', price: 0, tags: '', image: null, service: 'mehndi' },
     });
 
     React.useEffect(() => {
@@ -52,7 +55,7 @@ export default function PackageManagementPage() {
         setPackages(storedPackages ? JSON.parse(storedPackages) : initialPackages);
     }, [router]);
     
-    const savePackages = (updatedPackages: MehndiPackage[]) => {
+    const savePackages = (updatedPackages: ServicePackage[]) => {
         setPackages(updatedPackages);
         localStorage.setItem('mehndiPackages', JSON.stringify(updatedPackages));
     }
@@ -66,9 +69,10 @@ export default function PackageManagementPage() {
     };
 
     const onSubmit: SubmitHandler<PackageFormValues> = (data) => {
-        const newPackage: MehndiPackage = {
+        const newPackage: ServicePackage = {
             id: editingPackage?.id || `pkg_${Date.now()}`,
             name: data.name,
+            service: data.service,
             description: data.description,
             price: data.price,
             tags: data.tags?.split(',').map(tag => tag.trim()).filter(Boolean) || [],
@@ -87,15 +91,16 @@ export default function PackageManagementPage() {
         savePackages(updatedPackages);
         setEditingPackage(null);
         setImagePreview(null);
-        form.reset({ name: '', description: '', price: 0, tags: '', image: null });
+        form.reset({ name: '', description: '', price: 0, tags: '', image: null, service: 'mehndi' });
         if(fileInputRef.current) fileInputRef.current.value = "";
     };
 
-    const handleEdit = (pkg: MehndiPackage) => {
+    const handleEdit = (pkg: ServicePackage) => {
         setEditingPackage(pkg);
         form.reset({
             id: pkg.id,
             name: pkg.name,
+            service: pkg.service,
             description: pkg.description,
             price: pkg.price,
             tags: pkg.tags.join(', '),
@@ -113,8 +118,38 @@ export default function PackageManagementPage() {
     const handleCancelEdit = () => {
         setEditingPackage(null);
         setImagePreview(null);
-        form.reset({ name: '', description: '', price: 0, tags: '', image: null });
+        form.reset({ name: '', description: '', price: 0, tags: '', image: null, service: 'mehndi' });
         if(fileInputRef.current) fileInputRef.current.value = "";
+    }
+    
+    const renderPackages = (filter: 'all' | 'mehndi' | 'makeup' | 'photography') => {
+        const filteredPackages = filter === 'all' ? packages : packages.filter(p => p.service === filter);
+        
+        if (filteredPackages.length === 0) {
+            return <p className="text-muted-foreground text-center col-span-full">No packages found for this category.</p>;
+        }
+
+        return filteredPackages.map(pkg => (
+            <Card key={pkg.id} className="overflow-hidden group">
+                <div className="relative">
+                    <NextImage src={pkg.image} alt={pkg.name} width={400} height={250} className="w-full object-cover aspect-video" />
+                    <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button size="icon" variant="outline" className="bg-background/80" onClick={() => handleEdit(pkg)}><Edit className="h-4 w-4"/></Button>
+                            <Button size="icon" variant="destructive" onClick={() => handleDelete(pkg.id)}><Trash2 className="h-4 w-4"/></Button>
+                    </div>
+                </div>
+                <CardHeader>
+                    <CardTitle>{pkg.name}</CardTitle>
+                    <CardDescription className="text-sm">₹{pkg.price.toLocaleString()}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-muted-foreground">{pkg.description}</p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                        {pkg.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
+                    </div>
+                </CardContent>
+            </Card>
+        ));
     }
 
 
@@ -138,8 +173,22 @@ export default function PackageManagementPage() {
                         <CardContent>
                             <Form {...form}>
                                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                                    <FormField control={form.control} name="service" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Service Category</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="mehndi">Mehendi</SelectItem>
+                                                    <SelectItem value="makeup">Makeup</SelectItem>
+                                                    <SelectItem value="photography">Photography</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
                                     <FormField control={form.control} name="name" render={({ field }) => (
-                                        <FormItem><FormLabel>Package Name</FormLabel><FormControl><Input placeholder="e.g., Bridal Mehndi" {...field} /></FormControl><FormMessage /></FormItem>
+                                        <FormItem><FormLabel>Package Name</FormLabel><FormControl><Input placeholder="e.g., Bridal Mehendi" {...field} /></FormControl><FormMessage /></FormItem>
                                     )} />
                                     <FormField control={form.control} name="description" render={({ field }) => (
                                         <FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="Describe the package..." {...field} /></FormControl><FormMessage /></FormItem>
@@ -186,28 +235,27 @@ export default function PackageManagementPage() {
                             <CardTitle>Existing Packages</CardTitle>
                             <CardDescription>Here are all the service packages currently in your catalog.</CardDescription>
                         </CardHeader>
-                        <CardContent className="grid md:grid-cols-2 gap-4">
-                            {packages.map(pkg => (
-                                <Card key={pkg.id} className="overflow-hidden group">
-                                    <div className="relative">
-                                        <NextImage src={pkg.image} alt={pkg.name} width={400} height={250} className="w-full object-cover aspect-video" />
-                                        <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Button size="icon" variant="outline" className="bg-background/80" onClick={() => handleEdit(pkg)}><Edit className="h-4 w-4"/></Button>
-                                                <Button size="icon" variant="destructive" onClick={() => handleDelete(pkg.id)}><Trash2 className="h-4 w-4"/></Button>
-                                        </div>
-                                    </div>
-                                    <CardHeader>
-                                        <CardTitle>{pkg.name}</CardTitle>
-                                        <CardDescription className="text-sm">₹{pkg.price.toLocaleString()}</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <p className="text-sm text-muted-foreground">{pkg.description}</p>
-                                        <div className="flex flex-wrap gap-2 mt-2">
-                                            {pkg.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                        <CardContent>
+                            <Tabs defaultValue="all">
+                                <TabsList>
+                                    <TabsTrigger value="all">All</TabsTrigger>
+                                    <TabsTrigger value="mehndi">Mehendi</TabsTrigger>
+                                    <TabsTrigger value="makeup">Makeup</TabsTrigger>
+                                    <TabsTrigger value="photography">Photography</TabsTrigger>
+                                </TabsList>
+                                <TabsContent value="all" className="grid md:grid-cols-2 gap-4 mt-4">
+                                    {renderPackages('all')}
+                                </TabsContent>
+                                <TabsContent value="mehndi" className="grid md:grid-cols-2 gap-4 mt-4">
+                                    {renderPackages('mehndi')}
+                                </TabsContent>
+                                <TabsContent value="makeup" className="grid md:grid-cols-2 gap-4 mt-4">
+                                    {renderPackages('makeup')}
+                                </TabsContent>
+                                <TabsContent value="photography" className="grid md:grid-cols-2 gap-4 mt-4">
+                                    {renderPackages('photography')}
+                                </TabsContent>
+                            </Tabs>
                         </CardContent>
                     </Card>
                 </div>

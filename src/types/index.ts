@@ -1,8 +1,4 @@
 
-
-
-
-
 export type ArtistPackage = {
   id: string;
   name: string;
@@ -120,12 +116,15 @@ export type Transaction = {
   relatedId: string;
 };
 
-export type MehndiPackage = {
+export type ServicePackage = {
     id: string;
     name: string;
-    service: 'mehndi' | 'makeup';
+    service: 'mehndi' | 'makeup' | 'photography';
     description: string;
     price: number;
     image: string;
     tags: string[];
 };
+
+// Maintained for backward compatibility in some files
+export type MehndiPackage = ServicePackage;
