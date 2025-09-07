@@ -15,18 +15,10 @@ export function MehndiIcon(props: SVGProps<SVGSVGElement>) {
       strokeLinejoin="round"
       {...props}
     >
-      <path d="M20.32 3.68a2.828 2.828 0 0 0-4 0L12 8l-2.5 2.5" />
-      <path d="M14 10l-2 2" />
-      <path d="M12 12L4 4" />
-      <path d="M8.5 8.5L4 4" />
-      <path d="M16 14l-2 2" />
-      <path d="M22 8l-2 2" />
-      <path d="M18 12l-2 2" />
-      <path d="M20 10l-2 2" />
-      <path d="M4 20l-2-2" />
-      <path d="M10 20l-2-2" />
-      <path d="M6 16l-2-2" />
-      <path d="M8 14l-2-2" />
+      <path d="M20 5.14a7.2 7.2 0 0 0-1.2-4.34A6.45 6.45 0 0 0 14.36.2a3.47 3.47 0 0 0-4.72 0A6.45 6.45 0 0 0 5.2 3.8a7.2 7.2 0 0 0-1.2 4.34c0 .36.03.7.1 1.03L12 22l7.9-15.83c.07-.33.1-.67.1-1.03Z" />
+      <path d="m7.5 8.5 2 2" />
+      <path d="m14.5 8.5-2 2" />
+      <path d="M12 12v-2" />
     </svg>
   );
 }
