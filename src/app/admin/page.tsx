@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, MapPin, Image as ImageIcon, Users, Bell, User, Eye, Download, ChevronDown, Calendar as CalendarIcon, Briefcase } from "lucide-react";
+import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, Users, Eye, Download, ChevronDown, Calendar as CalendarIcon, Briefcase, Settings, DollarSign, BarChart, RefreshCw, Star } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -264,6 +264,14 @@ export default function AdminPage() {
 
     const bookedDates = bookings.filter(b => b.status === 'Confirmed' || b.status === 'Completed').map(b => new Date(b.date));
 
+    // Revenue Calculations
+    const completedBookings = bookings.filter(b => b.status === 'Completed');
+    const totalRevenue = completedBookings.reduce((sum, b) => sum + b.amount, 0);
+    const platformFee = totalRevenue * 0.10; // 10% commission
+    const refunds = 500; // Mocked data
+    const netPayout = totalRevenue - platformFee;
+    const netProfit = platformFee - refunds;
+
     return (
         <div className="flex min-h-screen w-full flex-col bg-muted/40">
             <div className="flex flex-col sm:gap-4 sm:py-4">
@@ -278,22 +286,6 @@ export default function AdminPage() {
                     <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
                         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
                             <Card>
-                                <CardHeader>
-                                    <CardTitle>Team Management</CardTitle>
-                                    <CardDescription>
-                                       Add or manage team members and their roles.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <Link href="/admin/team">
-                                        <Button>
-                                            <Users className="mr-2 h-4 w-4" />
-                                            Manage Team
-                                        </Button>
-                                    </Link>
-                                </CardContent>
-                            </Card>
-                             <Card>
                                 <CardHeader>
                                     <CardTitle>Manage Bookings</CardTitle>
                                      <CardDescription>
@@ -324,6 +316,22 @@ export default function AdminPage() {
                                         <Button>
                                             <Bell className="mr-2 h-4 w-4" />
                                             Send Notification
+                                        </Button>
+                                    </Link>
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader>
+                                    <CardTitle>Settings</CardTitle>
+                                    <CardDescription>
+                                       Manage team, locations, and profile.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Link href="/admin/settings">
+                                        <Button>
+                                            <Settings className="mr-2 h-4 w-4" />
+                                            Go to Settings
                                         </Button>
                                     </Link>
                                 </CardContent>
@@ -630,32 +638,32 @@ export default function AdminPage() {
                                 />
                             </CardContent>
                         </Card>
-                        <Card>
+                       <Card>
                             <CardHeader>
-                                <CardTitle>Site Configuration</CardTitle>
-                                <CardDescription>
-                                    Manage global settings for the application.
-                                </CardDescription>
+                                <CardTitle>Revenue</CardTitle>
+                                <CardDescription>Financial overview of your platform.</CardDescription>
                             </CardHeader>
-                            <CardContent className="grid gap-4">
-                               <Link href="/admin/locations">
-                                    <Button variant="outline" className="w-full justify-start gap-2">
-                                        <MapPin />
-                                        Manage Locations
-                                    </Button>
-                                </Link>
-                                <Link href="/admin/images">
-                                    <Button variant="outline" className="w-full justify-start gap-2">
-                                        <ImageIcon />
-                                        Manage Images
-                                    </Button>
-                                </Link>
-                                 <Link href="/admin/profile">
-                                    <Button variant="outline" className="w-full justify-start gap-2">
-                                        <User />
-                                        Manage Profile
-                                    </Button>
-                                </Link>
+                            <CardContent className="space-y-4">
+                                <div className="flex justify-between items-center border-b pb-2">
+                                    <span className="text-muted-foreground flex items-center gap-2"><DollarSign /> Total Revenue</span>
+                                    <span className="font-bold text-lg">₹{totalRevenue.toLocaleString()}</span>
+                                </div>
+                                 <div className="flex justify-between items-center border-b pb-2">
+                                    <span className="text-muted-foreground flex items-center gap-2"><BarChart /> Platform Fees (10%)</span>
+                                    <span className="font-bold text-lg">₹{platformFee.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between items-center border-b pb-2">
+                                    <span className="text-muted-foreground flex items-center gap-2"><Users /> Net Payout to Artists</span>
+                                    <span className="font-bold text-lg">₹{netPayout.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between items-center border-b pb-2">
+                                    <span className="text-muted-foreground flex items-center gap-2"><RefreshCw /> Refunds Processed</span>
+                                    <span className="font-bold text-lg text-amber-600">- ₹{refunds.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between items-center pt-2 bg-muted -mx-6 px-6 py-3 rounded-b-lg">
+                                    <span className="font-bold text-primary flex items-center gap-2"><Star /> Net Profit</span>
+                                    <span className="font-extrabold text-xl text-green-600">₹{netProfit.toLocaleString()}</span>
+                                </div>
                             </CardContent>
                         </Card>
                     </div>
