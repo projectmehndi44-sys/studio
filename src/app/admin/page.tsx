@@ -630,6 +630,12 @@ export default function AdminPage() {
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="grid gap-4">
+                                <Link href="/admin/bookings">
+                                    <Button variant="outline" className="w-full justify-start gap-2">
+                                        <Briefcase />
+                                        Manage Bookings
+                                    </Button>
+                                </Link>
                                <Link href="/admin/locations">
                                     <Button variant="outline" className="w-full justify-start gap-2">
                                         <MapPin />
@@ -640,12 +646,6 @@ export default function AdminPage() {
                                     <Button variant="outline" className="w-full justify-start gap-2">
                                         <ImageIcon />
                                         Manage Images
-                                    </Button>
-                                </Link>
-                                <Link href="/admin/bookings">
-                                    <Button variant="outline" className="w-full justify-start gap-2">
-                                        <Briefcase />
-                                        Manage Bookings
                                     </Button>
                                 </Link>
                             </CardContent>
