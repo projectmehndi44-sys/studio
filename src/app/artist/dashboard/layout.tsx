@@ -5,7 +5,7 @@ import * as React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Briefcase, Bell, User, LogOut, Palette, CalendarOff } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Bell, User, LogOut, Palette, CalendarOff, IndianRupee, Package, Star } from 'lucide-react';
 import type { Artist, Booking, Notification } from '@/types';
 import { artists as initialArtists, allBookings as initialBookings } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
@@ -44,7 +44,7 @@ export const useArtistPortal = () => {
 const NavLink = ({ href, pathname, icon: Icon, label }: { href: string; pathname: string; icon: React.ElementType, label: string}) => (
     <Link 
         href={href} 
-        className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${pathname === href ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-primary'}`}
+        className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all ${pathname.startsWith(href) ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-primary'}`}
     >
         <Icon className="h-5 w-5" />
         {label}
@@ -52,7 +52,7 @@ const NavLink = ({ href, pathname, icon: Icon, label }: { href: string; pathname
 );
 
 const BottomNavLink = ({ href, pathname, icon: Icon, label, unreadCount }: { href: string; pathname: string; icon: React.ElementType, label: string, unreadCount?: number }) => (
-    <Link href={href} className={cn("relative flex flex-col items-center justify-center gap-1 p-2 rounded-md h-full", pathname === href ? 'text-primary bg-primary/10' : 'text-muted-foreground')}>
+    <Link href={href} className={cn("relative flex flex-col items-center justify-center gap-1 p-2 rounded-md h-full", pathname.startsWith(href) ? 'text-primary bg-primary/10' : 'text-muted-foreground')}>
         <Icon className="h-6 w-6" />
         <span className="text-xs font-medium">{label}</span>
          {label === 'Notifications' && unreadCount && unreadCount > 0 && (
@@ -155,9 +155,26 @@ export default function ArtistDashboardLayout({
     const navLinks = [
         { href: '/artist/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/artist/dashboard/bookings', label: 'Bookings', icon: Briefcase },
+        { href: '/artist/dashboard/packages', label: 'Packages', icon: Package },
         { href: '/artist/dashboard/availability', label: 'Availability', icon: CalendarOff },
+        { href: '/artist/dashboard/payouts', label: 'Payouts', icon: IndianRupee },
+        { href: '/artist/dashboard/reviews', label: 'Reviews', icon: Star },
         { href: '/artist/dashboard/profile', label: 'Profile', icon: User },
     ];
+    
+    const bottomNavLinks = [
+        { href: '/artist/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { href: '/artist/dashboard/bookings', label: 'Bookings', icon: Briefcase },
+        { href: '/artist/dashboard/notifications', label: 'Inbox', icon: Bell, unreadCount },
+        { href: '/artist/dashboard/profile', label: 'Profile', icon: User },
+    ]
+
+    const getPageTitle = () => {
+        const currentLink = navLinks.find(l => pathname === l.href);
+        if (currentLink) return currentLink.label;
+        if (pathname.startsWith('/artist/dashboard/notifications')) return 'Notifications';
+        return 'Dashboard';
+    }
     
     const SidebarNav = () => (
         <div className='flex flex-col h-full'>
@@ -189,11 +206,10 @@ export default function ArtistDashboardLayout({
     
     const BottomNav = () => (
          <div className="fixed bottom-0 left-0 right-0 h-16 bg-background border-t shadow-lg md:hidden z-50">
-            <nav className="grid h-full grid-cols-5">
-                {navLinks.map(link => (
+            <nav className="grid h-full grid-cols-4">
+                {bottomNavLinks.map(link => (
                     <BottomNavLink key={link.href} {...link} pathname={pathname} />
                 ))}
-                 <BottomNavLink href='/artist/dashboard/notifications' pathname={pathname} icon={Bell} label='Notifications' unreadCount={unreadCount} />
             </nav>
         </div>
     );
@@ -217,7 +233,7 @@ export default function ArtistDashboardLayout({
                  <div className="flex flex-col">
                      <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
                         <div className='flex-1'>
-                            <h1 className='font-semibold text-lg'>{navLinks.find(l => pathname.startsWith(l.href))?.label || 'Notifications'}</h1>
+                            <h1 className='font-semibold text-lg'>{getPageTitle()}</h1>
                         </div>
                          <DropdownMenu>
                             <DropdownMenuTrigger asChild>
