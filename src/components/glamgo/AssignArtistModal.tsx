@@ -17,7 +17,7 @@ import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
 import { ScrollArea } from '../ui/scroll-area';
 import { Badge } from '../ui/badge';
-import { isSameDay } from 'date-fns';
+import { isSameDay, parseISO } from 'date-fns';
 
 interface AssignArtistModalProps {
   booking: Booking;
@@ -81,12 +81,8 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
 
     // Add artists who have marked the day as unavailable
     artists.forEach(artist => {
-        if (artist.unavailableDates?.some(dateStr => {
-            // Dates are stored as 'YYYY-MM-DD'. We need to parse them correctly, accounting for timezone.
-            const [year, month, day] = dateStr.split('-').map(Number);
-            const unavailableDate = new Date(year, month - 1, day);
-            return isSameDay(unavailableDate, bookingDate);
-        })) {
+        // Dates are stored as 'YYYY-MM-DD'. We need to parse them correctly.
+        if (artist.unavailableDates?.some(dateStr => isSameDay(parseISO(dateStr), bookingDate))) {
             unavailableIds.add(artist.id);
         }
     });

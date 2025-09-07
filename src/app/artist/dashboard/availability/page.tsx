@@ -9,9 +9,8 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Save } from 'lucide-react';
 import { artists as initialArtists } from '@/lib/data';
-import { formatISO, isSameDay } from 'date-fns';
+import { formatISO, isSameDay, parseISO } from 'date-fns';
 import { useArtistPortal } from '../layout';
-import { Badge } from '@/components/ui/badge';
 
 
 export default function ArtistAvailabilityPage() {
@@ -21,11 +20,8 @@ export default function ArtistAvailabilityPage() {
     
     React.useEffect(() => {
         if (artist?.unavailableDates) {
-            // Dates from storage are strings, convert them back to Date objects, accounting for timezone.
-            const savedDates = artist.unavailableDates.map(dateStr => {
-                const [year, month, day] = dateStr.split('-').map(Number);
-                return new Date(year, month - 1, day);
-            });
+            // Dates from storage are strings in 'yyyy-MM-dd', parse them into Date objects.
+            const savedDates = artist.unavailableDates.map(dateStr => parseISO(dateStr));
             setUnavailableDates(savedDates);
         }
     }, [artist]);
@@ -66,7 +62,7 @@ export default function ArtistAvailabilityPage() {
             return;
         }
 
-        // Convert dates to timezone-agnostic format 'yyyy-MM-dd' for storage
+        // Convert dates to timezone-agnostic format 'yyyy-MM-dd' for reliable storage
         const datesToSave = unavailableDates.map(d => formatISO(d, { representation: 'date' }));
         const updatedArtist = { ...allArtists[artistIndex], unavailableDates: datesToSave };
         
@@ -92,12 +88,14 @@ export default function ArtistAvailabilityPage() {
         }
         
         // Add or remove the date from the unavailable list
-        const isUnavailable = unavailableDates.some(d => isSameDay(d, day));
-        if (isUnavailable) {
-            setUnavailableDates(prev => prev.filter(d => !isSameDay(d, day)));
-        } else {
-            setUnavailableDates(prev => [...prev, day]);
-        }
+        setUnavailableDates(currentDates => {
+            const isAlreadyUnavailable = currentDates.some(d => isSameDay(d, day));
+            if (isAlreadyUnavailable) {
+                return currentDates.filter(d => !isSameDay(d, day));
+            } else {
+                return [...currentDates, day];
+            }
+        });
     };
 
 
@@ -106,7 +104,7 @@ export default function ArtistAvailabilityPage() {
             <CardHeader>
                 <CardTitle>Manage Your Availability</CardTitle>
                 <CardDescription>
-                   Click on a date to toggle its status between available (green) and unavailable (red). Booked dates (orange) cannot be changed. Click 'Save' to confirm your changes.
+                   All dates are available by default. Click on a date to toggle its status to unavailable (red). Booked dates (orange) cannot be changed. Click 'Save' to confirm your changes.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -117,7 +115,11 @@ export default function ArtistAvailabilityPage() {
                         onDayClick={handleDayClick}
                         modifiers={{ 
                             booked: bookedDates,
-                            available: { from: new Date(), disabled: [...bookedDates, ...unavailableDates] }
+                            // All dates that are not booked or marked as unavailable are available
+                            available: { 
+                                from: new Date(), 
+                                disabled: [...bookedDates, ...unavailableDates]
+                            }
                         }}
                         modifiersClassNames={{
                             selected: 'bg-red-500 text-white hover:bg-red-600 focus:bg-red-600',
