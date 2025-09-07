@@ -74,7 +74,6 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
   const [isVerifyingOtp, setIsVerifyingOtp] = React.useState(false);
   const [isOtpSent, setIsOtpSent] = React.useState(false);
   const [availableStates, setAvailableStates] = React.useState<string[]>([]);
-  const [allAvailableLocations, setAllAvailableLocations] = React.useState<Record<string, string[]>>({});
   
   const form = useForm<RegistrationFormValues>({
     resolver: zodResolver(registrationSchema),
@@ -99,20 +98,18 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
   React.useEffect(() => {
     if (isOpen) {
         const savedLocations = localStorage.getItem('availableLocations');
-        // Fallback to all of India if not set by admin, but check if it's empty
         const locations = savedLocations ? JSON.parse(savedLocations) : AVAILABLE_LOCATIONS;
         
         if (Object.keys(locations).length === 0) {
            console.log("No service locations configured by admin.");
         }
 
-        setAllAvailableLocations(locations);
         setAvailableStates(Object.keys(locations));
     }
   }, [isOpen]);
 
   const selectedState = form.watch('state');
-  const districts = selectedState ? allAvailableLocations[selectedState] || [] : [];
+  const districts = selectedState ? INDIA_LOCATIONS[selectedState] || [] : [];
 
   const onSubmit = (data: RegistrationFormValues) => {
     const existingPending = JSON.parse(localStorage.getItem('pendingArtists') || '[]');
