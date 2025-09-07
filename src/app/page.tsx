@@ -46,6 +46,7 @@ import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carouse
 import Autoplay from "embla-carousel-autoplay"
 import Image from 'next/image';
 import { Packages } from '@/components/glamgo/Packages';
+import { MehndiIcon } from '@/components/icons';
 
 const galleryImages = [
     { src: 'https://picsum.photos/600/400?random=101', alt: 'Intricate bridal mehndi', hint: 'bridal mehndi' },
