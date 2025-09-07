@@ -59,21 +59,19 @@ export default function AdminLayout({
     const { isAuthenticated, user, isLoading } = useAdminAuth();
     const [adminName, setAdminName] = React.useState('Admin');
 
-    // If on the login page, render only the children (the login form) without any layout.
-    if (pathname === '/admin/login') {
-        return <>{children}</>;
-    }
-    
-    // This effect runs for all other admin pages.
+    // This effect now runs for all admin pages, including the check to redirect.
     React.useEffect(() => {
-        if (!isLoading && !isAuthenticated) {
+        if (isLoading) {
+            return; // Do nothing while loading
+        }
+        if (!isAuthenticated && pathname !== '/admin/login') {
             router.push('/admin/login');
         }
         if (isAuthenticated && user) {
             setAdminName(user.name);
         }
     }, [isLoading, isAuthenticated, router, user, pathname]);
-    
+
     const handleLogout = () => {
         localStorage.removeItem('isAdminAuthenticated');
         localStorage.removeItem('adminRole');
@@ -81,6 +79,20 @@ export default function AdminLayout({
         router.push('/admin/login');
     };
 
+    // If on the login page, render only the children (the login form) without any layout.
+    if (pathname === '/admin/login') {
+        return <>{children}</>;
+    }
+
+    // While checking auth state, show a loading screen to prevent content flash.
+    if (isLoading || !isAuthenticated) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-background">
+                <p>Loading...</p>
+            </div>
+        );
+    }
+    
     const navLinks = [
         { href: '/admin', label: 'Dashboard', icon: Home },
         { href: '/admin/bookings', label: 'Bookings', icon: Briefcase },
@@ -100,15 +112,6 @@ export default function AdminLayout({
         </nav>
     );
 
-    // While checking auth state, show a loading screen to prevent content flash.
-    if (isLoading || !isAuthenticated) {
-        return (
-            <div className="flex items-center justify-center min-h-screen bg-background">
-                <p>Loading...</p>
-            </div>
-        );
-    }
-    
     // If authenticated and not on the login page, render the full admin dashboard.
     return (
         <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
