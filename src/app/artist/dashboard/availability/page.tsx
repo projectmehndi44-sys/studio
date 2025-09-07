@@ -106,7 +106,7 @@ export default function ArtistAvailabilityPage() {
             <CardHeader>
                 <CardTitle>Manage Your Availability</CardTitle>
                 <CardDescription>
-                   Click on a date to toggle its status. Booked dates cannot be changed.
+                   Click on a date to toggle its status between available (green) and unavailable (red). Booked dates (orange) cannot be changed. Click 'Save' to confirm your changes.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
