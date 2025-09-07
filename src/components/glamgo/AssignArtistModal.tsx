@@ -17,6 +17,7 @@ import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
 import { ScrollArea } from '../ui/scroll-area';
 import { Badge } from '../ui/badge';
+import { isSameDay } from 'date-fns';
 
 interface AssignArtistModalProps {
   booking: Booking;
@@ -63,19 +64,29 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
     }
   }, [booking]);
 
-  const bookedArtistIds = React.useMemo(() => {
-    if (!booking || !allBookings) return new Set();
+  const unavailableArtistIds = React.useMemo(() => {
+    if (!booking) return new Set();
+    
+    const unavailableIds = new Set<string>();
 
-    return new Set(
-        allBookings
-            .filter(b => 
-                b.id !== booking.id &&
-                new Date(b.date).toDateString() === new Date(booking.date).toDateString() &&
-                (b.status === 'Confirmed' || b.status === 'Completed') 
-            )
-            .flatMap(b => b.artistIds)
-    );
-  }, [booking, allBookings]);
+    // Add artists who are already booked on the same day
+    allBookings
+        .filter(b => 
+            b.id !== booking.id &&
+            isSameDay(new Date(b.date), new Date(booking.date)) &&
+            (b.status === 'Confirmed' || b.status === 'Completed') 
+        )
+        .forEach(b => b.artistIds.forEach(id => id && unavailableIds.add(id)));
+
+    // Add artists who have marked the day as unavailable
+    artists.forEach(artist => {
+        if (artist.unavailableDates?.some(dateStr => isSameDay(new Date(dateStr), new Date(booking.date)))) {
+            unavailableIds.add(artist.id);
+        }
+    });
+
+    return unavailableIds;
+  }, [booking, allBookings, artists]);
 
 
   return (
@@ -94,19 +105,19 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
               <ScrollArea className="h-48 w-full rounded-md border p-4">
                  <div className="space-y-2">
                     {artists.map(artist => {
-                       const isBooked = bookedArtistIds.has(artist.id);
+                       const isUnavailable = unavailableArtistIds.has(artist.id);
                        return (
                        <div key={artist.id} className="flex items-center space-x-2">
                            <Checkbox
                                 id={`artist-${artist.id}`}
                                 checked={selectedArtistIds.includes(artist.id)}
                                 onCheckedChange={(checked) => handleCheckboxChange(artist.id, checked)}
-                                disabled={isBooked}
+                                disabled={isUnavailable}
                            />
-                           <Label htmlFor={`artist-${artist.id}`} className={`font-normal w-full flex justify-between ${isBooked ? 'text-muted-foreground' : ''}`}>
+                           <Label htmlFor={`artist-${artist.id}`} className={`font-normal w-full flex justify-between ${isUnavailable ? 'text-muted-foreground' : ''}`}>
                                <span>{artist.name} <span className="text-xs text-muted-foreground">({artist.location})</span></span>
-                               {isBooked ? (
-                                    <Badge variant="destructive">Booked</Badge>
+                               {isUnavailable ? (
+                                    <Badge variant="destructive">Unavailable</Badge>
                                ) : (
                                     <Badge variant="secondary" className="bg-green-100 text-green-800">Available</Badge>
                                )}

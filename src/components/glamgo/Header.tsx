@@ -8,6 +8,7 @@ import {
   User,
   ShieldCheck,
   LogOut,
+  LayoutGrid
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -59,9 +60,9 @@ export function Header({
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-               <DropdownMenuItem onSelect={() => router.push('/admin/profile')} className="cursor-pointer">
-                 <User className="mr-2 h-4 w-4" />
-                <span>My Profile</span>
+               <DropdownMenuItem onSelect={() => router.push('/account')} className="cursor-pointer">
+                 <LayoutGrid className="mr-2 h-4 w-4" />
+                <span>My Dashboard</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 className="cursor-pointer"

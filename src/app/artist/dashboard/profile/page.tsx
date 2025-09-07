@@ -41,13 +41,20 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 
 interface ArtistProfilePageProps {
     artist: Artist; // Passed from layout
+    setArtist: React.Dispatch<React.SetStateAction<Artist | null>>;
 }
 
-export default function ArtistProfilePage({ artist: initialArtistData }: ArtistProfilePageProps) {
+export default function ArtistProfilePage({ artist: initialArtistData, setArtist }: ArtistProfilePageProps) {
     const router = useRouter();
     const { toast } = useToast();
-    const [artist, setArtist] = React.useState<Artist | null>(initialArtistData);
+    const [artist, _setArtist] = React.useState<Artist | null>(initialArtistData);
     const [tagInput, setTagInput] = React.useState('');
+    
+    // Create a new setArtist that also updates the parent layout's state
+    const updateArtistState = (newArtist: Artist | null) => {
+        _setArtist(newArtist);
+        setArtist(newArtist);
+    };
     
     const form = useForm<ProfileFormValues>({
         resolver: zodResolver(profileSchema),
@@ -127,7 +134,7 @@ export default function ArtistProfilePage({ artist: initialArtistData }: ArtistP
         
         allArtists[artistIndex] = updatedArtist;
         saveArtists(allArtists);
-        setArtist(updatedArtist);
+        updateArtistState(updatedArtist);
         
         form.reset({ ...data, password: '', confirmPassword: '' });
         
@@ -149,7 +156,7 @@ export default function ArtistProfilePage({ artist: initialArtistData }: ArtistP
             allArtists[artistIndex] = updatedArtist;
 
             saveArtists(allArtists);
-            setArtist(updatedArtist);
+            updateArtistState(updatedArtist);
 
             toast({ title: "Profile picture updated!" });
         }
@@ -184,7 +191,7 @@ export default function ArtistProfilePage({ artist: initialArtistData }: ArtistP
         allArtists[artistIndex] = updatedArtist;
 
         saveArtists(allArtists);
-        setArtist(updatedArtist);
+        updateArtistState(updatedArtist);
         
         toast({ title: "Image deleted", variant: "destructive" });
     };
@@ -203,7 +210,7 @@ export default function ArtistProfilePage({ artist: initialArtistData }: ArtistP
             allArtists[artistIndex] = updatedArtist;
             
             saveArtists(allArtists);
-setArtist(updatedArtist);
+            updateArtistState(updatedArtist);
 
             toast({ title: `${files.length} image(s) added to your gallery.` });
         }

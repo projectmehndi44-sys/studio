@@ -21,11 +21,13 @@ import { UserPlus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { GoogleIcon } from '../icons';
 import { signInWithGoogle } from '@/lib/firebase';
+import type { Customer } from '@/types';
 
 
 const registrationSchema = z.object({
   fullName: z.string().min(1, { message: 'Full name is required.' }),
   phone: z.string().regex(/^\d{10}$/, { message: 'Please enter a valid 10-digit phone number.' }),
+  email: z.string().email({ message: 'Please enter a valid email address.' }),
 });
 
 type RegistrationFormValues = z.infer<typeof registrationSchema>;
@@ -33,7 +35,7 @@ type RegistrationFormValues = z.infer<typeof registrationSchema>;
 interface CustomerRegistrationModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSuccessfulRegister: (name: string) => void;
+  onSuccessfulRegister: (customer: Customer) => void;
 }
 
 export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRegister }: CustomerRegistrationModalProps) {
@@ -48,8 +50,19 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
     defaultValues: {
       fullName: '',
       phone: '',
+      email: '',
     },
   });
+
+  const getCustomers = (): Customer[] => {
+    return JSON.parse(localStorage.getItem('customers') || '[]');
+  }
+  
+  const saveCustomers = (customers: Customer[]) => {
+      localStorage.setItem('customers', JSON.stringify(customers));
+      window.dispatchEvent(new Event('storage'));
+  }
+
 
   const handlePhoneVerify = () => {
     const phone = form.getValues('phone');
@@ -57,6 +70,12 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
         form.setError('phone', { type: 'manual', message: 'Please enter a valid 10-digit phone number to verify.' });
         return;
     }
+    const customers = getCustomers();
+    if (customers.some(c => c.phone === phone)) {
+        form.setError('phone', { type: 'manual', message: 'This phone number is already registered.' });
+        return;
+    }
+
     setIsVerifyingOtp(true);
     setTimeout(() => {
         setIsOtpSent(true);
@@ -73,11 +92,19 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
     // In a real app, this would trigger a server action to create a user and verify OTP
     console.log(data);
     setTimeout(() => {
+        const customers = getCustomers();
+        const newCustomer: Customer = {
+            id: data.phone, // Use phone as unique ID for this example
+            ...data
+        };
+        saveCustomers([...customers, newCustomer]);
+
         toast({
           title: "Registration Successful!",
           description: `Welcome to MehendiFy, ${data.fullName}!`,
         });
-        onSuccessfulRegister(data.fullName);
+        localStorage.setItem('currentCustomerId', newCustomer.id);
+        onSuccessfulRegister(newCustomer);
         handleClose();
     }, 1000);
   };
@@ -95,12 +122,31 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
   const handleGoogleSignUp = async () => {
     try {
       const user = await signInWithGoogle();
-      if (user && user.displayName) {
-        onSuccessfulRegister(user.displayName);
-        handleClose();
-      } else {
-        onSuccessfulRegister('New User');
-        handleClose();
+      if (user && user.email) {
+          const customers = getCustomers();
+          let customer = customers.find(c => c.email === user.email);
+
+          if (customer) { // If user exists, log them in
+             toast({
+                title: 'Welcome Back!',
+                description: `You are now logged in as ${customer.name}.`,
+             });
+          } else { // If user doesn't exist, create a new account
+             customer = {
+                id: user.uid,
+                name: user.displayName || 'Google User',
+                phone: user.phoneNumber || '', // May be null
+                email: user.email,
+            };
+            saveCustomers([...customers, customer]);
+            toast({
+                title: "Registration Successful!",
+                description: `Welcome to MehendiFy, ${customer.name}!`,
+            });
+          }
+          localStorage.setItem('currentCustomerId', customer.id);
+          onSuccessfulRegister(customer);
+          handleClose();
       }
     } catch (error) {
       console.error("Google Sign-Up Error:", error);
@@ -126,7 +172,9 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
                 <FormField control={form.control} name="fullName" render={({ field }) => (
                     <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
-                
+                 <FormField control={form.control} name="email" render={({ field }) => (
+                    <FormItem><FormLabel>Email Address</FormLabel><FormControl><Input placeholder="your.email@example.com" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
                 <FormField control={form.control} name="phone" render={({ field }) => (
                     <FormItem>
                         <FormLabel>Phone Number</FormLabel>
@@ -135,7 +183,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
                             <Input type="tel" placeholder="9876543210" {...field} disabled={isOtpSent} />
                         </FormControl>
                         <Button type="button" onClick={handlePhoneVerify} disabled={isVerifyingOtp || isOtpSent}>
-                            {isVerifyingOtp ? 'Sending...' : (isOtpSent ? 'Verified' : 'Verify')}
+                            {isVerifyingOtp ? 'Sending...' : (isOtpSent ? 'Sent' : 'Verify')}
                         </Button>
                         </div>
                         <FormMessage />

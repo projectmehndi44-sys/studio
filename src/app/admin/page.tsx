@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, Users, Eye, Download, ChevronDown, Calendar as CalendarIcon, Briefcase, Settings, DollarSign, BarChart, RefreshCw, Star, Bell, AlertOctagon, IndianRupee, FileSpreadsheet, Package } from "lucide-react";
+import { Shield, CheckCircle, XCircle, MoreHorizontal, Pencil, Trash2, Users, Eye, Download, ChevronDown, Calendar as CalendarIcon, Briefcase, Settings, DollarSign, BarChart, RefreshCw, Star, Bell, AlertOctagon, IndianRupee, FileSpreadsheet, Package, ListTree } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -50,12 +50,12 @@ type PendingArtist = {
 
 // Mock data for bookings across all artists for the master calendar
 const allBookings: Booking[] = [
-    { id: 'book_01', artistIds: ['1'], customerName: 'Priya Patel', customerContact: "9876543210", eventType: 'Wedding', serviceAddress: "address", date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed', paidOut: true, eventDate: new Date('2024-07-22'), state: 'Maharashtra', district: 'Mumbai', location: 'Bandra West' },
-    { id: 'book_02', artistIds: ['2'], customerName: 'Anjali Sharma', customerContact: "9876543211", eventType: 'Party', serviceAddress: "address", date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed', paidOut: false, eventDate: new Date('2024-07-25'), state: 'Delhi', district: 'South Delhi', location: 'Saket' },
-    { id: 'book_03', artistIds: ['3'], customerName: 'Sneha Reddy', customerContact: "9876543212", eventType: 'Wedding', serviceAddress: "address", date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Pending Approval', paidOut: false, eventDate: new Date('2024-08-07'), state: 'Karnataka', district: 'Bengaluru Urban', location: 'Koramangala' },
-    { id: 'book_04', artistIds: ['1'], customerName: 'Meera Iyer', customerContact: "9876543213", eventType: 'Engagement', serviceAddress: "address", date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed', paidOut: false, eventDate: new Date('2024-08-11'), state: 'Maharashtra', district: 'Mumbai Suburban', location: 'Powai' },
-    { id: 'book_05', artistIds: [], customerName: 'Rohan Gupta', customerContact: "9876543214", eventType: 'Festival', serviceAddress: "address", date: new Date('2024-08-12'), service: 'Mehndi Package', amount: 1800, status: 'Needs Assignment', paidOut: false, eventDate: new Date('2024-08-13'), state: 'Maharashtra', district: 'Pune', location: 'MG Road' },
-    { id: 'book_06', artistIds: ['4'], customerName: 'Kavita Singh', customerContact: "9876543215", eventType: 'Wedding', serviceAddress: "address", date: new Date('2024-08-15'), service: 'Minimalist Mehndi', amount: 2200, status: 'Completed', paidOut: false, eventDate: new Date('2024-08-18'), state: 'Haryana', district: 'Gurugram', location: 'Cyber City' },
+    { id: 'book_01', customerId: 'cust_101', artistIds: ['1'], customerName: 'Priya Patel', customerContact: "9876543210", eventType: 'Wedding', serviceAddress: "address", date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed', paidOut: true, eventDate: new Date('2024-07-22'), state: 'Maharashtra', district: 'Mumbai', location: 'Bandra West' },
+    { id: 'book_02', customerId: 'cust_102', artistIds: ['2'], customerName: 'Anjali Sharma', customerContact: "9876543211", eventType: 'Party', serviceAddress: "address", date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed', paidOut: false, eventDate: new Date('2024-07-25'), state: 'Delhi', district: 'South Delhi', location: 'Saket' },
+    { id: 'book_03', customerId: 'cust_103', artistIds: ['3'], customerName: 'Sneha Reddy', customerContact: "9876543212", eventType: 'Wedding', serviceAddress: "address", date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Pending Approval', paidOut: false, eventDate: new Date('2024-08-07'), state: 'Karnataka', district: 'Bengaluru Urban', location: 'Koramangala' },
+    { id: 'book_04', customerId: 'cust_101', artistIds: ['1'], customerName: 'Meera Iyer', customerContact: "9876543213", eventType: 'Engagement', serviceAddress: "address", date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed', paidOut: false, eventDate: new Date('2024-08-11'), state: 'Maharashtra', district: 'Mumbai Suburban', location: 'Powai' },
+    { id: 'book_05', customerId: 'cust_104', artistIds: [], customerName: 'Rohan Gupta', customerContact: "9876543214", eventType: 'Festival', serviceAddress: "address", date: new Date('2024-08-12'), service: 'Mehndi Package', amount: 1800, status: 'Needs Assignment', paidOut: false, eventDate: new Date('2024-08-13'), state: 'Maharashtra', district: 'Pune', location: 'MG Road' },
+    { id: 'book_06', customerId: 'cust_105', artistIds: ['4'], customerName: 'Kavita Singh', customerContact: "9876543215", eventType: 'Wedding', serviceAddress: "address", date: new Date('2024-08-15'), service: 'Minimalist Mehndi', amount: 2200, status: 'Completed', paidOut: false, eventDate: new Date('2024-08-18'), state: 'Haryana', district: 'Gurugram', location: 'Cyber City' },
 ];
 
 
@@ -66,11 +66,7 @@ export default function AdminPage() {
     const [pendingArtists, setPendingArtists] = React.useState<PendingArtist[]>([]);
     const [selectedArtistIds, setSelectedArtistIds] = React.useState<string[]>([]);
     const [bookings, setBookings] = React.useState<Booking[]>([]);
-    const [payoutHistory, setPayoutHistory] = React.useState<PayoutHistory[]>([]);
-    const [transactions, setTransactions] = React.useState<Transaction[]>([]);
-    const [filteredTransactions, setFilteredTransactions] = React.useState<Transaction[]>([]);
-    const [dateRange, setDateRange] = React.useState<{from: Date | undefined, to: Date | undefined}>({ from: undefined, to: undefined });
-
+    
     const [pendingBookingCount, setPendingBookingCount] = React.useState(0);
     const [financials, setFinancials] = React.useState({
         overall: { totalRevenue: 0, platformFee: 0, gst: 0, netPayout: 0, refunds: 0, netProfit: 0 },
@@ -102,10 +98,6 @@ export default function AdminPage() {
         setBookings(currentBookings);
         const pendingCount = currentBookings.filter((b: Booking) => b.status === 'Pending Approval' || b.status === 'Needs Assignment').length;
         setPendingBookingCount(pendingCount);
-
-        const storedPayoutHistory = localStorage.getItem('payoutHistory');
-        const currentPayoutHistory = storedPayoutHistory ? JSON.parse(storedPayoutHistory).map((p:any) => ({...p, paymentDate: new Date(p.paymentDate)})) : [];
-        setPayoutHistory(currentPayoutHistory);
 
     }, []);
 
@@ -154,44 +146,6 @@ export default function AdminPage() {
         });
 
     }, [bookings]);
-
-    // Effect for compiling transactions
-    React.useEffect(() => {
-        const allTransactions: Transaction[] = [];
-
-        // 1. Revenue from completed bookings
-        bookings.filter(b => b.status === 'Completed').forEach(b => {
-            allTransactions.push({
-                id: `rev-${b.id}`,
-                date: new Date(b.date),
-                type: 'Revenue',
-                description: `Booking #${b.id} for ${b.service}`,
-                amount: b.amount,
-                relatedId: b.id,
-            });
-        });
-
-        // 2. Payouts to artists
-        payoutHistory.forEach(p => {
-            allTransactions.push({
-                id: `payout-${p.id}`,
-                date: new Date(p.paymentDate),
-                type: 'Payout',
-                description: `Payout to ${p.artistName}`,
-                amount: -p.netPayout,
-                relatedId: p.id,
-            });
-        });
-
-        // 3. Refunds (mocked for now)
-        // Add refund logic here if it becomes available
-
-        allTransactions.sort((a,b) => b.date.getTime() - a.date.getTime());
-        setTransactions(allTransactions);
-        setFilteredTransactions(allTransactions); // Initially show all
-
-    }, [bookings, payoutHistory]);
-
 
     const handleLogout = () => {
         localStorage.removeItem('isAdminAuthenticated');
@@ -355,46 +309,6 @@ export default function AdminPage() {
         }
     };
 
-    const handleTransactionFilter = (filterType: 'all' | 'month' | 'year' | 'custom') => {
-        const now = new Date();
-        let filtered = transactions;
-
-        if (filterType === 'month') {
-            const start = startOfMonth(now);
-            const end = endOfMonth(now);
-            filtered = transactions.filter(t => t.date >= start && t.date <= end);
-        } else if (filterType === 'year') {
-            const start = startOfYear(now);
-            const end = endOfYear(now);
-            filtered = transactions.filter(t => t.date >= start && t.date <= end);
-        } else if (filterType === 'custom' && dateRange.from && dateRange.to) {
-             filtered = transactions.filter(t => t.date >= dateRange.from! && t.date <= dateRange.to!);
-        }
-
-        setFilteredTransactions(filtered);
-    }
-    
-    const handleDownloadTransactions = (format: 'pdf' | 'excel') => {
-        if(filteredTransactions.length === 0){
-             toast({
-                title: "No transactions to export",
-                variant: "destructive"
-            });
-            return;
-        }
-
-        if(format === 'pdf') {
-            exportTransactionsToPdf(filteredTransactions);
-        } else {
-            exportTransactionsToExcel(filteredTransactions);
-        }
-
-        toast({
-            title: "Download Started",
-            description: `Downloading ${filteredTransactions.length} transaction(s) as a ${format.toUpperCase()} file.`,
-        });
-    }
-
     const bookedDates = bookings.filter(b => b.status === 'Confirmed' || b.status === 'Completed').map(b => new Date(b.date));
     const currentMonthYear = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
     const lastMonth = new Date();
@@ -414,7 +328,7 @@ export default function AdminPage() {
                 </header>
                 <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
                     <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
-                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-5">
+                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3">
                             <Card>
                                 <CardHeader>
                                     <CardTitle>Manage Bookings</CardTitle>
@@ -452,16 +366,16 @@ export default function AdminPage() {
                             </Card>
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Notifications</CardTitle>
+                                    <CardTitle>Transactions</CardTitle>
                                     <CardDescription>
-                                        Send alerts to artists and customers.
+                                        View financial activity.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <Link href="/admin/notifications">
+                                    <Link href="/admin/transactions">
                                         <Button>
-                                            <Bell className="mr-2 h-4 w-4" />
-                                            Send Notification
+                                            <ListTree className="mr-2 h-4 w-4" />
+                                            View Transactions
                                         </Button>
                                     </Link>
                                 </CardContent>
@@ -505,7 +419,6 @@ export default function AdminPage() {
                                 <TabsTrigger value="artists">Artist Management</TabsTrigger>
                                 <TabsTrigger value="customers">Customer Management</TabsTrigger>
                                 <TabsTrigger value="bookings">All Bookings</TabsTrigger>
-                                <TabsTrigger value="transactions">Transactions</TabsTrigger>
                             </TabsList>
                             <TabsContent value="approvals">
                                 <Card>
@@ -778,91 +691,6 @@ export default function AdminPage() {
                                                         </TableRow>
                                                     )
                                                 })}
-                                            </TableBody>
-                                        </Table>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                            <TabsContent value="transactions">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Transaction History</CardTitle>
-                                        <CardDescription>
-                                            A log of all financial activities on the platform.
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="flex flex-wrap items-center gap-4 mb-4 p-4 border rounded-lg bg-muted/50">
-                                            <h3 className="font-semibold text-sm mr-4">Filter by:</h3>
-                                            <div className="flex items-center gap-2">
-                                                <Button variant="outline" size="sm" onClick={() => handleTransactionFilter('all')}>All</Button>
-                                                <Button variant="outline" size="sm" onClick={() => handleTransactionFilter('month')}>This Month</Button>
-                                                <Button variant="outline" size="sm" onClick={() => handleTransactionFilter('year')}>This Year</Button>
-                                            </div>
-                                             <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button variant="outline" size="sm" className="w-[280px] justify-start text-left font-normal">
-                                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                                        {dateRange.from ? (
-                                                            dateRange.to ? (
-                                                                <>
-                                                                    {format(dateRange.from, "LLL dd, y")} - {format(dateRange.to, "LLL dd, y")}
-                                                                </>
-                                                            ) : (
-                                                                format(dateRange.from, "LLL dd, y")
-                                                            )
-                                                        ) : (
-                                                            <span>Pick a date range</span>
-                                                        )}
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0" align="start">
-                                                    <Calendar
-                                                        initialFocus
-                                                        mode="range"
-                                                        defaultMonth={dateRange.from}
-                                                        selected={dateRange}
-                                                        onSelect={(range) => { setDateRange(range || {from: undefined, to: undefined}); handleTransactionFilter('custom'); }}
-                                                        numberOfMonths={2}
-                                                    />
-                                                </PopoverContent>
-                                            </Popover>
-                                            <div className="flex items-center gap-2 ml-auto">
-                                                <Button variant="outline" size="sm" onClick={() => handleDownloadTransactions('pdf')}>
-                                                    <Download className="mr-2" /> PDF
-                                                </Button>
-                                                <Button variant="outline" size="sm" onClick={() => handleDownloadTransactions('excel')}>
-                                                     <FileSpreadsheet className="mr-2" /> Excel
-                                                </Button>
-                                            </div>
-                                        </div>
-                                         <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Date</TableHead>
-                                                    <TableHead>Type</TableHead>
-                                                    <TableHead>Description</TableHead>
-                                                    <TableHead className="text-right">Amount</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {filteredTransactions.map(t => (
-                                                    <TableRow key={t.id}>
-                                                        <TableCell>{t.date.toLocaleDateString()}</TableCell>
-                                                        <TableCell>
-                                                            <Badge variant={t.type === 'Revenue' ? 'default' : 'secondary'}>{t.type}</Badge>
-                                                        </TableCell>
-                                                        <TableCell>{t.description}</TableCell>
-                                                        <TableCell className={`text-right font-mono ${t.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                            {t.amount > 0 ? `+₹${t.amount.toLocaleString()}` : `-₹${Math.abs(t.amount).toLocaleString()}`}
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                                {filteredTransactions.length === 0 && (
-                                                    <TableRow>
-                                                        <TableCell colSpan={4} className="text-center text-muted-foreground">No transactions found for the selected period.</TableCell>
-                                                    </TableRow>
-                                                )}
                                             </TableBody>
                                         </Table>
                                     </CardContent>

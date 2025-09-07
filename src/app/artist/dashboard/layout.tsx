@@ -5,7 +5,7 @@ import * as React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Briefcase, Bell, User, LogOut, Palette, PanelLeft } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Bell, User, LogOut, Palette, PanelLeft, CalendarOff } from 'lucide-react';
 import type { Artist, Booking, Notification } from '@/types';
 import { artists as initialArtists } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
@@ -45,6 +45,15 @@ export default function ArtistDashboardLayout({
     const [unreadCount, setUnreadCount] = React.useState(0);
     const [artistId, setArtistId] = React.useState<string | null>(null);
 
+    const getArtists = (): Artist[] => {
+         const storedArtists = localStorage.getItem('artists');
+         const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
+         const allArtistsMap = new Map<string, Artist>();
+         initialArtists.forEach(a => allArtistsMap.set(a.id, a));
+         localArtists.forEach(a => allArtistsMap.set(a.id, a));
+         return Array.from(allArtistsMap.values());
+    }
+
     const fetchArtistData = React.useCallback(() => {
         const currentArtistId = localStorage.getItem('artistId');
         if (!currentArtistId) {
@@ -54,8 +63,7 @@ export default function ArtistDashboardLayout({
         setArtistId(currentArtistId);
         
         // Fetch Artist Profile
-        const storedArtists: Artist[] = JSON.parse(localStorage.getItem('artists') || '[]');
-        const allArtists: Artist[] = [...initialArtists.filter(ia => !storedArtists.some(sa => sa.id === ia.id)), ...storedArtists];
+        const allArtists = getArtists();
         const currentArtist = allArtists.find((a: Artist) => a.id === currentArtistId);
         
         if (currentArtist) {
@@ -119,11 +127,18 @@ export default function ArtistDashboardLayout({
                 props.bookings = bookings;
                 props.setBookings = setBookings;
             }
+             if (pathname === '/artist/dashboard/availability') {
+                props.artist = artist;
+                props.setArtist = setArtist;
+            }
             if (pathname === '/artist/dashboard/notifications') {
                  props.notifications = notifications;
                  props.setNotifications = setNotifications;
                  props.artistId = artistId;
                  props.setUnreadCount = setUnreadCount;
+            }
+            if (pathname === '/artist/dashboard/profile') {
+                props.setArtist = setArtist;
             }
             return React.cloneElement(child, props);
         }
@@ -133,6 +148,7 @@ export default function ArtistDashboardLayout({
     const navLinks = [
         { href: '/artist/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/artist/dashboard/bookings', label: 'Bookings', icon: Briefcase },
+        { href: '/artist/dashboard/availability', label: 'Availability', icon: CalendarOff },
         { href: '/artist/dashboard/notifications', label: 'Notifications', icon: Bell, badge: unreadCount },
         { href: '/artist/dashboard/profile', label: 'Profile', icon: User },
     ]
@@ -175,7 +191,7 @@ export default function ArtistDashboardLayout({
                         </SheetContent>
                     </Sheet>
                     <div className='flex-1'>
-                        <h1 className='font-semibold text-lg'>{navLinks.find(l => l.href === pathname)?.label}</h1>
+                        <h1 className='font-semibold text-lg'>{navLinks.find(l => l.href.startsWith(pathname))?.label}</h1>
                     </div>
                 </header>
                 <main className="flex-1 p-4 lg:p-6 bg-background">

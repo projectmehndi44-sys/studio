@@ -2,8 +2,8 @@
 'use client';
 
 import * as React from 'react';
-import type { Artist, MehndiPackage } from '@/types';
-import { artists as allArtists } from '@/lib/data';
+import type { Artist, MehndiPackage, Customer } from '@/types';
+import { artists as initialArtists } from '@/lib/data';
 import { packages as allPackages } from '@/lib/packages-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -49,6 +49,7 @@ import Image from 'next/image';
 import { Packages } from '@/components/glamgo/Packages';
 import { MehndiIcon } from '@/components/icons';
 import { useSearchParams } from 'next/navigation';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const galleryImages = [
     { src: 'https://picsum.photos/600/400?random=101', alt: 'Intricate bridal mehndi', hint: 'bridal mehndi' },
@@ -72,6 +73,7 @@ const backgroundImages = [
 
 export default function Home() {
   const searchParams = useSearchParams();
+  const [artists, setArtists] = React.useState<Artist[]>([]);
   const [filteredArtists, setFilteredArtists] =
     React.useState<Artist[]>([]);
   const [selectedArtist, setSelectedArtist] = React.useState<Artist | null>(
@@ -84,22 +86,48 @@ export default function Home() {
   const [isCustomerLoginModalOpen, setIsCustomerLoginModalOpen] = React.useState(false);
   
   const [isCustomerLoggedIn, setIsCustomerLoggedIn] = React.useState(false);
-  const [customer, setCustomer] = React.useState<{ name: string } | null>(null);
+  const [customer, setCustomer] = React.useState<Customer | null>(null);
 
   const [cart, setCart] = React.useState<MehndiPackage[]>([]);
 
   const { toast } = useToast();
 
+  // Filter state
   const [location, setLocation] = React.useState('');
   const [serviceType, setServiceType] = React.useState('all');
   const [priceRange, setPriceRange] = React.useState([20000]);
   const [availabilityDate, setAvailabilityDate] = React.useState<
     Date | undefined
   >();
+  const [selectedStyles, setSelectedStyles] = React.useState<string[]>([]);
 
   const [currentBgIndex, setCurrentBgIndex] = React.useState(0);
+  
+  const allStyleTags = React.useMemo(() => {
+    const tags = new Set<string>();
+    artists.forEach(artist => artist.styleTags.forEach(tag => tags.add(tag)));
+    return Array.from(tags);
+  }, [artists]);
+
 
   React.useEffect(() => {
+    // Load artists from localStorage
+    const storedArtists = localStorage.getItem('artists');
+    const localArtists = storedArtists ? JSON.parse(storedArtists) : [];
+    const allApproved = [...initialArtists.filter(a => !localArtists.some((la: Artist) => la.id === a.id)), ...localArtists];
+    setArtists(allApproved);
+
+    // Check for logged-in customer
+    const customerId = localStorage.getItem('currentCustomerId');
+    if (customerId) {
+        const allCustomers: Customer[] = JSON.parse(localStorage.getItem('customers') || '[]');
+        const currentCustomer = allCustomers.find(c => c.id === customerId);
+        if (currentCustomer) {
+            setIsCustomerLoggedIn(true);
+            setCustomer(currentCustomer);
+        }
+    }
+
     const intervalId = setInterval(() => {
       setCurrentBgIndex((prevIndex) => (prevIndex + 1) % backgroundImages.length);
     }, 5000); // Change image every 5 seconds
@@ -125,8 +153,11 @@ export default function Home() {
         toast({ title: "Already in cart", description: `${pkg.name} is already in your selection.`, variant: "default" });
         return;
     }
-    toast({ title: "Package Added!", description: `${pkg.name} has been added to your selection.` });
-    setCart(currentCart => [...currentCart, pkg]);
+    setCart(currentCart => {
+      const newCart = [...currentCart, pkg];
+      toast({ title: "Package Added!", description: `${pkg.name} has been added to your selection.` });
+      return newCart;
+    });
   };
 
   const handleArtistRegister = () => {
@@ -141,14 +172,14 @@ export default function Home() {
     setIsCustomerLoginModalOpen(true);
   };
   
-  const onSuccessfulLogin = (name: string) => {
+  const onSuccessfulLogin = (customer: Customer) => {
     setIsCustomerLoggedIn(true);
-    setCustomer({ name: name });
+    setCustomer(customer);
     setIsCustomerLoginModalOpen(false);
     setIsCustomerRegistrationModalOpen(false);
     toast({
       title: 'Login Successful',
-      description: `Welcome back, ${name}! You can now search for artists.`,
+      description: `Welcome back, ${customer.name}! You can now search for artists.`,
     });
   }
 
@@ -156,6 +187,7 @@ export default function Home() {
     setIsCustomerLoggedIn(false);
     setCustomer(null);
     setCart([]);
+    localStorage.removeItem('currentCustomerId');
     toast({
       title: 'Logged Out',
       description: 'You have been successfully logged out.',
@@ -165,11 +197,11 @@ export default function Home() {
   React.useEffect(() => {
     // On initial load, show all artists if logged in, otherwise show none.
     if (isCustomerLoggedIn) {
-        setFilteredArtists(allArtists);
+        setFilteredArtists(artists);
     } else {
         setFilteredArtists([]);
     }
-  }, [isCustomerLoggedIn]);
+  }, [isCustomerLoggedIn, artists]);
 
 
   const applyFilters = React.useCallback(() => {
@@ -177,32 +209,32 @@ export default function Home() {
       setFilteredArtists([]);
       return;
     }
-    let artists = allArtists;
+    let currentArtists = artists;
 
     if (location) {
-      artists = artists.filter((artist) =>
+      currentArtists = currentArtists.filter((artist) =>
         artist.location.toLowerCase().includes(location.toLowerCase())
       );
     }
 
     if (serviceType !== 'all') {
-      artists = artists.filter(
+      currentArtists = currentArtists.filter(
         (artist) =>
           artist.services.includes(serviceType as 'makeup' | 'mehndi') ||
           artist.services.length === 2
       );
     }
-
-    artists = artists.filter((artist) => artist.charge <= priceRange[0]);
-
-    // Note: Availability check is mocked and won't filter realistically without a backend
-    if (availabilityDate) {
-      // For demo, we'll just keep this logic simple.
-      // In a real app, this would involve complex queries.
+    
+    if (selectedStyles.length > 0) {
+        currentArtists = currentArtists.filter(artist => 
+            selectedStyles.every(style => artist.styleTags.includes(style))
+        );
     }
 
-    setFilteredArtists(artists);
-  }, [location, serviceType, priceRange, availabilityDate, isCustomerLoggedIn]);
+    currentArtists = currentArtists.filter((artist) => artist.charge <= priceRange[0]);
+
+    setFilteredArtists(currentArtists);
+  }, [location, serviceType, priceRange, isCustomerLoggedIn, artists, selectedStyles]);
   
   React.useEffect(() => {
     applyFilters();
@@ -214,7 +246,14 @@ export default function Home() {
     setServiceType('all');
     setPriceRange([20000]);
     setAvailabilityDate(undefined);
+    setSelectedStyles([]);
   };
+  
+  const handleStyleChange = (style: string) => {
+      setSelectedStyles(prev => 
+          prev.includes(style) ? prev.filter(s => s !== style) : [...prev, style]
+      )
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col relative">
@@ -275,7 +314,7 @@ export default function Home() {
               <h2 className="text-center font-headline text-5xl text-primary mb-8">All Artists</h2>
               <Card className="my-4 border-2 border-accent/20 shadow-lg bg-background/80 backdrop-blur-sm">
                 <CardContent className="p-6">
-                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5">
+                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-5 items-end">
                     <div className="space-y-2">
                       <Label htmlFor="location">Location</Label>
                       <div className="relative">
@@ -302,10 +341,9 @@ export default function Home() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="price">Price Range (Max)</Label>
-                      <div className="flex items-center gap-4">
-                        <Slider
+                    <div className="space-y-2 lg:col-span-2">
+                      <Label htmlFor="price">Price Range (Max): <span className="font-bold text-primary">₹{priceRange[0].toLocaleString()}</span></Label>
+                      <Slider
                           id="price"
                           max={20000}
                           min={500}
@@ -313,45 +351,21 @@ export default function Home() {
                           value={priceRange}
                           onValueChange={setPriceRange}
                         />
-                        <span className="text-sm font-medium text-foreground/80 w-24 text-right">
-                          ₹{priceRange[0].toLocaleString()}
-                        </span>
+                    </div>
+                    <Button onClick={resetFilters} variant="ghost" className="w-full">
+                        Reset Filters
+                    </Button>
+                  </div>
+                  <div className="mt-4 pt-4 border-t">
+                      <Label>Filter by Style</Label>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                          {allStyleTags.map(tag => (
+                              <div key={tag} className="flex items-center space-x-2">
+                                  <Checkbox id={tag} checked={selectedStyles.includes(tag)} onCheckedChange={() => handleStyleChange(tag)} />
+                                  <label htmlFor={tag} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 capitalize">{tag}</label>
+                              </div>
+                          ))}
                       </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="availability">Availability</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant={'outline'}
-                            className={cn(
-                              'w-full justify-start text-left font-normal',
-                              !availabilityDate && 'text-muted-foreground'
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {availabilityDate ? (
-                              format(availabilityDate, 'PPP')
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={availabilityDate}
-                            onSelect={setAvailabilityDate}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                    <div className="flex items-end">
-                      <Button onClick={resetFilters} variant="ghost" className="w-full">
-                        Reset
-                      </Button>
-                    </div>
                   </div>
                 </CardContent>
               </Card>

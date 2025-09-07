@@ -13,11 +13,21 @@ export type Artist = {
   charge: number;
   rating: number;
   styleTags: string[];
+  unavailableDates?: string[]; // ISO date strings
 };
+
+export type Customer = {
+  id: string; // Can be email or a unique ID from Firebase/phone auth
+  name: string;
+  phone: string;
+  email?: string;
+};
+
 
 export type Booking = {
   id: string;
   artistIds: (string | null)[];
+  customerId: string; // Link to customer
   customerName: string;
   customerContact: string;
   serviceAddress: string;

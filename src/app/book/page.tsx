@@ -110,9 +110,21 @@ export default function BookingPage() {
             return;
         }
 
+        const customerId = localStorage.getItem('currentCustomerId');
+        if (!customerId) {
+             toast({
+                title: 'Not Logged In',
+                description: 'You must be logged in to create a booking.',
+                variant: 'destructive',
+            });
+            router.push('/');
+            return;
+        }
+
         // Create booking object
         const newBooking: Booking = {
             id: `book_${Date.now()}`,
+            customerId,
             artistIds: [], // To be assigned by admin
             customerName: name,
             customerContact: phone,
@@ -144,7 +156,7 @@ export default function BookingPage() {
             description: 'Your booking request has been submitted. The admin will review it and assign an artist shortly.',
         });
 
-        router.push('/'); // Redirect to payment or a confirmation page in a real app
+        router.push('/account'); // Redirect to customer dashboard
     };
 
     const handleFetchLocation = () => {

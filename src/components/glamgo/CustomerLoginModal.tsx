@@ -21,6 +21,7 @@ import { LogIn } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { GoogleIcon } from '../icons';
 import { signInWithGoogle } from '@/lib/firebase';
+import type { Customer } from '@/types';
 
 const loginSchema = z.object({
   phone: z.string().regex(/^\d{10}$/, { message: 'Please enter a valid 10-digit phone number.' }),
@@ -32,7 +33,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 interface CustomerLoginModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSuccessfulLogin: (name: string) => void;
+  onSuccessfulLogin: (customer: Customer) => void;
 }
 
 export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: CustomerLoginModalProps) {
@@ -49,12 +50,34 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
     },
   });
 
+  const getCustomers = (): Customer[] => {
+    return JSON.parse(localStorage.getItem('customers') || '[]');
+  }
+  
+  const saveCustomers = (customers: Customer[]) => {
+      localStorage.setItem('customers', JSON.stringify(customers));
+      window.dispatchEvent(new Event('storage'));
+  }
+
   const handleSendOtp = () => {
     const phone = form.getValues('phone');
     if (!/^\d{10}$/.test(phone)) {
         form.setError('phone', { type: 'manual', message: 'Please enter a valid 10-digit phone number to send OTP.' });
         return;
     }
+    
+    const customers = getCustomers();
+    const existingCustomer = customers.find(c => c.phone === phone);
+
+    if (!existingCustomer) {
+        toast({
+            title: 'Not Registered',
+            description: 'This phone number is not registered. Please sign up first.',
+            variant: 'destructive',
+        });
+        return;
+    }
+
     setIsSendingOtp(true);
     setTimeout(() => {
         setIsOtpSent(true);
@@ -71,11 +94,22 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
     // In a real app, this would verify the OTP against a backend service
     console.log(data);
     setTimeout(() => {
-        // Mock a successful login and retrieve a mock user name
-        // For demonstration, we'll use a hardcoded name. 
-        // In a real app, you would fetch this from your database based on the phone number.
-        onSuccessfulLogin('Jane Doe');
-        handleClose();
+        const customers = getCustomers();
+        const customer = customers.find(c => c.phone === data.phone);
+
+        if (customer) {
+          localStorage.setItem('currentCustomerId', customer.id);
+          onSuccessfulLogin(customer);
+          handleClose();
+        } else {
+            // This case should ideally not be hit due to the check in handleSendOtp
+            toast({
+                title: 'Login Failed',
+                description: 'An unexpected error occurred.',
+                variant: 'destructive',
+            });
+            setIsSubmitting(false);
+        }
     }, 1000)
   };
 
@@ -91,13 +125,22 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
   const handleGoogleSignIn = async () => {
     try {
       const user = await signInWithGoogle();
-      if (user && user.displayName) {
-        onSuccessfulLogin(user.displayName);
-        handleClose();
-      } else {
-        // Handle case where displayName is null
-        onSuccessfulLogin('New User');
-        handleClose();
+      if (user && user.email) {
+          const customers = getCustomers();
+          let customer = customers.find(c => c.email === user.email);
+          
+          if (!customer) {
+            customer = {
+                id: user.uid,
+                name: user.displayName || 'Google User',
+                phone: user.phoneNumber || '',
+                email: user.email,
+            };
+            saveCustomers([...customers, customer]);
+          }
+          localStorage.setItem('currentCustomerId', customer.id);
+          onSuccessfulLogin(customer);
+          handleClose();
       }
     } catch (error) {
       console.error("Google Sign-In Error:", error);
