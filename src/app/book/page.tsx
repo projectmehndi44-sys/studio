@@ -17,7 +17,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 
-import { allPackages } from '@/lib/packages-data';
+import { packages as allPackages } from '@/lib/packages-data';
 import { INDIA_LOCATIONS } from '@/lib/india-locations';
 import type { MehndiPackage, Booking } from '@/types';
 
@@ -300,3 +300,5 @@ export default function BookingPage() {
         </div>
     )
 }
+
+    
