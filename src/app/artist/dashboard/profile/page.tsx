@@ -22,6 +22,7 @@ import { Trash2, Upload, UserCircle, Briefcase, Tag, Lock, Image as ImageIcon } 
 import NextImage from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useArtistPortal } from '../layout';
 
 
 const profileSchema = z.object({
@@ -39,22 +40,11 @@ const profileSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
-interface ArtistProfilePageProps {
-    artist: Artist; // Passed from layout
-    setArtist: React.Dispatch<React.SetStateAction<Artist | null>>;
-}
-
-export default function ArtistProfilePage({ artist: initialArtistData, setArtist }: ArtistProfilePageProps) {
+export default function ArtistProfilePage() {
+    const { artist, setArtist } = useArtistPortal();
     const router = useRouter();
     const { toast } = useToast();
-    const [artist, _setArtist] = React.useState<Artist | null>(initialArtistData);
     const [tagInput, setTagInput] = React.useState('');
-    
-    // Create a new setArtist that also updates the parent layout's state
-    const updateArtistState = (newArtist: Artist | null) => {
-        _setArtist(newArtist);
-        setArtist(newArtist);
-    };
     
     const form = useForm<ProfileFormValues>({
         resolver: zodResolver(profileSchema),
@@ -134,7 +124,7 @@ export default function ArtistProfilePage({ artist: initialArtistData, setArtist
         
         allArtists[artistIndex] = updatedArtist;
         saveArtists(allArtists);
-        updateArtistState(updatedArtist);
+        setArtist(updatedArtist);
         
         form.reset({ ...data, password: '', confirmPassword: '' });
         
@@ -156,7 +146,7 @@ export default function ArtistProfilePage({ artist: initialArtistData, setArtist
             allArtists[artistIndex] = updatedArtist;
 
             saveArtists(allArtists);
-            updateArtistState(updatedArtist);
+            setArtist(updatedArtist);
 
             toast({ title: "Profile picture updated!" });
         }
@@ -191,7 +181,7 @@ export default function ArtistProfilePage({ artist: initialArtistData, setArtist
         allArtists[artistIndex] = updatedArtist;
 
         saveArtists(allArtists);
-        updateArtistState(updatedArtist);
+        setArtist(updatedArtist);
         
         toast({ title: "Image deleted", variant: "destructive" });
     };
@@ -210,7 +200,7 @@ export default function ArtistProfilePage({ artist: initialArtistData, setArtist
             allArtists[artistIndex] = updatedArtist;
             
             saveArtists(allArtists);
-            updateArtistState(updatedArtist);
+            setArtist(updatedArtist);
 
             toast({ title: `${files.length} image(s) added to your gallery.` });
         }

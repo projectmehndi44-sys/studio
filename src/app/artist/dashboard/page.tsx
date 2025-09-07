@@ -3,54 +3,31 @@
 
 import * as React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import type { Artist, Booking } from '@/types';
+import type { Booking } from '@/types';
 import { DollarSign, Briefcase, Star, Bell } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { allBookings as initialBookings } from '@/lib/data';
+import { useArtistPortal } from './layout';
 
 
-interface ArtistDashboardPageProps {
-    artist: Artist;
-}
-
-export default function ArtistDashboardPage({ artist }: ArtistDashboardPageProps) {
-    const [bookings, setBookings] = React.useState<Booking[]>([]);
-
-    const fetchArtistData = React.useCallback(() => {
-        if (!artist) return;
-        const allBookingsData: Booking[] = JSON.parse(localStorage.getItem('bookings') || JSON.stringify(initialBookings));
-        const artistBookings = allBookingsData
-            .map(b => ({ ...b, date: new Date(b.date) }))
-            .filter(b => b.artistIds.includes(artist.id));
-        setBookings(artistBookings);
-    }, [artist]);
-
-    React.useEffect(() => {
-        if (artist) {
-            fetchArtistData();
-            window.addEventListener('storage', fetchArtistData);
-            return () => {
-                window.removeEventListener('storage', fetchArtistData);
-            };
-        }
-    }, [artist, fetchArtistData]);
+export default function ArtistDashboardPage() {
+    const { artist, artistBookings } = useArtistPortal();
     
-    if (!artist || !bookings) {
+    if (!artist) {
         return <div className="flex items-center justify-center min-h-full">Loading Dashboard...</div>;
     }
 
     // Dashboard widgets data
-    const completedBookings = bookings.filter(b => b.status === 'Completed');
+    const completedBookings = artistBookings.filter(b => b.status === 'Completed');
     const totalRevenue = completedBookings.reduce((sum, b) => sum + b.amount, 0);
-    const totalBookings = bookings.length;
+    const totalBookings = artistBookings.length;
     const averageRating = artist.rating;
-    const upcomingBookingsCount = bookings.filter(b => b.status === 'Confirmed' && new Date(b.date) > new Date()).length;
+    const upcomingBookingsCount = artistBookings.filter(b => b.status === 'Confirmed' && new Date(b.date) > new Date()).length;
 
     // Recent activity data
-    const recentBookings = [...bookings].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+    const recentBookings = [...artistBookings].slice(0, 5);
 
      const getStatusVariant = (status: Booking['status']) => {
         switch (status) {

@@ -8,33 +8,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { Booking } from '@/types';
-import { allBookings as initialBookings } from '@/lib/data';
+import { useArtistPortal } from '../layout';
 
-interface ArtistBookingsPageProps {
-    artistId: string;
-}
-
-export default function ArtistBookingsPage({ artistId }: ArtistBookingsPageProps) {
+export default function ArtistBookingsPage() {
+    const { artistBookings, allBookings } = useArtistPortal();
     const { toast } = useToast();
-    const [bookings, setBookings] = React.useState<Booking[]>([]);
-
-    const fetchBookings = React.useCallback(() => {
-        const allBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || JSON.stringify(initialBookings)).map((b: any) => ({...b, date: new Date(b.date)}));
-        const artistBookings = allBookings.filter(b => b.artistIds.includes(artistId));
-        setBookings(artistBookings.sort((a,b) => b.date.getTime() - a.date.getTime()));
-    }, [artistId]);
-    
-    React.useEffect(() => {
-        fetchBookings();
-        window.addEventListener('storage', fetchBookings);
-        return () => window.removeEventListener('storage', fetchBookings);
-    }, [fetchBookings]);
-
 
     const handleStatusUpdate = (bookingId: string, status: 'Completed') => {
         // This function simulates updating the booking status.
         // In a real app, this would be a server action that updates your database.
-        const allBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || '[]').map((b: any) => ({...b, date: new Date(b.date)}));
         const newAllBookings = allBookings.map((b: Booking) => 
             b.id === bookingId ? { ...b, status } : b
         );
@@ -60,7 +42,7 @@ export default function ArtistBookingsPage({ artistId }: ArtistBookingsPageProps
         }
     };
 
-    if (!bookings) {
+    if (!artistBookings) {
         return (
              <Card>
                 <CardHeader>
@@ -93,7 +75,7 @@ export default function ArtistBookingsPage({ artistId }: ArtistBookingsPageProps
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {bookings.length > 0 ? bookings.map(booking => (
+                        {artistBookings.length > 0 ? artistBookings.map(booking => (
                             <TableRow key={booking.id}>
                                 <TableCell>{booking.customerName}</TableCell>
                                 <TableCell>{new Date(booking.date).toLocaleDateString()}</TableCell>

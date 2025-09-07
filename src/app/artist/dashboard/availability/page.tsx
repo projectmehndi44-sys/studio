@@ -10,21 +10,19 @@ import { useToast } from '@/hooks/use-toast';
 import { Save } from 'lucide-react';
 import { artists as initialArtists } from '@/lib/data';
 import { formatISO } from 'date-fns';
+import { useArtistPortal } from '../layout';
 
-interface ArtistAvailabilityPageProps {
-    artist: Artist;
-    setArtist: React.Dispatch<React.SetStateAction<Artist | null>>;
-}
 
-export default function ArtistAvailabilityPage({ artist: initialArtistData, setArtist }: ArtistAvailabilityPageProps) {
+export default function ArtistAvailabilityPage() {
+    const { artist, setArtist } = useArtistPortal();
     const { toast } = useToast();
     const [unavailableDates, setUnavailableDates] = React.useState<Date[]>([]);
     
     React.useEffect(() => {
-        if (initialArtistData?.unavailableDates) {
-            setUnavailableDates(initialArtistData.unavailableDates.map(d => new Date(d)));
+        if (artist?.unavailableDates) {
+            setUnavailableDates(artist.unavailableDates.map(d => new Date(d)));
         }
-    }, [initialArtistData]);
+    }, [artist]);
     
     const getArtists = (): Artist[] => {
          const storedArtists = localStorage.getItem('artists');
@@ -46,8 +44,10 @@ export default function ArtistAvailabilityPage({ artist: initialArtistData, setA
     };
 
     const handleSave = () => {
+        if (!artist) return;
+        
         const allArtists = getArtists();
-        const artistIndex = allArtists.findIndex(a => a.id === initialArtistData.id);
+        const artistIndex = allArtists.findIndex(a => a.id === artist.id);
         
         if (artistIndex === -1) {
             toast({ title: "Error", description: "Could not find your profile to update.", variant: "destructive" });

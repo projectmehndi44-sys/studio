@@ -5,7 +5,7 @@ import * as React from 'react';
 import type { Booking, Notification } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { allBookings as initialBookings } from '@/lib/data';
+import { useArtistPortal } from '../layout';
 
 interface NotificationCardProps {
     notification: Notification;
@@ -39,47 +39,28 @@ function NotificationCard({ notification, allBookings, onMarkAsRead }: Notificat
     )
 }
 
-interface ArtistNotificationsPageProps {
-    artistId: string;
-    setUnreadCount: React.Dispatch<React.SetStateAction<number>>;
-}
-
-export default function ArtistNotificationsPage({ artistId, setUnreadCount }: ArtistNotificationsPageProps) {
+export default function ArtistNotificationsPage() {
+    const { artist, allBookings, notifications, setNotifications } = useArtistPortal();
     
-    const [allBookings, setAllBookings] = React.useState<Booking[]>([]);
-    const [notifications, setNotifications] = React.useState<Notification[]>([]);
+    if (!artist) return null;
 
-    const fetchNotifications = React.useCallback(() => {
-        const storedBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || JSON.stringify(initialBookings)).map((b: any) => ({...b, date: new Date(b.date)}));
-        setAllBookings(storedBookings);
-
+    const updateNotificationsInStorage = (updated: Notification[]) => {
         const allNotifications: Notification[] = JSON.parse(localStorage.getItem('notifications') || '[]');
-        const artistNotifications = allNotifications.filter(n => n.artistId === artistId);
-        setNotifications(artistNotifications.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
-        setUnreadCount(artistNotifications.filter(n => !n.isRead).length);
-    }, [artistId, setUnreadCount]);
-
-    React.useEffect(() => {
-        fetchNotifications();
-        window.addEventListener('storage', fetchNotifications);
-        return () => window.removeEventListener('storage', fetchNotifications);
-    }, [fetchNotifications]);
-
-    const updateNotifications = (updated: Notification[]) => {
-        const allNotifications: Notification[] = JSON.parse(localStorage.getItem('notifications') || '[]');
-        const otherArtistsNotifications = allNotifications.filter(n => n.artistId !== artistId);
+        const otherArtistsNotifications = allNotifications.filter(n => n.artistId !== artist.id);
         localStorage.setItem('notifications', JSON.stringify([...updated, ...otherArtistsNotifications]));
         window.dispatchEvent(new Event('storage'));
     }
     
     const markOneAsRead = (id: string) => {
         const updated = notifications.map(n => n.id === id ? { ...n, isRead: true } : n);
-        updateNotifications(updated);
+        setNotifications(updated); // Update local state immediately
+        updateNotificationsInStorage(updated);
     }
 
     const markAllAsRead = () => {
         const updated = notifications.map(n => ({...n, isRead: true}));
-        updateNotifications(updated);
+        setNotifications(updated); // Update local state immediately
+        updateNotificationsInStorage(updated);
     };
 
     if (!notifications || !allBookings) {
