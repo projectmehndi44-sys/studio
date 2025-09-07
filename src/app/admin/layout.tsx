@@ -59,9 +59,14 @@ export default function AdminLayout({
     const { isAuthenticated, user, isLoading } = useAdminAuth();
     const [adminName, setAdminName] = React.useState('Admin');
 
+    // If on the login page, render only the children (the login form) without any layout.
+    if (pathname === '/admin/login') {
+        return <>{children}</>;
+    }
+    
+    // This effect runs for all other admin pages.
     React.useEffect(() => {
-        // If we are not on the login page and the user is not authenticated, redirect them.
-        if (!isLoading && !isAuthenticated && pathname !== '/admin/login') {
+        if (!isLoading && !isAuthenticated) {
             router.push('/admin/login');
         }
         if (isAuthenticated && user) {
@@ -94,11 +99,6 @@ export default function AdminLayout({
             ))}
         </nav>
     );
-
-    // If on the login page, render only the children (the login form) without any layout.
-    if (pathname === '/admin/login') {
-        return <>{children}</>;
-    }
 
     // While checking auth state, show a loading screen to prevent content flash.
     if (isLoading || !isAuthenticated) {
