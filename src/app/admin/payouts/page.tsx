@@ -7,15 +7,15 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, ArrowLeft, IndianRupee, MoreHorizontal } from 'lucide-react';
+import { Shield, ArrowLeft, IndianRupee, MoreHorizontal, Download, FileText } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from '@/components/ui/badge';
 import type { Booking, Artist, Payout, PayoutHistory } from '@/types';
 import { artists as initialArtists } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
+import { exportPayoutToPdf, generateGstInvoice } from '@/lib/export';
 
 
 const allBookings: Booking[] = [
@@ -126,15 +126,14 @@ export default function PayoutManagementPage() {
     }
 
     return (
-        <>
         <div className="flex min-h-screen w-full flex-col bg-muted/40">
             <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6 justify-between">
                 <h1 className="flex items-center gap-2 text-xl font-bold text-primary">
                     <Shield className="w-6 h-6" />
                     Admin Portal
                 </h1>
-                <Link href="/admin/settings">
-                     <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Settings</Button>
+                <Link href="/admin">
+                     <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Dashboard</Button>
                 </Link>
             </header>
             <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8">
@@ -176,8 +175,26 @@ export default function PayoutManagementPage() {
                                                     <TableCell>₹{payout.platformFees.toLocaleString()}</TableCell>
                                                     <TableCell>₹{payout.gst.toLocaleString()}</TableCell>
                                                     <TableCell className="font-bold text-green-600">₹{payout.netPayout.toLocaleString()}</TableCell>
-                                                    <TableCell className="text-right">
+                                                    <TableCell className="text-right space-x-2">
                                                         <Button onClick={() => handleMarkAsPaid(payout)}>Mark as Paid</Button>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                    <span className="sr-only">Toggle menu</span>
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem onSelect={() => exportPayoutToPdf(payout)}>
+                                                                    <Download className="mr-2 h-4 w-4" />
+                                                                    Download PDF
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onSelect={() => generateGstInvoice(payout)}>
+                                                                    <FileText className="mr-2 h-4 w-4" />
+                                                                    Generate GST Invoice
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
@@ -202,6 +219,7 @@ export default function PayoutManagementPage() {
                                                 <TableHead>Artist</TableHead>
                                                 <TableHead>Bookings Paid</TableHead>
                                                 <TableHead>Net Amount Paid</TableHead>
+                                                <TableHead className="text-right">Actions</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -211,6 +229,26 @@ export default function PayoutManagementPage() {
                                                     <TableCell className="font-medium">{history.artistName}</TableCell>
                                                     <TableCell>{history.totalBookings}</TableCell>
                                                     <TableCell>₹{history.netPayout.toLocaleString()}</TableCell>
+                                                    <TableCell className="text-right">
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                    <span className="sr-only">Toggle menu</span>
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem onSelect={() => exportPayoutToPdf(history)}>
+                                                                    <Download className="mr-2 h-4 w-4" />
+                                                                    Download PDF
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onSelect={() => generateGstInvoice(history)}>
+                                                                    <FileText className="mr-2 h-4 w-4" />
+                                                                    Generate GST Invoice
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </TableCell>
                                                  </TableRow>
                                             ))}
                                         </TableBody>
@@ -230,7 +268,5 @@ export default function PayoutManagementPage() {
                 </Card>
             </main>
         </div>
-        </>
     );
-
-    
+}

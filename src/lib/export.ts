@@ -2,7 +2,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import type { Artist, Booking, Review } from '@/types';
+import type { Artist, Booking, Review, Payout, PayoutHistory } from '@/types';
 
 type ArtistExportData = {
     artist: Artist;
@@ -145,4 +145,90 @@ export const exportToExcel = (data: ArtistExportData[], filename = 'artists-expo
     }
 
     XLSX.writeFile(wb, filename);
+};
+
+
+/**
+ * Generates a PDF summary of a payout transaction.
+ * @param payout - The payout data object.
+ */
+export const exportPayoutToPdf = (payout: Payout | PayoutHistory) => {
+  const doc = new jsPDF();
+  const isHistory = 'paymentDate' in payout;
+  const paymentDate = isHistory ? new Date(payout.paymentDate).toLocaleString() : 'N/A';
+
+  doc.setFontSize(20);
+  doc.text('Payout Summary', 14, 22);
+  doc.setFontSize(12);
+  doc.text(`Artist: ${payout.artistName}`, 14, 32);
+  doc.text(`Status: ${isHistory ? `Paid on ${paymentDate}` : 'Pending'}`, 14, 38);
+
+  autoTable(doc, {
+    startY: 45,
+    head: [['Description', 'Amount']],
+    body: [
+      ['Gross Revenue from Bookings', `₹${payout.grossRevenue.toLocaleString()}`],
+      ['Total Bookings Included', payout.totalBookings.toString()],
+      { content: 'Deductions', styles: { fontStyle: 'bold' } },
+      ['Platform Fees (10%)', `- ₹${payout.platformFees.toLocaleString()}`],
+      ['GST on Services (18%)', `- ₹${payout.gst.toLocaleString()}`],
+    ],
+    foot: [
+        [{ content: 'Net Payout Amount', styles: { fontStyle: 'bold' } }, { content: `₹${payout.netPayout.toLocaleString()}`, styles: { fontStyle: 'bold' } }],
+    ],
+    theme: 'striped',
+    styles: { fontSize: 12 },
+    headStyles: { fillColor: [41, 128, 185] },
+    footStyles: { fillColor: [22, 160, 133], textColor: [255, 255, 255] },
+  });
+
+  doc.save(`payout-summary-${payout.artistName.replace(/\s/g, '-')}.pdf`);
+};
+
+/**
+ * Generates a GST invoice for the platform fee.
+ * @param payout - The payout data object.
+ */
+export const generateGstInvoice = (payout: Payout | PayoutHistory) => {
+    const doc = new jsPDF();
+
+    // Invoice Header
+    doc.setFontSize(24);
+    doc.text('Tax Invoice', 105, 20, { align: 'center' });
+    doc.setFontSize(12);
+    doc.text('MehendiFy Platform', 14, 30);
+    doc.text('123 Glamour Lane, Mumbai, MH, 400001', 14, 36);
+    doc.text('GSTIN: 27ABCDE1234F1Z5', 14, 42);
+
+    doc.text(`Bill To: ${payout.artistName}`, 14, 60);
+    // Add artist address if available
+
+    const invoiceId = `INV-${payout.id || Date.now()}`;
+    const invoiceDate = 'paymentDate' in payout ? new Date(payout.paymentDate).toLocaleDateString() : new Date().toLocaleDateString();
+
+    doc.text(`Invoice #: ${invoiceId}`, 196, 60, { align: 'right' });
+    doc.text(`Date: ${invoiceDate}`, 196, 66, { align: 'right' });
+
+    // Invoice Table
+    autoTable(doc, {
+        startY: 80,
+        head: [['#', 'Service Description', 'Taxable Amount', 'GST Rate', 'GST Amount', 'Total']],
+        body: [
+            ['1', 'Platform Commission Fee', `₹${payout.platformFees.toLocaleString()}`, '18%', `₹${(payout.platformFees * 0.18).toLocaleString()}`, `₹${(payout.platformFees * 1.18).toLocaleString()}`],
+        ],
+        foot: [
+            ['', '', '', '', 'Total', `₹${(payout.platformFees * 1.18).toLocaleString()}`]
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: '#34495e' },
+        footStyles: { fillColor: '#34495e', textColor: '#ffffff' }
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY;
+
+    // Footer
+    doc.setFontSize(10);
+    doc.text('This is a computer-generated invoice and does not require a signature.', 105, finalY + 20, { align: 'center' });
+
+    doc.save(`gst-invoice-${invoiceId}.pdf`);
 };
