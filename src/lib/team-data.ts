@@ -16,5 +16,12 @@ export const teamMembers: TeamMember[] = [
         username: 'admin',
         password: 'Abhi@123',
         role: 'admin',
+    },
+    {
+        id: 'user_002',
+        name: 'Abhi',
+        username: 'abhi@gmail.com',
+        password: 'Abhi@123',
+        role: 'admin',
     }
 ];
