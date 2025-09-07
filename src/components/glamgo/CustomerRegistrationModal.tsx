@@ -22,6 +22,7 @@ import { Separator } from '@/components/ui/separator';
 import { GoogleIcon } from '../icons';
 import { signInWithGoogle } from '@/lib/firebase';
 import type { Customer } from '@/types';
+import { initialCustomers } from '@/lib/data';
 
 
 const registrationSchema = z.object({
@@ -55,7 +56,8 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
   });
 
   const getCustomers = (): Customer[] => {
-    return JSON.parse(localStorage.getItem('customers') || '[]');
+    const storedCustomers = localStorage.getItem('customers');
+    return storedCustomers ? JSON.parse(storedCustomers) : initialCustomers;
   }
   
   const saveCustomers = (customers: Customer[]) => {

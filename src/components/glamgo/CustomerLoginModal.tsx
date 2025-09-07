@@ -22,6 +22,7 @@ import { Separator } from '@/components/ui/separator';
 import { GoogleIcon } from '../icons';
 import { signInWithGoogle } from '@/lib/firebase';
 import type { Customer } from '@/types';
+import { initialCustomers } from '@/lib/data';
 
 const loginSchema = z.object({
   phone: z.string().regex(/^\d{10}$/, { message: 'Please enter a valid 10-digit phone number.' }),
@@ -51,7 +52,8 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
   });
 
   const getCustomers = (): Customer[] => {
-    return JSON.parse(localStorage.getItem('customers') || '[]');
+    const storedCustomers = localStorage.getItem('customers');
+    return storedCustomers ? JSON.parse(storedCustomers) : initialCustomers;
   }
   
   const saveCustomers = (customers: Customer[]) => {

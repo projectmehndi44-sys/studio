@@ -17,12 +17,16 @@ export default function ArtistReviewsPage() {
         if (artist?.reviews) {
             setReviews(artist.reviews);
         } else {
-            // Mock data if no reviews are on the artist object yet
-             const mockReviews: Review[] = [
-                { id: 'rev_01', customerName: 'Priya Patel', rating: 5, comment: 'Absolutely stunning work! Made my wedding day perfect.' },
-                { id: 'rev_02', customerName: 'Anjali Sharma', rating: 4, comment: 'Great makeup, but was a little late. Overall happy with the result.' },
-            ];
-            setReviews(mockReviews);
+            // Mock data if no reviews are on the artist object yet, for artists from initial data
+            if (artist?.id && ['1', '2', '3', '4', '5', '6', '7', '8', 'abhi@gmail.com'].includes(artist.id)) {
+                 const mockReviews: Review[] = [
+                    { id: 'rev_01', customerName: 'Priya Patel', rating: 5, comment: 'Absolutely stunning work! Made my wedding day perfect.' },
+                    { id: 'rev_02', customerName: 'Anjali Sharma', rating: 4, comment: 'Great makeup, but was a little late. Overall happy with the result.' },
+                ];
+                setReviews(mockReviews);
+            } else {
+                setReviews([]);
+            }
         }
     }, [artist]);
     

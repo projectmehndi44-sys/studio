@@ -25,6 +25,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { INDIA_LOCATIONS } from '@/lib/india-locations';
 import { Separator } from '../ui/separator';
+import { AVAILABLE_LOCATIONS } from '@/lib/available-locations';
 
 
 const passwordSchema = z.string()
@@ -98,14 +99,20 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
   React.useEffect(() => {
     if (isOpen) {
         const savedLocations = localStorage.getItem('availableLocations');
-        const locations = savedLocations ? JSON.parse(savedLocations) : {};
+        // Fallback to all of India if not set by admin, but check if it's empty
+        const locations = savedLocations ? JSON.parse(savedLocations) : AVAILABLE_LOCATIONS;
+        
+        if (Object.keys(locations).length === 0) {
+           console.log("No service locations configured by admin.");
+        }
+
         setAllAvailableLocations(locations);
         setAvailableStates(Object.keys(locations));
     }
   }, [isOpen]);
 
   const selectedState = form.watch('state');
-  const districts = selectedState ? allAvailableLocations[selectedState] : [];
+  const districts = selectedState ? allAvailableLocations[selectedState] || [] : [];
 
   const onSubmit = (data: RegistrationFormValues) => {
     const existingPending = JSON.parse(localStorage.getItem('pendingArtists') || '[]');
@@ -354,7 +361,9 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                    )}
                 </div>
             <DialogFooter>
-                <Button type="submit" className="bg-accent hover:bg-accent/90 w-full" disabled={availableStates.length === 0}>Submit for Review</Button>
+                <Button type="submit" className="bg-accent hover:bg-accent/90 w-full" disabled={availableStates.length === 0 || form.formState.isSubmitting}>
+                    {form.formState.isSubmitting ? 'Submitting...' : 'Submit for Review'}
+                </Button>
             </DialogFooter>
             </form>
             </Form>

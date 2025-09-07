@@ -28,7 +28,9 @@ export default function AccountPage() {
         const currentCustomer = allCustomers.find(c => c.id === customerId);
         setCustomer(currentCustomer || null);
 
-        const allBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || JSON.stringify(initialBookings)).map((b: any) => ({...b, date: new Date(b.date)}));
+        const allBookingsData = localStorage.getItem('bookings');
+        const allBookings: Booking[] = (allBookingsData ? JSON.parse(allBookingsData) : initialBookings).map((b: any) => ({...b, date: new Date(b.date)}));
+        
         const customerBookings = allBookings.filter(b => b.customerId === customerId);
         setBookings(customerBookings.sort((a,b) => b.date.getTime() - a.date.getTime()));
     }, [router]);

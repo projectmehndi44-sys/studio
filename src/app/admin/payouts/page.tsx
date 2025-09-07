@@ -37,11 +37,13 @@ export default function PayoutManagementPage() {
             booking.artistIds.forEach(artistId => {
                 if (!artistId) return;
 
+                const artist = artists.find(a => a.id === artistId);
+                if (!artist) return; // Skip if artist not found
+
                 if (!payoutMap[artistId]) {
-                    const artist = artists.find(a => a.id === artistId);
                     payoutMap[artistId] = {
                         artistId: artistId,
-                        artistName: artist?.name || 'Unknown Artist',
+                        artistName: artist.name,
                         totalBookings: 0,
                         grossRevenue: 0,
                         platformFees: 0,
@@ -97,7 +99,7 @@ export default function PayoutManagementPage() {
 
     React.useEffect(() => {
         calculatePayouts();
-    }, [bookings, calculatePayouts]);
+    }, [bookings, artists, calculatePayouts]);
     
     const handleMarkAsPaid = (payout: Payout) => {
         // Create a new history record
@@ -123,7 +125,7 @@ export default function PayoutManagementPage() {
 
         toast({
             title: "Payout Marked as Paid",
-            description: `Payment of ₹${payout.netPayout.toLocaleString()} to ${payout.artistName} has been recorded.`
+            description: `Payment of ₹${payout.netPayout.toLocaleString(undefined, {maximumFractionDigits: 2})} to ${payout.artistName} has been recorded.`
         });
     }
 
@@ -165,7 +167,7 @@ export default function PayoutManagementPage() {
                                             <TableRow key={payout.artistId}>
                                                 <TableCell className="font-medium">{payout.artistName}</TableCell>
                                                 <TableCell>{payout.totalBookings}</TableCell>
-                                                <TableCell>₹{payout.grossRevenue.toLocaleString()}</TableCell>
+                                                <TableCell>₹{payout.grossRevenue.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
                                                 <TableCell>- ₹{payout.platformFees.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
                                                 <TableCell className="font-bold text-green-600">₹{payout.netPayout.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
                                                 <TableCell className="text-right space-x-2">
