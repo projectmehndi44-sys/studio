@@ -17,6 +17,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import type { MehndiPackage } from '@/types';
 import { packages as initialPackages } from '@/lib/packages-data';
 import NextImage from 'next/image';
+import { Badge } from '@/components/ui/badge';
 
 const packageSchema = z.object({
   id: z.string().optional(),
@@ -223,4 +224,3 @@ export default function PackageManagementPage() {
         </div>
     );
 }
-
