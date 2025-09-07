@@ -37,7 +37,6 @@ import { cn } from '@/lib/utils';
 import { Header } from '@/components/glamgo/Header';
 import { ArtistCard } from '@/components/glamgo/ArtistCard';
 import { BookingModal } from '@/components/glamgo/BookingModal';
-import { RecommendationsTab } from '@/components/glamgo/RecommendationsTab';
 import { ArtistRegistrationModal } from '@/components/glamgo/ArtistRegistrationModal';
 import { CustomerRegistrationModal } from '@/components/glamgo/CustomerRegistrationModal';
 import { CustomerLoginModal } from '@/components/glamgo/CustomerLoginModal';
@@ -267,10 +266,6 @@ export default function Home() {
 
   const ArtistFinder = ({ service }: { service?: 'mehndi' | 'makeup' }) => (
     <div className="space-y-8">
-        <RecommendationsTab onBookingRequest={handleBookingRequest} />
-        
-        <Separator />
-
         <Packages onAddToCart={handleAddToCart} cart={cart}/>
         
         <Separator />
