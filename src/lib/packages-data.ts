@@ -1,13 +1,12 @@
 
 
-
 import type { ServicePackage } from '@/types';
 
 export const packages: ServicePackage[] = [
   {
     id: 'pkg_bridal_01',
     name: 'Bridal Mehendi',
-    service: 'mehendi',
+    service: 'mehndi',
     description: 'Covers both hands on both sides up to elbow length. Intricate and detailed designs perfect for the bride.',
     price: 5000,
     image: 'https://picsum.photos/600/400?random=301',
@@ -16,7 +15,7 @@ export const packages: ServicePackage[] = [
   {
     id: 'pkg_semibridal_02',
     name: 'Semi Bridal Mehendi',
-    service: 'mehendi',
+    service: 'mehndi',
     description: 'A perfect balance of tradition and elegance.',
     price: 4000,
     image: 'https://picsum.photos/600/400?random=302',
@@ -25,7 +24,7 @@ export const packages: ServicePackage[] = [
   {
     id: 'pkg_bridalfeet_03',
     name: 'Bridal Feet Mehendi',
-    service: 'mehendi',
+    service: 'mehndi',
     description: 'Complements the bridal hand mehendi.',
     price: 2000,
     image: 'https://picsum.photos/600/400?random=303',
@@ -34,7 +33,7 @@ export const packages: ServicePackage[] = [
   {
     id: 'pkg_feet_04',
     name: 'Feet Mehendi',
-    service: 'mehendi',
+    service: 'mehndi',
     description: 'Covers toes and mid-portion, no sides included. Simple and elegant for any occasion.',
     price: 1000,
     image: 'https://picsum.photos/600/400?random=304',
@@ -43,7 +42,7 @@ export const packages: ServicePackage[] = [
   {
     id: 'pkg_megabridal_05',
     name: 'Mega Bridal Feet Mehendi',
-    service: 'mehendi',
+    service: 'mehndi',
     description: 'Extensive coverage for the feet, including toes, mid-portion, and all four sides with heavy designs.',
     price: 5000,
     image: 'https://picsum.photos/600/400?random=305',
@@ -52,7 +51,7 @@ export const packages: ServicePackage[] = [
   {
     id: 'pkg_wrist_06',
     name: 'Wrist Length Mehendi',
-    service: 'mehendi',
+    service: 'mehndi',
     description: 'Covers both hands on both sides up to the wrist. Ideal for guests and smaller functions.',
     price: 3000,
     image: 'https://picsum.photos/600/400?random=306',
