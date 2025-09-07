@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { Booking } from '@/types';
 import { useArtistPortal } from '../layout';
+import { MapPin } from 'lucide-react';
 
 export default function ArtistBookingsPage() {
     const { artistBookings, allBookings } = useArtistPortal();
@@ -67,9 +68,8 @@ export default function ArtistBookingsPage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>Customer</TableHead>
-                            <TableHead>Mehndi Date</TableHead>
-                            <TableHead>Event Type</TableHead>
-                            <TableHead>Location</TableHead>
+                            <TableHead>Event Details</TableHead>
+                            <TableHead>Venue</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead className="text-right">Action</TableHead>
                         </TableRow>
@@ -77,10 +77,31 @@ export default function ArtistBookingsPage() {
                     <TableBody>
                         {artistBookings.length > 0 ? artistBookings.map(booking => (
                             <TableRow key={booking.id}>
-                                <TableCell>{booking.customerName}</TableCell>
-                                <TableCell>{new Date(booking.date).toLocaleDateString()}</TableCell>
-                                <TableCell>{booking.eventType}</TableCell>
-                                <TableCell>{booking.location}, {booking.district}</TableCell>
+                                <TableCell className="font-medium">
+                                    <div className="flex flex-col">
+                                        <span>{booking.customerName}</span>
+                                        <span className="text-xs text-muted-foreground">{booking.customerContact}</span>
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                     <div className="flex flex-col">
+                                        <span>{booking.eventType}</span>
+                                        <span className="text-xs text-muted-foreground">{new Date(booking.date).toLocaleDateString()}</span>
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex flex-col">
+                                        <span>{booking.serviceAddress}</span>
+                                        {booking.mapLink && (
+                                            <a href={booking.mapLink} target="_blank" rel="noopener noreferrer">
+                                                <Button variant="link" className="p-0 h-auto text-xs text-primary">
+                                                    <MapPin className="mr-1 h-3 w-3"/>
+                                                    Track Location
+                                                </Button>
+                                            </a>
+                                        )}
+                                    </div>
+                                </TableCell>
                                 <TableCell>
                                     <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>
                                 </TableCell>
