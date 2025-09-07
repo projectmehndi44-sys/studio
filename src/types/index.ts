@@ -35,6 +35,7 @@ export type Booking = {
   location: string; // Locality/Area
   mapLink?: string;
   note?: string;
+  instagramId?: string;
   referencePhoto?: string;
   guestMehndi?: {
     included: boolean;

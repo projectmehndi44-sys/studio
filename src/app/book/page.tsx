@@ -21,10 +21,11 @@ import { packages as allPackages } from '@/lib/packages-data';
 import { INDIA_LOCATIONS } from '@/lib/india-locations';
 import type { MehndiPackage, Booking } from '@/types';
 
-import { Calendar as CalendarIcon, ChevronLeft, Minus, Plus, Trash2, Upload, MapPin } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, Minus, Plus, Trash2, Upload, MapPin, Instagram, Info, CheckCircle, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { BookingSummary } from '@/components/glamgo/BookingSummary';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
 export default function BookingPage() {
@@ -37,6 +38,7 @@ export default function BookingPage() {
     
     // Form state
     const [name, setName] = React.useState('');
+    const [phone, setPhone] = React.useState('');
     const [eventType, setEventType] = React.useState('');
     const [eventDate, setEventDate] = React.useState<Date>();
     const [mehndiDate, setMehndiDate] = React.useState<Date>();
@@ -47,6 +49,7 @@ export default function BookingPage() {
     const [address, setAddress] = React.useState('');
     const [mapLink, setMapLink] = React.useState('');
     const [note, setNote] = React.useState('');
+    const [instagramId, setInstagramId] = React.useState('');
     
     const [includeGuestMehndi, setIncludeGuestMehndi] = React.useState(false);
     const [guestCount, setGuestCount] = React.useState(1);
@@ -83,6 +86,7 @@ export default function BookingPage() {
     const isFormValid = () => {
         return (
             name &&
+            phone &&
             eventType &&
             eventDate &&
             mehndiDate &&
@@ -111,7 +115,7 @@ export default function BookingPage() {
             id: `book_${Date.now()}`,
             artistIds: [], // To be assigned by admin
             customerName: name,
-            customerContact: '', // Assuming phone is captured during login/signup
+            customerContact: phone,
             serviceAddress: address,
             date: mehndiDate!,
             service: selectedPackages.map(p => p.name).join(', '),
@@ -124,6 +128,7 @@ export default function BookingPage() {
             location,
             mapLink: mapLink,
             note: note || '',
+            instagramId: instagramId || '',
             guestMehndi: {
                 included: includeGuestMehndi,
                 expectedCount: includeGuestMehndi ? guestCount : 0,
@@ -184,6 +189,7 @@ export default function BookingPage() {
                  </Button>
             </header>
             <main className="max-w-4xl mx-auto p-4 md:p-8">
+                 <h1 className="text-3xl font-bold text-primary mb-6">Create Booking</h1>
                 <div className="space-y-8">
                     {/* Selected Items */}
                     <Card>
@@ -240,71 +246,104 @@ export default function BookingPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Booking Details */}
+                    {/* Booking Details Form */}
                     <Card>
                         <CardHeader>
                             <CardTitle>Booking Details</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <div><Label htmlFor="name">Name*</Label><Input id="name" value={name} onChange={e => setName(e.target.value)} required/></div>
-                                <div><Label htmlFor="event-type">Event Type*</Label>
-                                <Select value={eventType} onValueChange={setEventType}>
-                                    <SelectTrigger id="event-type"><SelectValue placeholder="Select event type"/></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Wedding">Wedding</SelectItem>
-                                        <SelectItem value="Engagement">Engagement</SelectItem>
-                                        <SelectItem value="Baby Shower">Baby Shower</SelectItem>
-                                        <SelectItem value="Festival">Festival</SelectItem>
-                                        <SelectItem value="Other">Other</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                </div>
-                                <div><Label>Date of Event*</Label>
-                                <Popover>
-                                    <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !eventDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={eventDate} onSelect={setEventDate} initialFocus/></PopoverContent>
-                                </Popover>
-                                </div>
-                                <div><Label>Date to Put Mehndi*</Label>
-                                 <Popover>
-                                    <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !mehndiDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{mehndiDate ? format(mehndiDate, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={mehndiDate} onSelect={setMehndiDate} disabled={(date) => eventDate ? date > eventDate : false} initialFocus/></PopoverContent>
-                                </Popover>
-                                </div>
-                                <div><Label htmlFor="time">Time*</Label><Input id="time" type="time" value={time} onChange={e => setTime(e.target.value)} required/></div>
-                                <div><Label htmlFor="state">State*</Label>
-                                 <Select value={state} onValueChange={s => { setState(s); setDistrict(''); }}>
-                                    <SelectTrigger id="state"><SelectValue placeholder="Select state"/></SelectTrigger>
-                                    <SelectContent>{availableStates.length > 0 ? availableStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : <div className="p-2 text-sm text-muted-foreground">No locations available</div>}</SelectContent>
-                                </Select>
-                                </div>
-                                 <div><Label htmlFor="district">District*</Label>
-                                <Select value={district} onValueChange={setDistrict} disabled={!state}>
-                                    <SelectTrigger id="district"><SelectValue placeholder="Select district"/></SelectTrigger>
-                                    <SelectContent>
-                                        {availableDistricts.length > 0 ? (
-                                            availableDistricts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)
-                                        ) : (
-                                            <div className="p-2 text-sm text-muted-foreground">Select a state first</div>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                                </div>
-                                <div><Label htmlFor="location">Locality / Area*</Label><Input id="location" placeholder="e.g., Koregaon Park" value={location} onChange={e => setLocation(e.target.value)} required/></div>
+                            {/* Personal Info */}
+                            <div className="space-y-2">
+                                <Label htmlFor="name">Name*</Label>
+                                <Input id="name" value={name} onChange={e => setName(e.target.value)} required/>
                             </div>
-                            <div><Label htmlFor="address">Full Address*</Label><Textarea id="address" placeholder="House No, Street, Landmark..." value={address} onChange={e => setAddress(e.target.value)} required/></div>
-                            <div>
+                            <div className="space-y-2">
+                                <Label htmlFor="phone">Contact Number*</Label>
+                                <Input id="phone" type="tel" value={phone} onChange={e => setPhone(e.target.value)} required/>
+                            </div>
+                            
+                            {/* Event Details */}
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="event-type">Event Type*</Label>
+                                    <Select value={eventType} onValueChange={setEventType}>
+                                        <SelectTrigger id="event-type"><SelectValue placeholder="Select event type"/></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Wedding">Wedding</SelectItem>
+                                            <SelectItem value="Engagement">Engagement</SelectItem>
+                                            <SelectItem value="Baby Shower">Baby Shower</SelectItem>
+                                            <SelectItem value="Festival">Festival</SelectItem>
+                                            <SelectItem value="Other">Other</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Date of Event*</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !eventDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={eventDate} onSelect={setEventDate} initialFocus/></PopoverContent>
+                                    </Popover>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Date to Put Mehndi*</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !mehndiDate && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>{mehndiDate ? format(mehndiDate, "PPP") : <span>Pick a date</span>}</Button></PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={mehndiDate} onSelect={setMehndiDate} disabled={(date) => eventDate ? date > eventDate : false} initialFocus/></PopoverContent>
+                                    </Popover>
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="time">Time*</Label>
+                                    <Input id="time" type="time" value={time} onChange={e => setTime(e.target.value)} required/>
+                                </div>
+                            </div>
+                            
+                            {/* Location Details */}
+                             <div className="grid md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="state">State*</Label>
+                                    <Select value={state} onValueChange={s => { setState(s); setDistrict(''); }}>
+                                        <SelectTrigger id="state"><SelectValue placeholder="Select state"/></SelectTrigger>
+                                        <SelectContent>{availableStates.length > 0 ? availableStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : <div className="p-2 text-sm text-muted-foreground">No locations available</div>}</SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="district">District*</Label>
+                                    <Select value={district} onValueChange={setDistrict} disabled={!state}>
+                                        <SelectTrigger id="district"><SelectValue placeholder="Select district"/></SelectTrigger>
+                                        <SelectContent>
+                                            {availableDistricts.length > 0 ? (
+                                                availableDistricts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)
+                                            ) : (
+                                                <div className="p-2 text-sm text-muted-foreground">Select a state first</div>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="location">Locality / Area*</Label>
+                                <Input id="location" placeholder="e.g., Koregaon Park" value={location} onChange={e => setLocation(e.target.value)} required/>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="address">Full Address*</Label>
+                                <Textarea id="address" placeholder="House No, Street, Landmark..." value={address} onChange={e => setAddress(e.target.value)} required/>
+                            </div>
+                            <div className="space-y-2">
                                 <Label htmlFor="map-link">Google Maps Link*</Label>
                                 <div className="flex items-center gap-2">
-                                <Input id="map-link" placeholder="Paste location link here" value={mapLink} onChange={e => setMapLink(e.target.value)} required/>
-                                <Button type="button" variant="outline" onClick={handleFetchLocation}>
-                                    <MapPin className="mr-2 h-4 w-4"/> Get Current Location
-                                </Button>
+                                    <Input id="map-link" placeholder="Paste location link here" value={mapLink} onChange={e => setMapLink(e.target.value)} required/>
+                                    <Button type="button" variant="outline" onClick={handleFetchLocation}>
+                                        <MapPin className="mr-2 h-4 w-4"/> Get Current Location
+                                    </Button>
                                 </div>
                             </div>
-                            <div><Label htmlFor="note">Note (Optional)</Label><Textarea id="note" placeholder="Any special requests or instructions..." value={note} onChange={e => setNote(e.target.value)}/></div>
-                             <div>
+                            
+                            {/* Optional Fields */}
+                             <div className="space-y-2">
+                                <Label htmlFor="note">Notes (Optional)</Label>
+                                <Textarea id="note" placeholder="Any special requests or instructions..." value={note} onChange={e => setNote(e.target.value)}/>
+                            </div>
+                            <div className="space-y-2">
                                 <Label htmlFor="ref-photo">Reference Photo (Optional)</Label>
                                 <div className="relative border-2 border-dashed border-muted-foreground/50 rounded-lg p-4 text-center hover:border-accent cursor-pointer">
                                     <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
@@ -312,6 +351,25 @@ export default function BookingPage() {
                                     <Input id="ref-photo" type="file" className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" />
                                 </div>
                             </div>
+
+                            {/* Instagram */}
+                             <Accordion type="single" collapsible>
+                                <AccordionItem value="instagram">
+                                    <AccordionTrigger>
+                                        <div className="flex items-center gap-2">
+                                            <Instagram className="text-pink-600" />
+                                            Instagram Collaboration (Optional)
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        <p className="text-sm text-muted-foreground mb-2">We'd love to tag you or collaborate on Instagram! Please share your Instagram ID with us.</p>
+                                        <div className="relative">
+                                            <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                            <Input placeholder="your_instagram_id" className="pl-9" value={instagramId} onChange={e => setInstagramId(e.target.value)} />
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Accordion>
                         </CardContent>
                     </Card>
 
@@ -319,25 +377,23 @@ export default function BookingPage() {
                     <BookingSummary packages={selectedPackages} />
 
                     {/* Policies */}
-                    <Card className="bg-amber-50 border-amber-200">
-                        <CardHeader>
-                            <CardTitle className="text-amber-800">Confirmation Policy</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-amber-700">Please confirm only if you wish to proceed. Bookings are accepted on a first-come, first-serve basis. Dates will be reserved only after receiving an advance payment.</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-red-50 border-red-200">
-                        <CardHeader>
-                            <CardTitle className="text-red-800">Refund Policy</CardTitle>
-                        </CardHeader>
-                        <CardContent>
+                    <div className="p-4 rounded-lg bg-green-50 border border-green-200 flex items-start gap-3">
+                         <CheckCircle className="h-5 w-5 text-green-600 mt-1 shrink-0"/>
+                         <div>
+                            <h3 className="font-semibold text-green-800">Confirmation Policy</h3>
+                            <p className="text-sm text-green-700">Please confirm only if you wish to proceed. Bookings are accepted on a first-come, first-serve basis. Dates will be reserved only after receiving an advance payment.</p>
+                         </div>
+                    </div>
+                     <div className="p-4 rounded-lg bg-red-50 border border-red-200 flex items-start gap-3">
+                         <AlertCircle className="h-5 w-5 text-red-600 mt-1 shrink-0"/>
+                         <div>
+                            <h3 className="font-semibold text-red-800">Refund Policy</h3>
                              <p className="text-sm text-red-700">The advance amount is only refunded if the booking is cancelled 72 hours prior to the service date. Later cancellations are non-refundable. This is because the date will be exclusively reserved for you, and no other inquiries will be entertained for that day. Thank you for your understanding.</p>
-                        </CardContent>
-                    </Card>
+                         </div>
+                    </div>
 
                     {/* Action */}
-                    <Button size="lg" className="w-full" onClick={handleCreateBooking} disabled={!isFormValid()}>
+                    <Button size="lg" className="w-full !mt-8 text-lg" onClick={handleCreateBooking} disabled={!isFormValid()}>
                        Create Booking & Proceed to Payment
                     </Button>
                 </div>
@@ -345,5 +401,3 @@ export default function BookingPage() {
         </div>
     )
 }
-
-    
