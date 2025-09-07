@@ -72,8 +72,8 @@ export default function AdminLoginPage() {
                     description: 'Invalid credentials for the selected user type.',
                     variant: 'destructive',
                 });
+                 setIsLoading(false);
             }
-            setIsLoading(false);
         }, 1000);
     };
 
