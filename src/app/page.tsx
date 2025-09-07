@@ -47,6 +47,7 @@ import Autoplay from "embla-carousel-autoplay"
 import Image from 'next/image';
 import { Packages } from '@/components/glamgo/Packages';
 import { MehndiIcon } from '@/components/icons';
+import { useSearchParams } from 'next/navigation';
 
 const galleryImages = [
     { src: 'https://picsum.photos/600/400?random=101', alt: 'Intricate bridal mehndi', hint: 'bridal mehndi' },
@@ -69,6 +70,7 @@ const backgroundImages = [
 
 
 export default function Home() {
+  const searchParams = useSearchParams();
   const [filteredArtists, setFilteredArtists] =
     React.useState<Artist[]>([]);
   const [selectedArtist, setSelectedArtist] = React.useState<Artist | null>(
@@ -103,6 +105,14 @@ export default function Home() {
 
     return () => clearInterval(intervalId);
   }, []);
+
+  React.useEffect(() => {
+    const packageIds = searchParams.get('packages')?.split(',') || [];
+    if (packageIds.length > 0) {
+      const selectedPackages = allPackages.filter(p => packageIds.includes(p.id));
+      setCart(selectedPackages);
+    }
+  }, [searchParams]);
 
   const handleBookingRequest = (artist: Artist) => {
     setSelectedArtist(artist);

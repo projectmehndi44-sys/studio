@@ -211,7 +211,9 @@ export default function BookingPage() {
                                     </Button>
                                 </div>
                             ))}
-                             <Button variant="outline" className="w-full" asChild><Link href="/">+ Add More Packages</Link></Button>
+                             <Button variant="outline" className="w-full" asChild>
+                                <Link href={`/?packages=${selectedPackages.map(p => p.id).join(',')}`}>+ Add More Packages</Link>
+                             </Button>
                         </CardContent>
                     </Card>
 
