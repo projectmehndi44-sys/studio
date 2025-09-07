@@ -350,3 +350,5 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
     </Dialog>
   );
 }
+
+    
