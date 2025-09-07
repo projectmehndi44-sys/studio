@@ -3,7 +3,6 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -12,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Users, PlusCircle, Trash2, MoreHorizontal, User, ArrowLeft } from 'lucide-react';
+import { PlusCircle, Trash2, MoreHorizontal } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -118,115 +117,105 @@ export default function TeamManagementPage() {
                 <Card className="p-8 text-center">
                     <CardTitle>Access Denied</CardTitle>
                     <CardDescription>You need to be an admin to manage team members.</CardDescription>
-                    <Button asChild className="mt-4">
-                        <Link href="/admin">Back to Dashboard</Link>
-                    </Button>
+                    <Button onClick={() => router.push('/admin')} className="mt-4">Back to Dashboard</Button>
                 </Card>
             </div>
         );
     }
 
     return (
-        <div className="flex min-h-screen w-full flex-col bg-muted/40">
-            <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6 justify-between">
-                <h1 className="flex items-center gap-2 text-xl font-bold text-primary">
-                    <Shield className="w-6 h-6" />
-                    Team Management
-                </h1>
-                 <Link href="/admin/settings">
-                     <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Settings</Button>
-                </Link>
-            </header>
-            <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8">
-                 <div className="max-w-4xl mx-auto grid gap-6 py-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Add New Team Member</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                           <Form {...form}>
-                             <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-                                <FormField control={form.control} name="name" render={({ field }) => (
-                                    <FormItem className="lg:col-span-1"><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                 <FormField control={form.control} name="username" render={({ field }) => (
-                                    <FormItem className="lg:col-span-1"><FormLabel>Username</FormLabel><FormControl><Input placeholder="e.g., jane_d" {...field} /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                <FormField control={form.control} name="password" render={({ field }) => (
-                                    <FormItem className="lg:col-span-1"><FormLabel>Password</FormLabel><FormControl><Input type="password" placeholder="********" {...field} /></FormControl><FormMessage /></FormItem>
-                                )} />
-                                <FormField control={form.control} name="role" render={({ field }) => (
-                                    <FormItem className="lg:col-span-1">
-                                        <FormLabel>Role</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="admin">Admin</SelectItem>
-                                                <SelectItem value="team-member">Team Member</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
-                                 <Button type="submit" className="lg:col-span-1 w-full">
-                                    <PlusCircle className="mr-2 h-4 w-4" /> Add Member
-                                 </Button>
-                             </form>
-                           </Form>
-                        </CardContent>
-                    </Card>
+        <>
+            <div className="flex items-center justify-between">
+                <h1 className="text-lg font-semibold md:text-2xl">Team Management</h1>
+            </div>
+            <div className="grid gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Add New Team Member</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
+                            <FormField control={form.control} name="name" render={({ field }) => (
+                                <FormItem className="lg:col-span-1"><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                                <FormField control={form.control} name="username" render={({ field }) => (
+                                <FormItem className="lg:col-span-1"><FormLabel>Username</FormLabel><FormControl><Input placeholder="e.g., jane_d" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name="password" render={({ field }) => (
+                                <FormItem className="lg:col-span-1"><FormLabel>Password</FormLabel><FormControl><Input type="password" placeholder="********" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name="role" render={({ field }) => (
+                                <FormItem className="lg:col-span-1">
+                                    <FormLabel>Role</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger><SelectValue placeholder="Select a role" /></SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="admin">Admin</SelectItem>
+                                            <SelectItem value="team-member">Team Member</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                                <Button type="submit" className="lg:col-span-1 w-full">
+                                <PlusCircle className="mr-2 h-4 w-4" /> Add Member
+                                </Button>
+                            </form>
+                        </Form>
+                    </CardContent>
+                </Card>
 
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Current Team</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                           <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Name</TableHead>
-                                        <TableHead>Username</TableHead>
-                                        <TableHead>Role</TableHead>
-                                        <TableHead><span className="sr-only">Actions</span></TableHead>
+                    <Card>
+                    <CardHeader>
+                        <CardTitle>Current Team</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Name</TableHead>
+                                    <TableHead>Username</TableHead>
+                                    <TableHead>Role</TableHead>
+                                    <TableHead><span className="sr-only">Actions</span></TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {teamMembers.map((member) => (
+                                    <TableRow key={member.id}>
+                                        <TableCell className="font-medium">{member.name}</TableCell>
+                                        <TableCell>{member.username}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={member.role === 'admin' ? 'default' : 'secondary'} className="capitalize">
+                                                {member.role}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button aria-haspopup="true" size="icon" variant="ghost" disabled={member.id === 'user_001'}>
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                        <span className="sr-only">Toggle menu</span>
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                    <DropdownMenuItem onSelect={() => handleDelete(member.id)}>
+                                                        <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
                                     </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {teamMembers.map((member) => (
-                                        <TableRow key={member.id}>
-                                            <TableCell className="font-medium">{member.name}</TableCell>
-                                            <TableCell>{member.username}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={member.role === 'admin' ? 'default' : 'secondary'} className="capitalize">
-                                                    {member.role}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                 <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button aria-haspopup="true" size="icon" variant="ghost" disabled={member.id === 'user_001'}>
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                            <span className="sr-only">Toggle menu</span>
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                        <DropdownMenuItem onSelect={() => handleDelete(member.id)}>
-                                                            <Trash2 className="mr-2 h-4 w-4 text-red-500" />
-                                                            Delete
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                           </Table>
-                        </CardContent>
-                    </Card>
-                 </div>
-            </main>
-        </div>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </div>
+        </>
     );
 }

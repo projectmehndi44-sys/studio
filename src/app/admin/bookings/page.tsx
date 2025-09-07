@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Briefcase, ArrowLeft, MoreHorizontal, AlertOctagon } from 'lucide-react';
+import { Shield, Briefcase, MoreHorizontal, AlertOctagon } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import type { Booking, Artist, Notification } from '@/types';
@@ -278,56 +278,47 @@ export default function BookingManagementPage() {
 
     return (
         <>
-        <div className="flex min-h-screen w-full flex-col bg-muted/40">
-            <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6 justify-between">
-                <h1 className="flex items-center gap-2 text-xl font-bold text-primary">
-                    <Shield className="w-6 h-6" />
-                    Admin Portal
-                </h1>
-                <Link href="/admin">
-                     <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Dashboard</Button>
-                </Link>
-            </header>
-            <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8">
-                <Card className="max-w-7xl mx-auto my-6">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                           <Briefcase className="w-6 h-6 text-primary"/> Booking Management
-                        </CardTitle>
-                        <CardDescription>
-                            Approve, assign, change, or cancel any booking on the platform.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       <Tabs defaultValue="all">
-                            <TabsList>
-                                <TabsTrigger value="all">All Bookings</TabsTrigger>
-                                <TabsTrigger value="disputed">
-                                    <AlertOctagon className="mr-2 h-4 w-4" />
-                                    Disputed Bookings
-                                </TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="all" className="mt-4">
-                                {renderTable(bookings.filter(b => b.status !== 'Disputed'))}
-                            </TabsContent>
-                            <TabsContent value="disputed" className="mt-4">
-                                 {renderTable(bookings.filter(b => b.status === 'Disputed'))}
-                            </TabsContent>
-                        </Tabs>
-                    </CardContent>
-                </Card>
-            </main>
-        </div>
-         {selectedBooking && (
-            <AssignArtistModal
-                isOpen={isAssignModalOpen}
-                onOpenChange={setIsAssignModalOpen}
-                booking={selectedBooking}
-                artists={artists}
-                allBookings={bookings}
-                onAssign={handleAssignArtist}
-            />
-        )}
+            <div className="flex items-center justify-between">
+                <h1 className="text-lg font-semibold md:text-2xl">Booking Management</h1>
+            </div>
+            <Card className="flex-1">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Briefcase className="w-6 h-6 text-primary"/> All Bookings
+                    </CardTitle>
+                    <CardDescription>
+                        Approve, assign, change, or cancel any booking on the platform.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Tabs defaultValue="all">
+                        <TabsList>
+                            <TabsTrigger value="all">All Bookings</TabsTrigger>
+                            <TabsTrigger value="disputed">
+                                <AlertOctagon className="mr-2 h-4 w-4" />
+                                Disputed Bookings
+                            </TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="all" className="mt-4">
+                            {renderTable(bookings.filter(b => b.status !== 'Disputed'))}
+                        </TabsContent>
+                        <TabsContent value="disputed" className="mt-4">
+                            {renderTable(bookings.filter(b => b.status === 'Disputed'))}
+                        </TabsContent>
+                    </Tabs>
+                </CardContent>
+            </Card>
+            {selectedBooking && (
+                <AssignArtistModal
+                    isOpen={isAssignModalOpen}
+                    onOpenChange={setIsAssignModalOpen}
+                    booking={selectedBooking}
+                    artists={artists}
+                    allBookings={bookings}
+                    onAssign={handleAssignArtist}
+                />
+            )}
         </>
     );
 }
+

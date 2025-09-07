@@ -3,7 +3,6 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, User, Save } from 'lucide-react';
+import { User, Save } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { teamMembers as initialTeamMembers, TeamMember } from '@/lib/team-data';
 
@@ -143,60 +142,50 @@ export default function ProfileManagementPage() {
     }
 
     return (
-        <div className="flex min-h-screen w-full flex-col bg-muted/40">
-            <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6 justify-between">
-                <h1 className="flex items-center gap-2 text-xl font-bold text-primary">
-                    <Shield className="w-6 h-6" />
-                    Admin Portal
-                </h1>
-                <Link href="/admin">
-                     <Button variant="outline">Back to Dashboard</Button>
-                </Link>
-            </header>
-            <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8">
-                 <div className="max-w-2xl mx-auto grid gap-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                               <User className="w-6 h-6 text-primary"/> Profile Management
-                            </CardTitle>
-                            <CardDescription>
-                                Update your account details. Leave password fields blank to keep your current password.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                             <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                                     <FormField control={form.control} name="name" render={({ field }) => (
-                                        <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem>
+        <>
+            <div className="flex items-center justify-between">
+                <h1 className="text-lg font-semibold md:text-2xl">My Profile</h1>
+            </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <User className="w-6 h-6 text-primary"/> Profile Management
+                    </CardTitle>
+                    <CardDescription>
+                        Update your account details. Leave password fields blank to keep your current password.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                        <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                                <FormField control={form.control} name="name" render={({ field }) => (
+                                <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={form.control} name="username" render={({ field }) => (
+                                <FormItem><FormLabel>Username</FormLabel><FormControl><Input placeholder="e.g., jane_d" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-lg">Change Password</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <FormField control={form.control} name="password" render={({ field }) => (
+                                        <FormItem><FormLabel>New Password</FormLabel><FormControl><Input type="password" placeholder="Enter new password" {...field} /></FormControl><FormMessage /></FormItem>
                                     )} />
-                                    <FormField control={form.control} name="username" render={({ field }) => (
-                                        <FormItem><FormLabel>Username</FormLabel><FormControl><Input placeholder="e.g., jane_d" {...field} /></FormControl><FormMessage /></FormItem>
+                                        <FormField control={form.control} name="confirmPassword" render={({ field }) => (
+                                        <FormItem><FormLabel>Confirm New Password</FormLabel><FormControl><Input type="password" placeholder="Confirm new password" {...field} /></FormControl><FormMessage /></FormItem>
                                     )} />
-                                    
-                                    <Card>
-                                        <CardHeader>
-                                            <CardTitle className="text-lg">Change Password</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="space-y-4">
-                                            <FormField control={form.control} name="password" render={({ field }) => (
-                                                <FormItem><FormLabel>New Password</FormLabel><FormControl><Input type="password" placeholder="Enter new password" {...field} /></FormControl><FormMessage /></FormItem>
-                                            )} />
-                                             <FormField control={form.control} name="confirmPassword" render={({ field }) => (
-                                                <FormItem><FormLabel>Confirm New Password</FormLabel><FormControl><Input type="password" placeholder="Confirm new password" {...field} /></FormControl><FormMessage /></FormItem>
-                                            )} />
-                                        </CardContent>
-                                    </Card>
-                                    
-                                    <Button type="submit" disabled={isLoading} className="w-full">
-                                         {isLoading ? 'Saving...' : <><Save className="mr-2 h-4 w-4"/> Save Changes</>}
-                                    </Button>
-                                </form>
-                            </Form>
-                        </CardContent>
-                    </Card>
-                 </div>
-            </main>
-        </div>
+                                </CardContent>
+                            </Card>
+                            
+                            <Button type="submit" disabled={isLoading} className="w-full">
+                                    {isLoading ? 'Saving...' : <><Save className="mr-2 h-4 w-4"/> Save Changes</>}
+                            </Button>
+                        </form>
+                    </Form>
+                </CardContent>
+            </Card>
+        </>
     );
 }

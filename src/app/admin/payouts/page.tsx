@@ -3,11 +3,10 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, ArrowLeft, IndianRupee, MoreHorizontal, Download, FileText } from 'lucide-react';
+import { IndianRupee, MoreHorizontal, Download, FileText } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Booking, Artist, Payout, PayoutHistory } from '@/types';
 import { artists as initialArtists } from '@/lib/data';
@@ -127,147 +126,139 @@ export default function PayoutManagementPage() {
     }
 
     return (
-        <div className="flex min-h-screen w-full flex-col bg-muted/40">
-            <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6 justify-between">
-                <h1 className="flex items-center gap-2 text-xl font-bold text-primary">
-                    <Shield className="w-6 h-6" />
-                    Admin Portal
-                </h1>
-                <Link href="/admin">
-                     <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Dashboard</Button>
-                </Link>
-            </header>
-            <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8">
-                <Card className="max-w-7xl mx-auto my-6">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                           <IndianRupee className="w-6 h-6 text-primary"/> Artist Payout Management
-                        </CardTitle>
-                        <CardDescription>
-                            Calculate and manage payouts for artists based on their completed bookings.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       <Tabs defaultValue="payouts">
-                            <TabsList>
-                                <TabsTrigger value="payouts">Pending Payouts</TabsTrigger>
-                                <TabsTrigger value="history">Payout History</TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="payouts" className="mt-4">
-                                {payouts.length > 0 ? (
-                                     <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Artist</TableHead>
-                                                <TableHead>Completed Bookings</TableHead>
-                                                <TableHead>Gross Revenue</TableHead>
-                                                <TableHead>Platform Fees</TableHead>
-                                                <TableHead>GST (18%)</TableHead>
-                                                <TableHead className="font-bold text-primary">Net Payout</TableHead>
-                                                <TableHead className="text-right">Actions</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {payouts.map(payout => (
-                                                <TableRow key={payout.artistId}>
-                                                    <TableCell className="font-medium">{payout.artistName}</TableCell>
-                                                    <TableCell>{payout.totalBookings}</TableCell>
-                                                    <TableCell>₹{payout.grossRevenue.toLocaleString()}</TableCell>
-                                                    <TableCell>- ₹{payout.platformFees.toLocaleString()}</TableCell>
-                                                    <TableCell>- ₹{payout.gst.toLocaleString()}</TableCell>
-                                                    <TableCell className="font-bold text-green-600">₹{payout.netPayout.toLocaleString()}</TableCell>
-                                                    <TableCell className="text-right space-x-2">
-                                                        <Button onClick={() => handleMarkAsPaid(payout)}>Mark as Paid</Button>
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                                    <MoreHorizontal className="h-4 w-4" />
-                                                                    <span className="sr-only">Toggle menu</span>
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem onSelect={() => exportPayoutToPdf(payout)}>
-                                                                    <Download className="mr-2 h-4 w-4" />
-                                                                    Download PDF
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem onSelect={() => generateGstInvoice(payout)}>
-                                                                    <FileText className="mr-2 h-4 w-4" />
-                                                                    Generate GST Invoice
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                ) : (
-                                    <Alert>
-                                        <Terminal className="h-4 w-4" />
-                                        <AlertTitle>All Clear!</AlertTitle>
-                                        <AlertDescription>
-                                            There are no pending payouts to be made at this time.
-                                        </AlertDescription>
-                                    </Alert>
-                                )}
-                            </TabsContent>
-                             <TabsContent value="history" className="mt-4">
-                                 {payoutHistory.length > 0 ? (
+        <>
+            <div className="flex items-center justify-between">
+                <h1 className="text-lg font-semibold md:text-2xl">Artist Payouts</h1>
+            </div>
+             <Card className="flex-1">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <IndianRupee className="w-6 h-6 text-primary"/> Payout Management
+                    </CardTitle>
+                    <CardDescription>
+                        Calculate and manage payouts for artists based on their completed bookings.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Tabs defaultValue="payouts">
+                        <TabsList>
+                            <TabsTrigger value="payouts">Pending Payouts</TabsTrigger>
+                            <TabsTrigger value="history">Payout History</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="payouts" className="mt-4">
+                            {payouts.length > 0 ? (
                                     <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Payment Date</TableHead>
-                                                <TableHead>Artist</TableHead>
-                                                <TableHead>Bookings Paid</TableHead>
-                                                <TableHead>Net Amount Paid</TableHead>
-                                                <TableHead className="text-right">Actions</TableHead>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Artist</TableHead>
+                                            <TableHead>Completed Bookings</TableHead>
+                                            <TableHead>Gross Revenue</TableHead>
+                                            <TableHead>Platform Fees</TableHead>
+                                            <TableHead>GST (18%)</TableHead>
+                                            <TableHead className="font-bold text-primary">Net Payout</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {payouts.map(payout => (
+                                            <TableRow key={payout.artistId}>
+                                                <TableCell className="font-medium">{payout.artistName}</TableCell>
+                                                <TableCell>{payout.totalBookings}</TableCell>
+                                                <TableCell>₹{payout.grossRevenue.toLocaleString()}</TableCell>
+                                                <TableCell>- ₹{payout.platformFees.toLocaleString()}</TableCell>
+                                                <TableCell>- ₹{payout.gst.toLocaleString()}</TableCell>
+                                                <TableCell className="font-bold text-green-600">₹{payout.netPayout.toLocaleString()}</TableCell>
+                                                <TableCell className="text-right space-x-2">
+                                                    <Button onClick={() => handleMarkAsPaid(payout)}>Mark as Paid</Button>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                                <span className="sr-only">Toggle menu</span>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem onSelect={() => exportPayoutToPdf(payout)}>
+                                                                <Download className="mr-2 h-4 w-4" />
+                                                                Download PDF
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onSelect={() => generateGstInvoice(payout)}>
+                                                                <FileText className="mr-2 h-4 w-4" />
+                                                                Generate GST Invoice
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
                                             </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {payoutHistory.map(history => (
-                                                 <TableRow key={history.id}>
-                                                    <TableCell>{new Date(history.paymentDate).toLocaleString()}</TableCell>
-                                                    <TableCell className="font-medium">{history.artistName}</TableCell>
-                                                    <TableCell>{history.totalBookings}</TableCell>
-                                                    <TableCell>₹{history.netPayout.toLocaleString()}</TableCell>
-                                                    <TableCell className="text-right">
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                                    <MoreHorizontal className="h-4 w-4" />
-                                                                    <span className="sr-only">Toggle menu</span>
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem onSelect={() => exportPayoutToPdf(history)}>
-                                                                    <Download className="mr-2 h-4 w-4" />
-                                                                    Download PDF
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem onSelect={() => generateGstInvoice(history)}>
-                                                                    <FileText className="mr-2 h-4 w-4" />
-                                                                    Generate GST Invoice
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </TableCell>
-                                                 </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                 ) : (
-                                    <Alert>
-                                        <Terminal className="h-4 w-4" />
-                                        <AlertTitle>No History</AlertTitle>
-                                        <AlertDescription>
-                                            No payouts have been recorded yet.
-                                        </AlertDescription>
-                                    </Alert>
-                                 )}
-                            </TabsContent>
-                        </Tabs>
-                    </CardContent>
-                </Card>
-            </main>
-        </div>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <Alert>
+                                    <Terminal className="h-4 w-4" />
+                                    <AlertTitle>All Clear!</AlertTitle>
+                                    <AlertDescription>
+                                        There are no pending payouts to be made at this time.
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                        </TabsContent>
+                            <TabsContent value="history" className="mt-4">
+                                {payoutHistory.length > 0 ? (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Payment Date</TableHead>
+                                            <TableHead>Artist</TableHead>
+                                            <TableHead>Bookings Paid</TableHead>
+                                            <TableHead>Net Amount Paid</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {payoutHistory.map(history => (
+                                                <TableRow key={history.id}>
+                                                <TableCell>{new Date(history.paymentDate).toLocaleString()}</TableCell>
+                                                <TableCell className="font-medium">{history.artistName}</TableCell>
+                                                <TableCell>{history.totalBookings}</TableCell>
+                                                <TableCell>₹{history.netPayout.toLocaleString()}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                                <span className="sr-only">Toggle menu</span>
+                                                            </Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem onSelect={() => exportPayoutToPdf(history)}>
+                                                                <Download className="mr-2 h-4 w-4" />
+                                                                Download PDF
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onSelect={() => generateGstInvoice(history)}>
+                                                                <FileText className="mr-2 h-4 w-4" />
+                                                                Generate GST Invoice
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
+                                                </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                                ) : (
+                                <Alert>
+                                    <Terminal className="h-4 w-4" />
+                                    <AlertTitle>No History</AlertTitle>
+                                    <AlertDescription>
+                                        No payouts have been recorded yet.
+                                    </AlertDescription>
+                                </Alert>
+                                )}
+                        </TabsContent>
+                    </Tabs>
+                </CardContent>
+            </Card>
+        </>
     );
 }

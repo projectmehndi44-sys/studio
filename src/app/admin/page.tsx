@@ -29,11 +29,8 @@ import { artists as initialArtists } from '@/lib/data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { Artist, Booking, Transaction, PayoutHistory } from '@/types';
 import { Checkbox } from '@/components/ui/checkbox';
-import { exportToExcel, exportTransactionsToExcel, exportTransactionsToPdf } from '@/lib/export';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { exportToExcel } from '@/lib/export';
+
 
 // Define a type for pending artist data, which might be slightly different
 type PendingArtist = {
@@ -69,9 +66,9 @@ export default function AdminPage() {
     
     const [pendingBookingCount, setPendingBookingCount] = React.useState(0);
     const [financials, setFinancials] = React.useState({
-        overall: { totalRevenue: 0, platformFee: 0, gst: 0, netPayout: 0, refunds: 0, netProfit: 0 },
-        currentMonth: { totalRevenue: 0, platformFee: 0, gst: 0, netPayout: 0, refunds: 0, netProfit: 0 },
-        lastMonth: { totalRevenue: 0, platformFee: 0, gst: 0, netPayout: 0, refunds: 0, netProfit: 0 },
+        totalRevenue: 0,
+        platformFee: 0,
+        netProfit: 0
     });
 
 
@@ -102,16 +99,11 @@ export default function AdminPage() {
     }, []);
 
     React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
-        if (isAdminAuthenticated !== 'true') {
-            router.push('/admin/login');
-        } else {
-            fetchAdminData();
-             // Listen for storage changes to update lists
-            window.addEventListener('storage', fetchAdminData);
-            return () => window.removeEventListener('storage', fetchAdminData);
-        }
-    }, [router, fetchAdminData]);
+        fetchAdminData();
+        // Listen for storage changes to update lists
+        window.addEventListener('storage', fetchAdminData);
+        return () => window.removeEventListener('storage', fetchAdminData);
+    }, [fetchAdminData]);
 
      // Effect for calculating financials
     React.useEffect(() => {
@@ -122,66 +114,15 @@ export default function AdminPage() {
             const completed = filteredBookings.filter(b => b.status === 'Completed');
             const totalRevenue = completed.reduce((sum, b) => sum + b.amount, 0);
             const platformFee = totalRevenue * platformFeePercentage;
-            const gst = totalRevenue * 0.18; // GST on artist's gross service value
             const refunds = refundFee; // Mocked data for now
-            const netPayout = totalRevenue - platformFee - gst; // Artist payout after commission and GST
             const netProfit = platformFee - refunds; // Platform profit is the commission minus refunds
 
-            return { totalRevenue, platformFee, gst, netPayout, refunds, netProfit };
+            return { totalRevenue, platformFee, netProfit };
         };
-        
-        const getMonthYear = (date: Date) => new Date(date).toLocaleString('default', { month: 'long', year: 'numeric' });
-        
-        const currentMonth = new Date();
-        const lastMonth = new Date();
-        lastMonth.setMonth(lastMonth.getMonth() - 1);
 
-        const currentMonthBookings = bookings.filter(b => getMonthYear(new Date(b.date)) === getMonthYear(currentMonth));
-        const lastMonthBookings = bookings.filter(b => getMonthYear(new Date(b.date)) === getMonthYear(lastMonth));
-
-        setFinancials({
-            overall: calculateRevenue(bookings),
-            currentMonth: calculateRevenue(currentMonthBookings),
-            lastMonth: calculateRevenue(lastMonthBookings),
-        });
+        setFinancials(calculateRevenue(bookings));
 
     }, [bookings]);
-
-    const handleLogout = () => {
-        localStorage.removeItem('isAdminAuthenticated');
-        localStorage.removeItem('adminRole');
-        localStorage.removeItem('adminUsername');
-        router.push('/admin/login');
-    };
-
-    const customers = [
-        {
-            id: 'cust_101',
-            name: 'Priya Patel',
-            email: 'priya.p@email.com',
-            phone: '9123456780',
-            registeredOn: '2023-10-25',
-            status: 'Active'
-        },
-        {
-            id: 'cust_102',
-            name: 'Amit Singh',
-            email: 'amit.singh@email.com',
-            phone: '9098765432',
-            registeredOn: '2023-10-24',
-            status: 'Active'
-        },
-        {
-            id: 'cust_103',
-            name: 'Sunita Rao',
-            email: 'sunita.r@email.com',
-            phone: '9988776655',
-            registeredOn: '2023-10-22',
-            status: 'Suspended'
-        }
-    ];
-
-    const allArtistsWithStatus = approvedArtists.map(artist => ({...artist, status: 'Approved'}));
 
     const handleApprove = (artistId: string) => {
         const artistToApprove = pendingArtists.find(p => p.id === artistId);
@@ -309,476 +250,157 @@ export default function AdminPage() {
         }
     };
 
-    const bookedDates = bookings.filter(b => b.status === 'Confirmed' || b.status === 'Completed').map(b => new Date(b.date));
-    const currentMonthYear = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
-    const lastMonth = new Date();
-    lastMonth.setMonth(lastMonth.getMonth() - 1);
-    const lastMonthYear = lastMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
-    
-
     return (
-        <div className="flex min-h-screen w-full flex-col bg-muted/40">
-            <div className="flex flex-col sm:gap-4 sm:py-4 sm:pl-14">
-                <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6 justify-between">
-                    <h1 className="flex items-center gap-2 text-2xl font-bold text-primary">
-                        <Shield className="w-8 h-8" />
-                        Admin Portal
-                    </h1>
-                    <Button onClick={handleLogout} variant="outline">Logout</Button>
-                </header>
-                <main className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
-                    <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
-                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Manage Bookings</CardTitle>
-                                     <CardDescription>
-                                        You have {pendingBookingCount} pending booking(s).
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="flex items-center gap-2">
-                                     <Link href="/admin/bookings">
-                                        <Button>
-                                            <Briefcase className="mr-2 h-4 w-4" />
-                                            View All Bookings
-                                        </Button>
-                                     </Link>
-                                     {pendingBookingCount > 0 && 
-                                        <Badge variant="destructive">{pendingBookingCount}</Badge>
-                                     }
-                                </CardContent>
-                            </Card>
-                             <Card>
-                                <CardHeader>
-                                    <CardTitle>Package Management</CardTitle>
-                                    <CardDescription>
-                                        Create & manage packages.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <Link href="/admin/packages">
-                                        <Button>
-                                            <Package className="mr-2 h-4 w-4" />
-                                            Manage Packages
-                                        </Button>
-                                    </Link>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Transactions</CardTitle>
-                                    <CardDescription>
-                                        View financial activity.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <Link href="/admin/transactions">
-                                        <Button>
-                                            <ListTree className="mr-2 h-4 w-4" />
-                                            View Transactions
-                                        </Button>
-                                    </Link>
-                                </CardContent>
-                            </Card>
-                             <Card>
-                                <CardHeader>
-                                    <CardTitle>Artist Payouts</CardTitle>
-                                    <CardDescription>
-                                       Manage artist earnings and payments.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <Link href="/admin/payouts">
-                                        <Button>
-                                            <IndianRupee className="mr-2 h-4 w-4" />
-                                            Go to Payouts
-                                        </Button>
-                                    </Link>
-                                </CardContent>
-                            </Card>
-                             <Card>
-                                <CardHeader>
-                                    <CardTitle>Settings</CardTitle>
-                                    <CardDescription>
-                                       Manage team, locations, and profile.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <Link href="/admin/settings">
-                                        <Button>
-                                            <Settings className="mr-2 h-4 w-4" />
-                                            Go to Settings
-                                        </Button>
-                                    </Link>
-                                </CardContent>
-                            </Card>
-                        </div>
-                        <Tabs defaultValue="approvals">
-                             <TabsList>
-                                <TabsTrigger value="approvals">Artist Approvals</TabsTrigger>
-                                <TabsTrigger value="artists">Artist Management</TabsTrigger>
-                                <TabsTrigger value="customers">Customer Management</TabsTrigger>
-                                <TabsTrigger value="bookings">All Bookings</TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="approvals">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>Pending Artist Approvals</CardTitle>
-                                        <CardDescription>
-                                            Review and approve new artist registrations. There are currently {pendingArtists.length} pending approvals.
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Artist Name</TableHead>
-                                                    <TableHead>Contact</TableHead>
-                                                    <TableHead>Location</TableHead>
-                                                    <TableHead>Registered On</TableHead>
-                                                    <TableHead>Status</TableHead>
-                                                    <TableHead>
-                                                        <span className="sr-only">Actions</span>
-                                                    </TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {pendingArtists.map((artist) => (
-                                                    <TableRow key={artist.id}>
-                                                        <TableCell className="font-medium">{artist.name}</TableCell>
-                                                        <TableCell>
-                                                            <div className="flex flex-col">
-                                                                <span>{artist.email}</span>
-                                                                <span className="text-muted-foreground">{artist.phone}</span>
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell>{artist.location}</TableCell>
-                                                        <TableCell>{artist.date}</TableCell>
-                                                        <TableCell>
-                                                            <Badge variant={artist.status === 'Pending' ? 'secondary' : 'default'}>
-                                                                {artist.status}
-                                                            </Badge>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild>
-                                                                    <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                                        <MoreHorizontal className="h-4 w-4" />
-                                                                        <span className="sr-only">Toggle menu</span>
-                                                                    </Button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end">
-                                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                                    <DropdownMenuItem onSelect={() => handleApprove(artist.id)}>
-                                                                        <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                                                                        Approve
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem onSelect={() => handleReject(artist.id)}>
-                                                                        <XCircle className="mr-2 h-4 w-4 text-red-500" />
-                                                                        Reject
-                                                                    </DropdownMenuItem>
-                                                                </DropdownMenuContent>
-                                                            </DropdownMenu>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                             <TabsContent value="artists">
-                                <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between">
-                                        <div>
-                                            <CardTitle>Artist Management</CardTitle>
-                                            <CardDescription>
-                                                View and manage all approved artists. {selectedArtistIds.length} of {approvedArtists.length} selected.
-                                            </CardDescription>
-                                        </div>
-                                         <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button disabled={selectedArtistIds.length === 0}>
-                                                    <Download className="mr-2 h-4 w-4" />
-                                                    Download Selected ({selectedArtistIds.length})
-                                                    <ChevronDown className="ml-2 h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onSelect={() => handleDownloadSelected('json')}>JSON</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleDownloadSelected('excel')}>Excel</DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </CardHeader>
-                                    <CardContent>
-                                    <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead className="w-12">
-                                                        <Checkbox 
-                                                          checked={selectedArtistIds.length === approvedArtists.length && approvedArtists.length > 0}
-                                                          onCheckedChange={(checked) => handleSelectAll(!!checked)}
-                                                          aria-label="Select all"
-                                                        />
-                                                    </TableHead>
-                                                    <TableHead>Artist</TableHead>
-                                                    <TableHead>Location</TableHead>
-                                                    <TableHead>Services</TableHead>
-                                                    <TableHead>Charge</TableHead>
-                                                    <TableHead>Rating</TableHead>
-                                                    <TableHead>Status</TableHead>
-                                                    <TableHead>
-                                                        <span className="sr-only">Actions</span>
-                                                    </TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {allArtistsWithStatus.map((artist) => (
-                                                    <TableRow key={artist.id}>
-                                                         <TableCell>
-                                                            <Checkbox
-                                                                checked={selectedArtistIds.includes(artist.id)}
-                                                                onCheckedChange={(checked) => handleSelectOne(artist.id, !!checked)}
-                                                                aria-label={`Select ${artist.name}`}
-                                                            />
-                                                        </TableCell>
-                                                        <TableCell className="font-medium flex items-center gap-2">
-                                                            <Avatar>
-                                                                <AvatarImage src={artist.profilePicture} alt={artist.name} />
-                                                                <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
-                                                            </Avatar>
-                                                            {artist.name}
-                                                        </TableCell>
-                                                        <TableCell>{artist.location}</TableCell>
-                                                        <TableCell className="capitalize">{artist.services.join(', ')}</TableCell>
-                                                        <TableCell>₹{artist.charge}</TableCell>
-                                                        <TableCell>{artist.rating}</TableCell>
-                                                        <TableCell>
-                                                            <Badge>
-                                                                {artist.status}
-                                                            </Badge>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild>
-                                                                    <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                                        <MoreHorizontal className="h-4 w-4" />
-                                                                        <span className="sr-only">Toggle menu</span>
-                                                                    </Button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end">
-                                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                                     <DropdownMenuItem onSelect={() => router.push(`/admin/artists/${artist.id}`)}>
-                                                                        <Eye className="mr-2 h-4 w-4" />
-                                                                        View Details
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem onSelect={() => handleAction('Edit', 'Artist', artist.id)}>
-                                                                        <Pencil className="mr-2 h-4 w-4" />
-                                                                        Edit
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem onSelect={() => handleAction('Delete', 'Artist', artist.id)}>
-                                                                        <Trash2 className="mr-2 h-4 w-4 text-red-500" />
-                                                                        Delete
-                                                                    </DropdownMenuItem>
-                                                                </DropdownMenuContent>
-                                                            </DropdownMenu>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </CardContent>
-                                </Card>
-                             </TabsContent>
-                             <TabsContent value="customers">
-                                 <Card>
-                                    <CardHeader>
-                                        <CardTitle>Customer Management</CardTitle>
-                                        <CardDescription>
-                                            View and manage registered customers.
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                    <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Customer Name</TableHead>
-                                                    <TableHead>Contact</TableHead>
-                                                    <TableHead>Registered On</TableHead>
-                                                    <TableHead>Status</TableHead>
-                                                    <TableHead>
-                                                        <span className="sr-only">Actions</span>
-                                                    </TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {customers.map((customer) => (
-                                                    <TableRow key={customer.id}>
-                                                        <TableCell className="font-medium">{customer.name}</TableCell>
-                                                        <TableCell>
-                                                            <div className="flex flex-col">
-                                                                <span>{customer.email}</span>
-                                                                <span className="text-muted-foreground">{customer.phone}</span>
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell>{customer.registeredOn}</TableCell>
-                                                        <TableCell>
-                                                            <Badge variant={customer.status === 'Active' ? 'default' : 'destructive'}>
-                                                                {customer.status}
-                                                            </Badge>
-                                                        </TableCell>
-                                                        <TableCell>
-                                                            <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild>
-                                                                    <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                                        <MoreHorizontal className="h-4 w-4" />
-                                                                        <span className="sr-only">Toggle menu</span>
-                                                                    </Button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end">
-                                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                                    <DropdownMenuItem onSelect={() => handleAction('Suspend', 'Customer', customer.id)}>
-                                                                        <XCircle className="mr-2 h-4 w-4 text-yellow-500" />
-                                                                        Suspend
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem onSelect={() => handleAction('Delete', 'Customer', customer.id)}>
-                                                                        <Trash2 className="mr-2 h-4 w-4 text-red-500" />
-                                                                        Delete
-                                                                    </DropdownMenuItem>
-                                                                </DropdownMenuContent>
-                                                            </DropdownMenu>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
-                                    </CardContent>
-                                </Card>
-                             </TabsContent>
-                              <TabsContent value="bookings">
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle>All Bookings</CardTitle>
-                                        <CardDescription>
-                                            View all bookings across the platform.
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <Table>
-                                            <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Customer</TableHead>
-                                                    <TableHead>Artist</TableHead>
-                                                    <TableHead>Date</TableHead>
-                                                    <TableHead>Amount</TableHead>
-                                                    <TableHead>Status</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                {bookings.map((booking) => {
-                                                    const assignedArtists = approvedArtists.filter(a => booking.artistIds.includes(a.id));
-                                                    return (
-                                                        <TableRow key={booking.id}>
-                                                            <TableCell>{booking.customerName}</TableCell>
-                                                            <TableCell>{assignedArtists.length > 0 ? assignedArtists.map(a => a.name).join(', ') : <span className="text-muted-foreground">N/A</span>}</TableCell>
-                                                            <TableCell>{new Date(booking.date).toLocaleDateString()}</TableCell>
-                                                            <TableCell>₹{booking.amount}</TableCell>
-                                                            <TableCell>
-                                                                <Badge variant={getStatusVariant(booking.status)}>
-                                                                    {booking.status}
-                                                                </Badge>
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    )
-                                                })}
-                                            </TableBody>
-                                        </Table>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                        </Tabs>
-                    </div>
-                     <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-1">
-                        <Card>
-                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2"><CalendarIcon className="w-5 h-5 text-primary"/> Platform Schedule</CardTitle>
-                                <CardDescription>Consolidated view of all artist bookings. Red dates are booked.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex justify-center">
-                                <Calendar
-                                    mode="multiple"
-                                    selected={bookedDates}
-                                    className="rounded-md border"
-                                    classNames={{ day_selected: "bg-red-500 text-white hover:bg-red-600 focus:bg-red-600" }}
-                                    disabled
-                                />
-                            </CardContent>
-                        </Card>
-                       <Card>
-                            <CardHeader>
-                                <CardTitle>Overall Revenue</CardTitle>
-                                <CardDescription>Financial overview for all time.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="flex justify-between items-center border-b pb-2">
-                                    <span className="text-muted-foreground flex items-center gap-2"><DollarSign /> Total Revenue</span>
-                                    <span className="font-bold text-lg">₹{financials.overall.totalRevenue.toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between items-center border-b pb-2">
-                                    <span className="text-muted-foreground flex items-center gap-2"><BarChart /> Platform Fees</span>
-                                    <span className="font-bold text-lg">₹{financials.overall.platformFee.toLocaleString()}</span>
-                                </div>
-                                 <div className="flex justify-between items-center border-b pb-2">
-                                    <span className="text-muted-foreground flex items-center gap-2"><BarChart /> GST on Revenue (18%)</span>
-                                    <span className="font-bold text-lg">₹{financials.overall.gst.toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between items-center border-b pb-2">
-                                    <span className="text-muted-foreground flex items-center gap-2"><Users /> Net Payout to Artists</span>
-                                    <span className="font-bold text-lg">₹{financials.overall.netPayout.toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between items-center border-b pb-2">
-                                    <span className="text-muted-foreground flex items-center gap-2"><RefreshCw /> Refunds Processed</span>
-                                    <span className="font-bold text-lg text-amber-600">- ₹{financials.overall.refunds.toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between items-center pt-2 bg-muted -mx-6 px-6 py-3 rounded-b-lg">
-                                    <span className="font-bold text-primary flex items-center gap-2"><Star /> Net Profit</span>
-                                    <span className="font-extrabold text-xl text-green-600">₹{financials.overall.netProfit.toLocaleString()}</span>
-                                </div>
-                            </CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>Monthly Revenue</CardTitle>
-                                <CardDescription>This Month vs. Last Month</CardDescription>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <h4 className="font-semibold text-center text-primary">{currentMonthYear}</h4>
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">Revenue:</span>
-                                        <span className="font-bold">₹{financials.currentMonth.totalRevenue.toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">Profit:</span>
-                                        <span className="font-bold">₹{financials.currentMonth.netProfit.toLocaleString()}</span>
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <h4 className="font-semibold text-center text-primary">{lastMonthYear}</h4>
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">Revenue:</span>
-                                        <span className="font-bold">₹{financials.lastMonth.totalRevenue.toLocaleString()}</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">Profit:</span>
-                                        <span className="font-bold">₹{financials.lastMonth.netProfit.toLocaleString()}</span>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </main>
+        <>
+            <div className="flex items-center justify-between">
+                <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
             </div>
-        </div>
+            <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">₹{financials.totalRevenue.toLocaleString()}</div>
+                        <p className="text-xs text-muted-foreground">Based on completed bookings</p>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
+                        <Briefcase className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">+{bookings.length}</div>
+                        <p className="text-xs text-muted-foreground">All-time bookings</p>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
+                        <Star className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-green-600">₹{financials.netProfit.toLocaleString()}</div>
+                        <p className="text-xs text-muted-foreground">Total platform fees minus refunds</p>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Pending Bookings</CardTitle>
+                        <Bell className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{pendingBookingCount}</div>
+                        <p className="text-xs text-muted-foreground">Require assignment or approval</p>
+                    </CardContent>
+                </Card>
+            </div>
+            <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+                <div className="xl:col-span-2">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Recent Bookings</CardTitle>
+                            <CardDescription>A list of the most recent bookings on the platform.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Customer</TableHead>
+                                        <TableHead>Artist</TableHead>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Amount</TableHead>
+                                        <TableHead>Status</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {bookings.slice(0, 5).map((booking) => {
+                                        const assignedArtists = approvedArtists.filter(a => booking.artistIds.includes(a.id));
+                                        return (
+                                            <TableRow key={booking.id}>
+                                                <TableCell>{booking.customerName}</TableCell>
+                                                <TableCell>{assignedArtists.length > 0 ? assignedArtists.map(a => a.name).join(', ') : <span className="text-muted-foreground">N/A</span>}</TableCell>
+                                                <TableCell>{new Date(booking.date).toLocaleDateString()}</TableCell>
+                                                <TableCell>₹{booking.amount}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={getStatusVariant(booking.status)}>
+                                                        {booking.status}
+                                                    </Badge>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </div>
+                 <div className="xl:col-span-1">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Pending Artist Approvals</CardTitle>
+                            <CardDescription>
+                                Review and approve new artist registrations.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Artist</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                     {pendingArtists.length > 0 ? pendingArtists.slice(0, 5).map((artist) => (
+                                        <TableRow key={artist.id}>
+                                            <TableCell>
+                                                <div className="font-medium">{artist.name}</div>
+                                                <div className="text-sm text-muted-foreground">{artist.location}</div>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                            <span className="sr-only">Toggle menu</span>
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                        <DropdownMenuItem onSelect={() => handleApprove(artist.id)}>
+                                                            <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                                                            Approve
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => handleReject(artist.id)}>
+                                                            <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                                                            Reject
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    )) : (
+                                        <TableRow>
+                                            <TableCell colSpan={2} className="text-center text-muted-foreground">No pending approvals</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                            {pendingArtists.length > 5 && 
+                                <div className="text-center mt-4">
+                                     <Button variant="outline" size="sm" asChild>
+                                         <Link href="/admin/approvals">View All Approvals</Link>
+                                     </Button>
+                                </div>
+                            }
+                        </CardContent>
+                    </Card>
+                 </div>
+            </div>
+        </>
     );
 }
+

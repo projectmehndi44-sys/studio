@@ -3,7 +3,6 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, ArrowLeft, Save, Percent, IndianRupee } from 'lucide-react';
+import { Save, Percent, IndianRupee } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 const settingsSchema = z.object({
@@ -80,74 +79,64 @@ export default function FinancialSettingsPage() {
     };
 
     return (
-        <div className="flex min-h-screen w-full flex-col bg-muted/40">
-            <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6 justify-between">
-                <h1 className="flex items-center gap-2 text-xl font-bold text-primary">
-                    <Shield className="w-6 h-6" />
-                    Financial Settings
-                </h1>
-                <Link href="/admin/settings">
-                     <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Settings</Button>
-                </Link>
-            </header>
-            <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8">
-                <div className="max-w-2xl mx-auto grid gap-6 py-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Manage Financial Rules</CardTitle>
-                            <CardDescription>
-                                Set your platform's GST number, commission fees, and other financial parameters. These will be applied globally.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                           <Form {...form}>
-                                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                                    <FormField control={form.control} name="gstin" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Platform GSTIN</FormLabel>
-                                            <FormControl><Input placeholder="e.g., 27ABCDE1234F1Z5" {...field} /></FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                    <FormField control={form.control} name="platformFee" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Platform Fee Percentage</FormLabel>
-                                            <div className="relative">
-                                                <FormControl><Input type="number" placeholder="10" {...field} className="pl-8" /></FormControl>
-                                                <Percent className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <>
+            <div className="flex items-center justify-between">
+                <h1 className="text-lg font-semibold md:text-2xl">Financial Settings</h1>
+            </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Manage Financial Rules</CardTitle>
+                    <CardDescription>
+                        Set your platform's GST number, commission fees, and other financial parameters. These will be applied globally.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                            <FormField control={form.control} name="gstin" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Platform GSTIN</FormLabel>
+                                    <FormControl><Input placeholder="e.g., 27ABCDE1234F1Z5" {...field} /></FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="platformFee" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Platform Fee Percentage</FormLabel>
+                                    <div className="relative">
+                                        <FormControl><Input type="number" placeholder="10" {...field} className="pl-8" /></FormControl>
+                                        <Percent className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    </div>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="discount" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Global Discount Percentage</FormLabel>
+                                        <div className="relative">
+                                        <FormControl><Input type="number" placeholder="0" {...field} className="pl-8"/></FormControl>
+                                        <Percent className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                             </div>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                    <FormField control={form.control} name="discount" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Global Discount Percentage</FormLabel>
-                                             <div className="relative">
-                                                <FormControl><Input type="number" placeholder="0" {...field} className="pl-8"/></FormControl>
-                                                <Percent className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                             </div>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                    <FormField control={form.control} name="refundFee" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Refund Processing Fee</FormLabel>
-                                            <div className="relative">
-                                                <FormControl><Input type="number" placeholder="500" {...field} className="pl-8" /></FormControl>
-                                                <IndianRupee className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                            </div>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                    <Button type="submit" disabled={isLoading} className="w-full">
-                                         {isLoading ? 'Saving...' : <><Save className="mr-2 h-4 w-4"/> Save Changes</>}
-                                    </Button>
-                                </form>
-                           </Form>
-                        </CardContent>
-                    </Card>
-                </div>
-            </main>
-        </div>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                            <FormField control={form.control} name="refundFee" render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Refund Processing Fee</FormLabel>
+                                    <div className="relative">
+                                        <FormControl><Input type="number" placeholder="500" {...field} className="pl-8" /></FormControl>
+                                        <IndianRupee className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    </div>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                            <Button type="submit" disabled={isLoading} className="w-full">
+                                    {isLoading ? 'Saving...' : <><Save className="mr-2 h-4 w-4"/> Save Changes</>}
+                            </Button>
+                        </form>
+                    </Form>
+                </CardContent>
+            </Card>
+        </>
     );
 }

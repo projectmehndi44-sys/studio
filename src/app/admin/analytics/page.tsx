@@ -3,10 +3,8 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from '@/components/ui/button';
-import { Shield, ArrowLeft, BarChart, PieChart, Users, Map } from 'lucide-react';
+import { Shield, BarChart, PieChart, Users, Map } from 'lucide-react';
 import type { Booking } from '@/types';
 import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Pie, Cell } from 'recharts';
 import { BarChart as BarChartComponent, PieChart as PieChartComponent } from 'recharts';
@@ -84,80 +82,72 @@ export default function AnalyticsPage() {
 
 
     return (
-        <div className="flex min-h-screen w-full flex-col bg-muted/40">
-            <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6 justify-between">
-                <h1 className="flex items-center gap-2 text-xl font-bold text-primary">
-                    <Shield className="w-6 h-6" />
-                    Analytics Dashboard
-                </h1>
-                <Link href="/admin/settings">
-                     <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Settings</Button>
-                </Link>
-            </header>
-            <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8">
-                <div className="max-w-7xl mx-auto grid gap-6 py-6">
-                    <Card>
+        <>
+            <div className="flex items-center justify-between">
+                <h1 className="text-lg font-semibold md:text-2xl">Analytics</h1>
+            </div>
+            <div className="grid gap-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><BarChart className="w-6 h-6 text-primary"/>Bookings & Revenue Over Time</CardTitle>
+                        <CardDescription>Monthly trends for total bookings and completed revenue.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-96">
+                            <ResponsiveContainer width="100%" height="100%">
+                            <BarChartComponent data={bookingsChartData}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
+                                <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+                                <Tooltip />
+                                <Legend />
+                                <Bar yAxisId="left" dataKey="bookings" fill="#8884d8" name="Total Bookings" />
+                                <Bar yAxisId="right" dataKey="revenue" fill="#82ca9d" name="Completed Revenue (₹)" />
+                            </BarChartComponent>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                        <Card>
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><BarChart className="w-6 h-6 text-primary"/>Bookings & Revenue Over Time</CardTitle>
-                            <CardDescription>Monthly trends for total bookings and completed revenue.</CardDescription>
+                            <CardTitle className="flex items-center gap-2"><PieChart className="w-6 h-6 text-primary"/>Service Popularity</CardTitle>
+                            <CardDescription>Distribution of bookings by service type.</CardDescription>
                         </CardHeader>
-                        <CardContent className="h-96">
-                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChartComponent data={bookingsChartData}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="name" />
-                                    <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                                    <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+                        <CardContent className="h-80">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChartComponent>
+                                    <Pie data={serviceData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
+                                            {serviceData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
                                     <Tooltip />
                                     <Legend />
-                                    <Bar yAxisId="left" dataKey="bookings" fill="#8884d8" name="Total Bookings" />
-                                    <Bar yAxisId="right" dataKey="revenue" fill="#82ca9d" name="Completed Revenue (₹)" />
+                                </PieChartComponent>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                        <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><Map className="w-6 h-6 text-primary"/>Bookings by State</CardTitle>
+                            <CardDescription>Top locations for service bookings.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="h-80">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChartComponent data={locationChartData} layout="vertical">
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis type="number" />
+                                    <YAxis dataKey="name" type="category" width={80} />
+                                    <Tooltip />
+                                    <Legend />
+                                    <Bar dataKey="bookings" fill="#FF8042" name="Bookings" />
                                 </BarChartComponent>
                             </ResponsiveContainer>
                         </CardContent>
                     </Card>
-
-                    <div className="grid md:grid-cols-2 gap-6">
-                         <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2"><PieChart className="w-6 h-6 text-primary"/>Service Popularity</CardTitle>
-                                <CardDescription>Distribution of bookings by service type.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="h-80">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChartComponent>
-                                        <Pie data={serviceData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
-                                             {serviceData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip />
-                                        <Legend />
-                                    </PieChartComponent>
-                                </ResponsiveContainer>
-                            </CardContent>
-                        </Card>
-                         <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2"><Map className="w-6 h-6 text-primary"/>Bookings by State</CardTitle>
-                                <CardDescription>Top locations for service bookings.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="h-80">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChartComponent data={locationChartData} layout="vertical">
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis type="number" />
-                                        <YAxis dataKey="name" type="category" width={80} />
-                                        <Tooltip />
-                                        <Legend />
-                                        <Bar dataKey="bookings" fill="#FF8042" name="Bookings" />
-                                    </BarChartComponent>
-                                </ResponsiveContainer>
-                            </CardContent>
-                        </Card>
-                    </div>
                 </div>
-            </main>
-        </div>
+            </div>
+        </>
     );
 }

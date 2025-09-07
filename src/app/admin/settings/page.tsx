@@ -29,49 +29,31 @@ export default function SettingsPage() {
     ];
 
     return (
-        <div className="flex min-h-screen w-full flex-col bg-muted/40">
-            <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6 justify-between">
-                <h1 className="flex items-center gap-2 text-xl font-bold text-primary">
-                    <Shield className="w-6 h-6" />
-                    Admin Settings
-                </h1>
-                <Link href="/admin">
-                    <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard</Button>
-                </Link>
-            </header>
-            <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8">
-                <div className="max-w-4xl mx-auto grid gap-6 py-8">
-                    <Card>
+        <>
+            <div className="flex items-center justify-between">
+                <h1 className="text-lg font-semibold md:text-2xl">Settings</h1>
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {settingsLinks.map((link) => (
+                    <Card key={link.href}>
                         <CardHeader>
-                            <CardTitle>Platform Configuration</CardTitle>
-                            <CardDescription>
-                                Manage global settings, content, and users for your application.
-                            </CardDescription>
+                            <CardTitle className="flex items-center gap-2">
+                                <link.icon className="w-5 h-5 text-primary" />
+                                {link.title}
+                            </CardTitle>
+                            <CardDescription>{link.description}</CardDescription>
                         </CardHeader>
+                        <CardContent>
+                            <Link href={link.href}>
+                                <Button variant="outline" className="w-full">
+                                    Go to {link.title.split(' ')[0]}
+                                </Button>
+                            </Link>
+                        </CardContent>
                     </Card>
-
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {settingsLinks.map((link) => (
-                            <Card key={link.href}>
-                                <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <link.icon className="w-5 h-5 text-primary" />
-                                        {link.title}
-                                    </CardTitle>
-                                    <CardDescription>{link.description}</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <Link href={link.href}>
-                                        <Button variant="outline" className="w-full">
-                                            Go to {link.title.split(' ')[0]}
-                                        </Button>
-                                    </Link>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-                </div>
-            </main>
-        </div>
+                ))}
+            </div>
+        </>
     );
 }
+
