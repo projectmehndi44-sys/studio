@@ -13,7 +13,7 @@ export const packages: MehndiPackage[] = [
   {
     id: 'pkg_semibridal_02',
     name: 'Semi Bridal Mehndi',
-    description: 'Covers both hands on both sides up to bangle length. A perfect balance of tradition and elegance.',
+    description: 'A perfect balance of tradition and elegance.',
     price: 4000,
     image: 'https://picsum.photos/600/400?random=302',
     tags: ['Organic Henna'],
@@ -21,7 +21,7 @@ export const packages: MehndiPackage[] = [
   {
     id: 'pkg_bridalfeet_03',
     name: 'Bridal Feet Mehndi',
-    description: 'Covers toes, mid-portion, and all four sides of the feet. Complements the bridal hand mehndi.',
+    description: 'Complements the bridal hand mehndi.',
     price: 2000,
     image: 'https://picsum.photos/600/400?random=303',
     tags: ['Organic Henna'],

@@ -50,12 +50,12 @@ export function Header({
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
-                   <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${customer.name}`} alt={customer.name} />
+                   <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${customer?.name}`} alt={customer?.name} />
                   <AvatarFallback>
-                    {customer.name ? customer.name.charAt(0).toUpperCase() : '?'}
+                    {customer?.name ? customer.name.charAt(0).toUpperCase() : '?'}
                   </AvatarFallback>
                 </Avatar>
-                <span>{customer.name}</span>
+                <span>{customer?.name}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">

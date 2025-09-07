@@ -149,15 +149,13 @@ export default function Home() {
   };
   
   const handleAddToCart = (pkg: MehndiPackage) => {
-    if (cart.find(item => item.id === pkg.id)) {
+    const isInCart = cart.find(item => item.id === pkg.id);
+    if (isInCart) {
         toast({ title: "Already in cart", description: `${pkg.name} is already in your selection.`, variant: "default" });
         return;
     }
     toast({ title: "Package Added!", description: `${pkg.name} has been added to your selection.` });
-    setCart(currentCart => {
-      const newCart = [...currentCart, pkg];
-      return newCart;
-    });
+    setCart(currentCart => [...currentCart, pkg]);
   };
 
   const handleArtistRegister = () => {
