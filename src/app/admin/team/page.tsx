@@ -45,7 +45,7 @@ type MemberFormValues = z.infer<typeof memberSchema>;
 export default function TeamManagementPage() {
     const router = useRouter();
     const { toast } = useToast();
-    const { user } = useAdminAuth();
+    const { user, hasPermission } = useAdminAuth();
     const [teamMembers, setTeamMembers] = React.useState<TeamMember[]>([]);
     const [editingMember, setEditingMember] = React.useState<TeamMember | null>(null);
 
@@ -85,17 +85,8 @@ export default function TeamManagementPage() {
     };
 
     React.useEffect(() => {
-        if (user?.role !== 'admin') {
-            toast({
-                title: "Access Denied",
-                description: "You do not have permission to view this page.",
-                variant: "destructive"
-            });
-            router.push('/admin');
-        } else {
-             setTeamMembers(getTeamMembers());
-        }
-    }, [router, toast, getTeamMembers, user]);
+       setTeamMembers(getTeamMembers());
+    }, [getTeamMembers]);
     
     const onSubmit: SubmitHandler<MemberFormValues> = (data) => {
         const currentMembers = getTeamMembers();
@@ -156,12 +147,12 @@ export default function TeamManagementPage() {
         });
     }
 
-    if (user?.role !== 'admin') {
+    if (user && user.role !== 'admin') {
         return (
              <div className="flex min-h-screen w-full flex-col bg-muted/40 items-center justify-center">
                 <Card className="p-8 text-center">
                     <CardTitle>Access Denied</CardTitle>
-                    <CardDescription>You need to be an admin to manage team members.</CardDescription>
+                    <CardDescription>You do not have permission to manage team members.</CardDescription>
                     <Button onClick={() => router.push('/admin')} className="mt-4">Back to Dashboard</Button>
                 </Card>
             </div>
