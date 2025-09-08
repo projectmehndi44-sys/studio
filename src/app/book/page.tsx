@@ -216,18 +216,10 @@ export default function BookingPage() {
                     const googleMapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
                     setMapLink(googleMapsUrl);
                     
-                    // Mock reverse geocoding for this prototype
-                    // In a real app, you'd use a service like Google's Geocoding API
                     toast({
                         title: 'Location Fetched!',
-                        description: 'Google Maps link created and location fields auto-filled (mocked).',
+                        description: 'Google Maps link created. Please fill in your address details manually.',
                     });
-                    
-                    // Mocked data based on a sample location
-                    setState("Maharashtra");
-                    setDistrict("Pune");
-                    setLocation("Koregaon Park");
-                    setAddress("Near Starbucks, Lane 7, Koregaon Park, Pune, Maharashtra 411001");
                 },
                 (error) => {
                     toast({
