@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { Booking } from '@/types';
 import { useArtistPortal } from '../layout';
-import { MapPin } from 'lucide-react';
+import { MapPin, User, Phone } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function ArtistBookingsPage() {
@@ -69,7 +69,7 @@ export default function ArtistBookingsPage() {
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Customer</TableHead>
+                            <TableHead>Customer Details</TableHead>
                             <TableHead>Event Details</TableHead>
                             <TableHead>Service Dates</TableHead>
                             <TableHead>Venue</TableHead>
@@ -81,9 +81,15 @@ export default function ArtistBookingsPage() {
                         {artistBookings.length > 0 ? artistBookings.map(booking => (
                             <TableRow key={booking.id}>
                                 <TableCell className="font-medium">
-                                    <div className="flex flex-col">
-                                        <span>{booking.customerName}</span>
-                                        <span className="text-xs text-muted-foreground">{booking.customerContact}</span>
+                                    <div className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-2">
+                                            <User className="h-4 w-4 text-muted-foreground" />
+                                            <span>{booking.customerName}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <Phone className="h-4 w-4" />
+                                            <span>{booking.customerContact}</span>
+                                        </div>
                                     </div>
                                 </TableCell>
                                 <TableCell>

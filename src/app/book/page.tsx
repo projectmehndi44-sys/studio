@@ -215,10 +215,19 @@ export default function BookingPage() {
                     const { latitude, longitude } = position.coords;
                     const googleMapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
                     setMapLink(googleMapsUrl);
+                    
+                    // Mock reverse geocoding for this prototype
+                    // In a real app, you'd use a service like Google's Geocoding API
                     toast({
-                        title: 'Location Fetched',
-                        description: 'Google Maps link has been created for your current location.',
+                        title: 'Location Fetched!',
+                        description: 'Google Maps link created and location fields auto-filled (mocked).',
                     });
+                    
+                    // Mocked data based on a sample location
+                    setState("Maharashtra");
+                    setDistrict("Pune");
+                    setLocation("Koregaon Park");
+                    setAddress("Near Starbucks, Lane 7, Koregaon Park, Pune, Maharashtra 411001");
                 },
                 (error) => {
                     toast({
@@ -411,6 +420,12 @@ export default function BookingPage() {
                             </div>
                             
                             {/* Location Details */}
+                            <div className="flex items-center gap-2">
+                                <Label>Venue Location*</Label>
+                                <Button type="button" variant="link" onClick={handleFetchLocation} className="text-xs p-0 h-auto">
+                                    <MapPin className="mr-1 h-3 w-3"/> Auto-detect Precise Location
+                                </Button>
+                            </div>
                              <div className="grid md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="state">State*</Label>
@@ -444,10 +459,7 @@ export default function BookingPage() {
                             <div className="space-y-2">
                                 <Label htmlFor="map-link">Google Maps Link*</Label>
                                 <div className="flex items-center gap-2">
-                                    <Input id="map-link" placeholder="Paste location link here" value={mapLink} onChange={e => setMapLink(e.target.value)} required/>
-                                    <Button type="button" variant="outline" onClick={handleFetchLocation}>
-                                        <MapPin className="mr-2 h-4 w-4"/> Get Current Location
-                                    </Button>
+                                    <Input id="map-link" placeholder="Auto-filled or paste location link here" value={mapLink} onChange={e => setMapLink(e.target.value)} required/>
                                 </div>
                             </div>
                             

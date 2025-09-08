@@ -3,20 +3,25 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
+import { useForm, SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
-import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-react';
+import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Pencil, Trash2, UserPlus } from 'lucide-react';
 import type { Artist } from '@/types';
 import { artists as initialArtists } from '@/lib/data';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { exportToExcel } from '@/lib/export';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 
 type PendingArtist = {
   id: string;
@@ -30,6 +35,17 @@ type PendingArtist = {
   [key: string]: any;
 };
 
+const onboardSchema = z.object({
+  name: z.string().min(2, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().regex(/^\d{10}$/, "Must be a 10-digit phone number"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  location: z.string().min(3, "Location is required"),
+  charge: z.coerce.number().min(0, "Charge must be a positive number"),
+});
+type OnboardFormValues = z.infer<typeof onboardSchema>;
+
+
 export default function ArtistManagementPage() {
     const router = useRouter();
     const { toast } = useToast();
@@ -38,12 +54,22 @@ export default function ArtistManagementPage() {
     const [pendingArtists, setPendingArtists] = React.useState<PendingArtist[]>([]);
     const [selectedArtistIds, setSelectedArtistIds] = React.useState<string[]>([]);
     
-    const fetchAdminData = React.useCallback(() => {
-        const storedArtists = localStorage.getItem('artists');
-        const localArtists = storedArtists ? JSON.parse(storedArtists) : [];
-        const allApproved = [...initialArtists.filter(a => !localArtists.some((la: Artist) => la.id === a.id)), ...localArtists];
-        setApprovedArtists(allApproved);
+    const form = useForm<OnboardFormValues>({
+        resolver: zodResolver(onboardSchema),
+        defaultValues: { name: '', email: '', phone: '', password: '', location: '', charge: 2500 },
+    });
 
+    const getArtists = React.useCallback((): Artist[] => {
+        const storedArtists = localStorage.getItem('artists');
+        const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
+        const allArtistsMap = new Map<string, Artist>();
+        initialArtists.forEach(a => allArtistsMap.set(a.id, a));
+        localArtists.forEach(a => allArtistsMap.set(a.id, a));
+        return Array.from(allArtistsMap.values());
+    }, []);
+
+    const fetchAdminData = React.useCallback(() => {
+        setApprovedArtists(getArtists());
         const storedPending = localStorage.getItem('pendingArtists');
         try {
             const pending = storedPending ? JSON.parse(storedPending) : [];
@@ -51,7 +77,7 @@ export default function ArtistManagementPage() {
         } catch (e) {
             setPendingArtists([]);
         }
-    }, []);
+    }, [getArtists]);
 
     React.useEffect(() => {
         const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
@@ -82,11 +108,14 @@ export default function ArtistManagementPage() {
             services: ['mehndi', 'makeup'],
             location: artistToApprove.location,
             charge: 2000,
+            charges: { mehndi: 2000, makeup: 3000 },
             rating: 0,
             styleTags: ['new', 'verified'],
         };
-        const updatedApprovedArtists = [...approvedArtists, newArtist];
-        localStorage.setItem('artists', JSON.stringify(updatedApprovedArtists));
+        const currentArtists = getArtists();
+        const updatedApprovedArtists = [...currentArtists, newArtist];
+        const updatedLocalArtists = JSON.parse(localStorage.getItem('artists') || '[]').filter((a: Artist) => a.id !== newArtist.id);
+        localStorage.setItem('artists', JSON.stringify([...updatedLocalArtists, newArtist]));
 
         const updatedPendingArtists = pendingArtists.filter(p => p.id !== artistId);
         localStorage.setItem('pendingArtists', JSON.stringify(updatedPendingArtists));
@@ -172,6 +201,43 @@ export default function ArtistManagementPage() {
         });
         setSelectedArtistIds([]);
     };
+    
+    const onOnboardSubmit: SubmitHandler<OnboardFormValues> = (data) => {
+        const currentArtists = getArtists();
+        if (currentArtists.some(a => a.email === data.email)) {
+            form.setError('email', { message: 'An artist with this email already exists.' });
+            return;
+        }
+
+        const newArtist: Artist = {
+            id: data.email, // Using email as a unique ID for admin-added artists
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            password: data.password,
+            profilePicture: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 100)}`,
+            workImages: [
+                `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
+                `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
+            ],
+            services: ['mehndi', 'makeup'],
+            location: data.location,
+            charge: data.charge,
+            charges: { mehndi: data.charge, makeup: data.charge },
+            rating: 0,
+            styleTags: ['new', 'verified'],
+        };
+        
+        const updatedLocalArtists = JSON.parse(localStorage.getItem('artists') || '[]');
+        localStorage.setItem('artists', JSON.stringify([...updatedLocalArtists, newArtist]));
+
+        fetchAdminData();
+        toast({
+            title: "Artist Onboarded",
+            description: `${newArtist.name} has been added to the platform.`,
+        });
+        form.reset();
+    };
 
     return (
         <>
@@ -179,9 +245,10 @@ export default function ArtistManagementPage() {
                 <h1 className="text-lg font-semibold md:text-2xl">Artist Management</h1>
             </div>
             <Tabs defaultValue="approved">
-                <TabsList>
+                <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="approved">Approved Artists</TabsTrigger>
                     <TabsTrigger value="pending">Pending Approvals</TabsTrigger>
+                    <TabsTrigger value="onboard">Onboard Artist</TabsTrigger>
                 </TabsList>
                 <TabsContent value="approved">
                     <Card>
@@ -332,6 +399,49 @@ export default function ArtistManagementPage() {
                                     ))}
                                 </TableBody>
                             </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                 <TabsContent value="onboard">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Onboard New Artist</CardTitle>
+                            <CardDescription>
+                                Directly create a new artist profile, bypassing the registration queue.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Form {...form}>
+                                <form onSubmit={form.handleSubmit(onOnboardSubmit)} className="space-y-6">
+                                     <div className="grid md:grid-cols-2 gap-4">
+                                        <FormField control={form.control} name="name" render={({ field }) => (
+                                            <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Artist's full name" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )} />
+                                         <FormField control={form.control} name="email" render={({ field }) => (
+                                            <FormItem><FormLabel>Email (will be username)</FormLabel><FormControl><Input type="email" placeholder="artist@example.com" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )} />
+                                        <FormField control={form.control} name="phone" render={({ field }) => (
+                                            <FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input type="tel" placeholder="10-digit number" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )} />
+                                        <FormField control={form.control} name="password" render={({ field }) => (
+                                            <FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" placeholder="Set a password" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )} />
+                                    </div>
+                                    <Separator />
+                                     <div className="grid md:grid-cols-2 gap-4">
+                                         <FormField control={form.control} name="location" render={({ field }) => (
+                                            <FormItem><FormLabel>Location</FormLabel><FormControl><Input placeholder="e.g., Pune, Maharashtra" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )} />
+                                        <FormField control={form.control} name="charge" render={({ field }) => (
+                                            <FormItem><FormLabel>Base Charge (per service)</FormLabel><FormControl><Input type="number" placeholder="2500" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )} />
+                                    </div>
+                                    <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                                        <UserPlus className="mr-2 h-4 w-4"/>
+                                        {form.formState.isSubmitting ? 'Onboarding...' : 'Onboard Artist'}
+                                    </Button>
+                                </form>
+                            </Form>
                         </CardContent>
                     </Card>
                 </TabsContent>
