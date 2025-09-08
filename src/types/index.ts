@@ -29,6 +29,11 @@ export type Artist = {
   styleTags: string[];
   unavailableDates?: string[]; // ISO date strings
   reviews?: Review[]; // Artist-specific reviews
+  // New detailed location fields
+  state?: string;
+  district?: string;
+  locality?: string;
+  servingAreas?: string;
 };
 
 export type Customer = {

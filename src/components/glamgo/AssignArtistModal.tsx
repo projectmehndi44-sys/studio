@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -111,6 +110,7 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
                  <div className="space-y-2">
                     {artists.map(artist => {
                        const isUnavailable = unavailableArtistIds.has(artist.id);
+                       const isLocal = artist.district === booking.district;
                        return (
                        <div key={artist.id} className="flex items-center space-x-2">
                            <Checkbox
@@ -121,11 +121,14 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
                            />
                            <Label htmlFor={`artist-${artist.id}`} className={`font-normal w-full flex justify-between ${isUnavailable ? 'text-muted-foreground' : ''}`}>
                                <span>{artist.name} <span className="text-xs text-muted-foreground">({artist.location})</span></span>
+                               <div className="flex gap-2 items-center">
+                               {isLocal && !isUnavailable && <Badge variant="outline">Local</Badge>}
                                {isUnavailable ? (
                                     <Badge variant="destructive">Unavailable</Badge>
                                ) : (
                                     <Badge variant="secondary" className="bg-green-100 text-green-800">Available</Badge>
                                )}
+                               </div>
                            </Label>
                        </div>
                        )

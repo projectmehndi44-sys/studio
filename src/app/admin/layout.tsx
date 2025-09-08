@@ -59,12 +59,8 @@ export default function AdminLayout({
     const { isAuthenticated, user, isLoading } = useAdminAuth();
     const [adminName, setAdminName] = React.useState('Admin');
 
-    // This effect now runs for all admin pages, including the check to redirect.
     React.useEffect(() => {
-        if (isLoading) {
-            return; // Do nothing while loading
-        }
-        if (!isAuthenticated && pathname !== '/admin/login') {
+        if (!isLoading && !isAuthenticated && pathname !== '/admin/login') {
             router.push('/admin/login');
         }
         if (isAuthenticated && user) {
@@ -79,12 +75,10 @@ export default function AdminLayout({
         router.push('/admin/login');
     };
 
-    // If on the login page, render only the children (the login form) without any layout.
     if (pathname === '/admin/login') {
         return <>{children}</>;
     }
 
-    // While checking auth state, show a loading screen to prevent content flash.
     if (isLoading || !isAuthenticated) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-background">
@@ -98,6 +92,7 @@ export default function AdminLayout({
         { href: '/admin/bookings', label: 'Bookings', icon: Briefcase },
         { href: '/admin/artists', label: 'Artists', icon: Palette },
         { href: '/admin/customers', label: 'Customers', icon: Users },
+        { href: '/admin/artist-directory', label: 'Artist Directory', icon: MapPin },
         { href: '/admin/payouts', label: 'Payouts', icon: IndianRupee },
         { href: '/admin/transactions', label: 'Transactions', icon: ListTree },
         { href: '/admin/packages', label: 'Packages', icon: Package },
@@ -112,7 +107,6 @@ export default function AdminLayout({
         </nav>
     );
 
-    // If authenticated and not on the login page, render the full admin dashboard.
     return (
         <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
             <aside className="hidden border-r bg-muted/40 md:block">

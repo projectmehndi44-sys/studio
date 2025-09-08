@@ -29,17 +29,24 @@ const profileSchema = z.object({
   charges: z.object({
     mehndi: z.coerce.number().min(0).optional(),
     makeup: z.coerce.number().min(0).optional(),
+    photography: z.coerce.number().min(0).optional(),
   }),
   services: z.array(z.string()).min(1, "At least one service must be selected."),
   styleTags: z.array(z.object({ value: z.string().min(1, "Tag cannot be empty.") })),
   password: z.string().optional().or(z.literal('')),
   confirmPassword: z.string().optional(),
+  // Add location fields to schema
+  state: z.string().optional(),
+  district: z.string().optional(),
+  locality: z.string().optional(),
+  servingAreas: z.string().optional(),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
 }).refine(data => {
     if (data.services.includes('mehndi') && (data.charges.mehndi === undefined || data.charges.mehndi <= 0)) return false;
     if (data.services.includes('makeup') && (data.charges.makeup === undefined || data.charges.makeup <= 0)) return false;
+    if (data.services.includes('photography') && (data.charges.photography === undefined || data.charges.photography <= 0)) return false;
     return true;
 }, {
     message: "A base price is required for each selected service.",
@@ -62,11 +69,16 @@ export default function ArtistProfilePage() {
             charges: {
                 mehndi: 0,
                 makeup: 0,
+                photography: 0,
             },
             services: [],
             styleTags: [],
             password: '',
-            confirmPassword: ''
+            confirmPassword: '',
+            state: '',
+            district: '',
+            locality: '',
+            servingAreas: '',
         },
     });
 
@@ -105,6 +117,10 @@ export default function ArtistProfilePage() {
                 charges: artist.charges,
                 services: artist.services,
                 styleTags: artist.styleTags.map(tag => ({ value: tag })),
+                state: artist.state,
+                district: artist.district,
+                locality: artist.locality,
+                servingAreas: artist.servingAreas,
             });
         } else {
              router.push('/artist/login');
@@ -127,8 +143,12 @@ export default function ArtistProfilePage() {
             name: data.name,
             location: data.location,
             charges: data.charges,
-            services: data.services as ('mehndi' | 'makeup')[],
+            services: data.services as ('mehndi' | 'makeup' | 'photography')[],
             styleTags: data.styleTags.map(tag => tag.value),
+            state: data.state,
+            district: data.district,
+            locality: data.locality,
+            servingAreas: data.servingAreas,
         };
         
         if (data.password) {
@@ -248,7 +268,13 @@ export default function ArtistProfilePage() {
                                             <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                         <FormField control={form.control} name="location" render={({ field }) => (
-                                            <FormItem><FormLabel>Location</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                                            <FormItem><FormLabel>Primary Location (City, State)</FormLabel><FormControl><Input placeholder="e.g. Pune, Maharashtra" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )} />
+                                         <FormField control={form.control} name="locality" render={({ field }) => (
+                                            <FormItem><FormLabel>Primary Locality / Area</FormLabel><FormControl><Input placeholder="e.g. Koregaon Park" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )} />
+                                        <FormField control={form.control} name="servingAreas" render={({ field }) => (
+                                            <FormItem><FormLabel>Other Serving Areas</FormLabel><FormControl><Input placeholder="e.g. South Mumbai, Navi Mumbai" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                         <div className="space-y-2">
                                             <Label>Email</Label>
@@ -288,6 +314,12 @@ export default function ArtistProfilePage() {
                                                             <Label htmlFor="service-makeup" className="flex items-center gap-2 cursor-pointer rounded-md border p-2 hover:bg-muted/50 data-[state=checked]:bg-accent/20 data-[state=checked]:border-accent"><input type="checkbox" className="h-4 w-4 accent-primary" checked={field.value?.includes('makeup')} readOnly /> Makeup</Label>
                                                         </FormItem>
                                                     )} />
+                                                     <FormField control={form.control} name="services" render={({ field }) => (
+                                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                                            <FormControl><input type="checkbox" checked={field.value?.includes('photography')} onChange={(e) => { field.onChange(e.target.checked ? [...field.value, 'photography'] : field.value?.filter(v => v !== 'photography')) }} className="hidden" id="service-photography" /></FormControl>
+                                                            <Label htmlFor="service-photography" className="flex items-center gap-2 cursor-pointer rounded-md border p-2 hover:bg-muted/50 data-[state=checked]:bg-accent/20 data-[state=checked]:border-accent"><input type="checkbox" className="h-4 w-4 accent-primary" checked={field.value?.includes('photography')} readOnly /> Photography</Label>
+                                                        </FormItem>
+                                                    )} />
                                                 </div>
                                                 <FormMessage />
                                             </FormItem>
@@ -313,6 +345,18 @@ export default function ArtistProfilePage() {
                                                         <div className="relative">
                                                             <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                                             <FormControl><Input type="number" placeholder="5000" {...field} className="pl-8" /></FormControl>
+                                                        </div>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )} />
+                                          )}
+                                          {watchServices.includes('photography') && (
+                                                <FormField control={form.control} name="charges.photography" render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Base Price for Photography</FormLabel>
+                                                        <div className="relative">
+                                                            <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                                            <FormControl><Input type="number" placeholder="10000" {...field} className="pl-8" /></FormControl>
                                                         </div>
                                                         <FormMessage />
                                                     </FormItem>
