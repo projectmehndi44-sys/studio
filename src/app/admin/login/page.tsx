@@ -5,7 +5,6 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,13 +21,21 @@ export default function AdminLoginPage() {
     const [password, setPassword] = React.useState('');
     const [userType, setUserType] = React.useState<'admin' | 'team-member' | ''>('');
     const [isLoading, setIsLoading] = React.useState(false);
-    const [teamMembers, setTeamMembers] = React.useState<TeamMember[]>(initialTeamMembers);
+    const [teamMembers, setTeamMembers] = React.useState<TeamMember[]>([]);
 
     const getTeamMembers = React.useCallback((): TeamMember[] => {
-        if (typeof window === 'undefined') return initialTeamMembers;
+        if (typeof window === 'undefined') return [];
         const storedMembers = localStorage.getItem('teamMembers');
         if (storedMembers) {
-            return JSON.parse(storedMembers);
+            try {
+                // Safely parse the stored members
+                return JSON.parse(storedMembers);
+            } catch (e) {
+                // If parsing fails, fall back to initial members
+                console.error("Failed to parse team members from localStorage", e);
+                localStorage.setItem('teamMembers', JSON.stringify(initialTeamMembers));
+                return initialTeamMembers;
+            }
         }
         // If nothing in local storage, initialize with default admin
         localStorage.setItem('teamMembers', JSON.stringify(initialTeamMembers));
