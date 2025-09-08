@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -21,6 +20,7 @@ import { artists as initialArtists, allBookings as initialBookings } from '@/lib
 import type { Artist, Booking } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { cn } from '@/lib/utils';
 
 function DashboardCard({ title, value, description, icon: Icon, href, className }: { title: string, value: string, description: string, icon: React.ElementType, href?: string, className?: string }) {
     const CardContentWrapper = ({children}: {children: React.ReactNode}) => {
