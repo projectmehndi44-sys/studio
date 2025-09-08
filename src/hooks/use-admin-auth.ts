@@ -65,7 +65,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
     const value = React.useMemo(() => ({ ...authState, hasPermission }), [authState, hasPermission]);
     
-    return <authContext.Provider value={value}>{children}</authContext.Provider>;
+    return React.createElement(authContext.Provider, { value }, children);
 }
 
 export function useAdminAuth() {
