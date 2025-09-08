@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -133,7 +134,7 @@ export default function ProfileManagementPage() {
     // Simplified access control for demonstration
     if (!userRole) {
          return (
-             <div className="flex min-h-screen w-full flex-col bg-muted/40 items-center justify-center">
+             <div className="flex min-h-screen w-full flex-col bg-background items-center justify-center">
                 <Card className="p-8 text-center">
                     <CardTitle>Loading...</CardTitle>
                 </Card>

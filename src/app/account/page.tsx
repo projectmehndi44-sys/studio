@@ -135,7 +135,7 @@ export default function AccountPage() {
     );
 
     return (
-        <div className="bg-muted/40 min-h-screen">
+        <div className="bg-background min-h-screen">
             <header className="bg-background border-b p-4 flex justify-between items-center">
                  <h1 className="text-2xl font-bold text-primary">My Dashboard</h1>
                  <Button variant="outline" onClick={() => router.push('/')}>Back to Home</Button>

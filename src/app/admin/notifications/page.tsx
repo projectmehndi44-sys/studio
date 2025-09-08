@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -69,7 +70,7 @@ export default function NotificationPage() {
     }
 
     return (
-        <div className="flex min-h-screen w-full flex-col bg-muted/40">
+        <div className="flex min-h-screen w-full flex-col bg-background">
             <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6 justify-between">
                 <h1 className="flex items-center gap-2 text-xl font-bold text-primary">
                     <Shield className="w-6 h-6" />
