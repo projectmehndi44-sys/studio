@@ -16,7 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { teamMembers as initialTeamMembers, TeamMember, Permissions, PERMISSION_MODULES, PermissionLevel } from '@/lib/team-data';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
@@ -45,7 +45,7 @@ type MemberFormValues = z.infer<typeof memberSchema>;
 export default function TeamManagementPage() {
     const router = useRouter();
     const { toast } = useToast();
-    const { user, hasPermission } = useAdminAuth();
+    const { user } = useAdminAuth();
     const [teamMembers, setTeamMembers] = React.useState<TeamMember[]>([]);
     const [editingMember, setEditingMember] = React.useState<TeamMember | null>(null);
 
@@ -148,8 +148,8 @@ export default function TeamManagementPage() {
     }
 
     if (user && user.role !== 'admin') {
-        return (
-             <div className="flex min-h-screen w-full flex-col bg-muted/40 items-center justify-center">
+         return (
+             <div className="flex min-h-full w-full flex-col items-center justify-center">
                 <Card className="p-8 text-center">
                     <CardTitle>Access Denied</CardTitle>
                     <CardDescription>You do not have permission to manage team members.</CardDescription>
