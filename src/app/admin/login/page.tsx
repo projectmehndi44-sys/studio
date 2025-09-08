@@ -10,9 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Home } from 'lucide-react';
+import { Home } from 'lucide-react';
 import { teamMembers as initialTeamMembers, TeamMember } from '@/lib/team-data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Image from 'next/image';
 
 export default function AdminLoginPage() {
     const router = useRouter();
@@ -24,6 +25,7 @@ export default function AdminLoginPage() {
     const [teamMembers, setTeamMembers] = React.useState<TeamMember[]>(initialTeamMembers);
 
     const getTeamMembers = React.useCallback((): TeamMember[] => {
+        if (typeof window === 'undefined') return initialTeamMembers;
         const storedMembers = localStorage.getItem('teamMembers');
         if (storedMembers) {
             return JSON.parse(storedMembers);
@@ -51,10 +53,8 @@ export default function AdminLoginPage() {
             return;
         }
         
-        // This is a basic, client-side-only authentication for prototyping using localStorage as a mock DB.
-        // In a real application, this should be a server action that validates credentials against a secure backend.
         setTimeout(() => {
-            const allMembers = getTeamMembers(); // Fetch the most current list
+            const allMembers = getTeamMembers();
             const member = allMembers.find(m => m.username === username && m.password === password && m.role === userType);
 
             if (member) {
@@ -62,8 +62,6 @@ export default function AdminLoginPage() {
                     title: 'Login Successful',
                     description: `Welcome, ${member.name}! Redirecting...`,
                 });
-                // In a real app, you would use a proper session/token management system.
-                // For this prototype, we'll use localStorage.
                 localStorage.setItem('isAdminAuthenticated', 'true');
                 localStorage.setItem('adminRole', member.role);
                 localStorage.setItem('adminUsername', member.username);
@@ -80,16 +78,17 @@ export default function AdminLoginPage() {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-background">
-            <Card className="w-full max-w-sm">
-                <CardHeader className="text-center">
-                    <Shield className="mx-auto w-12 h-12 text-primary" />
-                    <CardTitle className="text-2xl font-bold mt-2">Admin Portal</CardTitle>
-                    <CardDescription>Enter your credentials to access the dashboard</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleLogin} className="space-y-4">
-                        <div className="space-y-2">
+        <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
+            <div className="flex items-center justify-center py-12">
+                <div className="mx-auto grid w-[350px] gap-6">
+                    <div className="grid gap-2 text-center">
+                        <h1 className="text-3xl font-bold text-primary">Admin Portal Login</h1>
+                        <p className="text-balance text-muted-foreground">
+                            Enter your credentials to access the dashboard
+                        </p>
+                    </div>
+                     <form onSubmit={handleLogin} className="grid gap-4">
+                        <div className="grid gap-2">
                             <Label htmlFor="userType">User Type</Label>
                              <Select onValueChange={(value: 'admin' | 'team-member') => setUserType(value)} value={userType}>
                                 <SelectTrigger id="userType">
@@ -101,7 +100,7 @@ export default function AdminLoginPage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
+                        <div className="grid gap-2">
                             <Label htmlFor="username">Username</Label>
                             <Input
                                 id="username"
@@ -111,8 +110,11 @@ export default function AdminLoginPage() {
                                 required
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>                            <Input
+                        <div className="grid gap-2">
+                            <div className="flex items-center">
+                                <Label htmlFor="password">Password</Label>
+                            </div>
+                            <Input
                                 id="password"
                                 type="password"
                                 value={password}
@@ -124,14 +126,24 @@ export default function AdminLoginPage() {
                             {isLoading ? 'Logging in...' : 'Login'}
                         </Button>
                     </form>
-                     <div className="mt-4 text-center text-sm">
+                    <div className="mt-4 text-center text-sm">
                         <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors">
                             <Home className="mr-1 h-4 w-4" />
                             Back to Home
                         </Link>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
+            <div className="hidden bg-muted lg:block">
+                <Image
+                    src="https://picsum.photos/1200/1500?random=205"
+                    alt="Image"
+                    width="1920"
+                    height="1080"
+                    className="h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+                    data-ai-hint="mehndi design background"
+                />
+            </div>
         </div>
     );
 }

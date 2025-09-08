@@ -23,11 +23,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 function DashboardCard({ title, value, description, icon: Icon, href, className }: { title: string, value: string, description: string, icon: React.ElementType, href?: string, className?: string }) {
-    const CardContentWrapper = ({children}: {children: React.ReactNode}) => href ? <Link href={href}>{children}</Link> : <>{children}</>;
-
-    return (
-        <CardContentWrapper>
-            <Card className={className}>
+    const CardContentWrapper = ({children}: {children: React.ReactNode}) => {
+        const content = (
+             <Card className={cn("hover:bg-muted/50 transition-colors", className)}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">{title}</CardTitle>
                     <Icon className="h-4 w-4 text-muted-foreground" />
@@ -37,8 +35,11 @@ function DashboardCard({ title, value, description, icon: Icon, href, className 
                     <p className="text-xs text-muted-foreground">{description}</p>
                 </CardContent>
             </Card>
-        </CardContentWrapper>
-    );
+        );
+        return href ? <Link href={href}>{content}</Link> : <>{content}</>;
+    }
+
+    return <CardContentWrapper>{null}</CardContentWrapper>;
 }
 
 export default function AdminPage() {
@@ -129,6 +130,7 @@ export default function AdminPage() {
                     value={`₹${financials.totalRevenue.toLocaleString()}`}
                     description="Based on completed bookings"
                     icon={IndianRupee}
+                    href="/admin/transactions"
                 />
                  <DashboardCard
                     title="Total Bookings"
@@ -136,7 +138,6 @@ export default function AdminPage() {
                     description="All-time bookings"
                     icon={Briefcase}
                     href="/admin/bookings"
-                    className="hover:bg-muted"
                 />
                 <DashboardCard
                     title="Net Profit"
@@ -151,7 +152,7 @@ export default function AdminPage() {
                     description="Require assignment or approval"
                     icon={Bell}
                     href="/admin/bookings?filter=pending"
-                    className="hover:bg-muted"
+                    className={pendingBookingCount > 0 ? "text-destructive" : ""}
                 />
             </div>
             <div className="grid gap-4 md:gap-8 lg:grid-cols-2">

@@ -16,8 +16,9 @@ interface BookingSummaryProps {
 }
 
 export function BookingSummary({ packages, artist, serviceDates }: BookingSummaryProps) {
+    const primaryServiceType = artist ? artist.services[0] : (packages.length > 0 ? packages[0].service : null);
     const packageBaseTotal = packages.reduce((sum, pkg) => sum + pkg.price, 0);
-    const artistBaseTotal = artist ? (artist.charges?.mehndi || artist.charges?.makeup || artist.charge) : 0;
+    const artistBaseTotal = artist && primaryServiceType ? (artist.charges?.[primaryServiceType] || artist.charge) : 0;
     const total = packageBaseTotal + artistBaseTotal;
     
     // Assuming 18% GST is included in the price
@@ -27,7 +28,7 @@ export function BookingSummary({ packages, artist, serviceDates }: BookingSummar
     const isMultiDay = serviceDates.length > 1;
 
     return (
-        <Card>
+        <Card className="bg-muted/50">
             <CardHeader>
                 <CardTitle>Booking Summary</CardTitle>
             </CardHeader>

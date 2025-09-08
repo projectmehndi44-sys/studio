@@ -216,7 +216,9 @@ export default function BookingManagementPage() {
                     <TableHead>Service Dates</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    {hasPermission('bookings', 'edit') && (
+                        <TableHead className="text-right">Actions</TableHead>
+                    )}
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -252,43 +254,45 @@ export default function BookingManagementPage() {
                                     {booking.status}
                                 </Badge>
                             </TableCell>
-                            <TableCell className="text-right space-x-2">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button aria-haspopup="true" size="icon" variant="ghost" disabled={!hasPermission('bookings', 'edit')}>
-                                            <MoreHorizontal className="h-4 w-4" />
-                                            <span className="sr-only">Toggle menu</span>
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                        <DropdownMenuSeparator />
-                                        {booking.status === 'Pending Approval' && (
-                                            <>
-                                                <DropdownMenuItem onSelect={() => handleApproveBooking(booking.id)} disabled={assignedArtists.length === 0}>Approve</DropdownMenuItem>
+                             {hasPermission('bookings', 'edit') && (
+                                <TableCell className="text-right space-x-2">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                                <span className="sr-only">Toggle menu</span>
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                            <DropdownMenuSeparator />
+                                            {booking.status === 'Pending Approval' && (
+                                                <>
+                                                    <DropdownMenuItem onSelect={() => handleApproveBooking(booking.id)} disabled={assignedArtists.length === 0}>Approve</DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleOpenAssignModal(booking)}>Assign Artist</DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleCancelBooking(booking.id)}>Cancel Booking</DropdownMenuItem>
+                                                </>
+                                            )}
+                                            {booking.status === 'Needs Assignment' && (
                                                 <DropdownMenuItem onSelect={() => handleOpenAssignModal(booking)}>Assign Artist</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleCancelBooking(booking.id)}>Cancel Booking</DropdownMenuItem>
-                                            </>
-                                        )}
-                                        {booking.status === 'Needs Assignment' && (
-                                             <DropdownMenuItem onSelect={() => handleOpenAssignModal(booking)}>Assign Artist</DropdownMenuItem>
-                                        )}
-                                        {booking.status === 'Confirmed' && (
-                                            <>
-                                                <DropdownMenuItem onSelect={() => handleOpenAssignModal(booking)}>Change Artists</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleCancelBooking(booking.id)}>Cancel Booking</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleDisputeBooking(booking.id)}>Mark as Disputed</DropdownMenuItem>
-                                            </>
-                                        )}
-                                        {booking.status === 'Disputed' && (
-                                             <>
-                                                <DropdownMenuItem onSelect={() => updateBookingStatus(booking.id, 'Completed')}>Resolve (Mark as Complete)</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleCancelBooking(booking.id)}>Resolve (Cancel Booking)</DropdownMenuItem>
-                                            </>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </TableCell>
+                                            )}
+                                            {booking.status === 'Confirmed' && (
+                                                <>
+                                                    <DropdownMenuItem onSelect={() => handleOpenAssignModal(booking)}>Change Artists</DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleCancelBooking(booking.id)}>Cancel Booking</DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleDisputeBooking(booking.id)}>Mark as Disputed</DropdownMenuItem>
+                                                </>
+                                            )}
+                                            {booking.status === 'Disputed' && (
+                                                <>
+                                                    <DropdownMenuItem onSelect={() => updateBookingStatus(booking.id, 'Completed')}>Resolve (Mark as Complete)</DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleCancelBooking(booking.id)}>Resolve (Cancel Booking)</DropdownMenuItem>
+                                                </>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
+                             )}
                         </TableRow>
                     )
                 }) : (

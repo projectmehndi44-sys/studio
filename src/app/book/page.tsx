@@ -8,7 +8,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,13 +21,17 @@ import { useToast } from '@/hooks/use-toast';
 import { packages as initialPackages } from '@/lib/packages-data';
 import { artists as initialArtists } from '@/lib/data';
 import { INDIA_LOCATIONS } from '@/lib/india-locations';
-import type { ServicePackage, Booking, Artist } from '@/types';
+import type { ServicePackage, Booking, Artist, Review } from '@/types';
 
-import { Calendar as CalendarIcon, ChevronLeft, Minus, Plus, Trash2, Upload, MapPin, Instagram, CheckCircle, AlertCircle, User, IndianRupee } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, Minus, Plus, Trash2, Upload, MapPin, Instagram, CheckCircle, AlertCircle, User, IndianRupee, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { BookingSummary } from '@/components/glamgo/BookingSummary';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+
+// Mocked review, in a real app this would be fetched with the artist
+const mockReview: Review = { id: 'rev_book_1', customerName: 'Riya S.', rating: 5, comment: 'Absolutely phenomenal work, so professional and talented!' };
 
 export default function BookingPage() {
     const searchParams = useSearchParams();
@@ -161,7 +165,7 @@ export default function BookingPage() {
         }
         
         const packageTotal = selectedPackages.reduce((sum, p) => sum + p.price, 0);
-        const artistTotal = selectedArtist ? (selectedArtist.charges?.[selectedArtist.services[0]] || selectedArtist.charge) : 0;
+        const artistTotal = selectedArtist ? (selectedArtist.charges?.[primaryServiceType] || selectedArtist.charge) : 0;
         let finalAmount = packageTotal + artistTotal;
         
 
@@ -244,7 +248,7 @@ export default function BookingPage() {
     const availableDistricts = state ? availableLocations[state] || [] : [];
     
     return (
-        <div className="bg-white min-h-screen">
+        <div className="bg-background min-h-screen">
             <header className="p-4 border-b">
                  <Button variant="outline" asChild>
                     <Link href="/"><ChevronLeft className="mr-2 h-4 w-4"/> Back to Home</Link>
@@ -260,19 +264,30 @@ export default function BookingPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {selectedArtist && (
-                                <div className="flex items-center justify-between p-2 border rounded-lg">
-                                    <div className="flex items-center gap-4">
-                                        <Image src={selectedArtist.profilePicture} alt={selectedArtist.name} width={64} height={64} className="rounded-full object-cover aspect-square"/>
-                                        <div>
-                                            <p className="font-semibold text-lg">{selectedArtist.name}</p>
-                                            <p className="text-sm text-muted-foreground">{selectedArtist.services.join(', ')}</p>
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between p-2 border rounded-lg">
+                                        <div className="flex items-center gap-4">
+                                            <Image src={selectedArtist.profilePicture} alt={selectedArtist.name} width={64} height={64} className="rounded-full object-cover aspect-square"/>
+                                            <div>
+                                                <p className="font-semibold text-lg">{selectedArtist.name}</p>
+                                                <p className="text-sm text-muted-foreground">{selectedArtist.services.join(', ')}</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center text-lg font-bold text-primary">
+                                            <IndianRupee className="w-4 h-4 mr-1"/>
+                                            <span>{(selectedArtist.charges?.[primaryServiceType] || selectedArtist.charge).toLocaleString()}</span>
+                                            <span className="text-sm text-muted-foreground ml-1">(base)</span>
                                         </div>
                                     </div>
-                                    <div className="flex items-center text-lg font-bold text-primary">
-                                        <IndianRupee className="w-4 h-4 mr-1"/>
-                                        <span>{(selectedArtist.charges?.[selectedArtist.services[0]] || selectedArtist.charge).toLocaleString()}</span>
-                                        <span className="text-sm text-muted-foreground ml-1">(base)</span>
-                                    </div>
+                                    <Card className="bg-muted/50 p-3">
+                                        <CardDescription className="flex items-center gap-2">
+                                            <div className="flex items-center text-amber-500">
+                                                 <Star className="w-4 h-4 mr-1 fill-current" />
+                                                <span className="font-bold text-sm">{selectedArtist.rating}</span>
+                                            </div>
+                                            <span className="italic">"{mockReview.comment}" - {mockReview.customerName}</span>
+                                        </CardDescription>
+                                    </Card>
                                 </div>
                             )}
 
@@ -314,7 +329,7 @@ export default function BookingPage() {
                                         </div>
                                         {includeGuestMehndi && (
                                             <AccordionContent>
-                                                <div className="mt-4 flex flex-col md:flex-row items-center gap-4 p-4 border rounded-lg bg-secondary/30">
+                                                <div className="mt-4 flex flex-col md:flex-row items-center gap-4 p-4 border rounded-lg bg-muted/50">
                                                     <Image src="https://picsum.photos/400/400?random=310" alt="Guest Mehndi" width={120} height={120} className="rounded-lg object-cover" data-ai-hint="guest mehndi"/>
                                                     <div className="flex-1 space-y-4">
                                                         <p className="text-sm text-muted-foreground">Designs-based pricing ranges from ₹200 - ₹600 per side. The final amount will be calculated after service completion based on the designs and number of sides.</p>
@@ -341,7 +356,7 @@ export default function BookingPage() {
                                         </div>
                                         {includeGuestMakeup && (
                                             <AccordionContent>
-                                                <div className="mt-4 flex flex-col md:flex-row items-center gap-4 p-4 border rounded-lg bg-secondary/30">
+                                                <div className="mt-4 flex flex-col md:flex-row items-center gap-4 p-4 border rounded-lg bg-muted/50">
                                                     <Image src="https://picsum.photos/400/400?random=311" alt="Guest Makeup" width={120} height={120} className="rounded-lg object-cover" data-ai-hint="guest makeup"/>
                                                     <div className="flex-1 space-y-4">
                                                         <p className="text-sm text-muted-foreground">Party makeup for guests starts at ₹2,500 per person. The final amount depends on the chosen look and will be confirmed by the assigned artist.</p>
@@ -500,20 +515,21 @@ export default function BookingPage() {
                     <BookingSummary packages={selectedPackages} artist={selectedArtist} serviceDates={serviceDates} />
 
                     {/* Policies */}
-                    <div className="p-4 rounded-lg bg-green-50 border border-green-200 flex items-start gap-3">
-                         <CheckCircle className="h-5 w-5 text-green-600 mt-1 shrink-0"/>
-                         <div>
-                            <h3 className="font-semibold text-green-800">Confirmation Policy</h3>
-                            <p className="text-sm text-green-700">Please confirm only if you wish to proceed. Bookings are accepted on a first-come, first-serve basis. Dates will be reserved only after receiving an advance payment.</p>
-                         </div>
-                    </div>
-                     <div className="p-4 rounded-lg bg-red-50 border border-red-200 flex items-start gap-3">
-                         <AlertCircle className="h-5 w-5 text-red-600 mt-1 shrink-0"/>
-                         <div>
-                            <h3 className="font-semibold text-red-800">Refund Policy</h3>
-                             <p className="text-sm text-red-700">The advance amount is only refunded if the booking is cancelled 72 hours prior to the service date. Later cancellations are non-refundable. This is because the date will be exclusively reserved for you, and no other inquiries will be entertained for that day. Thank you for your understanding.</p>
-                         </div>
-                    </div>
+                     <Alert variant="default" className="bg-green-50 border-green-200 text-green-800">
+                        <CheckCircle className="h-4 w-4 !text-green-600" />
+                        <AlertTitle className="font-bold">Confirmation Policy</AlertTitle>
+                        <AlertDescription>
+                           Dates are reserved only after an advance payment. Bookings are first-come, first-serve. Please confirm only if you wish to proceed.
+                        </AlertDescription>
+                    </Alert>
+                    <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle className="font-bold">Refund Policy</AlertTitle>
+                        <AlertDescription>
+                           The advance amount is only refunded if the booking is cancelled 72 hours prior to the service date. This is because the date will be exclusively reserved for you. Thank you for your understanding.
+                        </AlertDescription>
+                    </Alert>
+                    
 
                     {/* Action */}
                     <Button size="lg" className="w-full !mt-8 text-lg" onClick={handleCreateBooking} disabled={!isFormValid()}>

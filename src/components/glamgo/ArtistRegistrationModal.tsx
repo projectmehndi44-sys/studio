@@ -204,7 +204,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                     <>
                     {/* Personal Details Section */}
                     <div className="space-y-4">
-                        <h3 className="font-semibold text-lg text-primary">Personal Details</h3>
+                        <h3 className="font-semibold text-lg text-primary">Step 1: Personal & Contact Details</h3>
                          <FormField control={form.control} name="fullName" render={({ field }) => (
                             <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
@@ -212,7 +212,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                             <FormField control={form.control} name="email" render={({ field }) => (
                                 <FormItem><FormLabel>Email Address</FormLabel><FormControl><Input type="email" placeholder="your.email@example.com" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
-                            <FormField control={form.control} name="phone" render={({ field }) => (
+                           <FormField control={form.control} name="phone" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Phone Number</FormLabel>
                                     <div className="flex gap-2">
@@ -246,7 +246,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
 
                     {/* Service Location Section */}
                      <div className="space-y-4">
-                        <h3 className="font-semibold text-lg text-primary">Service Location</h3>
+                        <h3 className="font-semibold text-lg text-primary">Step 2: Service Location</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                              <FormField control={form.control} name="state" render={({ field }) => (
                                 <FormItem>
@@ -294,7 +294,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                     
                     {/* Account Security */}
                      <div className="space-y-4">
-                        <h3 className="font-semibold text-lg text-primary">Account Security</h3>
+                        <h3 className="font-semibold text-lg text-primary">Step 3: Account Security</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField control={form.control} name="password" render={({ field }) => (
                                 <FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
@@ -309,7 +309,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
 
                     {/* Portfolio */}
                      <div className="space-y-4">
-                         <h3 className="font-semibold text-lg text-primary">Portfolio</h3>
+                         <h3 className="font-semibold text-lg text-primary">Step 4: Portfolio & Agreement</h3>
                          <FormField
                             control={form.control}
                             name="workImages"

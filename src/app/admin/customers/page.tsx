@@ -65,7 +65,9 @@ export default function CustomerManagementPage() {
                                 <TableHead>Contact</TableHead>
                                 <TableHead>Registered On</TableHead>
                                 <TableHead>Status</TableHead>
-                                <TableHead><span className="sr-only">Actions</span></TableHead>
+                                {hasPermission('customers', 'edit') && (
+                                    <TableHead><span className="sr-only">Actions</span></TableHead>
+                                )}
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -84,27 +86,29 @@ export default function CustomerManagementPage() {
                                             {customer.status}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button aria-haspopup="true" size="icon" variant="ghost" disabled={!hasPermission('customers', 'edit')}>
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                    <span className="sr-only">Toggle menu</span>
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                <DropdownMenuItem onSelect={() => handleAction('Suspend', customer.id)}>
-                                                    <XCircle className="mr-2 h-4 w-4 text-yellow-500" />
-                                                    Suspend
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => handleAction('Delete', customer.id)}>
-                                                    <Trash2 className="mr-2 h-4 w-4 text-red-500" />
-                                                    Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
+                                    {hasPermission('customers', 'edit') && (
+                                        <TableCell className="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                        <span className="sr-only">Toggle menu</span>
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                    <DropdownMenuItem onSelect={() => handleAction('Suspend', customer.id)}>
+                                                        <XCircle className="mr-2 h-4 w-4 text-yellow-500" />
+                                                        Suspend
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleAction('Delete', customer.id)}>
+                                                        <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    )}
                                 </TableRow>
                             ))}
                         </TableBody>

@@ -3,8 +3,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,7 +34,6 @@ type FinancialFormValues = z.infer<typeof financialSchema>;
 type CompanyFormValues = z.infer<typeof companySchema>;
 
 export default function SettingsPage() {
-    const router = useRouter();
     const { toast } = useToast();
     const { hasPermission } = useAdminAuth();
     const [isLoading, setIsLoading] = React.useState(false);
@@ -74,7 +72,7 @@ export default function SettingsPage() {
         }
     }, [financialForm, companyForm]);
 
-    const onFinancialSubmit: SubmitHandler<FinancialFormValues> = (data) => {
+    const onFinancialSubmit = (data: FinancialFormValues) => {
         setIsLoading(true);
         localStorage.setItem('platformFeePercentage', data.platformFee.toString());
         localStorage.setItem('platformRefundFee', data.refundFee.toString());
@@ -85,7 +83,7 @@ export default function SettingsPage() {
         }, 1000);
     };
 
-    const onCompanySubmit: SubmitHandler<CompanyFormValues> = (data) => {
+    const onCompanySubmit = (data: CompanyFormValues) => {
         setIsLoading(true);
         localStorage.setItem('companyProfile', JSON.stringify(data));
         window.dispatchEvent(new Event('storage'));

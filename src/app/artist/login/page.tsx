@@ -10,10 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Palette, Home } from 'lucide-react';
+import { Home } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import type { Artist } from '@/types';
 import { artists as initialArtists } from '@/lib/data';
+import Image from 'next/image';
 
 export default function ArtistLoginPage() {
     const router = useRouter();
@@ -218,60 +219,72 @@ export default function ArtistLoginPage() {
 
     return (
         <>
-            <div className="flex items-center justify-center min-h-screen bg-background">
-                <Card className="w-full max-w-sm">
-                    <CardHeader className="text-center">
-                        <Palette className="mx-auto w-12 h-12 text-primary" />
-                        <CardTitle className="text-2xl font-bold mt-2">Artist Portal</CardTitle>
-                        <CardDescription>Enter your credentials to access your dashboard</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleLogin} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email (Username)</Label>
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    placeholder="your.email@example.com"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
-                                />
+        <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
+             <div className="flex items-center justify-center py-12">
+                <div className="mx-auto grid w-[350px] gap-6">
+                    <div className="grid gap-2 text-center">
+                        <h1 className="text-3xl font-bold text-primary">Artist Portal Login</h1>
+                        <p className="text-balance text-muted-foreground">
+                            Enter your credentials to access your dashboard
+                        </p>
+                    </div>
+                     <form onSubmit={handleLogin} className="grid gap-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="email">Email (Username)</Label>
+                            <Input
+                                id="email"
+                                type="email"
+                                placeholder="your.email@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                             <div className="flex items-center">
+                                <Label htmlFor="password">Password</Label>
+                                <Button variant="link" type="button" className="ml-auto inline-block text-sm underline" onClick={() => setIsForgotPasswordOpen(true)}>
+                                    Forgot Password?
+                                </Button>
                             </div>
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <Label htmlFor="password">Password</Label>
-                                    <Button variant="link" type="button" className="p-0 h-auto text-xs" onClick={() => setIsForgotPasswordOpen(true)}>
-                                        Forgot Password?
-                                    </Button>
-                                </div>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                />
-                            </div>
-                            <Button type="submit" className="w-full" disabled={isLoading}>
-                                {isLoading ? 'Logging in...' : 'Login'}
-                            </Button>
-                        </form>
-                        <div className="mt-4 text-center text-sm">
+                            <Input
+                                id="password"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                            {isLoading ? 'Logging in...' : 'Login'}
+                        </Button>
+                    </form>
+                     <div className="mt-4 text-center text-sm">
                             Don't have an account?{' '}
                             <Link href="/#artist-register" className="underline">
                                Register here
                             </Link>
                         </div>
-                         <div className="mt-4 text-center text-sm">
-                            <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors">
-                                <Home className="mr-1 h-4 w-4" />
-                                Back to Home
-                            </Link>
-                        </div>
-                    </CardContent>
-                </Card>
+                     <div className="mt-2 text-center text-sm">
+                        <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors">
+                            <Home className="mr-1 h-4 w-4" />
+                            Back to Home
+                        </Link>
+                    </div>
+                </div>
             </div>
+            <div className="hidden bg-muted lg:block">
+                 <Image
+                    src="https://picsum.photos/1200/1500?random=206"
+                    alt="Image"
+                    width="1920"
+                    height="1080"
+                    className="h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+                    data-ai-hint="mehndi artist portrait"
+                />
+            </div>
+        </div>
+           
 
             <Dialog open={isForgotPasswordOpen} onOpenChange={(isOpen) => {
                 setIsForgotPasswordOpen(isOpen);

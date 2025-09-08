@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -171,7 +172,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
         </DialogHeader>
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField control={form.control} name="fullName" render={({ field }) => (
+                 <FormField control={form.control} name="fullName" render={({ field }) => (
                     <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                  <FormField control={form.control} name="email" render={({ field }) => (
