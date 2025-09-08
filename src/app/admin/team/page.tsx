@@ -202,7 +202,7 @@ export default function TeamManagementPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuItem onSelect={() => handleDelete(member.id)}>
+                                                    <DropdownMenuItem onSelect={() => handleDelete(member.id)} disabled={member.id === 'user_001'}>
                                                         <Trash2 className="mr-2 h-4 w-4 text-red-500" />
                                                         Delete
                                                     </DropdownMenuItem>
