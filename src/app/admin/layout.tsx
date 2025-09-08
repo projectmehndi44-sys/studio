@@ -35,8 +35,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
-import type { Permission, Permissions } from '@/types';
+import { AdminAuthProvider, useAdminAuth } from '@/hooks/use-admin-auth';
+import type { Permissions } from '@/types';
 
 const NavLink = ({ href, pathname, icon: Icon, label }: { href: string; pathname: string; icon: React.ElementType, label: string }) => (
     <Link
@@ -51,11 +51,7 @@ const NavLink = ({ href, pathname, icon: Icon, label }: { href: string; pathname
     </Link>
 );
 
-export default function AdminLayout({
-    children,
-}: {
-    children: React.ReactNode
-}) {
+function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
     const { isAuthenticated, user, isLoading, hasPermission } = useAdminAuth();
@@ -119,7 +115,8 @@ export default function AdminLayout({
     );
     
     // Check if the current page should be accessible
-    const currentLink = navLinks.find(link => pathname.startsWith(link.href) && link.href !== '/admin');
+    const currentLink = navLinks.find(link => pathname.startsWith(link.href) && (link.href !== '/admin' || pathname !== '/admin') );
+    
     if (currentLink && !hasPermission(currentLink.permissionKey, 'view')) {
          return (
             <div className="flex flex-col items-center justify-center min-h-screen text-center">
@@ -198,4 +195,13 @@ export default function AdminLayout({
             </div>
         </div>
     );
+}
+
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+    return (
+        <AdminAuthProvider>
+            <AdminLayoutContent>{children}</AdminLayoutContent>
+        </AdminAuthProvider>
+    )
 }

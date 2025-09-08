@@ -8,10 +8,8 @@ import { Input } from '@/components/ui/input';
 import { MapPin, Search } from 'lucide-react';
 import type { Artist } from '@/types';
 import { artists as initialArtists } from '@/lib/data';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 export default function ArtistDirectoryPage() {
-    useAdminAuth();
     const [artists, setArtists] = React.useState<Artist[]>([]);
     const [searchTerm, setSearchTerm] = React.useState('');
 

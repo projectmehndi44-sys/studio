@@ -1,9 +1,7 @@
 
-
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -13,13 +11,10 @@ import { Badge } from '@/components/ui/badge';
 import type { Customer } from '@/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { initialCustomers } from '@/lib/data';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 type CustomerWithStatus = Customer & { status: 'Active' | 'Suspended'; registeredOn: string; };
 
 export default function CustomerManagementPage() {
-    useAdminAuth();
-    const router = useRouter();
     const { toast } = useToast();
     const [customers, setCustomers] = React.useState<CustomerWithStatus[]>([]);
 

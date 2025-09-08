@@ -2,29 +2,27 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
 import { teamMembers as initialTeamMembers, TeamMember, Permissions } from '@/lib/team-data';
 
 interface AuthState {
     isLoading: boolean;
     isAuthenticated: boolean;
     user: TeamMember | null;
-    hasPermission: (module: keyof Permissions, level: 'view' | 'edit') => boolean;
 }
 
-export function useAdminAuth(): AuthState {
-    const [authState, setAuthState] = React.useState<Omit<AuthState, 'hasPermission'>>({
+const authContext = React.createContext<AuthState & { hasPermission: (module: keyof Permissions, level: 'view' | 'edit') => boolean; } | null>(null);
+
+
+export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
+    const [authState, setAuthState] = React.useState<AuthState>({
         isLoading: true,
         isAuthenticated: false,
         user: null,
     });
-    const router = useRouter();
 
     React.useEffect(() => {
-        // This check is to prevent running this logic on the server.
         if (typeof window !== 'undefined') {
             const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated') === 'true';
-            
             if (isAdminAuthenticated) {
                 const username = localStorage.getItem('adminUsername');
                 const teamMembersData = localStorage.getItem('teamMembers');
@@ -34,14 +32,13 @@ export function useAdminAuth(): AuthState {
                 if (currentUser) {
                     setAuthState({ isLoading: false, isAuthenticated: true, user: currentUser });
                 } else {
-                    // Mismatch or data corruption, log out
                     localStorage.removeItem('isAdminAuthenticated');
                     localStorage.removeItem('adminRole');
                     localStorage.removeItem('adminUsername');
                     setAuthState({ isLoading: false, isAuthenticated: false, user: null });
                 }
             } else {
-                 setAuthState({ isLoading: false, isAuthenticated: false, user: null });
+                setAuthState({ isLoading: false, isAuthenticated: false, user: null });
             }
         }
     }, []);
@@ -50,11 +47,10 @@ export function useAdminAuth(): AuthState {
         const { user } = authState;
         if (!user) return false;
         
-        // Super admin has all permissions
         if (user.role === 'admin') return true;
         
         const userPermission = user.permissions?.[module];
-        if (!userPermission) return false;
+        if (!userPermission || userPermission === 'hidden') return false;
 
         if (level === 'view') {
             return userPermission === 'view' || userPermission === 'edit';
@@ -67,5 +63,15 @@ export function useAdminAuth(): AuthState {
         return false;
     }, [authState.user]);
 
-    return { ...authState, hasPermission };
+    const value = React.useMemo(() => ({ ...authState, hasPermission }), [authState, hasPermission]);
+    
+    return <authContext.Provider value={value}>{children}</authContext.Provider>;
+}
+
+export function useAdminAuth() {
+    const context = React.useContext(authContext);
+    if (!context) {
+        throw new Error('useAdminAuth must be used within an AdminAuthProvider');
+    }
+    return context;
 }
