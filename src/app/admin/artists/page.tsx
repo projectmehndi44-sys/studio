@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -22,6 +23,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 type PendingArtist = {
   id: string;
@@ -49,6 +51,7 @@ type OnboardFormValues = z.infer<typeof onboardSchema>;
 export default function ArtistManagementPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { hasPermission } = useAdminAuth();
 
     const [approvedArtists, setApprovedArtists] = React.useState<Artist[]>([]);
     const [pendingArtists, setPendingArtists] = React.useState<PendingArtist[]>([]);
@@ -80,15 +83,10 @@ export default function ArtistManagementPage() {
     }, [getArtists]);
 
     React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
-        if (isAdminAuthenticated !== 'true') {
-            router.push('/admin/login');
-        } else {
-            fetchAdminData();
-            window.addEventListener('storage', fetchAdminData);
-            return () => window.removeEventListener('storage', fetchAdminData);
-        }
-    }, [router, fetchAdminData]);
+        fetchAdminData();
+        window.addEventListener('storage', fetchAdminData);
+        return () => window.removeEventListener('storage', fetchAdminData);
+    }, [fetchAdminData]);
 
     const handleApprove = (artistId: string) => {
         const artistToApprove = pendingArtists.find(p => p.id === artistId);
@@ -330,7 +328,7 @@ export default function ArtistManagementPage() {
                                             <TableCell>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                        <Button aria-haspopup="true" size="icon" variant="ghost" disabled={!hasPermission('artists', 'edit')}>
                                                             <MoreHorizontal className="h-4 w-4" />
                                                             <span className="sr-only">Toggle menu</span>
                                                         </Button>
@@ -393,7 +391,7 @@ export default function ArtistManagementPage() {
                                             <TableCell>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                        <Button aria-haspopup="true" size="icon" variant="ghost" disabled={!hasPermission('artists', 'edit')}>
                                                             <MoreHorizontal className="h-4 w-4" />
                                                             <span className="sr-only">Toggle menu</span>
                                                         </Button>
@@ -452,7 +450,7 @@ export default function ArtistManagementPage() {
                                             <FormItem><FormLabel>Base Charge (per service)</FormLabel><FormControl><Input type="number" placeholder="2500" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                     </div>
-                                    <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                                    <Button type="submit" className="w-full" disabled={form.formState.isSubmitting || !hasPermission('artists', 'edit')}>
                                         <UserPlus className="mr-2 h-4 w-4"/>
                                         {form.formState.isSubmitting ? 'Onboarding...' : 'Onboard Artist'}
                                     </Button>

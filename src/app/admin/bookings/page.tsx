@@ -19,7 +19,7 @@ import { format } from 'date-fns';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 export default function BookingManagementPage() {
-    useAdminAuth();
+    const { hasPermission } = useAdminAuth();
     const router = useRouter();
     const { toast } = useToast();
     const [bookings, setBookings] = React.useState<Booking[]>([]);
@@ -241,7 +241,7 @@ export default function BookingManagementPage() {
                             <TableCell className="text-right space-x-2">
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                                        <Button aria-haspopup="true" size="icon" variant="ghost" disabled={!hasPermission('bookings', 'edit')}>
                                             <MoreHorizontal className="h-4 w-4" />
                                             <span className="sr-only">Toggle menu</span>
                                         </Button>
