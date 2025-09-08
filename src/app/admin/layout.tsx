@@ -21,6 +21,7 @@ import {
     MapPin,
     AreaChart,
     User as UserIcon,
+    EyeOff,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -35,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
+import type { Permission, Permissions } from '@/types';
 
 const NavLink = ({ href, pathname, icon: Icon, label }: { href: string; pathname: string; icon: React.ElementType, label: string }) => (
     <Link
@@ -56,7 +58,7 @@ export default function AdminLayout({
 }) {
     const router = useRouter();
     const pathname = usePathname();
-    const { isAuthenticated, user, isLoading } = useAdminAuth();
+    const { isAuthenticated, user, isLoading, hasPermission } = useAdminAuth();
     const [adminName, setAdminName] = React.useState('Admin');
 
     React.useEffect(() => {
@@ -87,25 +89,47 @@ export default function AdminLayout({
         );
     }
     
-    const navLinks = [
-        { href: '/admin', label: 'Dashboard', icon: Home },
-        { href: '/admin/bookings', label: 'Bookings', icon: Briefcase },
-        { href: '/admin/artists', label: 'Artists', icon: Palette },
-        { href: '/admin/customers', label: 'Customers', icon: Users },
-        { href: '/admin/artist-directory', label: 'Artist Directory', icon: MapPin },
-        { href: '/admin/payouts', label: 'Payouts', icon: IndianRupee },
-        { href: '/admin/transactions', label: 'Transactions', icon: ListTree },
-        { href: '/admin/packages', label: 'Packages', icon: Package },
-        { href: '/admin/settings', label: 'Settings', icon: Settings },
+    type NavLinkItem = {
+        href: string;
+        label: string;
+        icon: React.ElementType;
+        permissionKey: keyof Permissions;
+    };
+
+    const navLinks: NavLinkItem[] = [
+        { href: '/admin', label: 'Dashboard', icon: Home, permissionKey: 'dashboard' },
+        { href: '/admin/bookings', label: 'Bookings', icon: Briefcase, permissionKey: 'bookings' },
+        { href: '/admin/artists', label: 'Artists', icon: Palette, permissionKey: 'artists' },
+        { href: '/admin/customers', label: 'Customers', icon: Users, permissionKey: 'customers' },
+        { href: '/admin/artist-directory', label: 'Artist Directory', icon: MapPin, permissionKey: 'artistDirectory' },
+        { href: '/admin/payouts', label: 'Payouts', icon: IndianRupee, permissionKey: 'payouts' },
+        { href: '/admin/transactions', label: 'Transactions', icon: ListTree, permissionKey: 'transactions' },
+        { href: '/admin/packages', label: 'Packages', icon: Package, permissionKey: 'packages' },
+        { href: '/admin/settings', label: 'Settings', icon: Settings, permissionKey: 'settings' },
     ];
+    
+    const accessibleNavLinks = navLinks.filter(link => hasPermission(link.permissionKey, 'view'));
 
     const SidebarNav = () => (
          <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-            {navLinks.map(link => (
+            {accessibleNavLinks.map(link => (
                 <NavLink key={link.href} {...link} pathname={pathname} />
             ))}
         </nav>
     );
+    
+    // Check if the current page should be accessible
+    const currentLink = navLinks.find(link => pathname.startsWith(link.href) && link.href !== '/admin');
+    if (currentLink && !hasPermission(currentLink.permissionKey, 'view')) {
+         return (
+            <div className="flex flex-col items-center justify-center min-h-screen text-center">
+                <EyeOff className="w-16 h-16 text-destructive mb-4" />
+                <h1 className="text-2xl font-bold">Access Denied</h1>
+                <p className="text-muted-foreground">You do not have permission to view this page.</p>
+                <Button onClick={() => router.push('/admin')} className="mt-4">Back to Dashboard</Button>
+            </div>
+        );
+    }
 
     return (
         <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">

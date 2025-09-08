@@ -1,11 +1,29 @@
 
+import type { Permissions } from "@/types";
+
 export type TeamMember = {
     id: string;
     name: string;
     username: string;
     password?: string;
     role: 'admin' | 'team-member';
+    permissions: Permissions;
 };
+
+export type PermissionLevel = 'edit' | 'view' | 'hidden';
+
+export const PERMISSION_MODULES: { key: keyof Permissions, label: string }[] = [
+    { key: 'dashboard', label: 'Dashboard' },
+    { key: 'bookings', label: 'Bookings' },
+    { key: 'artists', label: 'Artists' },
+    { key: 'customers', label: 'Customers' },
+    { key: 'artistDirectory', label: 'Artist Directory' },
+    { key: 'payouts', label: 'Payouts' },
+    { key: 'transactions', label: 'Transactions' },
+    { key: 'packages', label: 'Packages' },
+    { key: 'settings', label: 'Settings (Promos, Locations etc.)' },
+];
+
 
 // In a real application, this data would be stored securely in a database.
 // Passwords should always be hashed.
@@ -16,5 +34,16 @@ export const teamMembers: TeamMember[] = [
         username: 'admin',
         password: 'Abhi@123',
         role: 'admin',
+        permissions: { // Admin has all rights by default, this is illustrative
+            dashboard: 'edit',
+            bookings: 'edit',
+            artists: 'edit',
+            customers: 'edit',
+            artistDirectory: 'edit',
+            payouts: 'edit',
+            transactions: 'edit',
+            packages: 'edit',
+            settings: 'edit',
+        }
     }
 ];

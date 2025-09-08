@@ -140,3 +140,27 @@ export type ServicePackage = {
 
 // Maintained for backward compatibility in some files
 export type MehndiPackage = ServicePackage;
+
+
+export type Permission = 'edit' | 'view' | 'hidden';
+
+export type Permissions = {
+  dashboard: Permission;
+  bookings: Permission;
+  artists: Permission;
+  customers: Permission;
+  artistDirectory: Permission;
+  payouts: Permission;
+  transactions: Permission;
+  packages: Permission;
+  settings: Permission;
+};
+
+export type TeamMember = {
+    id: string;
+    name: string;
+    username: string;
+    password?: string;
+    role: 'admin' | 'team-member';
+    permissions: Permissions;
+};

@@ -3,16 +3,17 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { teamMembers as initialTeamMembers, TeamMember } from '@/lib/team-data';
+import { teamMembers as initialTeamMembers, TeamMember, Permissions } from '@/lib/team-data';
 
 interface AuthState {
     isLoading: boolean;
     isAuthenticated: boolean;
     user: TeamMember | null;
+    hasPermission: (module: keyof Permissions, level: 'view' | 'edit') => boolean;
 }
 
 export function useAdminAuth(): AuthState {
-    const [authState, setAuthState] = React.useState<AuthState>({
+    const [authState, setAuthState] = React.useState<Omit<AuthState, 'hasPermission'>>({
         isLoading: true,
         isAuthenticated: false,
         user: null,
@@ -27,7 +28,7 @@ export function useAdminAuth(): AuthState {
             if (isAdminAuthenticated) {
                 const username = localStorage.getItem('adminUsername');
                 const teamMembersData = localStorage.getItem('teamMembers');
-                const teamMembers = teamMembersData ? JSON.parse(teamMembersData) : initialTeamMembers;
+                const teamMembers: TeamMember[] = teamMembersData ? JSON.parse(teamMembersData) : initialTeamMembers;
                 const currentUser = teamMembers.find((m: TeamMember) => m.username === username);
 
                 if (currentUser) {
@@ -45,5 +46,26 @@ export function useAdminAuth(): AuthState {
         }
     }, []);
 
-    return authState;
+    const hasPermission = React.useCallback((module: keyof Permissions, level: 'view' | 'edit'): boolean => {
+        const { user } = authState;
+        if (!user) return false;
+        
+        // Super admin has all permissions
+        if (user.role === 'admin') return true;
+        
+        const userPermission = user.permissions?.[module];
+        if (!userPermission) return false;
+
+        if (level === 'view') {
+            return userPermission === 'view' || userPermission === 'edit';
+        }
+        
+        if (level === 'edit') {
+            return userPermission === 'edit';
+        }
+
+        return false;
+    }, [authState.user]);
+
+    return { ...authState, hasPermission };
 }
