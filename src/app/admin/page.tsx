@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -20,6 +21,25 @@ import { artists as initialArtists, allBookings as initialBookings } from '@/lib
 import type { Artist, Booking } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
+
+function DashboardCard({ title, value, description, icon: Icon, href, className }: { title: string, value: string, description: string, icon: React.ElementType, href?: string, className?: string }) {
+    const CardContentWrapper = ({children}: {children: React.ReactNode}) => href ? <Link href={href}>{children}</Link> : <>{children}</>;
+
+    return (
+        <CardContentWrapper>
+            <Card className={className}>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">{title}</CardTitle>
+                    <Icon className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{value}</div>
+                    <p className="text-xs text-muted-foreground">{description}</p>
+                </CardContent>
+            </Card>
+        </CardContentWrapper>
+    );
+}
 
 export default function AdminPage() {
     const router = useRouter();
@@ -104,46 +124,35 @@ export default function AdminPage() {
                 <h1 className="text-lg font-semibold md:text-2xl">Dashboard</h1>
             </div>
             <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-                        <IndianRupee className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">₹{financials.totalRevenue.toLocaleString()}</div>
-                        <p className="text-xs text-muted-foreground">Based on completed bookings</p>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Bookings</CardTitle>
-                        <Briefcase className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">+{bookings.length}</div>
-                        <p className="text-xs text-muted-foreground">All-time bookings</p>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
-                        <Star className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-green-600">₹{financials.netProfit.toLocaleString()}</div>
-                        <p className="text-xs text-muted-foreground">Total platform fees minus refunds</p>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Pending Bookings</CardTitle>
-                        <Bell className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{pendingBookingCount}</div>
-                        <p className="text-xs text-muted-foreground">Require assignment or approval</p>
-                    </CardContent>
-                </Card>
+                 <DashboardCard
+                    title="Total Revenue"
+                    value={`₹${financials.totalRevenue.toLocaleString()}`}
+                    description="Based on completed bookings"
+                    icon={IndianRupee}
+                />
+                 <DashboardCard
+                    title="Total Bookings"
+                    value={`+${bookings.length}`}
+                    description="All-time bookings"
+                    icon={Briefcase}
+                    href="/admin/bookings"
+                    className="hover:bg-muted"
+                />
+                <DashboardCard
+                    title="Net Profit"
+                    value={`₹${financials.netProfit.toLocaleString()}`}
+                    description="Total platform fees minus refunds"
+                    icon={Star}
+                    className="text-green-600"
+                />
+                <DashboardCard
+                    title="Pending Bookings"
+                    value={`${pendingBookingCount}`}
+                    description="Require assignment or approval"
+                    icon={Bell}
+                    href="/admin/bookings?filter=pending"
+                    className="hover:bg-muted"
+                />
             </div>
             <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
                 <Card className="xl:col-span-1">

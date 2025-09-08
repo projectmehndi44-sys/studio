@@ -3,7 +3,7 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -21,6 +21,7 @@ import { useAdminAuth } from '@/hooks/use-admin-auth';
 export default function BookingManagementPage() {
     const { hasPermission } = useAdminAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { toast } = useToast();
     const [bookings, setBookings] = React.useState<Booking[]>([]);
     const [artists, setArtists] = React.useState<Artist[]>([]);
@@ -192,7 +193,20 @@ export default function BookingManagementPage() {
         }
     };
     
-    const renderTable = (filteredBookings: Booking[]) => (
+    const filterBookings = (tab: string | null) => {
+        if (tab === 'pending') {
+            return bookings.filter(b => b.status === 'Pending Approval' || b.status === 'Needs Assignment');
+        }
+        if (tab === 'disputed') {
+            return bookings.filter(b => b.status === 'Disputed');
+        }
+        return bookings.filter(b => b.status !== 'Disputed');
+    };
+
+    const initialTab = searchParams.get('filter') || 'all';
+    const filteredBookings = filterBookings(initialTab);
+    
+    const renderTable = (bookingsToRender: Booking[]) => (
          <Table>
             <TableHeader>
                 <TableRow>
@@ -206,7 +220,7 @@ export default function BookingManagementPage() {
                 </TableRow>
             </TableHeader>
             <TableBody>
-                {filteredBookings.map(booking => {
+                {bookingsToRender.length > 0 ? bookingsToRender.map(booking => {
                     const assignedArtists = artists.filter(a => booking.artistIds && booking.artistIds.includes(a.id));
                     return (
                         <TableRow key={booking.id}>
@@ -277,7 +291,13 @@ export default function BookingManagementPage() {
                             </TableCell>
                         </TableRow>
                     )
-                })}
+                }) : (
+                     <TableRow>
+                        <TableCell colSpan={7} className="text-center text-muted-foreground">
+                            No bookings found for this category.
+                        </TableCell>
+                    </TableRow>
+                )}
             </TableBody>
         </Table>
     );
@@ -297,19 +317,17 @@ export default function BookingManagementPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Tabs defaultValue="all">
+                    <Tabs defaultValue={initialTab} onValueChange={(tab) => router.push(`/admin/bookings?filter=${tab}`)}>
                         <TabsList>
                             <TabsTrigger value="all">All Bookings</TabsTrigger>
+                            <TabsTrigger value="pending">Pending</TabsTrigger>
                             <TabsTrigger value="disputed">
                                 <AlertOctagon className="mr-2 h-4 w-4" />
                                 Disputed Bookings
                             </TabsTrigger>
                         </TabsList>
-                        <TabsContent value="all" className="mt-4">
-                            {renderTable(bookings.filter(b => b.status !== 'Disputed'))}
-                        </TabsContent>
-                        <TabsContent value="disputed" className="mt-4">
-                            {renderTable(bookings.filter(b => b.status === 'Disputed'))}
+                        <TabsContent value={initialTab} className="mt-4">
+                            {renderTable(filteredBookings)}
                         </TabsContent>
                     </Tabs>
                 </CardContent>

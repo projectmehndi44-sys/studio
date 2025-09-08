@@ -161,7 +161,7 @@ export default function BookingPage() {
         }
         
         const packageTotal = selectedPackages.reduce((sum, p) => sum + p.price, 0);
-        const artistTotal = selectedArtist ? selectedArtist.charge : 0;
+        const artistTotal = selectedArtist ? (selectedArtist.charges?.[selectedArtist.services[0]] || selectedArtist.charge) : 0;
         let finalAmount = packageTotal + artistTotal;
         
 
@@ -270,7 +270,7 @@ export default function BookingPage() {
                                     </div>
                                     <div className="flex items-center text-lg font-bold text-primary">
                                         <IndianRupee className="w-4 h-4 mr-1"/>
-                                        <span>{selectedArtist.charge.toLocaleString()}</span>
+                                        <span>{(selectedArtist.charges?.[selectedArtist.services[0]] || selectedArtist.charge).toLocaleString()}</span>
                                         <span className="text-sm text-muted-foreground ml-1">(base)</span>
                                     </div>
                                 </div>
@@ -305,55 +305,61 @@ export default function BookingPage() {
                             <CardTitle>Add-ons</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            {primaryServiceType === 'mehndi' && (
-                                <div className="flex items-center justify-between p-4 border rounded-lg">
-                                    <div>
-                                        <Label htmlFor="guest-mehndi-switch" className="text-base font-semibold">Would you like to include Guest Mehndi Services?</Label>
-                                    </div>
-                                    <Switch id="guest-mehndi-switch" checked={includeGuestMehndi} onCheckedChange={setIncludeGuestMehndi}/>
-                                </div>
-                            )}
-                            {includeGuestMehndi && primaryServiceType === 'mehndi' && (
-                                <div className="mt-4 flex flex-col md:flex-row items-center gap-4 p-4 border rounded-lg bg-secondary/30">
-                                    <Image src="https://picsum.photos/400/400?random=310" alt="Guest Mehndi" width={120} height={120} className="rounded-lg object-cover" data-ai-hint="guest mehndi"/>
-                                    <div className="flex-1 space-y-4">
-                                        <p className="text-sm text-muted-foreground">Designs-based pricing ranges from ₹200 - ₹600 per side. The final amount will be calculated after service completion based on the designs and number of sides.</p>
-                                        <div className="flex items-center gap-4">
-                                            <Label>Expected Guest No.</Label>
-                                            <div className="flex items-center gap-2 border rounded-full p-1">
-                                                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setGuestCount(Math.max(1, guestCount - 1))}><Minus className="h-4 w-4"/></Button>
-                                                <span className="font-bold text-lg w-10 text-center">{guestCount}</span>
-                                                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setGuestCount(guestCount + 1)}><Plus className="h-4 w-4"/></Button>
-                                            </div>
+                             <Accordion type="multiple" className="w-full">
+                                {primaryServiceType === 'mehndi' && (
+                                    <AccordionItem value="guest-mehndi">
+                                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                                            <Label htmlFor="guest-mehndi-switch" className="text-base font-semibold">Include Guest Mehndi Services?</Label>
+                                            <Switch id="guest-mehndi-switch" checked={includeGuestMehndi} onCheckedChange={setIncludeGuestMehndi}/>
                                         </div>
-                                    </div>
-                                </div>
-                            )}
+                                        {includeGuestMehndi && (
+                                            <AccordionContent>
+                                                <div className="mt-4 flex flex-col md:flex-row items-center gap-4 p-4 border rounded-lg bg-secondary/30">
+                                                    <Image src="https://picsum.photos/400/400?random=310" alt="Guest Mehndi" width={120} height={120} className="rounded-lg object-cover" data-ai-hint="guest mehndi"/>
+                                                    <div className="flex-1 space-y-4">
+                                                        <p className="text-sm text-muted-foreground">Designs-based pricing ranges from ₹200 - ₹600 per side. The final amount will be calculated after service completion based on the designs and number of sides.</p>
+                                                        <div className="flex items-center gap-4">
+                                                            <Label>Expected Guest No.</Label>
+                                                            <div className="flex items-center gap-2 border rounded-full p-1">
+                                                                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setGuestCount(Math.max(1, guestCount - 1))}><Minus className="h-4 w-4"/></Button>
+                                                                <span className="font-bold text-lg w-10 text-center">{guestCount}</span>
+                                                                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setGuestCount(guestCount + 1)}><Plus className="h-4 w-4"/></Button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </AccordionContent>
+                                        )}
+                                    </AccordionItem>
+                                )}
 
-                             {primaryServiceType === 'makeup' && (
-                                <div className="flex items-center justify-between p-4 border rounded-lg mt-4">
-                                    <div>
-                                        <Label htmlFor="guest-makeup-switch" className="text-base font-semibold">Would you like to include Guest Makeup Services?</Label>
-                                    </div>
-                                    <Switch id="guest-makeup-switch" checked={includeGuestMakeup} onCheckedChange={setIncludeGuestMakeup}/>
-                                </div>
-                            )}
-                            {includeGuestMakeup && primaryServiceType === 'makeup' && (
-                                <div className="mt-4 flex flex-col md:flex-row items-center gap-4 p-4 border rounded-lg bg-secondary/30">
-                                    <Image src="https://picsum.photos/400/400?random=311" alt="Guest Makeup" width={120} height={120} className="rounded-lg object-cover" data-ai-hint="guest makeup"/>
-                                    <div className="flex-1 space-y-4">
-                                        <p className="text-sm text-muted-foreground">Party makeup for guests starts at ₹2,500 per person. The final amount depends on the chosen look and will be confirmed by the assigned artist.</p>
-                                        <div className="flex items-center gap-4">
-                                            <Label>Expected Guest No.</Label>
-                                            <div className="flex items-center gap-2 border rounded-full p-1">
-                                                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setGuestMakeupCount(Math.max(1, guestMakeupCount - 1))}><Minus className="h-4 w-4"/></Button>
-                                                <span className="font-bold text-lg w-10 text-center">{guestMakeupCount}</span>
-                                                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setGuestMakeupCount(guestMakeupCount + 1)}><Plus className="h-4 w-4"/></Button>
-                                            </div>
+                                {primaryServiceType === 'makeup' && (
+                                    <AccordionItem value="guest-makeup">
+                                         <div className="flex items-center justify-between p-4 border rounded-lg mt-4">
+                                            <Label htmlFor="guest-makeup-switch" className="text-base font-semibold">Include Guest Makeup Services?</Label>
+                                            <Switch id="guest-makeup-switch" checked={includeGuestMakeup} onCheckedChange={setIncludeGuestMakeup}/>
                                         </div>
-                                    </div>
-                                </div>
-                            )}
+                                        {includeGuestMakeup && (
+                                            <AccordionContent>
+                                                <div className="mt-4 flex flex-col md:flex-row items-center gap-4 p-4 border rounded-lg bg-secondary/30">
+                                                    <Image src="https://picsum.photos/400/400?random=311" alt="Guest Makeup" width={120} height={120} className="rounded-lg object-cover" data-ai-hint="guest makeup"/>
+                                                    <div className="flex-1 space-y-4">
+                                                        <p className="text-sm text-muted-foreground">Party makeup for guests starts at ₹2,500 per person. The final amount depends on the chosen look and will be confirmed by the assigned artist.</p>
+                                                        <div className="flex items-center gap-4">
+                                                            <Label>Expected Guest No.</Label>
+                                                            <div className="flex items-center gap-2 border rounded-full p-1">
+                                                                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setGuestMakeupCount(Math.max(1, guestMakeupCount - 1))}><Minus className="h-4 w-4"/></Button>
+                                                                <span className="font-bold text-lg w-10 text-center">{guestMakeupCount}</span>
+                                                                <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setGuestMakeupCount(guestMakeupCount + 1)}><Plus className="h-4 w-4"/></Button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </AccordionContent>
+                                        )}
+                                    </AccordionItem>
+                                )}
+                            </Accordion>
                         </CardContent>
                     </Card>
                     )}

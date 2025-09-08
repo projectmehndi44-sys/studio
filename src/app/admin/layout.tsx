@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -9,19 +10,18 @@ import {
     Home,
     Briefcase,
     IndianRupee,
-    ListTree,
     Settings,
     LogOut,
     PanelLeft,
     Package,
     Users,
     Palette,
-    Tag,
     Image as ImageIcon,
     MapPin,
-    AreaChart,
     User as UserIcon,
     EyeOff,
+    Tag,
+    ListTree,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -101,7 +101,11 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         { href: '/admin/payouts', label: 'Payouts', icon: IndianRupee, permissionKey: 'payouts' },
         { href: '/admin/transactions', label: 'Transactions', icon: ListTree, permissionKey: 'transactions' },
         { href: '/admin/packages', label: 'Packages', icon: Package, permissionKey: 'packages' },
-        { href: '/admin/settings', label: 'Settings', icon: Settings, permissionKey: 'settings' },
+        { href: '/admin/promotions', label: 'Promotions', icon: Tag, permissionKey: 'settings' },
+        { href: '/admin/team', label: 'Team Management', icon: Users, permissionKey: 'settings' },
+        { href: '/admin/images', label: 'Site Images', icon: ImageIcon, permissionKey: 'settings' },
+        { href: '/admin/locations', label: 'Locations', icon: MapPin, permissionKey: 'settings' },
+        { href: '/admin/settings', label: 'Platform Settings', icon: Settings, permissionKey: 'settings' },
     ];
     
     const accessibleNavLinks = navLinks.filter(link => hasPermission(link.permissionKey, 'view'));
@@ -114,9 +118,8 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         </nav>
     );
     
-    // Check if the current page should be accessible
-    const currentLink = navLinks.find(link => pathname.startsWith(link.href) && (link.href !== '/admin' || pathname !== '/admin') );
-    
+    const currentLink = navLinks.find(link => pathname.startsWith(link.href) && (link.href !== '/admin' || pathname === '/admin'));
+
     if (currentLink && !hasPermission(currentLink.permissionKey, 'view')) {
          return (
             <div className="flex flex-col items-center justify-center min-h-screen text-center">

@@ -255,14 +255,12 @@ export default function ArtistProfilePage() {
             
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <Accordion type="multiple" defaultValue={['item-1', 'item-2']} className="w-full space-y-4">
+                    <Accordion type="multiple" defaultValue={['item-1', 'item-2', 'item-3', 'item-4', 'item-5']} className="w-full space-y-4">
                         <AccordionItem value="item-1">
                             <Card>
-                                <CardHeader>
-                                    <AccordionTrigger className="w-full justify-between p-0 hover:no-underline">
-                                        <CardTitle className="flex items-center gap-2 text-lg"><UserCircle /> Basic Information</CardTitle>
-                                    </AccordionTrigger>
-                                </CardHeader>
+                                <AccordionTrigger className="p-6 hover:no-underline">
+                                    <CardTitle className="flex items-center gap-2 text-lg"><UserCircle /> Basic Information</CardTitle>
+                                </AccordionTrigger>
                                 <AccordionContent>
                                     <CardContent className="grid md:grid-cols-2 gap-6 pt-2">
                                         <FormField control={form.control} name="name" render={({ field }) => (
@@ -292,11 +290,9 @@ export default function ArtistProfilePage() {
                         
                         <AccordionItem value="item-2">
                              <Card>
-                                <CardHeader>
-                                    <AccordionTrigger className="w-full justify-between p-0 hover:no-underline">
-                                        <CardTitle className="flex items-center gap-2 text-lg"><Briefcase /> Services & Pricing</CardTitle>
-                                    </AccordionTrigger>
-                                </CardHeader>
+                                <AccordionTrigger className="p-6 hover:no-underline">
+                                    <CardTitle className="flex items-center gap-2 text-lg"><Briefcase /> Services & Pricing</CardTitle>
+                                </AccordionTrigger>
                                 <AccordionContent>
                                     <CardContent className="space-y-6 pt-2">
                                         <FormField control={form.control} name="services" render={() => (
@@ -373,13 +369,13 @@ export default function ArtistProfilePage() {
 
                         <AccordionItem value="item-3">
                              <Card>
-                                <CardHeader>
-                                     <AccordionTrigger className="w-full justify-between p-0 hover:no-underline">
-                                        <CardTitle className="flex items-center gap-2 text-lg"><Tag /> Style Tags</CardTitle>
-                                     </AccordionTrigger>
-                                    <CardDescription>Add tags that describe your work (e.g., 'bridal', 'minimalist').</CardDescription>
-                                </CardHeader>
+                                <AccordionTrigger className="p-6 hover:no-underline">
+                                    <CardTitle className="flex items-center gap-2 text-lg"><Tag /> Style Tags</CardTitle>
+                                </AccordionTrigger>
                                 <AccordionContent>
+                                    <CardHeader className="pt-0">
+                                        <CardDescription>Add tags that describe your work (e.g., 'bridal', 'minimalist').</CardDescription>
+                                    </CardHeader>
                                     <CardContent className="space-y-4 pt-2">
                                         <div className="flex items-center gap-2">
                                             <Input value={tagInput} onChange={(e) => setTagInput(e.target.value)} placeholder="Add a new tag" onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddTag(); } }} />
@@ -402,13 +398,13 @@ export default function ArtistProfilePage() {
 
                         <AccordionItem value="item-4">
                              <Card>
-                                <CardHeader>
-                                    <AccordionTrigger className="w-full justify-between p-0 hover:no-underline">
-                                        <CardTitle className="flex items-center gap-2 text-lg"><Lock /> Change Password</CardTitle>
-                                    </AccordionTrigger>
-                                     <CardDescription>Leave blank to keep your current password.</CardDescription>
-                                </CardHeader>
+                                <AccordionTrigger className="p-6 hover:no-underline">
+                                    <CardTitle className="flex items-center gap-2 text-lg"><Lock /> Change Password</CardTitle>
+                                </AccordionTrigger>
                                 <AccordionContent>
+                                    <CardHeader className="pt-0">
+                                        <CardDescription>Leave blank to keep your current password.</CardDescription>
+                                    </CardHeader>
                                     <CardContent className="grid md:grid-cols-2 gap-6 pt-2">
                                         <FormField control={form.control} name="password" render={({ field }) => (
                                             <FormItem><FormLabel>New Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
@@ -420,55 +416,58 @@ export default function ArtistProfilePage() {
                                 </AccordionContent>
                             </Card>
                         </AccordionItem>
+                        
+                        <AccordionItem value="item-5">
+                             <Card>
+                                <AccordionTrigger className="p-6 hover:no-underline">
+                                    <CardTitle className="flex items-center gap-2"><ImageIcon /> Manage Images</CardTitle>
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                     <CardHeader className="pt-0">
+                                        <CardDescription>Update your profile picture and work gallery.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-6">
+                                        <div className="space-y-2">
+                                            <Label>Profile Picture</Label>
+                                            <div className="flex items-center gap-4">
+                                                <NextImage src={artist.profilePicture} alt="Profile" width={80} height={80} className="rounded-full object-cover" />
+                                                <Button asChild variant="outline">
+                                                    <label>
+                                                        <Upload className="mr-2"/> Change Picture
+                                                        <Input type="file" className="sr-only" accept="image/*" onChange={handleProfilePicUpload} />
+                                                    </label>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Work Gallery</Label>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {artist.workImages.map((src, index) => (
+                                                <div key={index} className="relative group">
+                                                    <NextImage src={src} alt={`Work ${index + 1}`} width={200} height={150} className="rounded-md object-cover w-full aspect-[4/3]"/>
+                                                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Button variant="destructive" size="icon" onClick={() => handleImageDelete(src)}>
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                                <div className="relative border-2 border-dashed border-muted-foreground/50 rounded-lg aspect-[4/3] flex flex-col items-center justify-center text-center hover:border-accent">
+                                                    <Upload className="h-8 w-8 text-muted-foreground" />
+                                                    <p className="mt-2 text-xs text-muted-foreground">Upload More</p>
+                                                    <Input type="file" className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" multiple accept="image/*" onChange={handleGalleryUpload} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </AccordionContent>
+                            </Card>
+                        </AccordionItem>
 
                     </Accordion>
-                    <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>Save Profile Changes</Button>
+                    <Button type="submit" size="lg" disabled={form.formState.isSubmitting} className="w-full">Save Profile Changes</Button>
                 </form>
             </Form>
-            
-            <Separator />
-
-             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><ImageIcon /> Manage Images</CardTitle>
-                    <CardDescription>Update your profile picture and work gallery.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="space-y-2">
-                        <Label>Profile Picture</Label>
-                        <div className="flex items-center gap-4">
-                            <NextImage src={artist.profilePicture} alt="Profile" width={80} height={80} className="rounded-full object-cover" />
-                            <Button asChild variant="outline">
-                                <label>
-                                    <Upload className="mr-2"/> Change Picture
-                                    <Input type="file" className="sr-only" accept="image/*" onChange={handleProfilePicUpload} />
-                                </label>
-                            </Button>
-                        </div>
-                    </div>
-                     <div className="space-y-2">
-                        <Label>Work Gallery</Label>
-                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                           {artist.workImages.map((src, index) => (
-                               <div key={index} className="relative group">
-                                   <NextImage src={src} alt={`Work ${index + 1}`} width={200} height={150} className="rounded-md object-cover w-full aspect-[4/3]"/>
-                                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                       <Button variant="destructive" size="icon" onClick={() => handleImageDelete(src)}>
-                                           <Trash2 className="h-4 w-4" />
-                                       </Button>
-                                   </div>
-                               </div>
-                           ))}
-                             <div className="relative border-2 border-dashed border-muted-foreground/50 rounded-lg aspect-[4/3] flex flex-col items-center justify-center text-center hover:border-accent">
-                                <Upload className="h-8 w-8 text-muted-foreground" />
-                                <p className="mt-2 text-xs text-muted-foreground">Upload More</p>
-                                <Input type="file" className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" multiple accept="image/*" onChange={handleGalleryUpload} />
-                            </div>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
         </div>
     );
 }

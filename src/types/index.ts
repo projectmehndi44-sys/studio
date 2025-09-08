@@ -1,5 +1,7 @@
 
 
+import type { TeamMember } from "@/lib/team-data";
+
 export type ArtistPackage = {
   id: string;
   name: string;
@@ -154,13 +156,4 @@ export type Permissions = {
   transactions: Permission;
   packages: Permission;
   settings: Permission;
-};
-
-export type TeamMember = {
-    id: string;
-    name: string;
-    username: string;
-    password?: string;
-    role: 'admin' | 'team-member';
-    permissions: Permissions;
 };

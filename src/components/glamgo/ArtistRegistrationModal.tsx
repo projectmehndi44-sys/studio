@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -73,7 +74,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
   const [isSubmitted, setIsSubmitted] = React.useState(false);
   const [isVerifyingOtp, setIsVerifyingOtp] = React.useState(false);
   const [isOtpSent, setIsOtpSent] = React.useState(false);
-  const [availableStates, setAvailableStates] = React.useState<string[]>([]);
+  const [availableLocations, setAvailableLocations] = React.useState<Record<string, string[]>>({});
   
   const form = useForm<RegistrationFormValues>({
     resolver: zodResolver(registrationSchema),
@@ -104,12 +105,12 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
            console.log("No service locations configured by admin.");
         }
 
-        setAvailableStates(Object.keys(locations));
+        setAvailableLocations(locations);
     }
   }, [isOpen]);
 
   const selectedState = form.watch('state');
-  const districts = selectedState ? INDIA_LOCATIONS[selectedState] || [] : [];
+  const districts = selectedState ? (availableLocations[selectedState] || []) : [];
 
   const onSubmit = (data: RegistrationFormValues) => {
     const existingPending = JSON.parse(localStorage.getItem('pendingArtists') || '[]');
@@ -191,7 +192,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
             <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <div className="max-h-[60vh] overflow-y-auto pr-4 -mr-4 space-y-6">
-                   {availableStates.length === 0 ? (
+                   {Object.keys(availableLocations).length === 0 ? (
                         <Alert variant="destructive">
                             <Terminal className="h-4 w-4" />
                             <AlertTitle>Registration Currently Unavailable</AlertTitle>
@@ -255,7 +256,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                                             <SelectTrigger><SelectValue placeholder="Select an available state" /></SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {availableStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                            {Object.keys(availableLocations).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
@@ -358,7 +359,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                    )}
                 </div>
             <DialogFooter>
-                <Button type="submit" className="bg-accent hover:bg-accent/90 w-full" disabled={availableStates.length === 0 || form.formState.isSubmitting}>
+                <Button type="submit" className="bg-accent hover:bg-accent/90 w-full" disabled={Object.keys(availableLocations).length === 0 || form.formState.isSubmitting}>
                     {form.formState.isSubmitting ? 'Submitting...' : 'Submit for Review'}
                 </Button>
             </DialogFooter>
