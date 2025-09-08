@@ -35,6 +35,7 @@ import { MehndiIcon, MakeupIcon, PhotographyIcon } from '@/components/icons';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
 
 const galleryImages = [
     { src: 'https://picsum.photos/600/400?random=101', alt: 'Intricate bridal mehndi', hint: 'bridal mehndi' },
@@ -100,6 +101,21 @@ export default function Home() {
     localArtists.forEach(a => allArtistsMap.set(a.id, a));
     return Array.from(allArtistsMap.values());
   }, []);
+
+  const handleCustomerLogout = React.useCallback(() => {
+    setIsCustomerLoggedIn(false);
+    setCustomer(null);
+    setCart([]);
+    localStorage.removeItem('currentCustomerId');
+    toast({
+      title: 'Logged Out',
+      description: 'You have been successfully logged out.',
+    });
+  }, [toast]);
+  
+  // Setup inactivity timeout only when the user is logged in
+  useInactivityTimeout(isCustomerLoggedIn ? handleCustomerLogout : () => {});
+
 
   const fetchData = React.useCallback(() => {
     setArtists(getArtists());
@@ -202,17 +218,6 @@ export default function Home() {
         });
     }, 0);
   }
-
-  const handleCustomerLogout = () => {
-    setIsCustomerLoggedIn(false);
-    setCustomer(null);
-    setCart([]);
-    localStorage.removeItem('currentCustomerId');
-    toast({
-      title: 'Logged Out',
-      description: 'You have been successfully logged out.',
-    });
-  };
 
   const applyFilters = React.useCallback(() => {
     let currentArtists = artists;

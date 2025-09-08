@@ -19,6 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
 
 // 1. Create a context for the artist portal
 interface ArtistPortalContextType {
@@ -84,6 +85,14 @@ export default function ArtistDashboardLayout({
     const [unreadCount, setUnreadCount] = React.useState(0);
     const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
+    const handleLogout = React.useCallback(() => {
+        localStorage.removeItem('isArtistAuthenticated');
+        localStorage.removeItem('artistId');
+        router.push('/');
+    }, [router]);
+
+    useInactivityTimeout(handleLogout);
+
 
     const getArtists = (): Artist[] => {
          const storedArtists = localStorage.getItem('artists');
@@ -128,8 +137,7 @@ export default function ArtistDashboardLayout({
         setNotifications(artistNotifications.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
         setUnreadCount(artistNotifications.filter((n: Notification) => !n.isRead).length);
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [router, toast]);
+    }, [router, toast, handleLogout]);
 
     React.useEffect(() => {
         const isArtistAuthenticated = localStorage.getItem('isArtistAuthenticated');
@@ -145,11 +153,6 @@ export default function ArtistDashboardLayout({
         };
     }, [fetchData, router]);
 
-    const handleLogout = () => {
-        localStorage.removeItem('isArtistAuthenticated');
-        localStorage.removeItem('artistId');
-        router.push('/');
-    };
 
     if (!artist) {
         return <div className="flex items-center justify-center min-h-screen">Loading Artist Portal...</div>;

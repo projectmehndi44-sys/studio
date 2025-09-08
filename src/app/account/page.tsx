@@ -13,11 +13,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, Briefcase, CalendarCheck2, History } from 'lucide-react';
 import { allBookings as initialBookings, initialCustomers } from '@/lib/data';
 import { format } from 'date-fns';
+import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
 
 export default function AccountPage() {
     const router = useRouter();
     const [customer, setCustomer] = React.useState<Customer | null>(null);
     const [bookings, setBookings] = React.useState<Booking[]>([]);
+
+    const handleLogout = React.useCallback(() => {
+        localStorage.removeItem('currentCustomerId');
+        router.push('/');
+    }, [router]);
+
+    useInactivityTimeout(handleLogout);
 
     const fetchCustomerData = React.useCallback(() => {
         const customerId = localStorage.getItem('currentCustomerId');
@@ -43,11 +51,6 @@ export default function AccountPage() {
         window.addEventListener('storage', fetchCustomerData);
         return () => window.removeEventListener('storage', fetchCustomerData);
     }, [fetchCustomerData]);
-    
-    const handleLogout = () => {
-        localStorage.removeItem('currentCustomerId');
-        router.push('/');
-    };
 
     const getStatusVariant = (status: Booking['status']) => {
         switch (status) {
