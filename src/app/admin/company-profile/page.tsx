@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -13,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Save, Building, User, MapPin, Phone, Mail, Globe } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 const profileSchema = z.object({
   companyName: z.string().min(1, 'Company Name is required.'),
@@ -29,6 +31,7 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 export default function CompanyProfilePage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { hasPermission } = useAdminAuth();
     const [isLoading, setIsLoading] = React.useState(false);
 
     const form = useForm<ProfileFormValues>({
@@ -117,7 +120,7 @@ export default function CompanyProfilePage() {
                                 )} />
                             </div>
                             
-                            <Button type="submit" disabled={isLoading} className="w-full !mt-8">
+                            <Button type="submit" disabled={isLoading || !hasPermission('settings', 'edit')} className="w-full !mt-8">
                                     {isLoading ? 'Saving...' : <><Save className="mr-2 h-4 w-4"/> Save Changes</>}
                             </Button>
                         </form>

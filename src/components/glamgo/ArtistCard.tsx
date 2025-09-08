@@ -1,4 +1,5 @@
 
+
 import type { Artist } from '@/types';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,7 +29,8 @@ const getServiceIcon = (service: Artist['services'][number]) => {
 
 export function ArtistCard({ artist, onBookingRequest }: ArtistCardProps) {
   const primaryService = artist.services[0];
-  const baseCharge = artist.charges?.[primaryService] || artist.charge;
+  const baseCharge = artist.charges?.[primaryService] || artist.charges?.mehndi || artist.charges?.makeup || artist.charges?.photography || artist.charge;
+
 
   return (
     <Card className="overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-2xl hover:border-accent">

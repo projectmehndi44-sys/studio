@@ -16,11 +16,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { exportPayoutToPdf, generateGstInvoiceForPlatformFee } from '@/lib/export';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 
 export default function PayoutManagementPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { hasPermission } = useAdminAuth();
     const [artists, setArtists] = React.useState<Artist[]>(initialArtists);
     const [bookings, setBookings] = React.useState<Booking[]>([]);
     const [payouts, setPayouts] = React.useState<Payout[]>([]);
@@ -172,7 +174,7 @@ export default function PayoutManagementPage() {
                                                 <TableCell>- ₹{payout.platformFees.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
                                                 <TableCell className="font-bold text-green-600">₹{payout.netPayout.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
                                                 <TableCell className="text-right space-x-2">
-                                                    <Button onClick={() => handleMarkAsPaid(payout)}>Mark as Paid</Button>
+                                                    <Button onClick={() => handleMarkAsPaid(payout)} disabled={!hasPermission('payouts', 'edit')}>Mark as Paid</Button>
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
                                                             <Button aria-haspopup="true" size="icon" variant="ghost">
@@ -224,7 +226,7 @@ export default function PayoutManagementPage() {
                                                 <TableCell>{new Date(history.paymentDate).toLocaleString()}</TableCell>
                                                 <TableCell className="font-medium">{history.artistName}</TableCell>
                                                 <TableCell>{history.totalBookings}</TableCell>
-                                                <TableCell>₹{history.netPayout.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
+                                                <TableCell>₹{history.netPayout.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
                                                 <TableCell className="text-right">
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>

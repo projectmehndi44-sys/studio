@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -19,6 +20,7 @@ import NextImage from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 const packageSchema = z.object({
   id: z.string().optional(),
@@ -35,6 +37,7 @@ type PackageFormValues = z.infer<typeof packageSchema>;
 export default function PackageManagementPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { hasPermission } = useAdminAuth();
     const [packages, setPackages] = React.useState<ServicePackage[]>([]);
     const [editingPackage, setEditingPackage] = React.useState<ServicePackage | null>(null);
     const [imagePreview, setImagePreview] = React.useState<string | null>(null);
@@ -135,8 +138,8 @@ export default function PackageManagementPage() {
                 <div className="relative">
                     <NextImage src={pkg.image} alt={pkg.name} width={400} height={250} className="w-full object-cover aspect-video" />
                     <div className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button size="icon" variant="outline" className="bg-background/80" onClick={() => handleEdit(pkg)}><Edit className="h-4 w-4"/></Button>
-                            <Button size="icon" variant="destructive" onClick={() => handleDelete(pkg.id)}><Trash2 className="h-4 w-4"/></Button>
+                            <Button size="icon" variant="outline" className="bg-background/80" onClick={() => handleEdit(pkg)} disabled={!hasPermission('packages', 'edit')}><Edit className="h-4 w-4"/></Button>
+                            <Button size="icon" variant="destructive" onClick={() => handleDelete(pkg.id)} disabled={!hasPermission('packages', 'edit')}><Trash2 className="h-4 w-4"/></Button>
                     </div>
                 </div>
                 <CardHeader>
@@ -220,7 +223,7 @@ export default function PackageManagementPage() {
                                     )} />
                                     <div className="flex gap-2">
                                         {editingPackage && <Button type="button" variant="outline" onClick={handleCancelEdit} className="w-full">Cancel</Button>}
-                                        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                                        <Button type="submit" className="w-full" disabled={form.formState.isSubmitting || !hasPermission('packages', 'edit')}>
                                             {editingPackage ? <><Edit className="mr-2 h-4 w-4"/> Update Package</> : <><PlusCircle className="mr-2 h-4 w-4"/>Create Package</>}
                                         </Button>
                                     </div>

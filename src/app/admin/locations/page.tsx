@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -12,10 +13,12 @@ import { MapPin, Save } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { INDIA_LOCATIONS } from '@/lib/india-locations';
 import { AVAILABLE_LOCATIONS } from '@/lib/available-locations';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 export default function LocationManagementPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { hasPermission } = useAdminAuth();
     const [selectedLocations, setSelectedLocations] = React.useState<Record<string, string[]>>({});
     const [isLoading, setIsLoading] = React.useState(false);
 
@@ -142,7 +145,7 @@ export default function LocationManagementPage() {
                                 )
                             })}
                         </Accordion>
-                        <Button onClick={handleSave} disabled={isLoading} className="w-full">
+                        <Button onClick={handleSave} disabled={isLoading || !hasPermission('settings', 'edit')} className="w-full">
                             {isLoading ? 'Saving...' : <><Save className="mr-2 h-4 w-4"/> Save Changes</>}
                         </Button>
                     </div>
@@ -151,4 +154,3 @@ export default function LocationManagementPage() {
         </>
     );
 }
-

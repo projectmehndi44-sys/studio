@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -12,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Percent, IndianRupee } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 const settingsSchema = z.object({
   gstin: z.string().regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, { message: 'Invalid GSTIN format.' }).or(z.literal('')),
@@ -24,6 +26,7 @@ type SettingsFormValues = z.infer<typeof settingsSchema>;
 export default function FinancialSettingsPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { hasPermission } = useAdminAuth();
     const [isLoading, setIsLoading] = React.useState(false);
 
     const form = useForm<SettingsFormValues>({
@@ -119,7 +122,7 @@ export default function FinancialSettingsPage() {
                                 )} />
                              </div>
                             
-                            <Button type="submit" disabled={isLoading} className="w-full !mt-8">
+                            <Button type="submit" disabled={isLoading || !hasPermission('settings', 'edit')} className="w-full !mt-8">
                                     {isLoading ? 'Saving...' : <><Save className="mr-2 h-4 w-4"/> Save Changes</>}
                             </Button>
                         </form>

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -21,25 +22,23 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     React.useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated') === 'true';
-            if (isAdminAuthenticated) {
-                const username = localStorage.getItem('adminUsername');
-                const teamMembersData = localStorage.getItem('teamMembers');
-                const teamMembers: TeamMember[] = teamMembersData ? JSON.parse(teamMembersData) : initialTeamMembers;
-                const currentUser = teamMembers.find((m: TeamMember) => m.username === username);
+        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated') === 'true';
+        if (isAdminAuthenticated) {
+            const username = localStorage.getItem('adminUsername');
+            const teamMembersData = localStorage.getItem('teamMembers');
+            const teamMembers: TeamMember[] = teamMembersData ? JSON.parse(teamMembersData) : initialTeamMembers;
+            const currentUser = teamMembers.find((m: TeamMember) => m.username === username);
 
-                if (currentUser) {
-                    setAuthState({ isLoading: false, isAuthenticated: true, user: currentUser });
-                } else {
-                    localStorage.removeItem('isAdminAuthenticated');
-                    localStorage.removeItem('adminRole');
-                    localStorage.removeItem('adminUsername');
-                    setAuthState({ isLoading: false, isAuthenticated: false, user: null });
-                }
+            if (currentUser) {
+                setAuthState({ isLoading: false, isAuthenticated: true, user: currentUser });
             } else {
+                localStorage.removeItem('isAdminAuthenticated');
+                localStorage.removeItem('adminRole');
+                localStorage.removeItem('adminUsername');
                 setAuthState({ isLoading: false, isAuthenticated: false, user: null });
             }
+        } else {
+            setAuthState({ isLoading: false, isAuthenticated: false, user: null });
         }
     }, []);
 

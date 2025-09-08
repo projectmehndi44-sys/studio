@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -10,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Image as ImageIcon, Upload, Trash2 } from 'lucide-react';
 import NextImage from 'next/image';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 
 // Mock data for existing images. In a real app, this would come from a database or file storage.
@@ -31,6 +33,7 @@ const initialBackgroundImages = [
 export default function ImageManagementPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { hasPermission } = useAdminAuth();
     
     // State to manage images.
     const [galleryImages, setGalleryImages] = React.useState(initialGalleryImages);
@@ -116,7 +119,7 @@ export default function ImageManagementPage() {
                                             <div key={index} className="relative group">
                                                 <NextImage src={image.src} alt={image.alt} width={200} height={150} className="rounded-md object-cover w-full aspect-[4/3]"/>
                                                 <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Button variant="destructive" size="icon" onClick={() => handleImageDelete('gallery', index)}>
+                                                    <Button variant="destructive" size="icon" onClick={() => handleImageDelete('gallery', index)} disabled={!hasPermission('settings', 'edit')}>
                                                         <Trash2 className="h-4 w-4" />
                                                         <span className="sr-only">Delete Image</span>
                                                     </Button>
@@ -132,7 +135,7 @@ export default function ImageManagementPage() {
                                                 {isUploading ? 'Uploading...' : 'Add Gallery Images'}
                                                 </label>
                                         </Button>
-                                        <Input id="gallery-upload" type="file" className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" multiple onChange={handleImageUpload('gallery')} disabled={isUploading} />
+                                        <Input id="gallery-upload" type="file" className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" multiple onChange={handleImageUpload('gallery')} disabled={isUploading || !hasPermission('settings', 'edit')} />
                                     </div>
                                 </CardContent>
                             </Card>
@@ -149,7 +152,7 @@ export default function ImageManagementPage() {
                                             <div key={index} className="relative group">
                                                 <NextImage src={src} alt={`Background ${index + 1}`} width={200} height={150} className="rounded-md object-cover w-full aspect-[4/3]"/>
                                                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Button variant="destructive" size="icon" onClick={() => handleImageDelete('background', index)}>
+                                                    <Button variant="destructive" size="icon" onClick={() => handleImageDelete('background', index)} disabled={!hasPermission('settings', 'edit')}>
                                                         <Trash2 className="h-4 w-4" />
                                                         <span className="sr-only">Delete Image</span>
                                                     </Button>
@@ -165,7 +168,7 @@ export default function ImageManagementPage() {
                                                 {isUploading ? 'Uploading...' : 'Add Background Images'}
                                                 </label>
                                         </Button>
-                                        <Input id="background-upload" type="file" className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" multiple onChange={handleImageUpload('background')} disabled={isUploading} />
+                                        <Input id="background-upload" type="file" className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" multiple onChange={handleImageUpload('background')} disabled={isUploading || !hasPermission('settings', 'edit')} />
                                     </div>
                                 </CardContent>
                             </Card>

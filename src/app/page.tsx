@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -16,6 +17,7 @@ import {
   UserPlus,
   Palette,
   ShoppingBag,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/glamgo/Header';
@@ -35,6 +37,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
+import { RecommendationsTab } from '@/components/glamgo/RecommendationsTab';
 
 const galleryImages = [
     { src: 'https://picsum.photos/600/400?random=101', alt: 'Intricate bridal mehndi', hint: 'bridal mehndi' },
@@ -412,13 +415,14 @@ export default function Home() {
           </div>
         )}
 
-        <Tabs defaultValue="mehndi" className="w-full mt-8" onValueChange={(value) => setServiceType(value as 'mehndi' | 'makeup' | 'photography')}>
-            <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto">
-                <TabsTrigger value="mehndi"><MehndiIcon className="mr-2 h-6 w-6"/>Mehendi</TabsTrigger>
+        <Tabs defaultValue="browse" className="w-full mt-8">
+            <TabsList className="grid w-full grid-cols-4 max-w-2xl mx-auto">
+                <TabsTrigger value="browse"><MehndiIcon className="mr-2 h-6 w-6"/>Mehendi</TabsTrigger>
                 <TabsTrigger value="makeup"><MakeupIcon className="mr-2 h-6 w-6"/>Makeup</TabsTrigger>
                 <TabsTrigger value="photography"><PhotographyIcon className="mr-2 h-6 w-6"/>Photography</TabsTrigger>
+                 <TabsTrigger value="recommendations" className="text-accent"><Sparkles className="mr-2 h-5 w-5"/>AI Match</TabsTrigger>
             </TabsList>
-            <TabsContent value="mehndi">
+            <TabsContent value="browse">
                 <ArtistFinder service="mehndi" />
             </TabsContent>
             <TabsContent value="makeup">
@@ -426,6 +430,9 @@ export default function Home() {
             </TabsContent>
             <TabsContent value="photography">
                  <ArtistFinder service="photography" />
+            </TabsContent>
+            <TabsContent value="recommendations">
+                <RecommendationsTab onBookingRequest={handleBookingRequest}/>
             </TabsContent>
         </Tabs>
 

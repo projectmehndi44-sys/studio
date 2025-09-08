@@ -328,22 +328,22 @@ export default function ArtistManagementPage() {
                                             <TableCell>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
-                                                        <Button aria-haspopup="true" size="icon" variant="ghost" disabled={!hasPermission('artists', 'edit')}>
+                                                        <Button aria-haspopup="true" size="icon" variant="ghost">
                                                             <MoreHorizontal className="h-4 w-4" />
                                                             <span className="sr-only">Toggle menu</span>
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end">
                                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                            <DropdownMenuItem onSelect={() => router.push(`/admin/artists/${artist.id}`)}>
+                                                        <DropdownMenuItem onSelect={() => router.push(`/admin/artists/${artist.id}`)}>
                                                             <Eye className="mr-2 h-4 w-4" />
                                                             View Details
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => handleAction('Edit', 'Artist', artist.id)}>
+                                                        <DropdownMenuItem onSelect={() => handleAction('Edit', 'Artist', artist.id)} disabled={!hasPermission('artists', 'edit')}>
                                                             <Pencil className="mr-2 h-4 w-4" />
                                                             Edit
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => handleAction('Delete', 'Artist', artist.id)}>
+                                                        <DropdownMenuItem onSelect={() => handleAction('Delete', 'Artist', artist.id)} disabled={!hasPermission('artists', 'edit')}>
                                                             <Trash2 className="mr-2 h-4 w-4 text-red-500" />
                                                             Delete
                                                         </DropdownMenuItem>

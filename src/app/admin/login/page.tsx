@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -20,19 +21,21 @@ export default function AdminLoginPage() {
     const [password, setPassword] = React.useState('');
     const [userType, setUserType] = React.useState<'admin' | 'team-member' | ''>('');
     const [isLoading, setIsLoading] = React.useState(false);
+    const [teamMembers, setTeamMembers] = React.useState<TeamMember[]>(initialTeamMembers);
 
-    const getTeamMembers = (): TeamMember[] => {
-        if (typeof window !== 'undefined') {
-            const storedMembers = localStorage.getItem('teamMembers');
-            if (storedMembers) {
-                return JSON.parse(storedMembers);
-            }
-            // If nothing in local storage, initialize with default admin
-            localStorage.setItem('teamMembers', JSON.stringify(initialTeamMembers));
-            return initialTeamMembers;
+    const getTeamMembers = React.useCallback((): TeamMember[] => {
+        const storedMembers = localStorage.getItem('teamMembers');
+        if (storedMembers) {
+            return JSON.parse(storedMembers);
         }
+        // If nothing in local storage, initialize with default admin
+        localStorage.setItem('teamMembers', JSON.stringify(initialTeamMembers));
         return initialTeamMembers;
-    };
+    }, []);
+
+    React.useEffect(() => {
+        setTeamMembers(getTeamMembers());
+    }, [getTeamMembers]);
     
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
@@ -51,8 +54,8 @@ export default function AdminLoginPage() {
         // This is a basic, client-side-only authentication for prototyping using localStorage as a mock DB.
         // In a real application, this should be a server action that validates credentials against a secure backend.
         setTimeout(() => {
-            const teamMembers = getTeamMembers();
-            const member = teamMembers.find(m => m.username === username && m.password === password && m.role === userType);
+            const allMembers = getTeamMembers(); // Fetch the most current list
+            const member = allMembers.find(m => m.username === username && m.password === password && m.role === userType);
 
             if (member) {
                 toast({

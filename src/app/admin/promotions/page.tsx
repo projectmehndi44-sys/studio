@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -19,6 +20,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 const promotionSchema = z.object({
   code: z.string().min(4, 'Code must be at least 4 characters').regex(/^[A-Z0-9]+$/, 'Code must be uppercase letters and numbers only.'),
@@ -37,6 +39,7 @@ const initialPromotions: Promotion[] = [
 export default function PromotionsPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { hasPermission } = useAdminAuth();
     const [promotions, setPromotions] = React.useState<Promotion[]>([]);
 
     const form = useForm<PromotionFormValues>({
@@ -126,7 +129,7 @@ export default function PromotionsPage() {
                                         </Popover>
                                     <FormMessage /></FormItem>
                                 )} />
-                                <Button type="submit" className="md:col-span-1 w-full" disabled={form.formState.isSubmitting}><PlusCircle/>Create Code</Button>
+                                <Button type="submit" className="md:col-span-1 w-full" disabled={form.formState.isSubmitting || !hasPermission('settings', 'edit')}><PlusCircle/>Create Code</Button>
                             </form>
                         </Form>
                     </CardContent>
@@ -157,10 +160,10 @@ export default function PromotionsPage() {
                                             <Badge variant={promo.isActive ? 'default' : 'destructive'}>{promo.isActive ? 'Active' : 'Inactive'}</Badge>
                                         </TableCell>
                                         <TableCell className="text-right space-x-2">
-                                                <Button variant="ghost" size="icon" onClick={() => toggleStatus(promo.id)} title={promo.isActive ? 'Deactivate' : 'Activate'}>
+                                                <Button variant="ghost" size="icon" onClick={() => toggleStatus(promo.id)} title={promo.isActive ? 'Deactivate' : 'Activate'} disabled={!hasPermission('settings', 'edit')}>
                                                 {promo.isActive ? <ToggleRight className="text-green-600"/> : <ToggleLeft className="text-muted-foreground"/>}
                                                 </Button>
-                                                <Button variant="ghost" size="icon" onClick={() => deletePromotion(promo.id)} title="Delete">
+                                                <Button variant="ghost" size="icon" onClick={() => deletePromotion(promo.id)} title="Delete" disabled={!hasPermission('settings', 'edit')}>
                                                 <Trash2 className="text-destructive"/>
                                                 </Button>
                                         </TableCell>

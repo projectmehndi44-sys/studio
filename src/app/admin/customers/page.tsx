@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -11,11 +12,13 @@ import { Badge } from '@/components/ui/badge';
 import type { Customer } from '@/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { initialCustomers } from '@/lib/data';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 type CustomerWithStatus = Customer & { status: 'Active' | 'Suspended'; registeredOn: string; };
 
 export default function CustomerManagementPage() {
     const { toast } = useToast();
+    const { hasPermission } = useAdminAuth();
     const [customers, setCustomers] = React.useState<CustomerWithStatus[]>([]);
 
     const fetchCustomers = React.useCallback(() => {
@@ -84,7 +87,7 @@ export default function CustomerManagementPage() {
                                     <TableCell className="text-right">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
-                                                <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                <Button aria-haspopup="true" size="icon" variant="ghost" disabled={!hasPermission('customers', 'edit')}>
                                                     <MoreHorizontal className="h-4 w-4" />
                                                     <span className="sr-only">Toggle menu</span>
                                                 </Button>
