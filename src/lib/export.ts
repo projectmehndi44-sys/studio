@@ -191,22 +191,35 @@ export const exportPayoutToPdf = (payout: Payout | PayoutHistory) => {
   doc.save(`payout-summary-${payout.artistName.replace(/\s/g, '-')}.pdf`);
 };
 
+const getCompanyProfile = () => {
+    const savedProfile = localStorage.getItem('companyProfile');
+    if (savedProfile) {
+        return JSON.parse(savedProfile);
+    }
+    return {
+        companyName: 'MehendiFy Platform',
+        address: '123 Glamour Lane, Mumbai, MH, 400001',
+        gstin: 'Not Set',
+    };
+};
+
+
 /**
  * Generates a GST invoice for the platform fee charged to an artist.
  * @param payout - The payout data object for which to generate the commission invoice.
  */
 export const generateGstInvoiceForPlatformFee = (payout: Payout | PayoutHistory) => {
     const doc = new jsPDF();
-    const gstin = localStorage.getItem('platformGstin') || 'Not Set';
+    const companyProfile = getCompanyProfile();
     const platformFee = payout.platformFees;
 
     // Invoice Header
     doc.setFontSize(24);
     doc.text('Tax Invoice', 105, 20, { align: 'center' });
     doc.setFontSize(12);
-    doc.text('MehendiFy Platform', 14, 30);
-    doc.text('123 Glamour Lane, Mumbai, MH, 400001', 14, 36);
-    doc.text(`GSTIN: ${gstin}`, 14, 42);
+    doc.text(companyProfile.companyName, 14, 30);
+    doc.text(companyProfile.address, 14, 36);
+    doc.text(`GSTIN: ${companyProfile.gstin}`, 14, 42);
 
     doc.text(`Bill To: ${payout.artistName}`, 14, 60);
 
@@ -250,7 +263,7 @@ export const generateGstInvoiceForPlatformFee = (payout: Payout | PayoutHistory)
  */
 export const generateCustomerInvoice = (booking: Booking, customer: Customer) => {
     const doc = new jsPDF();
-    const gstin = localStorage.getItem('platformGstin') || 'Not Set';
+    const companyProfile = getCompanyProfile();
     const totalAmount = booking.amount;
     const taxableAmount = totalAmount / 1.18;
     const gstAmount = totalAmount - taxableAmount;
@@ -259,9 +272,9 @@ export const generateCustomerInvoice = (booking: Booking, customer: Customer) =>
     doc.setFontSize(24);
     doc.text('Tax Invoice', 105, 20, { align: 'center' });
     doc.setFontSize(12);
-    doc.text('MehendiFy Platform', 14, 30);
-    doc.text('123 Glamour Lane, Mumbai, MH, 400001', 14, 36);
-    doc.text(`GSTIN: ${gstin}`, 14, 42);
+    doc.text(companyProfile.companyName, 14, 30);
+    doc.text(companyProfile.address, 14, 36);
+    doc.text(`GSTIN: ${companyProfile.gstin}`, 14, 42);
 
     doc.text(`Bill To: ${customer.name}`, 14, 60);
     doc.text(`Contact: ${customer.phone}`, 14, 66);

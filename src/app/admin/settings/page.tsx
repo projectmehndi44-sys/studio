@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Users, MapPin, Image as ImageIcon, User, Tag, IndianRupee, AreaChart } from 'lucide-react';
+import { Users, MapPin, Image as ImageIcon, User, Tag, IndianRupee, AreaChart, Building } from 'lucide-react';
 
 export default function SettingsPage() {
     const router = useRouter();
@@ -26,6 +26,7 @@ export default function SettingsPage() {
         { href: "/admin/images", icon: ImageIcon, title: "Site Image Management", description: "Update homepage gallery and background images." },
         { href: "/admin/profile", icon: User, title: "Manage Your Profile", description: "Update your personal admin account details." },
         { href: "/admin/financial-settings", icon: IndianRupee, title: "Financial Settings", description: "Set GSTIN, platform fees, and other financial rules." },
+        { href: "/admin/company-profile", icon: Building, title: "Company Profile", description: "Manage your platform's name, address, and legal info." },
     ];
 
     return (
