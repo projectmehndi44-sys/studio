@@ -3,7 +3,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
-import type { Artist, Booking, Review, Payout, PayoutHistory, Transaction } from '@/types';
+import type { Artist, Booking, Review, Payout, PayoutHistory, Transaction, Customer } from '@/types';
 
 type ArtistExportData = {
     artist: Artist;
@@ -192,13 +192,12 @@ export const exportPayoutToPdf = (payout: Payout | PayoutHistory) => {
 };
 
 /**
- * Generates a GST invoice for the platform fee.
- * @param payout - The payout data object.
+ * Generates a GST invoice for the platform fee charged to an artist.
+ * @param payout - The payout data object for which to generate the commission invoice.
  */
-export const generateGstInvoice = (payout: Payout | PayoutHistory) => {
+export const generateGstInvoiceForPlatformFee = (payout: Payout | PayoutHistory) => {
     const doc = new jsPDF();
     const gstin = localStorage.getItem('platformGstin') || 'Not Set';
-    const taxableAmount = payout.grossRevenue / 1.18;
     const platformFee = payout.platformFees;
 
     // Invoice Header
@@ -210,23 +209,22 @@ export const generateGstInvoice = (payout: Payout | PayoutHistory) => {
     doc.text(`GSTIN: ${gstin}`, 14, 42);
 
     doc.text(`Bill To: ${payout.artistName}`, 14, 60);
-    // Add artist address if available
 
-    const invoiceId = `INV-${payout.artistId.substring(0,4)}-${Date.now()}`;
+    const invoiceId = `INV-COMM-${payout.artistId.substring(0,4)}-${Date.now()}`;
     const invoiceDate = 'paymentDate' in payout ? new Date(payout.paymentDate).toLocaleDateString() : new Date().toLocaleDateString();
 
     doc.text(`Invoice #: ${invoiceId}`, 196, 60, { align: 'right' });
     doc.text(`Date: ${invoiceDate}`, 196, 66, { align: 'right' });
 
-    // Invoice Table
-    const gstOnCommission = platformFee * 0.18;
+    // Invoice Table for Platform Commission
+    const gstOnCommission = platformFee * 0.18; // Assuming 18% GST on commission
     const totalFee = platformFee + gstOnCommission;
 
     autoTable(doc, {
         startY: 80,
         head: [['#', 'Service Description', 'Taxable Amount', 'GST Rate', 'GST Amount', 'Total']],
         body: [
-            ['1', `Platform Commission Fee`, `₹${platformFee.toLocaleString()}`, '18%', `₹${gstOnCommission.toLocaleString(undefined, {minimumFractionDigits: 2})}`, `₹${totalFee.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
+            ['1', `Platform Commission Fee`, `₹${platformFee.toLocaleString(undefined, {minimumFractionDigits: 2})}`, '18%', `₹${gstOnCommission.toLocaleString(undefined, {minimumFractionDigits: 2})}`, `₹${totalFee.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
         ],
         foot: [
             ['', '', '', '', 'Total', `₹${totalFee.toLocaleString(undefined, {minimumFractionDigits: 2})}`]
@@ -242,8 +240,78 @@ export const generateGstInvoice = (payout: Payout | PayoutHistory) => {
     doc.setFontSize(10);
     doc.text('This is a computer-generated invoice and does not require a signature.', 105, finalY + 20, { align: 'center' });
 
-    doc.save(`gst-invoice-${invoiceId}.pdf`);
+    doc.save(`gst-commission-invoice-${invoiceId}.pdf`);
 };
+
+/**
+ * Generates a customer-facing GST invoice for a booking.
+ * @param booking The booking object.
+ * @param customer The customer object.
+ */
+export const generateCustomerInvoice = (booking: Booking, customer: Customer) => {
+    const doc = new jsPDF();
+    const gstin = localStorage.getItem('platformGstin') || 'Not Set';
+    const totalAmount = booking.amount;
+    const taxableAmount = totalAmount / 1.18;
+    const gstAmount = totalAmount - taxableAmount;
+
+    // Invoice Header
+    doc.setFontSize(24);
+    doc.text('Tax Invoice', 105, 20, { align: 'center' });
+    doc.setFontSize(12);
+    doc.text('MehendiFy Platform', 14, 30);
+    doc.text('123 Glamour Lane, Mumbai, MH, 400001', 14, 36);
+    doc.text(`GSTIN: ${gstin}`, 14, 42);
+
+    doc.text(`Bill To: ${customer.name}`, 14, 60);
+    doc.text(`Contact: ${customer.phone}`, 14, 66);
+    if(customer.email) doc.text(`Email: ${customer.email}`, 14, 72);
+
+    const invoiceId = `INV-CUST-${booking.id.substring(5)}`;
+    const invoiceDate = new Date(booking.date).toLocaleDateString();
+
+    doc.text(`Invoice #: ${invoiceId}`, 196, 60, { align: 'right' });
+    doc.text(`Date: ${invoiceDate}`, 196, 66, { align: 'right' });
+
+    // Invoice Table
+    autoTable(doc, {
+        startY: 80,
+        head: [['#', 'Service Description', 'Amount']],
+        body: [
+            ['1', booking.service, `₹${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`]
+        ],
+        theme: 'striped',
+    });
+    
+    let finalY = (doc as any).lastAutoTable.finalY;
+
+    // Totals Section
+    autoTable(doc, {
+        startY: finalY + 2,
+        body: [
+             ['Subtotal (pre-tax)', `₹${taxableAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
+             ['GST (18%)', `₹${gstAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
+        ],
+        foot: [
+            [{ content: 'Total Amount Paid', styles: { fontStyle: 'bold' } }, { content: `₹${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`, styles: { fontStyle: 'bold' } }]
+        ],
+        theme: 'plain',
+        styles: { halign: 'right' },
+        footStyles: { halign: 'right', fillColor: false, fontStyle: 'bold' },
+        columnStyles: { 0: { halign: 'right' } },
+    });
+
+    finalY = (doc as any).lastAutoTable.finalY;
+
+
+    // Footer
+    doc.setFontSize(10);
+    doc.text('This is a computer-generated invoice and does not require a signature.', 105, finalY + 20, { align: 'center' });
+    doc.text('Thank you for your business!', 105, finalY + 26, { align: 'center' });
+
+    doc.save(`invoice-${invoiceId}.pdf`);
+}
+
 
 /**
  * Exports a list of transactions to a PDF file.

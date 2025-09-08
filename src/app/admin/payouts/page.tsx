@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -14,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
-import { exportPayoutToPdf, generateGstInvoice } from '@/lib/export';
+import { exportPayoutToPdf, generateGstInvoiceForPlatformFee } from '@/lib/export';
 
 
 export default function PayoutManagementPage() {
@@ -184,9 +185,9 @@ export default function PayoutManagementPage() {
                                                                 <Download className="mr-2 h-4 w-4" />
                                                                 Download PDF
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuItem onSelect={() => generateGstInvoice(payout)}>
+                                                            <DropdownMenuItem onSelect={() => generateGstInvoiceForPlatformFee(payout)}>
                                                                 <FileText className="mr-2 h-4 w-4" />
-                                                                Generate GST Invoice
+                                                                Generate Commission Invoice
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
@@ -235,11 +236,11 @@ export default function PayoutManagementPage() {
                                                         <DropdownMenuContent align="end">
                                                             <DropdownMenuItem onSelect={() => exportPayoutToPdf(history)}>
                                                                 <Download className="mr-2 h-4 w-4" />
-                                                                Download PDF
+                                                                Download Payout PDF
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuItem onSelect={() => generateGstInvoice(history)}>
+                                                            <DropdownMenuItem onSelect={() => generateGstInvoiceForPlatformFee(history)}>
                                                                 <FileText className="mr-2 h-4 w-4" />
-                                                                Generate GST Invoice
+                                                                Generate Commission Invoice
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>

@@ -10,13 +10,16 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { Booking, Customer } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Briefcase, CalendarCheck2, History } from 'lucide-react';
+import { LogOut, Briefcase, CalendarCheck2, History, Download } from 'lucide-react';
 import { allBookings as initialBookings, initialCustomers } from '@/lib/data';
 import { format } from 'date-fns';
 import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
+import { generateCustomerInvoice } from '@/lib/export';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AccountPage() {
     const router = useRouter();
+    const { toast } = useToast();
     const [customer, setCustomer] = React.useState<Customer | null>(null);
     const [bookings, setBookings] = React.useState<Booking[]>([]);
 
@@ -52,6 +55,22 @@ export default function AccountPage() {
         return () => window.removeEventListener('storage', fetchCustomerData);
     }, [fetchCustomerData]);
 
+    const handleDownloadInvoice = (booking: Booking) => {
+        if (customer) {
+            generateCustomerInvoice(booking, customer);
+            toast({
+                title: 'Invoice Downloaded',
+                description: `Invoice for booking #${booking.id} has been downloaded.`,
+            });
+        } else {
+             toast({
+                title: 'Error',
+                description: 'Could not download invoice. Customer data not found.',
+                variant: 'destructive',
+            });
+        }
+    };
+
     const getStatusVariant = (status: Booking['status']) => {
         switch (status) {
             case 'Completed': return 'default';
@@ -79,6 +98,7 @@ export default function AccountPage() {
                     <TableHead>Service Dates</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Invoice</TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
@@ -96,10 +116,18 @@ export default function AccountPage() {
                         </TableCell>
                         <TableCell>₹{booking.amount.toLocaleString(undefined, {maximumFractionDigits: 0})}</TableCell>
                         <TableCell><Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge></TableCell>
+                        <TableCell className="text-right">
+                            {booking.status !== 'Cancelled' && booking.status !== 'Needs Assignment' && (
+                                <Button variant="ghost" size="icon" onClick={() => handleDownloadInvoice(booking)}>
+                                    <Download className="h-4 w-4" />
+                                    <span className="sr-only">Download Invoice</span>
+                                </Button>
+                            )}
+                        </TableCell>
                     </TableRow>
                 )) : (
                     <TableRow>
-                        <TableCell colSpan={4} className="text-center text-muted-foreground">You have no bookings in this category.</TableCell>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground">You have no bookings in this category.</TableCell>
                     </TableRow>
                 )}
             </TableBody>
