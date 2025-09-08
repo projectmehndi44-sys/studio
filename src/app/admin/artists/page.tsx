@@ -285,8 +285,9 @@ export default function ArtistManagementPage() {
                                             />
                                         </TableHead>
                                         <TableHead>Artist</TableHead>
-                                        <TableHead>Location</TableHead>
-                                        <TableHead>Charge</TableHead>
+                                        <TableHead>Contact Info</TableHead>
+                                        <TableHead>Services</TableHead>
+                                        <TableHead>Base Charge</TableHead>
                                         <TableHead>Rating</TableHead>
                                         <TableHead><span className="sr-only">Actions</span></TableHead>
                                     </TableRow>
@@ -294,7 +295,7 @@ export default function ArtistManagementPage() {
                                 <TableBody>
                                     {approvedArtists.map((artist) => (
                                         <TableRow key={artist.id}>
-                                                <TableCell>
+                                            <TableCell>
                                                 <Checkbox
                                                     checked={selectedArtistIds.includes(artist.id)}
                                                     onCheckedChange={(checked) => handleSelectOne(artist.id, !!checked)}
@@ -306,9 +307,24 @@ export default function ArtistManagementPage() {
                                                     <AvatarImage src={artist.profilePicture} alt={artist.name} />
                                                     <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
                                                 </Avatar>
-                                                {artist.name}
+                                                <div className="flex flex-col">
+                                                    <span>{artist.name}</span>
+                                                    <span className="text-xs text-muted-foreground">{artist.location}</span>
+                                                </div>
                                             </TableCell>
-                                            <TableCell>{artist.location}</TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span>{artist.email}</span>
+                                                    <span className="text-xs text-muted-foreground">{artist.phone}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-wrap gap-1">
+                                                    {artist.services.map(service => (
+                                                        <Badge key={service} variant="secondary" className="capitalize">{service}</Badge>
+                                                    ))}
+                                                </div>
+                                            </TableCell>
                                             <TableCell>₹{artist.charge}</TableCell>
                                             <TableCell>{artist.rating}</TableCell>
                                             <TableCell>
