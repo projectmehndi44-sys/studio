@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -13,9 +12,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Shield, Bell, Send, Upload, Image as ImageIcon, Users, User, ArrowLeft } from 'lucide-react';
+import { Bell, Send, Upload, Image as ImageIcon, Users, User } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { artists } from '@/lib/data';
+import { useAdminAuth } from '@/hooks/use-admin-auth';
 
 const customers = [
     { id: 'cust_101', name: 'Priya Patel', phone: '9123456780' },
@@ -26,16 +26,10 @@ const customers = [
 export default function NotificationPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { hasPermission } = useAdminAuth();
     const [isLoading, setIsLoading] = React.useState(false);
     const [imagePreview, setImagePreview] = React.useState<string | null>(null);
     const [selectedUsers, setSelectedUsers] = React.useState<string[]>([]);
-    
-    React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
-        if (isAdminAuthenticated !== 'true') {
-            router.push('/admin/login');
-        }
-    }, [router]);
     
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -70,40 +64,31 @@ export default function NotificationPage() {
     }
 
     return (
-        <div className="flex min-h-screen w-full flex-col bg-background">
-            <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6 justify-between">
-                <h1 className="flex items-center gap-2 text-xl font-bold text-primary">
-                    <Shield className="w-6 h-6" />
-                    Admin Portal
-                </h1>
-                <Link href="/admin">
-                     <Button variant="outline"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Dashboard</Button>
-                </Link>
-            </header>
-            <main className="flex-1 p-4 sm:px-6 sm:py-0 md:gap-8">
-                 <div className="max-w-4xl mx-auto grid gap-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                               <Bell className="w-6 h-6 text-primary"/> Send Notifications
-                            </CardTitle>
-                            <CardDescription>
-                                Communicate with your artists and customers. Select an audience and compose your message.
-                            </CardDescription>
-                        </CardHeader>
-                    </Card>
-
+        <>
+            <div className="flex items-center justify-between">
+                <h1 className="text-lg font-semibold md:text-2xl">Send Notifications</h1>
+            </div>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Bell className="w-6 h-6 text-primary"/> Notification Composer
+                    </CardTitle>
+                    <CardDescription>
+                        Communicate with your artists and customers. Select an audience and compose your message.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
                     <form onSubmit={handleSendNotification}>
                         <Tabs defaultValue="bulk">
                             <TabsList className="grid w-full grid-cols-2">
                                 <TabsTrigger value="bulk">
-                                    <Users className="mr-2"/>Bulk Notification
+                                    <Users className="mr-2 h-4 w-4"/>Bulk Notification
                                 </TabsTrigger>
                                 <TabsTrigger value="individual">
-                                    <User className="mr-2"/>Individual Notification
+                                    <User className="mr-2 h-4 w-4"/>Individual Notification
                                 </TabsTrigger>
                             </TabsList>
-                            <TabsContent value="bulk">
+                            <TabsContent value="bulk" className="mt-4">
                                 <Card>
                                     <CardHeader>
                                         <CardTitle>Bulk Messaging</CardTitle>
@@ -126,7 +111,7 @@ export default function NotificationPage() {
                                     </CardContent>
                                 </Card>
                             </TabsContent>
-                            <TabsContent value="individual">
+                            <TabsContent value="individual" className="mt-4">
                                <Card>
                                     <CardHeader>
                                         <CardTitle>Individual Messaging</CardTitle>
@@ -161,7 +146,7 @@ export default function NotificationPage() {
 
                         <Card className="mt-6">
                             <CardHeader>
-                                <CardTitle>Message Composer</CardTitle>
+                                <CardTitle>Message Details</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
@@ -198,13 +183,13 @@ export default function NotificationPage() {
                         </Card>
                         
                         <div className="mt-6">
-                            <Button type="submit" className="w-full" disabled={isLoading}>
-                                {isLoading ? 'Sending...' : <><Send className="mr-2"/>Send Notification</>}
+                            <Button type="submit" className="w-full" disabled={isLoading || !hasPermission('notifications', 'edit')}>
+                                {isLoading ? 'Sending...' : <><Send className="mr-2 h-4 w-4"/>Send Notification</>}
                             </Button>
                         </div>
                     </form>
-                 </div>
-            </main>
-        </div>
+                </CardContent>
+            </Card>
+        </>
     );
 }
