@@ -3,6 +3,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -73,7 +74,11 @@ export default function CustomerManagementPage() {
                         <TableBody>
                             {customers.map((customer) => (
                                 <TableRow key={customer.id}>
-                                    <TableCell className="font-medium">{customer.name || 'N/A'}</TableCell>
+                                    <TableCell className="font-medium">
+                                        <Link href={`/admin/customers/${customer.id}`} className="hover:underline text-primary">
+                                            {customer.name || 'N/A'}
+                                        </Link>
+                                    </TableCell>
                                     <TableCell>
                                         <div className="flex flex-col">
                                             <span>{customer.email}</span>
