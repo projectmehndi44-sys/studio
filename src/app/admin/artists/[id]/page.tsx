@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
-import { IndianRupee, BarChart, Star, Users, Briefcase, Calendar as CalendarIcon, Image as ImageIcon, Download, ChevronDown } from 'lucide-react';
+import { IndianRupee, BarChart, Star, Users, Briefcase, Calendar as CalendarIcon, Image as ImageIcon, Download, ChevronDown, ArrowLeft } from 'lucide-react';
 import type { Artist, Booking, Review } from '@/types';
 import { artists as initialArtists, allBookings as initialBookings } from '@/lib/data';
 import NextImage from 'next/image';
@@ -115,7 +115,12 @@ export default function ArtistDetailPage() {
     return (
         <>
             <div className="flex items-center justify-between">
-                <h1 className="text-lg font-semibold md:text-2xl">Artist Details</h1>
+                 <div className="flex items-center gap-4">
+                    <Button variant="outline" size="icon" onClick={() => router.back()}>
+                        <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <h1 className="text-lg font-semibold md:text-2xl">Artist Details</h1>
+                </div>
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline">
