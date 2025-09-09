@@ -172,7 +172,7 @@ export default function Home() {
         title: "Service Added!",
         description: `${item.masterPackage.name} (${item.category.name}) has been added to your selection.`,
         action: (
-            <Link href="/book">
+            <Link href="/cart">
                 <Button variant="secondary" size="sm">View Cart</Button>
             </Link>
         ),
@@ -208,140 +208,19 @@ export default function Home() {
   }
 
   const CategoryTabContent = ({ serviceType }: { serviceType: 'mehndi' | 'makeup' | 'photography' }) => {
-    const [filteredArtists, setFilteredArtists] = React.useState<Artist[]>([]);
-    const [location, setLocation] = React.useState('');
-    const [priceRange, setPriceRange] = React.useState([20000]);
-    const [selectedStyles, setSelectedStyles] = React.useState<string[]>([]);
-    
     // Filter packages specific to this tab's service type
     const relevantPackages = allPackages.filter(p => p.service === serviceType);
     
-    const allStyleTags = React.useMemo(() => {
-      const tags = new Set<string>();
-      artists
-        .filter(artist => artist.services.includes(serviceType))
-        .forEach(artist => artist.styleTags.forEach(tag => tags.add(tag)));
-      return Array.from(tags);
-    }, [serviceType]);
-    
-    const applyFilters = React.useCallback(() => {
-        let currentArtists = artists.filter(artist => artist.services.includes(serviceType));
-
-        if (location) {
-        currentArtists = currentArtists.filter((artist) =>
-            artist.location.toLowerCase().includes(location.toLowerCase())
-        );
-        }
-        
-        if (selectedStyles.length > 0) {
-            currentArtists = currentArtists.filter(artist => 
-                selectedStyles.every(style => artist.styleTags.includes(style))
-            );
-        }
-
-        setFilteredArtists(currentArtists);
-    }, [location, selectedStyles, serviceType]);
-
-    React.useEffect(() => {
-        applyFilters();
-    }, [applyFilters, artists]); // Re-run when base artist list changes
-
-    const resetFilters = () => {
-        setLocation('');
-        setPriceRange([20000]);
-        setSelectedStyles([]);
-    };
-    
-    const handleStyleChange = (style: string) => {
-        setSelectedStyles(prev => 
-            prev.includes(style) ? prev.filter(s => s !== style) : [...prev, style]
-        )
-    }
-
     return (
       <div className="space-y-8 mt-8">
         <Packages packages={relevantPackages} onServiceSelect={(service) => { setSelectedService(service); setIsServiceModalOpen(true); }} />
-
-        <Separator />
-        
-        <h2 className="text-center font-headline text-5xl text-primary">Discover {serviceType.charAt(0).toUpperCase() + serviceType.slice(1)} Artists</h2>
-        <Card className="my-4 border-2 border-accent/20 shadow-lg bg-background/80 backdrop-blur-sm">
-            <CardContent className="p-6">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 items-end">
-                    <div className="space-y-2">
-                    <Label htmlFor={`location-${serviceType}`}>Location</Label>
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                        id={`location-${serviceType}`}
-                        placeholder="City or pin code..."
-                        className="pl-9"
-                        value={location}
-                        onChange={(e) => setLocation(e.target.value)}
-                        />
-                    </div>
-                    </div>
-                    <div className="space-y-2 lg:col-span-2">
-                    <Label htmlFor={`price-${serviceType}`}>Price Range (Max): <span className="font-bold text-primary">₹{priceRange[0].toLocaleString()}</span></Label>
-                    <Slider
-                        id={`price-${serviceType}`}
-                        max={20000}
-                        min={500}
-                        step={500}
-                        value={priceRange}
-                        onValueChange={setPriceRange}
-                        />
-                    </div>
-                    <Button onClick={resetFilters} variant="ghost" className="w-full">
-                        Reset Filters
-                    </Button>
-                </div>
-                <div className="mt-4 pt-4 border-t">
-                    <Label>Filter by Style</Label>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                        {allStyleTags.map(tag => (
-                            <div key={tag} className="flex items-center space-x-2">
-                                <Checkbox id={`${tag}-${serviceType}`} checked={selectedStyles.includes(tag)} onCheckedChange={() => handleStyleChange(tag)} />
-                                <label htmlFor={`${tag}-${serviceType}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 capitalize">{tag}</label>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-
-        {filteredArtists.length > 0 ? (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredArtists.map((artist) => (
-                <ArtistCard
-                key={artist.id}
-                artist={artist}
-                onBookingRequest={handleBookingRequest}
-                />
-            ))}
-            </div>
-        ) : (
-            <div className="text-center py-16">
-            <p className="text-lg text-muted-foreground">No artists found matching your criteria.</p>
-            </div>
-        )}
-        </div>
+      </div>
     );
   }
 
 
   return (
     <div className="flex min-h-screen w-full flex-col relative">
-       {isCustomerLoggedIn && cart.length > 0 && (
-         <div className="fixed bottom-8 right-8 z-50">
-             <Link href="/book">
-                <Button size="lg" className="rounded-full shadow-lg text-lg">
-                    <ShoppingBag className="mr-2 h-6 w-6"/>
-                    View Cart ({cart.length})
-                </Button>
-            </Link>
-         </div>
-       )}
       <div className="fixed inset-0 -z-10 h-full w-full">
           {backgroundImages.map((src, index) => (
               <Image
@@ -411,7 +290,7 @@ export default function Home() {
                     <TabsTrigger value="mehndi" className="text-lg py-3"><MehndiIcon className="mr-2 h-5 w-5"/>Mehndi</TabsTrigger>
                     <TabsTrigger value="makeup" className="text-lg py-3"><MakeupIcon className="mr-2 h-5 w-5"/>Makeup</TabsTrigger>
                     <TabsTrigger value="photography" className="text-lg py-3"><PhotographyIcon className="mr-2 h-5 w-5" />Photography</TabsTrigger>
-                    <TabsTrigger value="recommendations" className="text-lg py-3"><Sparkles className="mr-2 h-5 w-5 text-accent"/>AI Match</TabsTrigger>
+                    <TabsTrigger value="recommendations" className="text-lg py-3"><Sparkles className="mr-2 h-5 w-5 text-accent"/>AI Recommendations</TabsTrigger>
                 </TabsList>
                 <TabsContent value="mehndi">
                     <CategoryTabContent serviceType="mehndi" />
@@ -495,5 +374,3 @@ export default function Home() {
     </div>
   );
 }
-
-    

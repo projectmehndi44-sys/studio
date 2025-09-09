@@ -52,13 +52,11 @@ export function Header({
         {isCustomerLoggedIn && customer ? (
           <>
             <Button variant="ghost" className="relative" asChild>
-                <Link href="/book">
+                <Link href="/cart">
                     <ShoppingBag className="h-6 w-6"/>
-                    {cartCount > 0 && (
-                        <span className="absolute top-0 right-0 h-5 w-5 rounded-full bg-red-500 text-xs flex items-center justify-center text-white border-2 border-background">
-                            {cartCount}
-                        </span>
-                    )}
+                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-xs flex items-center justify-center text-white border-2 border-background">
+                        {cartCount}
+                    </span>
                     <span className="sr-only">View Cart</span>
                 </Link>
             </Button>

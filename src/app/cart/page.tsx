@@ -28,7 +28,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 
-export default function BookingPage() {
+export default function CartPage() {
     const router = useRouter();
     const { toast } = useToast();
 
@@ -208,7 +208,7 @@ export default function BookingPage() {
                  </Button>
             </header>
             <main className="max-w-4xl mx-auto p-4 md:p-8">
-                 <h1 className="text-3xl font-bold text-primary mb-6">Create Booking</h1>
+                 <h1 className="text-3xl font-bold text-primary mb-6">Your Cart & Booking</h1>
                 {cart.length === 0 ? (
                      <Card className="text-center p-8">
                         <CardTitle>Your Cart is Empty</CardTitle>

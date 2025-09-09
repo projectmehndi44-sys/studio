@@ -73,7 +73,16 @@ export function ServiceSelectionModal({ service, artists, isOpen, onOpenChange, 
     return (
         <div className="space-y-4">
              <Button variant="outline" onClick={() => setSelectedCategory(null)}>&larr; Back to Tiers</Button>
-            <h3 className="text-xl font-bold text-center">Choose an Artist for "{category.name}" Tier</h3>
+            
+            <div className="flex items-center gap-4 p-2 rounded-lg bg-muted">
+                {category.image && <Image src={category.image} alt={category.name} width={64} height={64} className="rounded-md object-cover"/>}
+                <div>
+                    <h3 className="text-xl font-bold">You selected: "{category.name}"</h3>
+                    <p className="text-sm text-muted-foreground">{category.description}</p>
+                </div>
+            </div>
+
+            <h4 className="text-lg font-bold text-center">Choose an Artist</h4>
             <ScrollArea className="h-72">
                  <div className="space-y-3 pr-4">
                  {offeringArtists.length > 0 ? (
