@@ -19,9 +19,10 @@ import { useToast } from '@/hooks/use-toast';
 
 import { AVAILABLE_LOCATIONS } from '@/lib/available-locations';
 import type { Booking, Artist, Customer, CartItem } from '@/types';
+import { artists as initialArtists } from '@/lib/data';
 
-import { Calendar as CalendarIcon, ChevronLeft, Trash2, Upload, MapPin, Instagram, CheckCircle, AlertCircle, IndianRupee } from 'lucide-react';
-import { format } from 'date-fns';
+import { Calendar as CalendarIcon, ChevronLeft, Trash2, Upload, MapPin, Instagram, CheckCircle, AlertCircle, IndianRupee, Tag } from 'lucide-react';
+import { format, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -36,6 +37,7 @@ export default function CartPage() {
     const [cart, setCart] = React.useState<CartItem[]>([]);
     const [availableLocations, setAvailableLocations] = React.useState<Record<string, string[]>>({});
     const [customer, setCustomer] = React.useState<Customer | null>(null);
+    const [allArtists, setAllArtists] = React.useState<Artist[]>([]);
     
     // State for Artist Profile Modal
     const [isArtistModalOpen, setIsArtistModalOpen] = React.useState(false);
@@ -55,6 +57,10 @@ export default function CartPage() {
     const [mapLink, setMapLink] = React.useState('');
     const [note, setNote] = React.useState('');
     const [instagramId, setInstagramId] = React.useState('');
+    
+    // Referral state
+    const [referralCode, setReferralCode] = React.useState('');
+    const [appliedReferral, setAppliedReferral] = React.useState<{ artist: Artist, discount: number } | null>(null);
 
     React.useEffect(() => {
         const customerId = localStorage.getItem('currentCustomerId');
@@ -63,7 +69,7 @@ export default function CartPage() {
             toast({ title: "Please login to continue", variant: "destructive" });
             return;
         }
-
+        
         const allCustomers: Customer[] = JSON.parse(localStorage.getItem('customers') || '[]');
         const currentCustomer = allCustomers.find(c => c.id === customerId);
         if (currentCustomer) {
@@ -81,8 +87,16 @@ export default function CartPage() {
         const savedLocationsData = localStorage.getItem('availableLocations');
         const savedLocations = savedLocationsData ? JSON.parse(savedLocationsData) : AVAILABLE_LOCATIONS;
         setAvailableLocations(savedLocations);
-    }, [router, toast]);
+        
+        // Fetch all artists
+        const storedArtists = localStorage.getItem('artists');
+        const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
+        const artistsMap = new Map<string, Artist>();
+        initialArtists.forEach(a => artistsMap.set(a.id, a));
+        localArtists.forEach(a => artistsMap.set(a.id, a));
+        setAllArtists(Array.from(artistsMap.values()));
 
+    }, [router, toast]);
 
     const handleRemoveFromCart = (index: number) => {
         const newCart = cart.filter((_, i) => i !== index);
@@ -108,30 +122,94 @@ export default function CartPage() {
             cart.length > 0
         );
     }
+    
+    const handleApplyReferral = () => {
+        if (!referralCode) return;
+        const referredArtist = allArtists.find(a => a.referralCode?.toUpperCase() === referralCode.toUpperCase());
+
+        if (referredArtist && referredArtist.referralDiscount) {
+            setAppliedReferral({ artist: referredArtist, discount: referredArtist.referralDiscount });
+            toast({
+                title: "Referral Applied!",
+                description: `You've received a ${referredArtist.referralDiscount}% discount from ${referredArtist.name}!`,
+            });
+        } else {
+            toast({
+                title: "Invalid Code",
+                description: "The referral code is not valid. Please check and try again.",
+                variant: "destructive",
+            });
+            setAppliedReferral(null);
+        }
+    };
+
+    const isArtistAvailable = (artist: Artist, dates: Date[]): boolean => {
+        const allBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || '[]');
+        
+        // Check for conflicting confirmed bookings
+        const hasConflictingBooking = allBookings.some(booking =>
+            booking.artistIds.includes(artist.id) &&
+            (booking.status === 'Confirmed' || booking.status === 'Completed') &&
+            booking.serviceDates.some(bookedDate =>
+                dates.some(newDate => isSameDay(new Date(bookedDate), newDate))
+            )
+        );
+
+        if (hasConflictingBooking) return false;
+
+        // Check for artist's manually set unavailable dates
+        const hasUnavailableDate = artist.unavailableDates?.some(unavailableDateStr =>
+            dates.some(newDate => isSameDay(new Date(unavailableDateStr), newDate))
+        );
+
+        if (hasUnavailableDate) return false;
+
+        return true;
+    };
 
     const handleCreateBooking = () => {
         if (!isFormValid() || !customer) return;
 
         let totalAmount = 0;
-        const artistIds = new Set<string>();
+        const bookingArtistIds = new Set<string>();
         let serviceDescription = '';
 
         cart.forEach(item => {
             if(item.artist) {
                 const offering = item.artist.serviceOfferings?.find(o => o.masterPackageId === item.masterPackage.id && o.categoryName === item.category.name);
                 totalAmount += offering?.artistPrice || item.category.basePrice;
-                artistIds.add(item.artist.id);
+                bookingArtistIds.add(item.artist.id);
             } else {
                 totalAmount += item.category.basePrice;
             }
         });
+        
+        if (appliedReferral) {
+            totalAmount = totalAmount * (1 - appliedReferral.discount / 100);
+            
+            // Referral Logic
+            const canAssignReferredArtist = isArtistAvailable(appliedReferral.artist, serviceDates);
+            if (canAssignReferredArtist) {
+                bookingArtistIds.add(appliedReferral.artist.id);
+                toast({
+                    title: `Artist ${appliedReferral.artist.name} Assigned!`,
+                    description: `Your referred artist was available and has been automatically assigned to your booking.`,
+                });
+            } else {
+                 toast({
+                    title: `${appliedReferral.artist.name} is unavailable`,
+                    description: `Your referred artist is not available on the selected dates. An admin will assign another top artist for you.`,
+                    variant: "destructive"
+                });
+            }
+        }
         
         serviceDescription = cart.map(item => `${item.masterPackage.name} (${item.category.name})`).join(', ');
 
         const newBooking: Booking = {
             id: `book_${Date.now()}`,
             customerId: customer.id,
-            artistIds: Array.from(artistIds),
+            artistIds: Array.from(bookingArtistIds),
             customerName: name,
             customerContact: phone,
             serviceAddress: address,
@@ -139,7 +217,7 @@ export default function CartPage() {
             date: serviceDates[0],
             service: serviceDescription,
             amount: totalAmount,
-            status: artistIds.size > 0 ? 'Pending Approval' : 'Needs Assignment',
+            status: bookingArtistIds.size > 0 ? 'Pending Approval' : 'Needs Assignment',
             eventType,
             eventDate: eventDate!,
             state,
@@ -148,6 +226,7 @@ export default function CartPage() {
             mapLink,
             note,
             instagramId,
+            appliedReferralCode: appliedReferral?.artist.referralCode,
             completionCode: Math.floor(100000 + Math.random() * 900000).toString(),
         };
 
@@ -197,18 +276,19 @@ export default function CartPage() {
         setIsArtistModalOpen(true);
     }
 
-
     const availableStates = Object.keys(availableLocations);
     const availableDistricts = state ? availableLocations[state] || [] : [];
     
-    const total = cart.reduce((sum, item) => {
+    const subtotal = cart.reduce((sum, item) => {
         if(item.artist) {
             const offering = item.artist.serviceOfferings?.find(o => o.masterPackageId === item.masterPackage.id && o.categoryName === item.category.name);
             return sum + (offering?.artistPrice || item.category.basePrice);
         }
         return sum + item.category.basePrice;
     }, 0);
-
+    
+    const discountAmount = appliedReferral ? subtotal * (appliedReferral.discount / 100) : 0;
+    const total = subtotal - discountAmount;
     const taxableAmount = total / 1.18;
     const taxes = total - taxableAmount;
     
@@ -410,20 +490,57 @@ export default function CartPage() {
                             <CardTitle>Final Summary</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
+                            <div className="grid grid-cols-1 gap-2">
+                                <div className="flex items-center gap-2">
+                                    <Input 
+                                        id="referral-code"
+                                        placeholder="Enter Referral Code"
+                                        value={referralCode}
+                                        onChange={e => setReferralCode(e.target.value)}
+                                        className="max-w-xs"
+                                        disabled={!!appliedReferral}
+                                    />
+                                    <Button type="button" variant="outline" onClick={handleApplyReferral} disabled={!!appliedReferral}>
+                                        <Tag className="mr-2 h-4 w-4"/>
+                                        {appliedReferral ? 'Applied!' : 'Apply'}
+                                    </Button>
+                                </div>
+                                {appliedReferral && (
+                                    <Alert variant="default" className="border-green-600 bg-green-50 text-green-800">
+                                        <CheckCircle className="h-4 w-4 !text-green-600" />
+                                        <AlertTitle className="font-bold">Code "{appliedReferral.artist.referralCode}" Applied</AlertTitle>
+                                        <AlertDescription>
+                                            You've got a {appliedReferral.discount}% discount from {appliedReferral.artist.name}.
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
+                            </div>
+                            <Separator/>
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Taxable Value</span>
+                                    <span className="text-muted-foreground">Subtotal</span>
+                                    <span>₹{subtotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                                </div>
+                                {appliedReferral && (
+                                    <div className="flex justify-between text-green-600 font-semibold">
+                                        <span className="">Discount ({appliedReferral.discount}%)</span>
+                                        <span>- ₹{discountAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                                    </div>
+                                )}
+                                <Separator/>
+                                <div className="flex justify-between text-base font-bold">
+                                    <span className="">Amount To Pay</span>
+                                    <span>₹{total.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                                </div>
+                                <Separator/>
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>Taxable Value</span>
                                     <span>₹{taxableAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                                 </div>
-                                <div className="flex justify-between">
-                                    <span className="text-muted-foreground">GST (18%)</span>
+                                <div className="flex justify-between text-xs text-muted-foreground">
+                                    <span>Included GST (18%)</span>
                                     <span>₹{taxes.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                                 </div>
-                            </div>
-                            <Separator />
-                            <div className="flex justify-between font-bold text-lg">
-                                <span>Total Amount (Inclusive of all taxes)</span>
-                                <span>₹{total.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                             </div>
                         </CardContent>
                     </Card>
