@@ -27,8 +27,9 @@ const dancingScript = Dancing_Script({
 
 
 export const metadata: Metadata = {
-  title: 'Artistry at Your Fingertips',
+  title: 'MehendiFy: Artistry at Your Fingertips',
   description: 'Discover and book the most talented mehndi and makeup artists near you. Your perfect look for any occasion is just a click away.',
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
@@ -38,6 +39,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+       <head>
+        <meta name="application-name" content="MehendiFy" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="MehendiFy" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="theme-color" content="#8B4513" />
+      </head>
       <body className={cn('font-body antialiased min-h-screen', playfairDisplay.variable, roboto.variable, dancingScript.variable)}>
         {children}
         <Toaster />
