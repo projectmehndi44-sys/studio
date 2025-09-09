@@ -31,6 +31,7 @@ import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
 import { RecommendationsTab } from '@/components/glamgo/RecommendationsTab';
 import { ServiceSelectionModal } from '@/components/glamgo/ServiceSelectionModal';
 import { MehndiIcon, MakeupIcon, PhotographyIcon } from '@/components/icons';
+import { PwaInstallBanner } from '@/components/glamgo/PwaInstallBanner';
 
 
 const galleryImages = [
@@ -309,6 +310,7 @@ export default function Home() {
             </Carousel>
         </div>
 
+        <PwaInstallBanner />
 
         <ArtistRegistrationModal
             isOpen={isArtistRegistrationModalOpen}
