@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Tag, PlusCircle, Trash2, ToggleLeft, ToggleRight, Calendar as CalendarIcon } from 'lucide-react';
+import { Tag, PlusCircle, Trash2, ToggleLeft, ToggleRight, Calendar as CalendarIcon, Repeat1 } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import type { Promotion } from '@/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -25,15 +25,16 @@ import { useAdminAuth } from '@/hooks/use-admin-auth';
 const promotionSchema = z.object({
   code: z.string().min(4, 'Code must be at least 4 characters').regex(/^[A-Z0-9]+$/, 'Code must be uppercase letters and numbers only.'),
   discount: z.coerce.number().min(1, 'Discount must be at least 1%').max(100, 'Discount cannot exceed 100%'),
+  usageLimit: z.coerce.number().min(0, 'Usage limit must be a positive number. 0 for unlimited.'),
   expiryDate: z.date({ required_error: 'An expiry date is required.'}),
 });
 
 type PromotionFormValues = z.infer<typeof promotionSchema>;
 
 const initialPromotions: Promotion[] = [
-    { id: 'promo_1', code: 'WELCOME10', discount: 10, expiryDate: '2024-12-31', isActive: true },
-    { id: 'promo_2', code: 'FESTIVE20', discount: 20, expiryDate: '2024-10-31', isActive: true },
-    { id: 'promo_3', code: 'SUMMER15', discount: 15, expiryDate: '2024-06-30', isActive: false },
+    { id: 'promo_1', code: 'WELCOME10', discount: 10, expiryDate: '2024-12-31', isActive: true, usageLimit: 1 },
+    { id: 'promo_2', code: 'FESTIVE20', discount: 20, expiryDate: '2024-10-31', isActive: true, usageLimit: 0 },
+    { id: 'promo_3', code: 'SUMMER15', discount: 15, expiryDate: '2024-06-30', isActive: false, usageLimit: 3 },
 ];
 
 export default function PromotionsPage() {
@@ -44,7 +45,7 @@ export default function PromotionsPage() {
 
     const form = useForm<PromotionFormValues>({
         resolver: zodResolver(promotionSchema),
-        defaultValues: { code: '', discount: 10 },
+        defaultValues: { code: '', discount: 10, usageLimit: 1 },
     });
 
     React.useEffect(() => {
@@ -77,7 +78,7 @@ export default function PromotionsPage() {
 
         savePromotions([newPromotion, ...promotions]);
         toast({ title: 'Promotion Created', description: `Code ${data.code} has been added.` });
-        form.reset({ code: '', discount: 10 });
+        form.reset({ code: '', discount: 10, usageLimit: 1 });
     };
 
     const toggleStatus = (id: string) => {
@@ -105,12 +106,15 @@ export default function PromotionsPage() {
                     </CardHeader>
                     <CardContent>
                             <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                                 <FormField control={form.control} name="code" render={({ field }) => (
                                     <FormItem><FormLabel>Promo Code</FormLabel><FormControl><Input placeholder="E.g., SAVE10" {...field} /></FormControl><FormMessage /></FormItem>
                                 )} />
                                 <FormField control={form.control} name="discount" render={({ field }) => (
                                     <FormItem><FormLabel>Discount (%)</FormLabel><FormControl><Input type="number" placeholder="10" {...field} /></FormControl><FormMessage /></FormItem>
+                                )} />
+                                <FormField control={form.control} name="usageLimit" render={({ field }) => (
+                                    <FormItem><FormLabel>Uses Per Customer</FormLabel><FormControl><Input type="number" placeholder="1 (0 for unlimited)" {...field} /></FormControl><FormMessage /></FormItem>
                                 )} />
                                     <FormField control={form.control} name="expiryDate" render={({ field }) => (
                                     <FormItem><FormLabel>Expiry Date</FormLabel>
@@ -145,6 +149,7 @@ export default function PromotionsPage() {
                                 <TableRow>
                                     <TableHead>Code</TableHead>
                                     <TableHead>Discount</TableHead>
+                                    <TableHead>Usage Limit</TableHead>
                                     <TableHead>Expires On</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
@@ -155,6 +160,7 @@ export default function PromotionsPage() {
                                     <TableRow key={promo.id}>
                                         <TableCell className="font-mono">{promo.code}</TableCell>
                                         <TableCell>{promo.discount}%</TableCell>
+                                        <TableCell>{promo.usageLimit === 0 ? 'Unlimited' : `${promo.usageLimit} per customer`}</TableCell>
                                         <TableCell>{format(new Date(promo.expiryDate), 'PPP')}</TableCell>
                                         <TableCell>
                                             <Badge variant={promo.isActive ? 'default' : 'destructive'}>{promo.isActive ? 'Active' : 'Inactive'}</Badge>
