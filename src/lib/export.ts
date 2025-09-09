@@ -180,7 +180,7 @@ export const exportPayoutToPdf = (payout: Payout | PayoutHistory) => {
       ['Platform Fees (on taxable amount)', `- ₹${payout.platformFees.toLocaleString(undefined, {maximumFractionDigits: 2})}`],
     ],
     foot: [
-        [{ content: 'Net Payout Amount', styles: { fontStyle: 'bold' } }, { content: `₹${payout.netPayout.toLocaleString()}`, styles: { fontStyle: 'bold' } }],
+        [{ content: 'Net Payout Amount', styles: { fontStyle: 'bold' } }, { content: `₹${payout.netPayout.toLocaleString(undefined, {maximumFractionDigits: 2})}`, styles: { fontStyle: 'bold' } }],
     ],
     theme: 'striped',
     styles: { fontSize: 12 },
@@ -289,7 +289,7 @@ export const generateCustomerInvoice = (booking: Booking, customer: Customer) =>
     // Invoice Table
     autoTable(doc, {
         startY: 80,
-        head: [['#', 'Service Description', 'Amount']],
+        head: [['#', 'Service Description', 'Amount (incl. GST)']],
         body: [
             ['1', booking.service, `₹${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`]
         ],
@@ -302,8 +302,8 @@ export const generateCustomerInvoice = (booking: Booking, customer: Customer) =>
     autoTable(doc, {
         startY: finalY + 2,
         body: [
-             ['Subtotal (pre-tax)', `₹${taxableAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
-             ['GST (18%)', `₹${gstAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
+             ['Taxable Value', `₹${taxableAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
+             ['Included GST (18%)', `₹${gstAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
         ],
         foot: [
             [{ content: 'Total Amount Paid', styles: { fontStyle: 'bold' } }, { content: `₹${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`, styles: { fontStyle: 'bold' } }]

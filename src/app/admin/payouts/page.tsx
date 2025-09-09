@@ -159,7 +159,7 @@ export default function PayoutManagementPage() {
                                         <TableRow>
                                             <TableHead>Artist</TableHead>
                                             <TableHead>Completed Bookings</TableHead>
-                                            <TableHead>Gross Revenue</TableHead>
+                                            <TableHead>Gross Booking Value (Incl. GST)</TableHead>
                                             <TableHead>Platform Fees</TableHead>
                                             <TableHead className="font-bold text-primary">Net Payout</TableHead>
                                             <TableHead className="text-right">Actions</TableHead>

@@ -189,7 +189,7 @@ export default function CartPage() {
     const availableStates = Object.keys(availableLocations);
     const availableDistricts = state ? availableLocations[state] || [] : [];
     
-    const subtotal = cart.reduce((sum, item) => {
+    const total = cart.reduce((sum, item) => {
         if(item.artist) {
             const offering = item.artist.serviceOfferings?.find(o => o.masterPackageId === item.masterPackage.id && o.categoryName === item.category.name);
             return sum + (offering?.artistPrice || item.category.basePrice);
@@ -197,8 +197,8 @@ export default function CartPage() {
         return sum + item.category.basePrice;
     }, 0);
 
-    const taxes = subtotal * 0.18; // Assuming 18% GST
-    const total = subtotal + taxes;
+    const taxableAmount = total / 1.18;
+    const taxes = total - taxableAmount;
     
     return (
         <div className="bg-background min-h-screen">
@@ -390,8 +390,8 @@ export default function CartPage() {
                         <CardContent className="space-y-4">
                             <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Subtotal (Pre-tax)</span>
-                                    <span>₹{subtotal.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                                    <span className="text-muted-foreground">Taxable Value</span>
+                                    <span>₹{taxableAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">GST (18%)</span>
@@ -400,7 +400,7 @@ export default function CartPage() {
                             </div>
                             <Separator />
                             <div className="flex justify-between font-bold text-lg">
-                                <span>Total Amount</span>
+                                <span>Total Amount (Inclusive of all taxes)</span>
                                 <span>₹{total.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
                             </div>
                         </CardContent>
