@@ -237,7 +237,7 @@ export default function CartPage() {
                                             <Image src={item.masterPackage.image} alt={item.masterPackage.name} width={64} height={64} className="rounded-md object-cover aspect-square"/>
                                             <div>
                                                 <div className="font-semibold">{item.masterPackage.name} <Badge variant="secondary">{item.category.name}</Badge></div>
-                                                <p className="text-sm text-muted-foreground">{artistName}</p>
+                                                <div className="text-sm text-muted-foreground">{artistName}</div>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
