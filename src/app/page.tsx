@@ -4,25 +4,16 @@
 
 import * as React from 'react';
 import type { Artist, ServicePackage, Customer, CartItem, MasterServicePackage } from '@/types';
-import { artists as initialArtists } from '@/lib/data';
-import { masterServices } from '@/lib/packages-data';
+import { getArtists, getMasterServices, getCustomer as fetchCustomer, getCustomers, createCustomer } from '@/lib/services';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
 import {
-  Search,
   LogIn,
   UserPlus,
   Palette,
-  ShoppingBag,
-  Sparkles,
-  Image as ImageIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/glamgo/Header';
-import { ArtistCard } from '@/components/glamgo/ArtistCard';
 import { ArtistRegistrationModal } from '@/components/glamgo/ArtistRegistrationModal';
 import { CustomerRegistrationModal } from '@/components/glamgo/CustomerRegistrationModal';
 import { CustomerLoginModal } from '@/components/glamgo/CustomerLoginModal';
@@ -34,12 +25,12 @@ import Autoplay from "embla-carousel-autoplay"
 import Image from 'next/image';
 import { Packages } from '@/components/glamgo/Packages';
 import { useRouter } from 'next/navigation';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
 import { RecommendationsTab } from '@/components/glamgo/RecommendationsTab';
 import { ServiceSelectionModal } from '@/components/glamgo/ServiceSelectionModal';
 import { MehndiIcon, MakeupIcon, PhotographyIcon } from '@/components/icons';
+import { Sparkles } from 'lucide-react';
 
 
 const galleryImages = [
@@ -85,41 +76,27 @@ export default function Home() {
 
   const [currentBgIndex, setCurrentBgIndex] = React.useState(0);
   
-  const getArtists = React.useCallback((): Artist[] => {
-    const storedArtists = localStorage.getItem('artists');
-    const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
-    const allArtistsMap = new Map<string, Artist>();
-    initialArtists.forEach(a => allArtistsMap.set(a.id, a));
-    localArtists.forEach(a => allArtistsMap.set(a.id, a));
-    return Array.from(allArtistsMap.values());
-  }, []);
-
   const handleCustomerLogout = React.useCallback(() => {
     setIsCustomerLoggedIn(false);
     setCustomer(null);
     setCart([]);
     localStorage.removeItem('currentCustomerId');
-    if(customer) localStorage.removeItem(`cart_${customer.id}`);
     toast({
       title: 'Logged Out',
       description: 'You have been successfully logged out.',
     });
-  }, [toast, customer]);
+  }, [toast]);
   
   useInactivityTimeout(isCustomerLoggedIn ? handleCustomerLogout : () => {});
 
 
-  const fetchData = React.useCallback(() => {
-    setArtists(getArtists());
-
-    const storedPackages = localStorage.getItem('masterServices');
-    setAllPackages(storedPackages ? JSON.parse(storedPackages) : masterServices);
-
+  const fetchData = React.useCallback(async () => {
+    setArtists(await getArtists());
+    setAllPackages(await getMasterServices());
+    
     const customerId = localStorage.getItem('currentCustomerId');
     if (customerId) {
-        const storedCustomers = localStorage.getItem('customers');
-        const allCustomers: Customer[] = storedCustomers ? JSON.parse(storedCustomers) : [];
-        const currentCustomer = allCustomers.find(c => c.id === customerId);
+        const currentCustomer = await fetchCustomer(customerId);
         if (currentCustomer) {
             setIsCustomerLoggedIn(true);
             setCustomer(currentCustomer);
@@ -131,7 +108,7 @@ export default function Home() {
         setCustomer(null);
         setCart([]);
     }
-  }, [getArtists]);
+  }, []);
 
   React.useEffect(() => {
     fetchData();
@@ -140,11 +117,12 @@ export default function Home() {
       setCurrentBgIndex((prevIndex) => (prevIndex + 1) % backgroundImages.length);
     }, 5000); 
     
-    window.addEventListener('storage', fetchData);
+    // No need for storage event listener anymore, as data is fetched from Firestore
+    // window.addEventListener('storage', fetchData);
 
     return () => {
         clearInterval(intervalId);
-        window.removeEventListener('storage', fetchData);
+        // window.removeEventListener('storage', fetchData);
     };
   }, [fetchData]);
   
@@ -168,20 +146,6 @@ export default function Home() {
     const newCart = [...cart, item];
     setCart(newCart);
     localStorage.setItem(`cart_${customer?.id}`, JSON.stringify(newCart));
-
-    // The toast is now replaced by the success view in the modal.
-    // We can keep a simpler one here for background actions if needed, but the modal provides better UX.
-    // toast({
-    //     title: "Service Added!",
-    //     description: `${item.masterPackage.name} (${item.category.name}) has been added to your selection.`,
-    //     action: (
-    //         <Link href="/cart">
-    //             <Button variant="secondary" size="sm">View Cart</Button>
-    //         </Link>
-    //     ),
-    // });
-    // The modal now handles its own state, so we don't close it from here.
-    // setIsServiceModalOpen(false); 
   };
 
   const handleArtistRegister = () => {
@@ -212,7 +176,6 @@ export default function Home() {
   }
 
   const CategoryTabContent = ({ serviceType }: { serviceType: 'mehndi' | 'makeup' | 'photography' }) => {
-    // Filter packages specific to this tab's service type
     const relevantPackages = allPackages.filter(p => p.service === serviceType);
     
     return (

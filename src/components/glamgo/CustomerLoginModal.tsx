@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -22,7 +23,7 @@ import { Separator } from '@/components/ui/separator';
 import { GoogleIcon } from '../icons';
 import { signInWithGoogle } from '@/lib/firebase';
 import type { Customer } from '@/types';
-import { initialCustomers } from '@/lib/data';
+import { getCustomers, getCustomerByEmail, createCustomer } from '@/lib/services';
 
 const loginSchema = z.object({
   phone: z.string().regex(/^\d{10}$/, { message: 'Please enter a valid 10-digit phone number.' }),
@@ -51,24 +52,14 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
     },
   });
 
-  const getCustomers = (): Customer[] => {
-    const storedCustomers = localStorage.getItem('customers');
-    return storedCustomers ? JSON.parse(storedCustomers) : initialCustomers;
-  }
-  
-  const saveCustomers = (customers: Customer[]) => {
-      localStorage.setItem('customers', JSON.stringify(customers));
-      window.dispatchEvent(new Event('storage'));
-  }
-
-  const handleSendOtp = () => {
+  const handleSendOtp = async () => {
     const phone = form.getValues('phone');
     if (!/^\d{10}$/.test(phone)) {
         form.setError('phone', { type: 'manual', message: 'Please enter a valid 10-digit phone number to send OTP.' });
         return;
     }
     
-    const customers = getCustomers();
+    const customers = await getCustomers();
     const existingCustomer = customers.find(c => c.phone === phone);
 
     if (!existingCustomer) {
@@ -91,28 +82,27 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
     }, 1000);
   }
 
-  const onSubmit = (data: LoginFormValues) => {
+  const onSubmit = async (data: LoginFormValues) => {
     setIsSubmitting(true);
     // In a real app, this would verify the OTP against a backend service
     console.log(data);
-    setTimeout(() => {
-        const customers = getCustomers();
-        const customer = customers.find(c => c.phone === data.phone);
 
-        if (customer) {
-          localStorage.setItem('currentCustomerId', customer.id);
-          onSuccessfulLogin(customer);
-          handleClose();
-        } else {
-            // This case should ideally not be hit due to the check in handleSendOtp
-            toast({
-                title: 'Login Failed',
-                description: 'An unexpected error occurred.',
-                variant: 'destructive',
-            });
-            setIsSubmitting(false);
-        }
-    }, 1000)
+    const customers = await getCustomers();
+    const customer = customers.find(c => c.phone === data.phone);
+
+    if (customer) {
+      localStorage.setItem('currentCustomerId', customer.id);
+      onSuccessfulLogin(customer);
+      handleClose();
+    } else {
+        // This case should ideally not be hit due to the check in handleSendOtp
+        toast({
+            title: 'Login Failed',
+            description: 'An unexpected error occurred.',
+            variant: 'destructive',
+        });
+        setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -128,17 +118,17 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
     try {
       const user = await signInWithGoogle();
       if (user && user.email) {
-          const customers = getCustomers();
-          let customer = customers.find(c => c.email === user.email);
+          let customer = await getCustomerByEmail(user.email);
           
           if (!customer) {
-            customer = {
+            const newCustomerData: Customer = {
                 id: user.uid,
                 name: user.displayName || 'Google User',
                 phone: user.phoneNumber || '',
                 email: user.email,
             };
-            saveCustomers([...customers, customer]);
+            await createCustomer(newCustomerData);
+            customer = newCustomerData;
           }
           localStorage.setItem('currentCustomerId', customer.id);
           onSuccessfulLogin(customer);

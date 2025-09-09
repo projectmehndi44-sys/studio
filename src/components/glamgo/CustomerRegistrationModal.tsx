@@ -23,7 +23,7 @@ import { Separator } from '@/components/ui/separator';
 import { GoogleIcon } from '../icons';
 import { signInWithGoogle } from '@/lib/firebase';
 import type { Customer } from '@/types';
-import { initialCustomers } from '@/lib/data';
+import { getCustomers, createCustomer, getCustomerByEmail } from '@/lib/services';
 
 
 const registrationSchema = z.object({
@@ -56,24 +56,13 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
     },
   });
 
-  const getCustomers = (): Customer[] => {
-    const storedCustomers = localStorage.getItem('customers');
-    return storedCustomers ? JSON.parse(storedCustomers) : initialCustomers;
-  }
-  
-  const saveCustomers = (customers: Customer[]) => {
-      localStorage.setItem('customers', JSON.stringify(customers));
-      window.dispatchEvent(new Event('storage'));
-  }
-
-
-  const handlePhoneVerify = () => {
+  const handlePhoneVerify = async () => {
     const phone = form.getValues('phone');
     if (!/^\d{10}$/.test(phone)) {
         form.setError('phone', { type: 'manual', message: 'Please enter a valid 10-digit phone number to verify.' });
         return;
     }
-    const customers = getCustomers();
+    const customers = await getCustomers();
     if (customers.some(c => c.phone === phone)) {
         form.setError('phone', { type: 'manual', message: 'This phone number is already registered.' });
         return;
@@ -90,26 +79,24 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
     }, 1000);
   }
 
-  const onSubmit = (data: RegistrationFormValues) => {
+  const onSubmit = async (data: RegistrationFormValues) => {
     setIsSubmitting(true);
-    // In a real app, this would trigger a server action to create a user and verify OTP
-    console.log(data);
-    setTimeout(() => {
-        const customers = getCustomers();
-        const newCustomer: Customer = {
-            id: data.phone, // Use phone as unique ID for this example
-            ...data
-        };
-        saveCustomers([...customers, newCustomer]);
+    
+    const newCustomer: Customer = {
+        id: data.phone, // Use phone as unique ID for this example
+        ...data
+    };
+    const newId = await createCustomer(newCustomer);
+    newCustomer.id = newId;
 
-        toast({
-          title: "Registration Successful!",
-          description: `Welcome to MehendiFy, ${data.fullName}!`,
-        });
-        localStorage.setItem('currentCustomerId', newCustomer.id);
-        onSuccessfulRegister(newCustomer);
-        handleClose();
-    }, 1000);
+    toast({
+      title: "Registration Successful!",
+      description: `Welcome to MehendiFy, ${data.fullName}!`,
+    });
+    localStorage.setItem('currentCustomerId', newCustomer.id);
+    onSuccessfulRegister(newCustomer);
+    handleClose();
+    setIsSubmitting(false);
   };
 
   const handleClose = () => {
@@ -126,8 +113,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
     try {
       const user = await signInWithGoogle();
       if (user && user.email) {
-          const customers = getCustomers();
-          let customer = customers.find(c => c.email === user.email);
+          let customer = await getCustomerByEmail(user.email);
 
           if (customer) { // If user exists, log them in
              toast({
@@ -135,13 +121,14 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
                 description: `You are now logged in as ${customer.name}.`,
              });
           } else { // If user doesn't exist, create a new account
-             customer = {
+             const newCustomerData = {
                 id: user.uid,
                 name: user.displayName || 'Google User',
                 phone: user.phoneNumber || '', // May be null
                 email: user.email,
             };
-            saveCustomers([...customers, customer]);
+            await createCustomer(newCustomerData);
+            customer = newCustomerData;
             toast({
                 title: "Registration Successful!",
                 description: `Welcome to MehendiFy, ${customer.name}!`,
