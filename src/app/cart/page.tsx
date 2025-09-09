@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -237,7 +236,7 @@ export default function CartPage() {
                                         <div className="flex items-start gap-4">
                                             <Image src={item.masterPackage.image} alt={item.masterPackage.name} width={64} height={64} className="rounded-md object-cover aspect-square"/>
                                             <div>
-                                                <p className="font-semibold">{item.masterPackage.name} <Badge variant="secondary">{item.category.name}</Badge></p>
+                                                <div className="font-semibold">{item.masterPackage.name} <Badge variant="secondary">{item.category.name}</Badge></div>
                                                 <p className="text-sm text-muted-foreground">{artistName}</p>
                                             </div>
                                         </div>
