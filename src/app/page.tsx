@@ -405,30 +405,29 @@ export default function Home() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-8">
-            <div className="lg:col-span-3">
-                <Tabs defaultValue="mehndi" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto">
-                        <TabsTrigger value="mehndi"><MehndiIcon className="mr-2 h-5 w-5"/>Mehndi</TabsTrigger>
-                        <TabsTrigger value="makeup"><MakeupIcon className="mr-2 h-5 w-5"/>Makeup</TabsTrigger>
-                        <TabsTrigger value="photography"><PhotographyIcon className="mr-2 h-5 w-5" />Photography</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="mehndi">
-                        <CategoryTabContent serviceType="mehndi" />
-                    </TabsContent>
-                    <TabsContent value="makeup">
-                        <CategoryTabContent serviceType="makeup" />
-                    </TabsContent>
-                    <TabsContent value="photography">
-                        <CategoryTabContent serviceType="photography" />
-                    </TabsContent>
-                </Tabs>
-            </div>
-            <div className="lg:col-span-1">
-                 <RecommendationsTab onBookingRequest={handleBookingRequest}/>
-            </div>
+        <div className="mt-8">
+            <Tabs defaultValue="mehndi" className="w-full">
+                <TabsList className="grid w-full grid-cols-4 max-w-3xl mx-auto h-auto">
+                    <TabsTrigger value="mehndi" className="text-lg py-3"><MehndiIcon className="mr-2 h-5 w-5"/>Mehndi</TabsTrigger>
+                    <TabsTrigger value="makeup" className="text-lg py-3"><MakeupIcon className="mr-2 h-5 w-5"/>Makeup</TabsTrigger>
+                    <TabsTrigger value="photography" className="text-lg py-3"><PhotographyIcon className="mr-2 h-5 w-5" />Photography</TabsTrigger>
+                    <TabsTrigger value="recommendations" className="text-lg py-3"><Sparkles className="mr-2 h-5 w-5 text-accent"/>AI Match</TabsTrigger>
+                </TabsList>
+                <TabsContent value="mehndi">
+                    <CategoryTabContent serviceType="mehndi" />
+                </TabsContent>
+                <TabsContent value="makeup">
+                    <CategoryTabContent serviceType="makeup" />
+                </TabsContent>
+                <TabsContent value="photography">
+                    <CategoryTabContent serviceType="photography" />
+                </TabsContent>
+                 <TabsContent value="recommendations" className="mt-8">
+                    <RecommendationsTab onBookingRequest={handleBookingRequest}/>
+                </TabsContent>
+            </Tabs>
         </div>
-
+        
         <Separator className="my-8"/>
 
         <div className="py-12">
@@ -496,3 +495,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
