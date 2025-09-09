@@ -8,6 +8,7 @@
 
 
 
+
 export type PackageCategory = {
   name: 'Normal' | 'Premium' | 'ULTRA PREMIUM';
   description: string;
@@ -38,6 +39,7 @@ export type Artist = {
   email: string;
   phone: string;
   password?: string;
+  fcmToken?: string;
   profilePicture: string;
   workImages: string[];
   services: ('mehndi' | 'makeup' | 'photography')[];
@@ -67,6 +69,7 @@ export type Customer = {
   name: string;
   phone: string;
   email?: string;
+  fcmToken?: string;
 };
 
 export type CartItem = {
@@ -120,12 +123,14 @@ export type Review = {
 
 export type Notification = {
   id: string;
-  artistId: string;
-  bookingId: string;
+  artistId?: string; // Optional for bulk notifications
+  customerId?: string; // Optional for bulk notifications
+  bookingId?: string; // Optional, for context
   title: string;
   message: string;
   timestamp: string;
   isRead: boolean;
+  type: 'booking' | 'payout' | 'announcement';
 };
 
 export type Promotion = {
@@ -191,4 +196,5 @@ export type TeamMember = {
     password?: string;
     role: 'admin' | 'team-member';
     permissions: Permissions;
+    fcmToken?: string;
 };

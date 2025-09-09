@@ -2,6 +2,7 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, User } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
+import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 
 const firebaseConfig = {
   projectId: "mehndify",
@@ -25,6 +26,7 @@ if (getApps().length === 0) {
 const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
+
 
 // Enable offline persistence
 if (typeof window !== 'undefined') {
@@ -59,5 +61,36 @@ const signInWithGoogle = (): Promise<User> => {
   });
 };
 
+const getFCMToken = async () => {
+    const isMessagingSupported = await isSupported();
+    if (!isMessagingSupported) {
+        console.log("Firebase Messaging is not supported in this browser.");
+        return null;
+    }
+    
+    const messaging = getMessaging(app);
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission === 'granted') {
+            const token = await getToken(messaging, { vapidKey: 'YOUR_VAPID_KEY_FROM_FIREBASE_CONSOLE' });
+            return token;
+        } else {
+            console.log('Unable to get permission to notify.');
+            return null;
+        }
+    } catch (error) {
+        console.error('An error occurred while retrieving token. ', error);
+        return null;
+    }
+};
 
-export { app, auth, db, signInWithGoogle };
+const onForegroundMessage = () => {
+    const messaging = getMessaging(app);
+    return onMessage(messaging, (payload) => {
+        console.log('Foreground message received. ', payload);
+        // You can display a custom toast or notification here
+    });
+}
+
+
+export { app, auth, db, signInWithGoogle, getFCMToken, onForegroundMessage };
