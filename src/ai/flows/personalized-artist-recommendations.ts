@@ -74,7 +74,7 @@ const personalizedArtistRecommendationsPrompt = ai.definePrompt({
   Location: {{{location}}}
 
   Provide the recommendations in the following JSON format:
-  {{JSON PersonalizedArtistRecommendationsOutputSchema}}
+  {{JSON schema=PersonalizedArtistRecommendationsOutputSchema}}
   `,
 });
 
@@ -99,4 +99,3 @@ const personalizedArtistRecommendationsFlow = ai.defineFlow(
 export async function getPersonalizedArtistRecommendations(input: PersonalizedArtistRecommendationsInput): Promise<PersonalizedArtistRecommendationsOutput> {
   return personalizedArtistRecommendationsFlow(input);
 }
-
