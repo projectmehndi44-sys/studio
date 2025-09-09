@@ -216,6 +216,26 @@ export const artists: Artist[] = [
     styleTags: ['destination wedding', 'candid', 'natural'],
     unavailableDates: [],
   },
+  {
+    id: 'abhi@gmail.com',
+    name: 'Abhi',
+    email: 'abhi@gmail.com',
+    phone: '9876543220',
+    password: '123456',
+    profilePicture: 'https://picsum.photos/200/200?random=14',
+    workImages: [
+      'https://picsum.photos/600/400?random=141',
+      'https://picsum.photos/600/400?random=142',
+      'https://picsum.photos/600/400?random=143',
+    ],
+    services: ['mehndi', 'makeup'],
+    location: 'Mumbai, India',
+    charge: 5500,
+    charges: { mehndi: 2500, makeup: 3000 },
+    rating: 4.8,
+    styleTags: ['bridal', 'glam', 'modern'],
+    unavailableDates: [],
+  },
 ];
 
 export const initialCustomers: Customer[] = [
