@@ -29,7 +29,9 @@ export const artists: Artist[] = [
         { masterPackageId: 'pkg_bridal_mehndi', categoryName: 'Normal', artistPrice: 3500, isEnabled: true },
         { masterPackageId: 'pkg_bridal_mehndi', categoryName: 'Premium', artistPrice: 6000, isEnabled: true },
         { masterPackageId: 'pkg_party_makeup', categoryName: 'Normal', artistPrice: 2500, isEnabled: true },
-    ]
+    ],
+    referralCode: 'AISHA10',
+    referralDiscount: 10,
   },
   {
     id: '2',
@@ -55,7 +57,9 @@ export const artists: Artist[] = [
         { masterPackageId: 'pkg_party_makeup', categoryName: 'Premium', artistPrice: 4500, isEnabled: true },
         { masterPackageId: 'pkg_party_makeup', categoryName: 'ULTRA PREMIUM', artistPrice: 7500, isEnabled: true },
         { masterPackageId: 'pkg_bridal_mehndi', categoryName: 'Normal', artistPrice: 4000, isEnabled: true },
-    ]
+    ],
+    referralCode: 'PRIYA20',
+    referralDiscount: 20,
   },
   {
     id: '3',

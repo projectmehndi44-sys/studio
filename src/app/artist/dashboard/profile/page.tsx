@@ -17,11 +17,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Separator } from '@/components/ui/separator';
-import { Trash2, Upload, UserCircle, Briefcase, Tag, Lock, Image as ImageIcon, IndianRupee } from 'lucide-react';
+import { Trash2, Upload, UserCircle, Briefcase, Tag, Lock, Image as ImageIcon, IndianRupee, Gift } from 'lucide-react';
 import NextImage from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useArtistPortal } from '../layout';
+import { Slider } from '@/components/ui/slider';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 
 const profileSchema = z.object({
@@ -41,6 +43,8 @@ const profileSchema = z.object({
   district: z.string().optional(),
   locality: z.string().optional(),
   servingAreas: z.string().optional(),
+  referralCode: z.string().optional(),
+  referralDiscount: z.coerce.number().min(0).max(20).optional(),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -80,6 +84,8 @@ export default function ArtistProfilePage() {
             district: '',
             locality: '',
             servingAreas: '',
+            referralCode: '',
+            referralDiscount: 10,
         },
     });
 
@@ -89,6 +95,7 @@ export default function ArtistProfilePage() {
     });
 
     const watchServices = form.watch('services');
+    const watchReferralDiscount = form.watch('referralDiscount');
 
     const getArtists = (): Artist[] => {
          const storedArtists = localStorage.getItem('artists');
@@ -122,6 +129,8 @@ export default function ArtistProfilePage() {
                 district: artist.district,
                 locality: artist.locality,
                 servingAreas: artist.servingAreas,
+                referralCode: artist.referralCode || artist.name.split(' ')[0].toUpperCase() + '10',
+                referralDiscount: artist.referralDiscount || 10,
             });
         } else {
              router.push('/artist/login');
@@ -150,6 +159,8 @@ export default function ArtistProfilePage() {
             district: data.district,
             locality: data.locality,
             servingAreas: data.servingAreas,
+            referralCode: data.referralCode,
+            referralDiscount: data.referralDiscount,
         };
         
         if (data.password) {
@@ -255,7 +266,7 @@ export default function ArtistProfilePage() {
             
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <Accordion type="multiple" defaultValue={['item-1', 'item-2', 'item-3', 'item-4', 'item-5']} className="w-full space-y-4">
+                    <Accordion type="multiple" defaultValue={['item-1', 'item-2', 'item-3', 'item-4', 'item-5', 'item-6']} className="w-full space-y-4">
                         <AccordionItem value="item-1">
                             <Card>
                                 <AccordionTrigger className="p-6 hover:no-underline">
@@ -367,6 +378,46 @@ export default function ArtistProfilePage() {
                             </Card>
                         </AccordionItem>
 
+                        <AccordionItem value="item-6">
+                            <Card>
+                                <AccordionTrigger className="p-6 hover:no-underline">
+                                    <CardTitle className="flex items-center gap-2 text-lg"><Gift /> Referral Program</CardTitle>
+                                </AccordionTrigger>
+                                <AccordionContent>
+                                    <CardHeader className="pt-0">
+                                        <CardDescription>Create a unique referral code to share with your clients. You can offer them a discount to encourage bookings, and we'll share the cost with you!</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4 pt-2">
+                                        <FormField control={form.control} name="referralCode" render={({ field }) => (
+                                            <FormItem><FormLabel>Your Unique Referral Code</FormLabel><FormControl><Input placeholder="e.g. YOURNAME10" {...field} /></FormControl><FormMessage /></FormItem>
+                                        )} />
+                                        <FormField control={form.control} name="referralDiscount" render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Discount for Your Customers (%)</FormLabel>
+                                                <FormControl>
+                                                    <Slider
+                                                        defaultValue={[field.value || 10]}
+                                                        value={[field.value || 10]}
+                                                        max={20}
+                                                        step={1}
+                                                        onValueChange={(value) => field.onChange(value[0])}
+                                                    />
+                                                </FormControl>
+                                                <div className="text-center font-bold text-lg text-primary">{watchReferralDiscount}%</div>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )} />
+                                        <Alert>
+                                            <AlertTitle>How It Works</AlertTitle>
+                                            <AlertDescription>
+                                                When a customer uses your code, we help cover the discount cost. MehendiFy will absorb a discount cost of up to 5% of the total booking value. Any discount you offer above 5% will be deducted from your final payout. For a balanced approach, we recommend setting a 10% discount.
+                                            </AlertDescription>
+                                        </Alert>
+                                    </CardContent>
+                                </AccordionContent>
+                            </Card>
+                        </AccordionItem>
+
                         <AccordionItem value="item-3">
                              <Card>
                                 <AccordionTrigger className="p-6 hover:no-underline">
@@ -420,7 +471,7 @@ export default function ArtistProfilePage() {
                         <AccordionItem value="item-5">
                              <Card>
                                 <AccordionTrigger className="p-6 hover:no-underline">
-                                    <CardTitle className="flex items-center gap-2"><ImageIcon /> Manage Images</CardTitle>
+                                    <CardTitle className="flex items-center gap-2 text-lg"><ImageIcon /> Manage Images</CardTitle>
                                 </AccordionTrigger>
                                 <AccordionContent>
                                      <CardHeader className="pt-0">

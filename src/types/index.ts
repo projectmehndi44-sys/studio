@@ -6,6 +6,7 @@
 
 
 
+
 export type PackageCategory = {
   name: 'Normal' | 'Premium' | 'ULTRA PREMIUM';
   description: string;
@@ -56,6 +57,8 @@ export type Artist = {
   district?: string;
   locality?: string;
   servingAreas?: string;
+  referralCode?: string;
+  referralDiscount?: number; // Percentage, e.g., 10 for 10%
 };
 
 export type Customer = {
@@ -104,6 +107,7 @@ export type Booking = {
     included: boolean;
     expectedCount: number;
   };
+  appliedReferralCode?: string;
 };
 
 export type Review = {
