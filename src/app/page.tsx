@@ -39,6 +39,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
 import { RecommendationsTab } from '@/components/glamgo/RecommendationsTab';
 import { ServiceSelectionModal } from '@/components/glamgo/ServiceSelectionModal';
+import { MehndiIcon, MakeupIcon, PhotographyIcon } from '@/components/icons';
 
 
 const galleryImages = [
@@ -65,8 +66,7 @@ export default function Home() {
   const router = useRouter();
   const [artists, setArtists] = React.useState<Artist[]>([]);
   const [allPackages, setAllPackages] = React.useState<MasterServicePackage[]>([]);
-  const [filteredArtists, setFilteredArtists] =
-    React.useState<Artist[]>([]);
+  
   const [isArtistRegistrationModalOpen, setIsArtistRegistrationModalOpen] =
     React.useState(false);
   const [isCustomerRegistrationModalOpen, setIsCustomerRegistrationModalOpen] = React.useState(false);
@@ -83,23 +83,8 @@ export default function Home() {
 
   const { toast } = useToast();
 
-  // Filter state
-  const [location, setLocation] = React.useState('');
-  const [serviceType, setServiceType] = React.useState<'mehndi' | 'makeup' | 'photography' | 'all'>('all');
-  const [priceRange, setPriceRange] = React.useState([20000]);
-  const [selectedStyles, setSelectedStyles] = React.useState<string[]>([]);
-
   const [currentBgIndex, setCurrentBgIndex] = React.useState(0);
   
-  const allStyleTags = React.useMemo(() => {
-    const tags = new Set<string>();
-    artists
-      .filter(artist => serviceType === 'all' || artist.services.includes(serviceType))
-      .forEach(artist => artist.styleTags.forEach(tag => tags.add(tag)));
-    return Array.from(tags);
-  }, [artists, serviceType]);
-
-
   const getArtists = React.useCallback((): Artist[] => {
     const storedArtists = localStorage.getItem('artists');
     const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
@@ -163,19 +148,12 @@ export default function Home() {
     };
   }, [fetchData]);
   
-  React.useEffect(() => {
-    applyFilters();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [artists, serviceType]);
-
   const handleBookingRequest = (artist: Artist) => {
     if (!isCustomerLoggedIn) {
         setIsCustomerLoginModalOpen(true);
         toast({ title: 'Please Login', description: 'You need to be logged in to book an artist.' });
         return;
     }
-    // This flow is now deprecated in favor of the cart system.
-    // For now, we'll just log a message. A better implementation might open the service selection modal.
     console.log("Direct artist booking from card is deprecated. Please use service selection.");
     toast({ title: "Please select a service first.", description: "Browse our services to start a booking."});
   };
@@ -230,114 +208,127 @@ export default function Home() {
     }, 0);
   }
 
-  const applyFilters = React.useCallback(() => {
-    let currentArtists = artists;
+  const CategoryTabContent = ({ serviceType }: { serviceType: 'mehndi' | 'makeup' | 'photography' }) => {
+    const [filteredArtists, setFilteredArtists] = React.useState<Artist[]>([]);
+    const [location, setLocation] = React.useState('');
+    const [priceRange, setPriceRange] = React.useState([20000]);
+    const [selectedStyles, setSelectedStyles] = React.useState<string[]>([]);
+    
+    const relevantPackages = allPackages.filter(p => p.service === serviceType);
+    
+    const allStyleTags = React.useMemo(() => {
+      const tags = new Set<string>();
+      artists
+        .filter(artist => artist.services.includes(serviceType))
+        .forEach(artist => artist.styleTags.forEach(tag => tags.add(tag)));
+      return Array.from(tags);
+    }, [serviceType]);
+    
+    const applyFilters = React.useCallback(() => {
+        let currentArtists = artists.filter(artist => artist.services.includes(serviceType));
 
-    if (serviceType !== 'all') {
-      currentArtists = currentArtists.filter(
-        (artist) => artist.services.includes(serviceType)
-      );
-    }
-    
-    if (location) {
-      currentArtists = currentArtists.filter((artist) =>
-        artist.location.toLowerCase().includes(location.toLowerCase())
-      );
-    }
-    
-    if (selectedStyles.length > 0) {
-        currentArtists = currentArtists.filter(artist => 
-            selectedStyles.every(style => artist.styleTags.includes(style))
+        if (location) {
+        currentArtists = currentArtists.filter((artist) =>
+            artist.location.toLowerCase().includes(location.toLowerCase())
         );
+        }
+        
+        if (selectedStyles.length > 0) {
+            currentArtists = currentArtists.filter(artist => 
+                selectedStyles.every(style => artist.styleTags.includes(style))
+            );
+        }
+
+        setFilteredArtists(currentArtists);
+    }, [location, selectedStyles, serviceType]);
+
+    React.useEffect(() => {
+        applyFilters();
+    }, [applyFilters, artists]); // Re-run when base artist list changes
+
+    const resetFilters = () => {
+        setLocation('');
+        setPriceRange([20000]);
+        setSelectedStyles([]);
+    };
+    
+    const handleStyleChange = (style: string) => {
+        setSelectedStyles(prev => 
+            prev.includes(style) ? prev.filter(s => s !== style) : [...prev, style]
+        )
     }
 
-    setFilteredArtists(currentArtists);
-  }, [location, serviceType, artists, selectedStyles]);
-  
-  React.useEffect(() => {
-    applyFilters();
-  }, [applyFilters]);
+    return (
+      <div className="space-y-8 mt-8">
+        <Packages packages={relevantPackages} onServiceSelect={(service) => { setSelectedService(service); setIsServiceModalOpen(true); }} />
 
-
-  const resetFilters = () => {
-    setLocation('');
-    setPriceRange([20000]);
-    setSelectedStyles([]);
-  };
-  
-  const handleStyleChange = (style: string) => {
-      setSelectedStyles(prev => 
-          prev.includes(style) ? prev.filter(s => s !== style) : [...prev, style]
-      )
-  }
-
-  const ArtistFinder = ({ service }: { service: 'mehndi' | 'makeup' | 'photography' | 'all' }) => {
-      return (
-        <div className="space-y-8">
-            <h2 className="text-center font-headline text-5xl text-primary mb-8 capitalize">{service} Artists</h2>
-            <Card className="my-4 border-2 border-accent/20 shadow-lg bg-background/80 backdrop-blur-sm">
-                <CardContent className="p-6">
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 items-end">
-                        <div className="space-y-2">
-                        <Label htmlFor="location">Location</Label>
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                            id="location"
-                            placeholder="City or pin code..."
-                            className="pl-9"
-                            value={location}
-                            onChange={(e) => setLocation(e.target.value)}
-                            />
-                        </div>
-                        </div>
-                        <div className="space-y-2 lg:col-span-2">
-                        <Label htmlFor="price">Price Range (Max): <span className="font-bold text-primary">₹{priceRange[0].toLocaleString()}</span></Label>
-                        <Slider
-                            id="price"
-                            max={20000}
-                            min={500}
-                            step={500}
-                            value={priceRange}
-                            onValueChange={setPriceRange}
-                            />
-                        </div>
-                        <Button onClick={resetFilters} variant="ghost" className="w-full">
-                            Reset Filters
-                        </Button>
+        <Separator />
+        
+        <h2 className="text-center font-headline text-5xl text-primary">Discover {serviceType.charAt(0).toUpperCase() + serviceType.slice(1)} Artists</h2>
+        <Card className="my-4 border-2 border-accent/20 shadow-lg bg-background/80 backdrop-blur-sm">
+            <CardContent className="p-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 items-end">
+                    <div className="space-y-2">
+                    <Label htmlFor={`location-${serviceType}`}>Location</Label>
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                        id={`location-${serviceType}`}
+                        placeholder="City or pin code..."
+                        className="pl-9"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        />
                     </div>
-                    <div className="mt-4 pt-4 border-t">
-                        <Label>Filter by Style</Label>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                            {allStyleTags.map(tag => (
-                                <div key={tag} className="flex items-center space-x-2">
-                                    <Checkbox id={tag} checked={selectedStyles.includes(tag)} onCheckedChange={() => handleStyleChange(tag)} />
-                                    <label htmlFor={tag} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 capitalize">{tag}</label>
-                                </div>
-                            ))}
-                        </div>
                     </div>
-                </CardContent>
-            </Card>
+                    <div className="space-y-2 lg:col-span-2">
+                    <Label htmlFor={`price-${serviceType}`}>Price Range (Max): <span className="font-bold text-primary">₹{priceRange[0].toLocaleString()}</span></Label>
+                    <Slider
+                        id={`price-${serviceType}`}
+                        max={20000}
+                        min={500}
+                        step={500}
+                        value={priceRange}
+                        onValueChange={setPriceRange}
+                        />
+                    </div>
+                    <Button onClick={resetFilters} variant="ghost" className="w-full">
+                        Reset Filters
+                    </Button>
+                </div>
+                <div className="mt-4 pt-4 border-t">
+                    <Label>Filter by Style</Label>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                        {allStyleTags.map(tag => (
+                            <div key={tag} className="flex items-center space-x-2">
+                                <Checkbox id={`${tag}-${serviceType}`} checked={selectedStyles.includes(tag)} onCheckedChange={() => handleStyleChange(tag)} />
+                                <label htmlFor={`${tag}-${serviceType}`} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 capitalize">{tag}</label>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
 
-            {filteredArtists.length > 0 ? (
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {filteredArtists.map((artist) => (
-                    <ArtistCard
-                    key={artist.id}
-                    artist={artist}
-                    onBookingRequest={handleBookingRequest}
-                    />
-                ))}
-                </div>
-            ) : (
-                <div className="text-center py-16">
-                <p className="text-lg text-muted-foreground">No artists found matching your criteria.</p>
-                </div>
-            )}
+        {filteredArtists.length > 0 ? (
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filteredArtists.map((artist) => (
+                <ArtistCard
+                key={artist.id}
+                artist={artist}
+                onBookingRequest={handleBookingRequest}
+                />
+            ))}
             </div>
-        );
+        ) : (
+            <div className="text-center py-16">
+            <p className="text-lg text-muted-foreground">No artists found matching your criteria.</p>
+            </div>
+        )}
+        </div>
+    );
   }
+
 
   return (
     <div className="flex min-h-screen w-full flex-col relative">
@@ -414,60 +405,66 @@ export default function Home() {
           </div>
         )}
 
-        <Tabs defaultValue="services" className="w-full mt-8">
-            <TabsList className="grid w-full grid-cols-4 max-w-2xl mx-auto">
-                <TabsTrigger value="services"><ShoppingBag className="mr-2 h-5 w-5" />Services</TabsTrigger>
-                <TabsTrigger value="artists"><Palette className="mr-2 h-5 w-5" />Artists</TabsTrigger>
-                <TabsTrigger value="recommendations" className="text-accent"><Sparkles className="mr-2 h-5 w-5"/>AI Match</TabsTrigger>
-                <TabsTrigger value="gallery"><ImageIcon className="mr-2 h-5 w-5" />Our Work</TabsTrigger>
+        <Tabs defaultValue="mehndi" className="w-full mt-8">
+            <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto">
+                <TabsTrigger value="mehndi"><MehndiIcon className="mr-2 h-5 w-5"/>Mehndi</TabsTrigger>
+                <TabsTrigger value="makeup"><MakeupIcon className="mr-2 h-5 w-5"/>Makeup</TabsTrigger>
+                <TabsTrigger value="photography"><PhotographyIcon className="mr-2 h-5 w-5" />Photography</TabsTrigger>
             </TabsList>
-            <TabsContent value="services">
-                <Packages onServiceSelect={(service) => { setSelectedService(service); setIsServiceModalOpen(true); }} />
+            <TabsContent value="mehndi">
+                <CategoryTabContent serviceType="mehndi" />
             </TabsContent>
-            <TabsContent value="artists">
-                <ArtistFinder service="all" />
+            <TabsContent value="makeup">
+                <CategoryTabContent serviceType="makeup" />
             </TabsContent>
-            <TabsContent value="recommendations">
-                <RecommendationsTab onBookingRequest={handleBookingRequest}/>
-            </TabsContent>
-            <TabsContent value="gallery">
-                 <div className="py-12">
-                    <Carousel
-                        opts={{
-                            align: "start",
-                            loop: true,
-                        }}
-                        plugins={[
-                            Autoplay({
-                                delay: 3000,
-                            }),
-                        ]}
-                        className="w-full max-w-6xl mx-auto"
-                    >
-                        <CarouselContent>
-                            {galleryImages.map((image, index) => (
-                                <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
-                                    <div className="p-1">
-                                        <Card className="overflow-hidden">
-                                            <CardContent className="flex aspect-video items-center justify-center p-0">
-                                                <Image 
-                                                    src={image.src} 
-                                                    alt={image.alt}
-                                                    width={600}
-                                                    height={400}
-                                                    className="w-full h-full object-cover"
-                                                    data-ai-hint={image.hint}
-                                                />
-                                            </CardContent>
-                                        </Card>
-                                    </div>
-                                </CarouselItem>
-                            ))}
-                        </CarouselContent>
-                    </Carousel>
-                </div>
+             <TabsContent value="photography">
+                <CategoryTabContent serviceType="photography" />
             </TabsContent>
         </Tabs>
+
+        <Separator className="my-8"/>
+
+        <RecommendationsTab onBookingRequest={handleBookingRequest}/>
+
+        <Separator className="my-8"/>
+
+        <div className="py-12">
+            <h2 className="text-center font-headline text-5xl text-primary mb-8">Our Work</h2>
+            <Carousel
+                opts={{
+                    align: "start",
+                    loop: true,
+                }}
+                plugins={[
+                    Autoplay({
+                        delay: 3000,
+                    }),
+                ]}
+                className="w-full max-w-6xl mx-auto"
+            >
+                <CarouselContent>
+                    {galleryImages.map((image, index) => (
+                        <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                            <div className="p-1">
+                                <Card className="overflow-hidden">
+                                    <CardContent className="flex aspect-video items-center justify-center p-0">
+                                        <Image 
+                                            src={image.src} 
+                                            alt={image.alt}
+                                            width={600}
+                                            height={400}
+                                            className="w-full h-full object-cover"
+                                            data-ai-hint={image.hint}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </CarouselItem>
+                    ))}
+                </CarouselContent>
+            </Carousel>
+        </div>
+
 
         <ArtistRegistrationModal
             isOpen={isArtistRegistrationModalOpen}
