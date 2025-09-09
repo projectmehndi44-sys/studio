@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -168,16 +169,19 @@ export default function Home() {
     setCart(newCart);
     localStorage.setItem(`cart_${customer?.id}`, JSON.stringify(newCart));
 
-    toast({
-        title: "Service Added!",
-        description: `${item.masterPackage.name} (${item.category.name}) has been added to your selection.`,
-        action: (
-            <Link href="/cart">
-                <Button variant="secondary" size="sm">View Cart</Button>
-            </Link>
-        ),
-    });
-    setIsServiceModalOpen(false);
+    // The toast is now replaced by the success view in the modal.
+    // We can keep a simpler one here for background actions if needed, but the modal provides better UX.
+    // toast({
+    //     title: "Service Added!",
+    //     description: `${item.masterPackage.name} (${item.category.name}) has been added to your selection.`,
+    //     action: (
+    //         <Link href="/cart">
+    //             <Button variant="secondary" size="sm">View Cart</Button>
+    //         </Link>
+    //     ),
+    // });
+    // The modal now handles its own state, so we don't close it from here.
+    // setIsServiceModalOpen(false); 
   };
 
   const handleArtistRegister = () => {
@@ -286,11 +290,11 @@ export default function Home() {
 
         <div className="mt-8">
             <Tabs defaultValue="mehndi" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 max-w-3xl mx-auto h-auto">
-                    <TabsTrigger value="mehndi" className="text-base sm:text-lg py-3"><MehndiIcon className="mr-2 h-5 w-5"/>Mehndi</TabsTrigger>
-                    <TabsTrigger value="makeup" className="text-base sm:text-lg py-3"><MakeupIcon className="mr-2 h-5 w-5"/>Makeup</TabsTrigger>
-                    <TabsTrigger value="photography" className="text-base sm:text-lg py-3"><PhotographyIcon className="mr-2 h-5 w-5" />Photography</TabsTrigger>
-                    <TabsTrigger value="recommendations" className="text-base sm:text-lg py-3"><Sparkles className="mr-2 h-5 w-5 text-accent"/>AI Recommendations</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 max-w-3xl mx-auto h-auto text-base sm:text-lg py-3">
+                    <TabsTrigger value="mehndi" className="py-2.5"><MehndiIcon className="mr-2 h-5 w-5"/>Mehndi</TabsTrigger>
+                    <TabsTrigger value="makeup" className="py-2.5"><MakeupIcon className="mr-2 h-5 w-5"/>Makeup</TabsTrigger>
+                    <TabsTrigger value="photography" className="py-2.5"><PhotographyIcon className="mr-2 h-5 w-5" />Photography</TabsTrigger>
+                    <TabsTrigger value="recommendations" className="py-2.5"><Sparkles className="mr-2 h-5 w-5 text-accent"/>AI Recommendations</TabsTrigger>
                 </TabsList>
                 <TabsContent value="mehndi">
                     <CategoryTabContent serviceType="mehndi" />

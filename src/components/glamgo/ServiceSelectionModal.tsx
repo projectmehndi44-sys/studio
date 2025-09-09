@@ -12,13 +12,14 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { IndianRupee, Info, Sparkles, Star, Users } from 'lucide-react';
+import { IndianRupee, Info, Sparkles, Star, Users, CheckCircle, ShoppingCart } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 interface ServiceSelectionModalProps {
   service: MasterServicePackage;
@@ -29,22 +30,46 @@ interface ServiceSelectionModalProps {
 }
 
 export function ServiceSelectionModal({ service, artists, isOpen, onOpenChange, onAddToCart }: ServiceSelectionModalProps) {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = React.useState<PackageCategory | null>(null);
+  const [view, setView] = React.useState<'tier' | 'artist' | 'success'>('tier');
+  const [lastAddedItem, setLastAddedItem] = React.useState<CartItem | null>(null);
+
+  const resetModal = () => {
+      setSelectedCategory(null);
+      setView('tier');
+      setLastAddedItem(null);
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      // Delay reset to allow animation to finish
+      setTimeout(resetModal, 300);
+    }
+    onOpenChange(open);
+  }
 
   React.useEffect(() => {
     // Reset selection when modal is reopened for a new service
     if (isOpen) {
-      setSelectedCategory(null);
+      resetModal();
     }
   }, [isOpen]);
 
   const handleSelectCategory = (category: PackageCategory) => {
     setSelectedCategory(category);
+    setView('artist');
+  };
+
+  const handleAddToCartAndShowSuccess = (item: CartItem) => {
+      onAddToCart(item);
+      setLastAddedItem(item);
+      setView('success');
   };
 
   const handleExpressBooking = () => {
     if (selectedCategory) {
-      onAddToCart({
+      handleAddToCartAndShowSuccess({
         masterPackage: service,
         category: selectedCategory,
       });
@@ -53,13 +78,38 @@ export function ServiceSelectionModal({ service, artists, isOpen, onOpenChange, 
   
   const handleArtistBooking = (artist: Artist) => {
     if (selectedCategory) {
-        onAddToCart({
+        handleAddToCartAndShowSuccess({
             masterPackage: service,
             category: selectedCategory,
             artist: artist,
         });
     }
   };
+
+  const SuccessView = () => (
+    <div className="text-center p-6 flex flex-col items-center gap-4">
+        <CheckCircle className="w-16 h-16 text-green-500" />
+        <h3 className="text-2xl font-bold">Added to Your Booking!</h3>
+        <Card className="text-left w-full">
+            <CardContent className="p-4 flex items-center gap-4">
+                {lastAddedItem?.category.image && <Image src={lastAddedItem.category.image} alt={lastAddedItem.category.name} width={60} height={60} className="rounded-md" />}
+                <div>
+                    <p className="font-semibold">{lastAddedItem?.masterPackage.name} ({lastAddedItem?.category.name})</p>
+                    {lastAddedItem?.artist && <p className="text-sm text-muted-foreground">with {lastAddedItem.artist.name}</p>}
+                </div>
+            </CardContent>
+        </Card>
+        <div className="flex flex-col sm:flex-row gap-2 w-full mt-4">
+             <Button size="lg" className="w-full" onClick={() => router.push('/cart')}>
+                <ShoppingCart className="mr-2 h-4 w-4"/>
+                Go to Cart &amp; Book
+             </Button>
+             <Button size="lg" variant="outline" className="w-full" onClick={() => handleOpenChange(false)}>
+                Add More Services
+             </Button>
+        </div>
+    </div>
+  );
 
   const ArtistsForTier = ({ category }: { category: PackageCategory }) => {
     const offeringArtists = artists.filter(artist =>
@@ -72,7 +122,7 @@ export function ServiceSelectionModal({ service, artists, isOpen, onOpenChange, 
 
     return (
         <div className="space-y-4">
-             <Button variant="outline" onClick={() => setSelectedCategory(null)}>&larr; Back to Tiers</Button>
+             <Button variant="outline" onClick={() => setView('tier')}>&larr; Back to Tiers</Button>
             
             <div className="flex items-center gap-4 p-2 rounded-lg bg-muted">
                 {category.image && <Image src={category.image} alt={category.name} width={64} height={64} className="rounded-md object-cover"/>}
@@ -128,8 +178,74 @@ export function ServiceSelectionModal({ service, artists, isOpen, onOpenChange, 
     );
   };
 
+  const renderContent = () => {
+    switch (view) {
+        case 'tier':
+             return (
+                 <div className="py-4">
+                    <h3 className="text-lg font-semibold text-center mb-4">Select a Tier</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {service.categories.map(category => (
+                            <Card key={category.name} className="flex flex-col overflow-hidden">
+                                {category.image && (
+                                    <div className="relative w-full aspect-video">
+                                        <Image src={category.image} alt={category.name} layout="fill" className="object-cover"/>
+                                    </div>
+                                )}
+                                <CardHeader>
+                                    <CardTitle className="text-accent">{category.name}</CardTitle>
+                                    <CardDescription>{category.description}</CardDescription>
+                                </CardHeader>
+                                <CardContent className="flex-grow"></CardContent>
+                                <CardFooter className="flex flex-col items-start gap-2 mt-auto p-4">
+                                    <p className="text-xs text-muted-foreground">Starts from</p>
+                                    <p className="font-bold text-xl flex items-center"><IndianRupee className="w-4 h-4 mr-1"/>{category.basePrice.toLocaleString()}</p>
+                                    <Button className="w-full" onClick={() => handleSelectCategory(category)}>Select {category.name}</Button>
+                                </CardFooter>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            );
+        case 'artist':
+            if (!selectedCategory) return null; // Should not happen
+            return (
+                <div className="py-4">
+                    <Tabs defaultValue="express" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="express"><Sparkles className="mr-2 h-4 w-4"/>Express Booking</TabsTrigger>
+                        <TabsTrigger value="choose"><Users className="mr-2 h-4 w-4"/>Choose Artist</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="express">
+                        <Card className="text-center p-6 space-y-4">
+                            <CardHeader>
+                                <CardTitle>Book at the Best Price</CardTitle>
+                                <CardDescription>We'll assign a top-rated, available artist for you at the standardized base price.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-4xl font-bold flex items-center justify-center text-primary"><IndianRupee className="w-7 h-7 mr-1"/>{selectedCategory.basePrice.toLocaleString()}</p>
+                                <Button size="lg" className="w-full mt-4" onClick={handleExpressBooking}>Book Now &amp; Let Us Assign</Button>
+                                <Button variant="link" onClick={() => setView('tier')}>Back to Tiers</Button>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                    <TabsContent value="choose">
+                        <Card className="p-6">
+                            <ArtistsForTier category={selectedCategory} />
+                        </Card>
+                    </TabsContent>
+                    </Tabs>
+                </div>
+            );
+        case 'success':
+            return <SuccessView />;
+        default:
+            return null;
+    }
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle className="text-primary font-bold text-2xl">{service.name}</DialogTitle>
@@ -137,62 +253,7 @@ export function ServiceSelectionModal({ service, artists, isOpen, onOpenChange, 
             {service.description}
           </DialogDescription>
         </DialogHeader>
-        
-        {!selectedCategory ? (
-            // Tier Selection View
-            <div className="py-4">
-                <h3 className="text-lg font-semibold text-center mb-4">Select a Tier</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {service.categories.map(category => (
-                        <Card key={category.name} className="flex flex-col overflow-hidden">
-                             {category.image && (
-                                <div className="relative w-full aspect-video">
-                                    <Image src={category.image} alt={category.name} layout="fill" className="object-cover"/>
-                                </div>
-                            )}
-                            <CardHeader>
-                                <CardTitle className="text-accent">{category.name}</CardTitle>
-                                <CardDescription>{category.description}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex-grow"></CardContent>
-                            <CardFooter className="flex flex-col items-start gap-2 mt-auto p-4">
-                                <p className="text-xs text-muted-foreground">Starts from</p>
-                                <p className="font-bold text-xl flex items-center"><IndianRupee className="w-4 h-4 mr-1"/>{category.basePrice.toLocaleString()}</p>
-                                <Button className="w-full" onClick={() => handleSelectCategory(category)}>Select {category.name}</Button>
-                            </CardFooter>
-                        </Card>
-                    ))}
-                </div>
-            </div>
-        ) : (
-            // Artist/Booking Selection View
-            <div className="py-4">
-                <Tabs defaultValue="express" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="express"><Sparkles className="mr-2 h-4 w-4"/>Express Booking</TabsTrigger>
-                    <TabsTrigger value="choose"><Users className="mr-2 h-4 w-4"/>Choose Artist</TabsTrigger>
-                </TabsList>
-                <TabsContent value="express">
-                    <Card className="text-center p-6 space-y-4">
-                         <CardHeader>
-                            <CardTitle>Book at the Best Price</CardTitle>
-                             <CardDescription>We'll assign a top-rated, available artist for you at the standardized base price.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-4xl font-bold flex items-center justify-center text-primary"><IndianRupee className="w-7 h-7 mr-1"/>{selectedCategory.basePrice.toLocaleString()}</p>
-                            <Button size="lg" className="w-full mt-4" onClick={handleExpressBooking}>Book Now &amp; Let Us Assign</Button>
-                            <Button variant="link" onClick={() => setSelectedCategory(null)}>Back to Tiers</Button>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-                <TabsContent value="choose">
-                     <Card className="p-6">
-                        <ArtistsForTier category={selectedCategory} />
-                    </Card>
-                </TabsContent>
-                </Tabs>
-            </div>
-        )}
+        {renderContent()}
       </DialogContent>
     </Dialog>
   );
