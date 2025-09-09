@@ -348,7 +348,7 @@ export default function CartPage() {
                                             {availableDistricts.length > 0 ? (
                                                 availableDistricts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)
                                             ) : (
-                                                <div className="p-2 text-sm text-muted-foreground">Select a state first</div>
+                                                <div className="p-2 text-sm text-muted-foreground">{state ? 'Coming to this area soon!' : 'Select a state first'}</div>
                                             )}
                                         </SelectContent>
                                     </Select>

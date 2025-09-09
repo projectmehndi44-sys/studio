@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -22,6 +21,7 @@ import {
     EyeOff,
     Tag,
     ListTree,
+    BarChart2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { AdminAuthProvider, useAdminAuth } from '@/hooks/use-admin-auth';
 import type { Permissions } from '@/types';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const NavLink = ({ href, pathname, icon: Icon, label }: { href: string; pathname: string; icon: React.ElementType, label: string }) => (
     <Link
@@ -91,34 +92,84 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         icon: React.ElementType;
         permissionKey: keyof Permissions;
     };
+    
+    type NavGroup = {
+        title: string;
+        links: NavLinkItem[];
+        permissionKey: keyof Permissions;
+    }
 
     const navLinks: NavLinkItem[] = [
         { href: '/admin', label: 'Dashboard', icon: Home, permissionKey: 'dashboard' },
         { href: '/admin/bookings', label: 'Bookings', icon: Briefcase, permissionKey: 'bookings' },
-        { href: '/admin/artists', label: 'Artists', icon: Palette, permissionKey: 'artists' },
-        { href: '/admin/customers', label: 'Customers', icon: Users, permissionKey: 'customers' },
-        { href: '/admin/artist-directory', label: 'Artist Directory', icon: MapPin, permissionKey: 'artistDirectory' },
-        { href: '/admin/payouts', label: 'Payouts', icon: IndianRupee, permissionKey: 'payouts' },
-        { href: '/admin/transactions', label: 'Transactions', icon: ListTree, permissionKey: 'transactions' },
-        { href: '/admin/packages', label: 'Packages', icon: Package, permissionKey: 'packages' },
-        { href: '/admin/promotions', label: 'Promotions', icon: Tag, permissionKey: 'settings' },
-        { href: '/admin/team', label: 'Team Management', icon: Users, permissionKey: 'settings' },
-        { href: '/admin/images', label: 'Site Images', icon: ImageIcon, permissionKey: 'settings' },
-        { href: '/admin/locations', label: 'Locations', icon: MapPin, permissionKey: 'settings' },
-        { href: '/admin/settings', label: 'Platform Settings', icon: Settings, permissionKey: 'settings' },
     ];
     
-    const accessibleNavLinks = navLinks.filter(link => hasPermission(link.permissionKey, 'view'));
+    const managementGroup: NavGroup = {
+        title: 'Management',
+        permissionKey: 'artists', // Use a general key, access is per-link
+        links: [
+            { href: '/admin/artists', label: 'Artists', icon: Palette, permissionKey: 'artists' },
+            { href: '/admin/customers', label: 'Customers', icon: Users, permissionKey: 'customers' },
+            { href: '/admin/artist-directory', label: 'Artist Directory', icon: MapPin, permissionKey: 'artistDirectory' },
+            { href: '/admin/packages', label: 'Packages', icon: Package, permissionKey: 'packages' },
+        ]
+    };
+    
+    const financialGroup: NavGroup = {
+        title: 'Financials',
+        permissionKey: 'payouts', // Use a general key
+        links: [
+            { href: '/admin/payouts', label: 'Payouts', icon: IndianRupee, permissionKey: 'payouts' },
+            { href: '/admin/transactions', label: 'Transactions', icon: ListTree, permissionKey: 'transactions' },
+            { href: '/admin/promotions', label: 'Promotions', icon: Tag, permissionKey: 'settings' },
+        ]
+    };
+
+    const settingsGroup: NavGroup = {
+        title: 'Platform',
+        permissionKey: 'settings', // Use a general key
+        links: [
+            { href: '/admin/analytics', label: 'Analytics', icon: BarChart2, permissionKey: 'dashboard' },
+            { href: '/admin/team', label: 'Team', icon: Users, permissionKey: 'settings' },
+            { href: '/admin/images', label: 'Site Images', icon: ImageIcon, permissionKey: 'settings' },
+            { href: '/admin/locations', label: 'Locations', icon: MapPin, permissionKey: 'settings' },
+            { href: '/admin/settings', label: 'Settings', icon: Settings, permissionKey: 'settings' },
+        ]
+    };
+
+    const navGroups: NavGroup[] = [managementGroup, financialGroup, settingsGroup];
+
+    const getAccessibleLinks = (group: NavGroup) => group.links.filter(link => hasPermission(link.permissionKey, 'view'));
 
     const SidebarNav = () => (
          <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-            {accessibleNavLinks.map(link => (
+            {navLinks.filter(l => hasPermission(l.permissionKey, 'view')).map(link => (
                 <NavLink key={link.href} {...link} pathname={pathname} />
             ))}
+             <Accordion type="multiple" defaultValue={['Management', 'Financials', 'Platform']} className="w-full">
+                {navGroups.map(group => {
+                    const accessibleLinks = getAccessibleLinks(group);
+                    if(accessibleLinks.length === 0) return null;
+                    return (
+                         <AccordionItem value={group.title} key={group.title} className="border-b-0">
+                            <AccordionTrigger className="py-2 text-muted-foreground hover:text-primary hover:no-underline text-base font-normal [&[data-state=open]>svg]:rotate-0">
+                                {group.title}
+                            </AccordionTrigger>
+                            <AccordionContent className="pl-4">
+                                <div className="flex flex-col gap-1">
+                                {accessibleLinks.map(link => (
+                                    <NavLink key={link.href} {...link} pathname={pathname} />
+                                ))}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    )
+                })}
+            </Accordion>
         </nav>
     );
     
-    const currentLink = navLinks.find(link => pathname.startsWith(link.href) && (link.href !== '/admin' || pathname === '/admin'));
+    const currentLink = [...navLinks, ...managementGroup.links, ...financialGroup.links, ...settingsGroup.links].find(link => pathname.startsWith(link.href) && (link.href !== '/admin' || pathname === '/admin'));
 
     if (currentLink && !hasPermission(currentLink.permissionKey, 'view')) {
          return (

@@ -5,7 +5,7 @@ import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Bell, Briefcase, IndianRupee, Star } from "lucide-react";
+import { Shield, Bell, Briefcase, IndianRupee, Star, BarChart, PieChart } from "lucide-react";
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -21,6 +21,8 @@ import type { Artist, Booking } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
 import { cn } from '@/lib/utils';
+import { Bar as BarRechart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Pie, Cell } from 'recharts';
+import { BarChart as BarChartComponent, PieChart as PieChartComponent } from 'recharts';
 
 function DashboardCard({ title, value, description, icon: Icon, href, className }: { title: string, value: string, description: string, icon: React.ElementType, href?: string, className?: string }) {
     const CardContentWrapper = ({children}: {children: React.ReactNode}) => {
@@ -111,6 +113,29 @@ export default function AdminPage() {
         }
     };
     
+      // --- Chart Data Processing ---
+    const monthlyData = bookings.reduce((acc, booking) => {
+        const month = new Date(booking.date).toLocaleString('default', { month: 'short', year: 'numeric' });
+        if (!acc[month]) {
+            acc[month] = { name: month, bookings: 0, revenue: 0 };
+        }
+        acc[month].bookings += 1;
+        if (booking.status === 'Completed') {
+            acc[month].revenue += booking.amount;
+        }
+        return acc;
+    }, {} as Record<string, {name: string, bookings: number, revenue: number}>);
+    const bookingsChartData = Object.values(monthlyData).sort((a, b) => new Date(a.name).getTime() - new Date(b.name).getTime());
+
+    const serviceData = bookings.reduce((acc, booking) => {
+        const serviceType = booking.service.toLowerCase().includes('mehndi') ? 'Mehndi' : 'Makeup';
+        const existing = acc.find(item => item.name === serviceType);
+        if (existing) existing.value += 1;
+        else acc.push({ name: serviceType, value: 1 });
+        return acc;
+    }, [] as {name: string, value: number}[]);
+    const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
     if (isLoading || !isAuthenticated) {
         return (
             <div className="flex items-center justify-center min-h-full">
@@ -154,6 +179,47 @@ export default function AdminPage() {
                     href="/admin/bookings?filter=pending"
                     className={pendingBookingCount > 0 ? "text-destructive" : ""}
                 />
+            </div>
+            <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
+                 <Card className="xl:col-span-2">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><BarChart className="w-5 h-5 text-primary"/>Bookings & Revenue</CardTitle>
+                        <CardDescription>Monthly trends for bookings and revenue.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-80">
+                         <ResponsiveContainer width="100%" height="100%">
+                            <BarChartComponent data={bookingsChartData}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false}/>
+                                <YAxis yAxisId="left" stroke="#8884d8" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" fontSize={12} tickLine={false} axisLine={false} />
+                                <Tooltip />
+                                <Legend />
+                                <BarRechart yAxisId="left" dataKey="bookings" fill="hsl(var(--primary))" name="Bookings" radius={[4, 4, 0, 0]} />
+                                <BarRechart yAxisId="right" dataKey="revenue" fill="hsl(var(--accent))" name="Revenue (₹)" radius={[4, 4, 0, 0]} />
+                            </BarChartComponent>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><PieChart className="w-5 h-5 text-primary"/>Service Popularity</CardTitle>
+                        <CardDescription>Breakdown of bookings by service type.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="h-80">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChartComponent>
+                                <Pie data={serviceData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label>
+                                        {serviceData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                                <Legend />
+                            </PieChartComponent>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
             </div>
             <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
                 <Card className="xl:col-span-1">

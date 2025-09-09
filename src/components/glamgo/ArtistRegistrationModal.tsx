@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -110,7 +109,9 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
   }, [isOpen]);
 
   const selectedState = form.watch('state');
-  const districts = selectedState ? (availableLocations[selectedState] || []) : [];
+  const availableStates = Object.keys(availableLocations);
+  const districtsInSelectedState = selectedState ? (INDIA_LOCATIONS[selectedState] || []) : [];
+
 
   const onSubmit = (data: RegistrationFormValues) => {
     const existingPending = JSON.parse(localStorage.getItem('pendingArtists') || '[]');
@@ -256,7 +257,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                                             <SelectTrigger><SelectValue placeholder="Select an available state" /></SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {Object.keys(availableLocations).map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                            {availableStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
@@ -270,7 +271,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                                             <SelectTrigger><SelectValue placeholder="Select a district" /></SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            {districts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                                            {districtsInSelectedState.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                                         </SelectContent>
                                     </Select>
                                      { !selectedState && <FormDescription>Please select a state first.</FormDescription> }

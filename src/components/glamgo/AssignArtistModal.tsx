@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -93,6 +92,16 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
     return unavailableIds;
   }, [booking, allBookings, artists]);
 
+  const sortedArtists = React.useMemo(() => {
+    return [...artists].sort((a, b) => {
+        const aIsLocal = a.district === booking.district;
+        const bIsLocal = b.district === booking.district;
+        if (aIsLocal && !bIsLocal) return -1;
+        if (!aIsLocal && bIsLocal) return 1;
+        return a.name.localeCompare(b.name);
+    });
+  }, [artists, booking.district]);
+
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -100,7 +109,7 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
         <DialogHeader>
           <DialogTitle className="text-primary font-bold text-2xl">{booking.artistIds && booking.artistIds.length > 0 ? 'Change' : 'Assign'} Artists</DialogTitle>
           <DialogDescription>
-            Select one or more available artists for booking #{booking.id}.
+            Select one or more available artists for booking #{booking.id}. Local artists are shown first.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -109,7 +118,7 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
               <Label>Select Artists</Label>
               <ScrollArea className="h-48 w-full rounded-md border p-4">
                  <div className="space-y-2">
-                    {artists.map(artist => {
+                    {sortedArtists.map(artist => {
                        const isUnavailable = unavailableArtistIds.has(artist.id);
                        const isLocal = artist.district === booking.district;
                        return (
