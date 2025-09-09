@@ -171,7 +171,7 @@ export default function PackageManagementPage() {
                                     )} />
                                     <div className="grid grid-cols-2 gap-4">
                                         <FormField control={form.control} name="service" render={({ field }) => (
-                                            <FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl><SelectContent><SelectItem value="mehndi">Mehendi</SelectItem><SelectItem value="makeup">Makeup</SelectItem><SelectItem value="photography">Photography</SelectItem></SelectContent></Select><FormMessage /></FormItem>
+                                            <FormItem><FormLabel>Category</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger></FormControl><SelectContent><SelectItem value="mehndi">Mehendi</SelectItem><SelectItem value="makeup">Makeup</SelectItem><SelectItem value="photography">Photography</SelectItem></SelectContent></Select></FormItem>
                                         )} />
                                         <FormField control={form.control} name="tags" render={({ field }) => (
                                             <FormItem><FormLabel>Tags</FormLabel><div className="relative"><Tag className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/><FormControl><Input placeholder="e.g., Bridal, Wedding" {...field} className="pl-8"/></FormControl></div><FormMessage /></FormItem>

@@ -137,7 +137,7 @@ export default function ArtistDashboardLayout({
         setNotifications(artistNotifications.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
         setUnreadCount(artistNotifications.filter((n: Notification) => !n.isRead).length);
 
-    }, [router, toast, handleLogout]);
+    }, [router, toast, handleLogout, getArtists]);
 
     React.useEffect(() => {
         const isArtistAuthenticated = localStorage.getItem('isArtistAuthenticated');

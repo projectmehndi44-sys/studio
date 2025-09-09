@@ -58,6 +58,11 @@ export type Customer = {
   email?: string;
 };
 
+export type CartItem = {
+    masterPackage: MasterServicePackage;
+    category: PackageCategory;
+    artist?: Artist; // Optional: if an artist is chosen for this item
+};
 
 export type Booking = {
   id: string;
@@ -171,10 +176,4 @@ export type TeamMember = {
     password?: string;
     role: 'admin' | 'team-member';
     permissions: Permissions;
-};
-
-export type CartItem = {
-    masterPackage: MasterServicePackage;
-    category: PackageCategory;
-    artist?: Artist; // Optional: if an artist is chosen for this item
 };

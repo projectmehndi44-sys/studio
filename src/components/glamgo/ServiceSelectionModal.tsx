@@ -165,7 +165,7 @@ export function ServiceSelectionModal({ service, artists, isOpen, onOpenChange, 
                         </CardHeader>
                         <CardContent>
                             <p className="text-4xl font-bold flex items-center justify-center text-primary"><IndianRupee className="w-7 h-7 mr-1"/>{selectedCategory.basePrice.toLocaleString()}</p>
-                            <Button size="lg" className="w-full mt-4" onClick={handleExpressBooking}>Book Now & Let Us Assign</Button>
+                            <Button size="lg" className="w-full mt-4" onClick={handleExpressBooking}>Book Now &amp; Let Us Assign</Button>
                             <Button variant="link" onClick={() => setSelectedCategory(null)}>Back to Tiers</Button>
                         </CardContent>
                     </Card>

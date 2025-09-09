@@ -28,6 +28,7 @@ export const artists: Artist[] = [
     serviceOfferings: [
         { masterPackageId: 'pkg_bridal_mehndi', categoryName: 'Normal', artistPrice: 3500, isEnabled: true },
         { masterPackageId: 'pkg_bridal_mehndi', categoryName: 'Premium', artistPrice: 6000, isEnabled: true },
+        { masterPackageId: 'pkg_party_makeup', categoryName: 'Normal', artistPrice: 2500, isEnabled: true },
     ]
   },
   {
@@ -53,6 +54,7 @@ export const artists: Artist[] = [
         { masterPackageId: 'pkg_party_makeup', categoryName: 'Normal', artistPrice: 2500, isEnabled: true },
         { masterPackageId: 'pkg_party_makeup', categoryName: 'Premium', artistPrice: 4500, isEnabled: true },
         { masterPackageId: 'pkg_party_makeup', categoryName: 'ULTRA PREMIUM', artistPrice: 7500, isEnabled: true },
+        { masterPackageId: 'pkg_bridal_mehndi', categoryName: 'Normal', artistPrice: 4000, isEnabled: true },
     ]
   },
   {
@@ -225,7 +227,7 @@ export const initialCustomers: Customer[] = [
 export const allBookings: Booking[] = [
     { id: 'book_01', customerId: 'cust_101', artistIds: ['1'], customerName: 'Priya Patel', customerContact: '9876543210', eventType: 'Wedding', serviceAddress: '123, Rose Villa, Bandra West, Mumbai', serviceDates: [new Date('2024-07-20')], date: new Date('2024-07-20'), service: 'Bridal Mehndi', amount: 5000, status: 'Completed', paidOut: true, eventDate: new Date('2024-07-22'), state: 'Maharashtra', district: 'Mumbai', location: 'Bandra West' },
     { id: 'book_02', customerId: 'cust_102', artistIds: ['2'], customerName: 'Anjali Sharma', customerContact: '9876543211', eventType: 'Party', serviceAddress: '456, Sunshine Apts, Saket, New Delhi', serviceDates: [new Date('2024-07-25')], date: new Date('2024-07-25'), service: 'Party Makeup', amount: 3000, status: 'Completed', paidOut: false, eventDate: new Date('2024-07-25'), state: 'Delhi', district: 'South Delhi', location: 'Saket' },
-    { id: 'book_03', customerId: 'cust_103', artistIds: ['3'], customerName: 'Sneha Reddy', customerContact: '9876543212', eventType: 'Wedding', serviceAddress: '789, Tech Park, Koramangala, Bangalore', serviceDates: [new Date('2024-08-05')], date: new Date('2024-08-05'), service: 'Mehndi & Makeup', amount: 8000, status: 'Pending Approval', paidOut: false, eventDate: new Date('2024-08-07'), state: 'Karnataka', district: 'Bengaluru Urban', location: 'Koramangala' },
+    { id: 'book_03', customerId: 'cust_103', artistIds: ['3'], customerName: 'Sneha Reddy', customerContact: '9876543212', eventType: 'Wedding', serviceAddress: '789, Tech Park, Koramangala, Bangalore', serviceDates: [new Date('2024-08-05')], date: new Date('2024-08-05'), service: 'Mehndi &amp; Makeup', amount: 8000, status: 'Pending Approval', paidOut: false, eventDate: new Date('2024-08-07'), state: 'Karnataka', district: 'Bengaluru Urban', location: 'Koramangala' },
     { id: 'book_04', customerId: 'cust_101', artistIds: ['1'], customerName: 'Meera Iyer', customerContact: '9876543213', eventType: 'Engagement', serviceAddress: '321, Lakeview, Powai, Mumbai', serviceDates: [new Date('2024-08-10')], date: new Date('2024-08-10'), service: 'Engagement Makeup', amount: 4500, status: 'Confirmed', paidOut: false, eventDate: new Date('2024-08-11'), state: 'Maharashtra', district: 'Mumbai Suburban', location: 'Powai' },
     { id: 'book_05', customerId: 'cust_104', artistIds: [], customerName: 'Rohan Gupta', customerContact: '9876543214', eventType: 'Festival', serviceAddress: '654, MG Road, Pune', serviceDates: [new Date('2024-08-12')], date: new Date('2024-08-12'), service: 'Mehndi Package', amount: 1800, status: 'Needs Assignment', paidOut: false, eventDate: new Date('2024-08-13'), state: 'Maharashtra', district: 'Pune', location: 'MG Road' },
     { id: 'book_06', customerId: 'cust_105', artistIds: ['4'], customerName: 'Kavita Singh', customerContact: '9876543215', eventType: 'Wedding', serviceAddress: '987, Cyber City, Gurgaon', serviceDates: [new Date('2024-08-15')], date: new Date('2024-08-15'), service: 'Minimalist Mehndi', amount: 2200, status: 'Completed', paidOut: false, eventDate: new Date('2024-08-18'), state: 'Haryana', district: 'Gurugram', location: 'Cyber City' },

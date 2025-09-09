@@ -170,12 +170,7 @@ export default function ArtistServicesPage() {
                                                                                     <Input type="number" {...field} className="pl-8" disabled={!form.watch(`offerings.${fieldIndex}.isEnabled`)}/>
                                                                                 </FormControl>
                                                                             </div>
-                                                                            <FormDescription>
-                                                                                Base price for this tier is ₹{category.basePrice}.
-                                                                            </FormDescription>
-                                                                            {form.formState.errors.offerings?.[fieldIndex]?.artistPrice && (
-                                                                                 <FormMessage>Your price cannot be lower than the base price.</FormMessage>
-                                                                            )}
+                                                                            {form.watch(`offerings.${fieldIndex}.artistPrice`) < category.basePrice && <FormMessage>Your price cannot be lower than the base price of ₹{category.basePrice}.</FormMessage>}
                                                                         </FormItem>
                                                                     )}
                                                                 />

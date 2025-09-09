@@ -294,7 +294,8 @@ export default function BookingPage() {
                                 <div className="space-y-2">
                                     <Label>Date(s) for Service(s)*</Label>
                                     <Popover>
-                                        <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", serviceDates.length === 0 && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4"/>
+                                        <PopoverTrigger asChild><Button variant="outline" className={cn("w-full justify-start text-left font-normal", serviceDates.length === 0 && "text-muted-foreground")}>
+                                        <CalendarIcon className="mr-2 h-4 w-4"/>
                                         {serviceDates.length > 0 ? serviceDates.map(d => format(d, "PPP")).join(', ') : <span>Pick one or more dates</span>}
                                         </Button></PopoverTrigger>
                                         <PopoverContent className="w-auto p-0"><Calendar mode="multiple" selected={serviceDates} onSelect={(dates) => setServiceDates(dates || [])} disabled={(date) => eventDate ? date > eventDate : false} initialFocus/></PopoverContent>
@@ -419,7 +420,7 @@ export default function BookingPage() {
                            The advance amount is only refunded if the booking is cancelled 72 hours prior to the service date. This is because the date will be exclusively reserved for you. Thank you for your understanding.
                         </AlertDescription>
                     </Alert>
-                    <Button onClick={handleCreateBooking} disabled={!isFormValid()} size="lg" className="w-full">Confirm & Proceed to Payment</Button>
+                    <Button onClick={handleCreateBooking} disabled={!isFormValid()} size="lg" className="w-full">Confirm &amp; Proceed to Payment</Button>
                 </div>
                 )}
             </main>
