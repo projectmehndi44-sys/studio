@@ -11,6 +11,7 @@ import {
   LogIn,
   UserPlus,
   Palette,
+  Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/glamgo/Header';
@@ -30,7 +31,6 @@ import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
 import { RecommendationsTab } from '@/components/glamgo/RecommendationsTab';
 import { ServiceSelectionModal } from '@/components/glamgo/ServiceSelectionModal';
 import { MehndiIcon, MakeupIcon, PhotographyIcon } from '@/components/icons';
-import { Sparkles } from 'lucide-react';
 
 
 const galleryImages = [
@@ -253,11 +253,10 @@ export default function Home() {
 
         <div className="mt-8">
             <Tabs defaultValue="mehndi" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 max-w-3xl mx-auto h-auto text-base sm:text-lg py-3">
+                <TabsList className="grid w-full grid-cols-3 max-w-xl mx-auto h-auto text-base sm:text-lg py-3">
                     <TabsTrigger value="mehndi" className="py-2.5"><MehndiIcon className="mr-2 h-5 w-5"/>Mehndi</TabsTrigger>
                     <TabsTrigger value="makeup" className="py-2.5"><MakeupIcon className="mr-2 h-5 w-5"/>Makeup</TabsTrigger>
                     <TabsTrigger value="photography" className="py-2.5"><PhotographyIcon className="mr-2 h-5 w-5" />Photography</TabsTrigger>
-                    <TabsTrigger value="recommendations" className="py-2.5"><Sparkles className="mr-2 h-5 w-5 text-accent"/>AI Recommendations</TabsTrigger>
                 </TabsList>
                 <TabsContent value="mehndi">
                     <CategoryTabContent serviceType="mehndi" />
@@ -267,9 +266,6 @@ export default function Home() {
                 </TabsContent>
                 <TabsContent value="photography">
                     <CategoryTabContent serviceType="photography" />
-                </TabsContent>
-                 <TabsContent value="recommendations" className="mt-8">
-                    <RecommendationsTab onBookingRequest={handleBookingRequest}/>
                 </TabsContent>
             </Tabs>
         </div>
