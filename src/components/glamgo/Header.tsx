@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React from 'react';
@@ -9,7 +8,8 @@ import {
   User,
   ShieldCheck,
   LogOut,
-  LayoutGrid
+  LayoutGrid,
+  ShoppingBag
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -28,12 +28,14 @@ interface HeaderProps {
   isCustomerLoggedIn: boolean;
   onCustomerLogout: () => void;
   customer: Customer | null;
+  cartCount: number;
 }
 
 export function Header({
   isCustomerLoggedIn,
   onCustomerLogout,
   customer,
+  cartCount,
 }: HeaderProps) {
   const router = useRouter();
 
@@ -47,44 +49,54 @@ export function Header({
       </Link>
       <div className="flex items-center gap-2">
         {isCustomerLoggedIn && customer ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
-                   <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${customer?.name}`} alt={customer?.name || 'User'} />
-                  <AvatarFallback>
-                    {customer?.name ? customer.name.charAt(0).toUpperCase() : '?'}
-                  </AvatarFallback>
-                </Avatar>
-                <span>{customer?.name}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-               <DropdownMenuItem onSelect={() => router.push('/account')} className="cursor-pointer">
-                 <LayoutGrid className="mr-2 h-4 w-4" />
-                <span>My Dashboard</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="cursor-pointer"
-                onClick={onCustomerLogout}
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <>
+            <Button variant="ghost" className="relative" asChild>
+                <Link href="/book">
+                    <ShoppingBag className="h-6 w-6"/>
+                    {cartCount > 0 && (
+                        <span className="absolute top-0 right-0 h-5 w-5 rounded-full bg-red-500 text-xs flex items-center justify-center text-white border-2 border-background">
+                            {cartCount}
+                        </span>
+                    )}
+                </Link>
+            </Button>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                    <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${customer?.name}`} alt={customer?.name || 'User'} />
+                    <AvatarFallback>
+                        {customer?.name ? customer.name.charAt(0).toUpperCase() : '?'}
+                    </AvatarFallback>
+                    </Avatar>
+                    <span className="hidden md:inline">{customer?.name}</span>
+                </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => router.push('/account')} className="cursor-pointer">
+                    <LayoutGrid className="mr-2 h-4 w-4" />
+                    <span>My Dashboard</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={onCustomerLogout}
+                >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
+                </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+          </>
         ) : (
            <Link href="/admin/login">
             <Button variant="outline">
                 <ShieldCheck className="mr-2 h-4 w-4" /> Admin Portal
             </Button>
-            </Link>
+           </Link>
         )}
       </div>
     </header>
   );
 }
-
-    

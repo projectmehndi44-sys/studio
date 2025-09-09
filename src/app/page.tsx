@@ -1,11 +1,10 @@
 
-
 'use client';
 
 import * as React from 'react';
-import type { Artist, ServicePackage, Customer } from '@/types';
+import type { Artist, ServicePackage, Customer, CartItem } from '@/types';
 import { artists as initialArtists } from '@/lib/data';
-import { packages as initialPackages } from '@/lib/packages-data';
+import { masterServices } from '@/lib/packages-data';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -38,6 +37,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
 import { RecommendationsTab } from '@/components/glamgo/RecommendationsTab';
+import { ServiceSelectionModal } from '@/components/glamgo/ServiceSelectionModal';
+
 
 const galleryImages = [
     { src: 'https://picsum.photos/600/400?random=101', alt: 'Intricate bridal mehndi', hint: 'bridal mehndi' },
@@ -74,13 +75,17 @@ export default function Home() {
   const [isCustomerLoggedIn, setIsCustomerLoggedIn] = React.useState(false);
   const [customer, setCustomer] = React.useState<Customer | null>(null);
 
-  const [cart, setCart] = React.useState<ServicePackage[]>([]);
+  const [cart, setCart] = React.useState<CartItem[]>([]);
+
+  // State for the service selection modal
+  const [isServiceModalOpen, setIsServiceModalOpen] = React.useState(false);
+  const [selectedService, setSelectedService] = React.useState<ServicePackage | null>(null);
 
   const { toast } = useToast();
 
   // Filter state
   const [location, setLocation] = React.useState('');
-  const [serviceType, setServiceType] = React.useState<'mehndi' | 'makeup' | 'photography' | 'all'>('mehndi');
+  const [serviceType, setServiceType] = React.useState<'mehndi' | 'makeup' | 'photography' | 'all'>('all');
   const [priceRange, setPriceRange] = React.useState([20000]);
   const [selectedStyles, setSelectedStyles] = React.useState<string[]>([]);
 
@@ -109,24 +114,22 @@ export default function Home() {
     setCustomer(null);
     setCart([]);
     localStorage.removeItem('currentCustomerId');
+    localStorage.removeItem('cart');
     toast({
       title: 'Logged Out',
       description: 'You have been successfully logged out.',
     });
   }, [toast]);
   
-  // Setup inactivity timeout only when the user is logged in
   useInactivityTimeout(isCustomerLoggedIn ? handleCustomerLogout : () => {});
 
 
   const fetchData = React.useCallback(() => {
     setArtists(getArtists());
 
-    // Load packages from localStorage
-    const storedPackages = localStorage.getItem('servicePackages');
-    setAllPackages(storedPackages ? JSON.parse(storedPackages) : initialPackages);
+    const storedPackages = localStorage.getItem('masterServices');
+    setAllPackages(storedPackages ? JSON.parse(storedPackages) : masterServices);
 
-    // Check for logged-in customer
     const customerId = localStorage.getItem('currentCustomerId');
     if (customerId) {
         const storedCustomers = localStorage.getItem('customers');
@@ -135,10 +138,13 @@ export default function Home() {
         if (currentCustomer) {
             setIsCustomerLoggedIn(true);
             setCustomer(currentCustomer);
+            const storedCart = localStorage.getItem(`cart_${customerId}`);
+            setCart(storedCart ? JSON.parse(storedCart) : []);
         }
     } else {
         setIsCustomerLoggedIn(false);
         setCustomer(null);
+        setCart([]);
     }
   }, [getArtists]);
 
@@ -147,7 +153,7 @@ export default function Home() {
 
     const intervalId = setInterval(() => {
       setCurrentBgIndex((prevIndex) => (prevIndex + 1) % backgroundImages.length);
-    }, 5000); // Change image every 5 seconds
+    }, 5000); 
     
     window.addEventListener('storage', fetchData);
 
@@ -162,38 +168,36 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [artists, serviceType]);
 
-  React.useEffect(() => {
-    const packageIds = searchParams.get('packages')?.split(',') || [];
-    if (packageIds.length > 0 && allPackages.length > 0) {
-      const selectedPackages = allPackages.filter(p => packageIds.includes(p.id));
-      setCart(selectedPackages);
-    }
-  }, [searchParams, allPackages]);
-
   const handleBookingRequest = (artist: Artist) => {
     if (!isCustomerLoggedIn) {
         setIsCustomerLoginModalOpen(true);
         toast({ title: 'Please Login', description: 'You need to be logged in to book an artist.' });
         return;
     }
-    // Redirect to the detailed booking page with artist ID
     router.push(`/book?artistId=${artist.id}`);
   };
   
-  const handleAddToCart = (pkg: ServicePackage) => {
+  const handleAddToCart = (item: CartItem) => {
     if (!isCustomerLoggedIn) {
         setIsCustomerLoginModalOpen(true);
-        toast({ title: 'Please Login', description: 'You need to be logged in to add packages to your booking.' });
+        toast({ title: 'Please Login', description: 'You need to be logged in to add services to your booking.' });
         return;
     }
+    
+    const newCart = [...cart, item];
+    setCart(newCart);
+    localStorage.setItem(`cart_${customer?.id}`, JSON.stringify(newCart));
 
-    const isInCart = cart.find(item => item.id === pkg.id);
-    if (isInCart) {
-        toast({ title: "Already in cart", description: `${pkg.name} is already in your selection.`, variant: "default" });
-        return;
-    }
-    toast({ title: "Package Added!", description: `${pkg.name} has been added to your selection.` });
-    setCart(currentCart => [...currentCart, pkg]);
+    toast({
+        title: "Service Added!",
+        description: `${item.masterPackage.name} (${item.category.name}) has been added to your selection.`,
+        action: (
+            <Link href="/book">
+                <Button variant="secondary" size="sm">View Cart</Button>
+            </Link>
+        ),
+    });
+    setIsServiceModalOpen(false);
   };
 
   const handleArtistRegister = () => {
@@ -213,6 +217,8 @@ export default function Home() {
     setCustomer(customer);
     setIsCustomerLoginModalOpen(false);
     setIsCustomerRegistrationModalOpen(false);
+    const storedCart = localStorage.getItem(`cart_${customer.id}`);
+    setCart(storedCart ? JSON.parse(storedCart) : []);
     setTimeout(() => {
         toast({
             title: 'Login Successful',
@@ -242,11 +248,8 @@ export default function Home() {
         );
     }
 
-    const priceKey = serviceType as keyof Artist['charges'];
-    currentArtists = currentArtists.filter((artist) => (artist.charges?.[priceKey] || artist.charge) <= priceRange[0]);
-
     setFilteredArtists(currentArtists);
-  }, [location, serviceType, priceRange, artists, selectedStyles]);
+  }, [location, serviceType, artists, selectedStyles]);
   
   React.useEffect(() => {
     applyFilters();
@@ -266,89 +269,82 @@ export default function Home() {
   }
 
   const ArtistFinder = ({ service }: { service: 'mehndi' | 'makeup' | 'photography' | 'all' }) => {
-      const filteredPackages = allPackages.filter(p => p.service === service);
-      
+      const serviceToFilter = service === 'all' ? serviceType : service;
       return (
         <div className="space-y-8">
-            <Packages onAddToCart={handleAddToCart} cart={cart} packages={filteredPackages} />
-            
-            <Separator />
-            
-            <div>
-              <h2 className="text-center font-headline text-5xl text-primary mb-8">All Artists</h2>
-              <Card className="my-4 border-2 border-accent/20 shadow-lg bg-background/80 backdrop-blur-sm">
+            <h2 className="text-center font-headline text-5xl text-primary mb-8 capitalize">{service} Artists</h2>
+            <Card className="my-4 border-2 border-accent/20 shadow-lg bg-background/80 backdrop-blur-sm">
                 <CardContent className="p-6">
-                  <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 items-end">
-                    <div className="space-y-2">
-                      <Label htmlFor="location">Location</Label>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="location"
-                          placeholder="City or pin code..."
-                          className="pl-9"
-                          value={location}
-                          onChange={(e) => setLocation(e.target.value)}
-                        />
-                      </div>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4 items-end">
+                        <div className="space-y-2">
+                        <Label htmlFor="location">Location</Label>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                            id="location"
+                            placeholder="City or pin code..."
+                            className="pl-9"
+                            value={location}
+                            onChange={(e) => setLocation(e.target.value)}
+                            />
+                        </div>
+                        </div>
+                        <div className="space-y-2 lg:col-span-2">
+                        <Label htmlFor="price">Price Range (Max): <span className="font-bold text-primary">₹{priceRange[0].toLocaleString()}</span></Label>
+                        <Slider
+                            id="price"
+                            max={20000}
+                            min={500}
+                            step={500}
+                            value={priceRange}
+                            onValueChange={setPriceRange}
+                            />
+                        </div>
+                        <Button onClick={resetFilters} variant="ghost" className="w-full">
+                            Reset Filters
+                        </Button>
                     </div>
-                     <div className="space-y-2 lg:col-span-2">
-                      <Label htmlFor="price">Price Range (Max): <span className="font-bold text-primary">₹{priceRange[0].toLocaleString()}</span></Label>
-                      <Slider
-                          id="price"
-                          max={20000}
-                          min={500}
-                          step={500}
-                          value={priceRange}
-                          onValueChange={setPriceRange}
-                        />
+                    <div className="mt-4 pt-4 border-t">
+                        <Label>Filter by Style</Label>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                            {allStyleTags.map(tag => (
+                                <div key={tag} className="flex items-center space-x-2">
+                                    <Checkbox id={tag} checked={selectedStyles.includes(tag)} onCheckedChange={() => handleStyleChange(tag)} />
+                                    <label htmlFor={tag} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 capitalize">{tag}</label>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                    <Button onClick={resetFilters} variant="ghost" className="w-full">
-                        Reset Filters
-                    </Button>
-                  </div>
-                  <div className="mt-4 pt-4 border-t">
-                      <Label>Filter by Style</Label>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                          {allStyleTags.map(tag => (
-                              <div key={tag} className="flex items-center space-x-2">
-                                  <Checkbox id={tag} checked={selectedStyles.includes(tag)} onCheckedChange={() => handleStyleChange(tag)} />
-                                  <label htmlFor={tag} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 capitalize">{tag}</label>
-                              </div>
-                          ))}
-                      </div>
-                  </div>
                 </CardContent>
-              </Card>
-    
-              {filteredArtists.length > 0 ? (
+            </Card>
+
+            {filteredArtists.length > 0 ? (
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {filteredArtists.map((artist) => (
+                {filteredArtists.map((artist) => (
                     <ArtistCard
-                      key={artist.id}
-                      artist={artist}
-                      onBookingRequest={handleBookingRequest}
+                    key={artist.id}
+                    artist={artist}
+                    onBookingRequest={handleBookingRequest}
                     />
-                  ))}
+                ))}
                 </div>
-              ) : (
+            ) : (
                 <div className="text-center py-16">
-                  <p className="text-lg text-muted-foreground">No artists found matching your criteria.</p>
+                <p className="text-lg text-muted-foreground">No artists found matching your criteria.</p>
                 </div>
-              )}
+            )}
             </div>
-          </div>
-      );
+        );
   }
 
   return (
     <div className="flex min-h-screen w-full flex-col relative">
        {cart.length > 0 && (
          <div className="fixed bottom-8 right-8 z-50">
-             <Link href={`/book?packages=${cart.map(p => p.id).join(',')}`}>
+             <Link href="/book">
                 <Button size="lg" className="rounded-full shadow-lg text-lg">
                     <ShoppingBag className="mr-2 h-6 w-6"/>
-                    Book Now ({cart.length})
+                    View Cart ({cart.length})
                 </Button>
             </Link>
          </div>
@@ -373,6 +369,7 @@ export default function Home() {
         isCustomerLoggedIn={isCustomerLoggedIn}
         onCustomerLogout={handleCustomerLogout}
         customer={customer}
+        cartCount={cart.length}
       />
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="text-center">
@@ -415,64 +412,60 @@ export default function Home() {
           </div>
         )}
 
-        <Tabs defaultValue="browse" className="w-full mt-8">
+        <Tabs defaultValue="services" className="w-full mt-8">
             <TabsList className="grid w-full grid-cols-4 max-w-2xl mx-auto">
-                <TabsTrigger value="browse"><MehndiIcon className="mr-2 h-6 w-6"/>Mehendi</TabsTrigger>
-                <TabsTrigger value="makeup"><MakeupIcon className="mr-2 h-6 w-6"/>Makeup</TabsTrigger>
-                <TabsTrigger value="photography"><PhotographyIcon className="mr-2 h-6 w-6"/>Photography</TabsTrigger>
-                 <TabsTrigger value="recommendations" className="text-accent"><Sparkles className="mr-2 h-5 w-5"/>AI Match</TabsTrigger>
+                <TabsTrigger value="services"><ShoppingBag className="mr-2 h-5 w-5" />Services</TabsTrigger>
+                <TabsTrigger value="artists"><Palette className="mr-2 h-5 w-5" />Artists</TabsTrigger>
+                <TabsTrigger value="recommendations" className="text-accent"><Sparkles className="mr-2 h-5 w-5"/>AI Match</TabsTrigger>
+                <TabsTrigger value="gallery"><Image className="mr-2 h-5 w-5" />Our Work</TabsTrigger>
             </TabsList>
-            <TabsContent value="browse">
-                <ArtistFinder service="mehndi" />
+            <TabsContent value="services">
+                <Packages onServiceSelect={(service) => { setSelectedService(service); setIsServiceModalOpen(true); }} />
             </TabsContent>
-            <TabsContent value="makeup">
-                <ArtistFinder service="makeup" />
-            </TabsContent>
-            <TabsContent value="photography">
-                 <ArtistFinder service="photography" />
+            <TabsContent value="artists">
+                <ArtistFinder service="all" />
             </TabsContent>
             <TabsContent value="recommendations">
                 <RecommendationsTab onBookingRequest={handleBookingRequest}/>
             </TabsContent>
+            <TabsContent value="gallery">
+                 <div className="py-12">
+                    <Carousel
+                        opts={{
+                            align: "start",
+                            loop: true,
+                        }}
+                        plugins={[
+                            Autoplay({
+                                delay: 3000,
+                            }),
+                        ]}
+                        className="w-full max-w-6xl mx-auto"
+                    >
+                        <CarouselContent>
+                            {galleryImages.map((image, index) => (
+                                <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                                    <div className="p-1">
+                                        <Card className="overflow-hidden">
+                                            <CardContent className="flex aspect-video items-center justify-center p-0">
+                                                <Image 
+                                                    src={image.src} 
+                                                    alt={image.alt}
+                                                    width={600}
+                                                    height={400}
+                                                    className="w-full h-full object-cover"
+                                                    data-ai-hint={image.hint}
+                                                />
+                                            </CardContent>
+                                        </Card>
+                                    </div>
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                    </Carousel>
+                </div>
+            </TabsContent>
         </Tabs>
-
-
-        <div className="py-12">
-            <h2 className="text-center font-headline text-5xl text-primary mb-8">Our Works</h2>
-            <Carousel
-                opts={{
-                    align: "start",
-                    loop: true,
-                }}
-                plugins={[
-                    Autoplay({
-                        delay: 3000,
-                    }),
-                ]}
-                className="w-full max-w-6xl mx-auto"
-            >
-                <CarouselContent>
-                    {galleryImages.map((image, index) => (
-                        <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
-                            <div className="p-1">
-                                <Card className="overflow-hidden">
-                                    <CardContent className="flex aspect-video items-center justify-center p-0">
-                                        <Image 
-                                            src={image.src} 
-                                            alt={image.alt}
-                                            width={600}
-                                            height={400}
-                                            className="w-full h-full object-cover"
-                                            data-ai-hint={image.hint}
-                                        />
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        </CarouselItem>
-                    ))}
-                </CarouselContent>
-            </Carousel>
-        </div>
 
         <ArtistRegistrationModal
             isOpen={isArtistRegistrationModalOpen}
@@ -488,6 +481,15 @@ export default function Home() {
             onOpenChange={setIsCustomerLoginModalOpen}
             onSuccessfulLogin={onSuccessfulLogin}
         />
+        {selectedService && (
+            <ServiceSelectionModal
+                isOpen={isServiceModalOpen}
+                onOpenChange={setIsServiceModalOpen}
+                service={selectedService}
+                artists={artists}
+                onAddToCart={handleAddToCart}
+            />
+        )}
       </main>
     </div>
   );

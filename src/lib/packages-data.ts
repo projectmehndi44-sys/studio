@@ -1,95 +1,84 @@
+import type { MasterServicePackage } from '@/types';
 
-import type { ServicePackage } from '@/types';
-
-export const packages: ServicePackage[] = [
+export const packages: MasterServicePackage[] = [
   {
-    id: 'pkg_bridal_01',
+    id: 'pkg_bridal_mehndi',
     name: 'Bridal Mehendi',
     service: 'mehndi',
-    description: 'Covers both hands on both sides up to elbow length. Intricate and detailed designs perfect for the bride.',
-    price: 5000,
+    description: 'A comprehensive mehendi service for the main event, tailored for brides who want to look their absolute best.',
     image: 'https://picsum.photos/600/400?random=301',
-    tags: ['Organic Henna', 'Bridal Special'],
+    tags: ['Bridal Special', 'Wedding'],
+    categories: [
+      { 
+        name: 'Normal',
+        description: 'Covers both hands (front and back) up to wrist length with beautiful, standard bridal designs.',
+        basePrice: 3000,
+      },
+      { 
+        name: 'Premium',
+        description: 'Covers both hands (front and back) up to mid-elbow with more intricate, dense, and personalized designs. Includes feet up to the ankle.',
+        basePrice: 5000,
+      },
+      { 
+        name: 'ULTRA PREMIUM',
+        description: 'Full coverage for both hands up to the elbows and feet up to the calf. Features hyper-detailed, portrait-style, or fully custom story-based designs. Uses premium, long-lasting organic henna.',
+        basePrice: 8000,
+      }
+    ]
   },
   {
-    id: 'pkg_semibridal_02',
-    name: 'Semi Bridal Mehendi',
-    service: 'mehndi',
-    description: 'A perfect balance of tradition and elegance.',
-    price: 4000,
-    image: 'https://picsum.photos/600/400?random=302',
-    tags: ['Organic Henna'],
-  },
-  {
-    id: 'pkg_bridalfeet_03',
-    name: 'Bridal Feet Mehendi',
-    service: 'mehndi',
-    description: 'Complements the bridal hand mehendi.',
-    price: 2000,
-    image: 'https://picsum.photos/600/400?random=303',
-    tags: ['Organic Henna'],
-  },
-  {
-    id: 'pkg_feet_04',
-    name: 'Feet Mehendi',
-    service: 'mehndi',
-    description: 'Covers toes and mid-portion, no sides included. Simple and elegant for any occasion.',
-    price: 1000,
-    image: 'https://picsum.photos/600/400?random=304',
-    tags: ['Organic Henna'],
-  },
-  {
-    id: 'pkg_megabridal_05',
-    name: 'Mega Bridal Feet Mehendi',
-    service: 'mehndi',
-    description: 'Extensive coverage for the feet, including toes, mid-portion, and all four sides with heavy designs.',
-    price: 5000,
-    image: 'https://picsum.photos/600/400?random=305',
-    tags: ['Organic Henna', 'Full Coverage'],
-  },
-  {
-    id: 'pkg_wrist_06',
-    name: 'Wrist Length Mehendi',
-    service: 'mehndi',
-    description: 'Covers both hands on both sides up to the wrist. Ideal for guests and smaller functions.',
-    price: 3000,
-    image: 'https://picsum.photos/600/400?random=306',
-    tags: ['Organic Henna'],
-  },
-  {
-    id: 'pkg_bridal_makeup_07',
-    name: 'Bridal Makeup',
+    id: 'pkg_party_makeup',
+    name: 'Party & Event Makeup',
     service: 'makeup',
-    description: 'Complete bridal makeup including HD or airbrush techniques, hair styling, and draping.',
-    price: 15000,
-    image: 'https://picsum.photos/600/400?random=307',
-    tags: ['HD Makeup', 'Airbrush', 'Bridal'],
-  },
-  {
-    id: 'pkg_party_makeup_08',
-    name: 'Party Makeup',
-    service: 'makeup',
-    description: 'Get ready for any event with our glam party makeup. Includes eyes, base, and lips.',
+    description: 'Get ready for any event with our professional makeup services, designed to make you shine.',
     price: 4500,
     image: 'https://picsum.photos/600/400?random=308',
-    tags: ['Glam', 'Evening Look'],
-  },
-   {
-    id: 'pkg_prewedding_photo_09',
-    name: 'Pre-Wedding Shoot',
-    service: 'photography',
-    description: 'A 4-hour pre-wedding photography session at a location of your choice. Includes 50 edited photos.',
-    price: 25000,
-    image: 'https://picsum.photos/600/400?random=309',
-    tags: ['Candid', 'Romantic', 'Outdoor'],
+    tags: ['Glam', 'Evening Look', 'Sangeet'],
+     categories: [
+      { 
+        name: 'Normal',
+        description: 'Classic party makeup including a flawless base, elegant eye makeup, and lipstick. Perfect for attending functions.',
+        basePrice: 2500,
+      },
+      { 
+        name: 'Premium',
+        description: 'HD Makeup application for a camera-ready finish. Includes contouring, highlighting, and false lashes. Hairstyle included.',
+        basePrice: 4500,
+      },
+      { 
+        name: 'ULTRA PREMIUM',
+        description: 'Airbrush makeup for the most durable and perfect finish. Includes premium skin prep, advanced hairstyling, and draping of your outfit.',
+        basePrice: 7000,
+      }
+    ]
   },
   {
-    id: 'pkg_event_photo_10',
-    name: 'Event Coverage',
+    id: 'pkg_event_photo',
+    name: 'Event Photography',
     service: 'photography',
-    description: 'Full coverage for a 6-hour event. Ideal for weddings, engagements, or corporate events.',
-    price: 40000,
-    image: 'https://picsum.photos/600/400?random=310',
-    tags: ['Wedding', 'Candid', 'Full Coverage'],
+    description: 'Capture the precious moments of your special event with our professional photography services.',
+    price: 25000,
+    image: 'https://picsum.photos/600/400?random=309',
+    tags: ['Candid', 'Wedding', 'Pre-Wedding'],
+     categories: [
+      { 
+        name: 'Normal',
+        description: 'Coverage for a 3-hour event (e.g., engagement, small party). Includes 100-150 edited, high-resolution digital photos.',
+        basePrice: 12000,
+      },
+      { 
+        name: 'Premium',
+        description: 'Coverage for a 6-hour event (e.g., wedding ceremony). Includes 250-300 edited photos and a 30-page printed photo album.',
+        basePrice: 25000,
+      },
+      { 
+        name: 'ULTRA PREMIUM',
+        description: 'Full-day coverage (up to 10 hours) with two photographers. Includes candid and traditional shots, a premium 50-page album, and a cinematic highlights video (3-5 mins).',
+        basePrice: 50000,
+      }
+    ]
   },
 ];
+
+// Compatibility export
+export const masterServices = packages;

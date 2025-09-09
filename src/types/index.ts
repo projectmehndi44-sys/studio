@@ -1,12 +1,26 @@
 
 
-export type ArtistPackage = {
+export type PackageCategory = {
+  name: 'Normal' | 'Premium' | 'ULTRA PREMIUM';
+  description: string;
+  basePrice: number;
+};
+
+export type MasterServicePackage = {
   id: string;
   name: string;
+  service: 'mehndi' | 'makeup' | 'photography';
   description: string;
-  price: number;
   image: string;
   tags: string[];
+  categories: PackageCategory[];
+};
+
+export type ArtistServiceOffering = {
+    masterPackageId: string;
+    categoryName: 'Normal' | 'Premium' | 'ULTRA PREMIUM';
+    artistPrice: number;
+    isEnabled: boolean;
 };
 
 export type Artist = {
@@ -18,6 +32,7 @@ export type Artist = {
   profilePicture: string;
   workImages: string[];
   services: ('mehndi' | 'makeup' | 'photography')[];
+  serviceOfferings?: ArtistServiceOffering[];
   location: string;
   charges: {
       mehndi?: number;
@@ -128,15 +143,8 @@ export type Transaction = {
   relatedId: string;
 };
 
-export type ServicePackage = {
-    id: string;
-    name: string;
-    service: 'mehndi' | 'makeup' | 'photography';
-    description: string;
-    price: number;
-    image: string;
-    tags: string[];
-};
+// This is now the Master Service Package definition
+export type ServicePackage = MasterServicePackage;
 
 // Maintained for backward compatibility in some files
 export type MehndiPackage = ServicePackage;
@@ -164,3 +172,8 @@ export type TeamMember = {
     role: 'admin' | 'team-member';
     permissions: Permissions;
 };
+
+export type CartItem = {
+    masterPackage: MasterServicePackage;
+    category: PackageCategory;
+    artist?: Artist; // Optional: if
