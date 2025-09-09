@@ -46,6 +46,11 @@ function transformRecommendations(recs: RawArtistRecommendation[]): Artist[] {
       services: rec.serviceTypes,
       location: rec.location,
       charge: rec.charge,
+      charges: {
+        mehndi: rec.serviceTypes.includes('mehndi') ? rec.charge : undefined,
+        makeup: rec.serviceTypes.includes('makeup') ? rec.charge : undefined,
+        photography: rec.serviceTypes.includes('photography') ? rec.charge : undefined,
+      },
       rating: +(4.5 + Math.random() * 0.5).toFixed(1), // Mock rating
       styleTags: rec.styleTags,
     }));

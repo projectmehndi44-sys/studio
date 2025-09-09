@@ -49,7 +49,7 @@ const PersonalizedArtistRecommendationsOutputSchema = z.object({
           'URL of the artist profile picture.'
         ),
       serviceTypes: z
-        .array(z.enum(['mehndi', 'makeup']))
+        .array(z.enum(['mehndi', 'makeup', 'photography']))
         .describe('The types of services the artist provides.'),
       location: z.string().describe('The location of the artist.'),
       charge: z.number().describe('The average charge for the artist services.'),
@@ -88,7 +88,10 @@ const personalizedArtistRecommendationsFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await personalizedArtistRecommendationsPrompt(input);
-    return output!;
+    
+    // Return the output only if it exists, otherwise return an empty array.
+    // This prevents the flow from crashing if the model returns a null response.
+    return output || { artistRecommendations: [] };
   }
 );
 
