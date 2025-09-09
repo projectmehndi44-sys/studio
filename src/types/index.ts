@@ -5,6 +5,7 @@
 
 
 
+
 export type PackageCategory = {
   name: 'Normal' | 'Premium' | 'ULTRA PREMIUM';
   description: string;
@@ -175,6 +176,7 @@ export type Permissions = {
   transactions: Permission;
   packages: Permission;
   settings: Permission;
+  notifications: Permission;
 };
 
 export type TeamMember = {

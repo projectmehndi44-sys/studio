@@ -38,6 +38,7 @@ const memberSchema = z.object({
     transactions: z.enum(['edit', 'view', 'hidden']),
     packages: z.enum(['edit', 'view', 'hidden']),
     settings: z.enum(['edit', 'view', 'hidden']),
+    notifications: z.enum(['edit', 'view', 'hidden']),
   }),
 });
 
@@ -67,6 +68,7 @@ export default function TeamManagementPage() {
                 transactions: 'hidden',
                 packages: 'hidden',
                 settings: 'hidden',
+                notifications: 'hidden',
             }
         },
     });

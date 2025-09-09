@@ -21,6 +21,7 @@ export const PERMISSION_MODULES: { key: keyof Permissions, label: string }[] = [
     { key: 'payouts', label: 'Payouts' },
     { key: 'transactions', label: 'Transactions' },
     { key: 'packages', label: 'Packages' },
+    { key: 'notifications', label: 'Notifications' },
     { key: 'settings', label: 'Settings (Promos, Locations etc.)' },
 ];
 
@@ -44,6 +45,7 @@ export const teamMembers: TeamMember[] = [
             transactions: 'edit',
             packages: 'edit',
             settings: 'edit',
+            notifications: 'edit',
         }
     }
 ];
