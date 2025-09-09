@@ -7,35 +7,19 @@ import {
 } from '@/ai/flows/personalized-artist-recommendations';
 import type { Artist } from '@/types';
 
-function transformRecommendation(
-  recs: PersonalizedArtistRecommendationsOutput
-): Artist[] {
-    if (!recs || !recs.artistRecommendations) return [];
-
-    return recs.artistRecommendations.map((rec) => ({
-      id: rec.artistId,
-      name: rec.name,
-      profilePicture: rec.profilePicture || `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 100)}`,
-      workImages: [
-        `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
-        `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
-        `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
-      ],
-      services: rec.serviceTypes,
-      location: rec.location,
-      charge: rec.charge,
-      rating: +(4.5 + Math.random() * 0.5).toFixed(1), // Mock rating
-      styleTags: rec.styleTags,
-    }));
-}
+/**
+ * This is the raw artist data that comes back from the AI.
+ * It does not include client-side generated data like random images or ratings.
+ */
+export type RawArtistRecommendation = PersonalizedArtistRecommendationsOutput['artistRecommendations'][number];
 
 
 export async function fetchRecommendations(
   input: PersonalizedArtistRecommendationsInput
-): Promise<Artist[]> {
+): Promise<RawArtistRecommendation[]> {
   try {
     const recommendations = await getPersonalizedArtistRecommendations(input);
-    return transformRecommendation(recommendations);
+    return recommendations.artistRecommendations || [];
   } catch (error) {
     console.error('Error fetching recommendations:', error);
     // In a real app, you would have more robust error handling

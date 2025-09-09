@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { fetchRecommendations } from '@/app/actions';
+import { fetchRecommendations, type RawArtistRecommendation } from '@/app/actions';
 import type { Artist } from '@/types';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +27,31 @@ interface RecommendationsTabProps {
   onBookingRequest: (artist: Artist) => void;
 }
 
+/**
+ * Transforms raw AI recommendations into the full Artist type for rendering.
+ * This is done on the client-side to handle dynamic data like random images.
+ */
+function transformRecommendations(recs: RawArtistRecommendation[]): Artist[] {
+    if (!recs) return [];
+
+    return recs.map((rec) => ({
+      id: rec.artistId,
+      name: rec.name,
+      profilePicture: rec.profilePicture || `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 100)}`,
+      workImages: [
+        `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
+        `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
+        `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
+      ],
+      services: rec.serviceTypes,
+      location: rec.location,
+      charge: rec.charge,
+      rating: +(4.5 + Math.random() * 0.5).toFixed(1), // Mock rating
+      styleTags: rec.styleTags,
+    }));
+}
+
+
 export function RecommendationsTab({ onBookingRequest }: RecommendationsTabProps) {
   const [recommendedArtists, setRecommendedArtists] = React.useState<Artist[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -44,13 +69,18 @@ export function RecommendationsTab({ onBookingRequest }: RecommendationsTabProps
     setIsLoading(true);
     setRecommendedArtists([]);
     try {
-      const results = await fetchRecommendations({
+      // Fetch raw data from the server action
+      const rawResults = await fetchRecommendations({
         userHistory: 'The user has previously booked bridal mehndi and has liked glam makeup styles.', // Mocked history
         stylePreferences: data.stylePreferences,
         location: data.location,
       });
-      setRecommendedArtists(results);
-      if (results.length === 0) {
+
+      // Transform the data on the client side
+      const finalArtists = transformRecommendations(rawResults);
+      setRecommendedArtists(finalArtists);
+
+      if (finalArtists.length === 0) {
         toast({
           title: "No specific recommendations found",
           description: "Try broadening your search criteria. Meanwhile, check out our general listings!",
