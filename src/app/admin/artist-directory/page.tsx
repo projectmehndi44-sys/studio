@@ -2,6 +2,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from '@/components/ui/input';
@@ -75,7 +76,11 @@ export default function ArtistDirectoryPage() {
                         <TableBody>
                             {filteredArtists.length > 0 ? filteredArtists.map((artist) => (
                                 <TableRow key={artist.id}>
-                                    <TableCell className="font-medium">{artist.name}</TableCell>
+                                    <TableCell className="font-medium">
+                                        <Link href={`/admin/artists/${artist.id}`} className="hover:underline text-primary">
+                                            {artist.name}
+                                        </Link>
+                                    </TableCell>
                                     <TableCell>{artist.state || 'N/A'}</TableCell>
                                     <TableCell>{artist.district || 'N/A'}</TableCell>
                                     <TableCell>{artist.locality || 'N/A'}</TableCell>
