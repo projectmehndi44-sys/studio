@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -58,6 +59,7 @@ export function Header({
                             {cartCount}
                         </span>
                     )}
+                    <span className="sr-only">View Cart</span>
                 </Link>
             </Button>
             <DropdownMenu>

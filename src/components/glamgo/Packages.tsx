@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { MakeupIcon, MehndiIcon, PhotographyIcon } from '@/components/icons';
 import type { MasterServicePackage } from '@/types';
 import { PackageSearch } from 'lucide-react';
-import { masterServices } from '@/lib/packages-data';
+import { masterServices as initialMasterServices } from '@/lib/packages-data';
 
 
 interface PackagesProps {
@@ -30,7 +30,7 @@ export function Packages({ onServiceSelect }: PackagesProps) {
 
     React.useEffect(() => {
         const storedServices = localStorage.getItem('masterServices');
-        setServices(storedServices ? JSON.parse(storedServices) : masterServices);
+        setServices(storedServices ? JSON.parse(storedServices) : initialMasterServices);
     }, []);
 
     if (services.length === 0) {

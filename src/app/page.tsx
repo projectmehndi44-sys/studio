@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import * as React from 'react';
-import type { Artist, ServicePackage, Customer, CartItem } from '@/types';
+import type { Artist, ServicePackage, Customer, CartItem, MasterServicePackage } from '@/types';
 import { artists as initialArtists } from '@/lib/data';
 import { masterServices } from '@/lib/packages-data';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,7 @@ import {
   Palette,
   ShoppingBag,
   Sparkles,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/glamgo/Header';
@@ -31,8 +33,7 @@ import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carouse
 import Autoplay from "embla-carousel-autoplay"
 import Image from 'next/image';
 import { Packages } from '@/components/glamgo/Packages';
-import { MehndiIcon, MakeupIcon, PhotographyIcon } from '@/components/icons';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
@@ -62,9 +63,8 @@ const backgroundImages = [
 
 export default function Home() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [artists, setArtists] = React.useState<Artist[]>([]);
-  const [allPackages, setAllPackages] = React.useState<ServicePackage[]>([]);
+  const [allPackages, setAllPackages] = React.useState<MasterServicePackage[]>([]);
   const [filteredArtists, setFilteredArtists] =
     React.useState<Artist[]>([]);
   const [isArtistRegistrationModalOpen, setIsArtistRegistrationModalOpen] =
@@ -79,7 +79,7 @@ export default function Home() {
 
   // State for the service selection modal
   const [isServiceModalOpen, setIsServiceModalOpen] = React.useState(false);
-  const [selectedService, setSelectedService] = React.useState<ServicePackage | null>(null);
+  const [selectedService, setSelectedService] = React.useState<MasterServicePackage | null>(null);
 
   const { toast } = useToast();
 
@@ -114,12 +114,12 @@ export default function Home() {
     setCustomer(null);
     setCart([]);
     localStorage.removeItem('currentCustomerId');
-    localStorage.removeItem('cart');
+    if(customer) localStorage.removeItem(`cart_${customer.id}`);
     toast({
       title: 'Logged Out',
       description: 'You have been successfully logged out.',
     });
-  }, [toast]);
+  }, [toast, customer]);
   
   useInactivityTimeout(isCustomerLoggedIn ? handleCustomerLogout : () => {});
 
@@ -174,11 +174,14 @@ export default function Home() {
         toast({ title: 'Please Login', description: 'You need to be logged in to book an artist.' });
         return;
     }
-    router.push(`/book?artistId=${artist.id}`);
+    // This flow is now deprecated in favor of the cart system.
+    // For now, we'll just log a message. A better implementation might open the service selection modal.
+    console.log("Direct artist booking from card is deprecated. Please use service selection.");
+    toast({ title: "Please select a service first.", description: "Browse our services to start a booking."});
   };
   
   const handleAddToCart = (item: CartItem) => {
-    if (!isCustomerLoggedIn) {
+    if (!isCustomerLoggedIn || !customer) {
         setIsCustomerLoginModalOpen(true);
         toast({ title: 'Please Login', description: 'You need to be logged in to add services to your booking.' });
         return;
@@ -269,7 +272,6 @@ export default function Home() {
   }
 
   const ArtistFinder = ({ service }: { service: 'mehndi' | 'makeup' | 'photography' | 'all' }) => {
-      const serviceToFilter = service === 'all' ? serviceType : service;
       return (
         <div className="space-y-8">
             <h2 className="text-center font-headline text-5xl text-primary mb-8 capitalize">{service} Artists</h2>
@@ -339,7 +341,7 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen w-full flex-col relative">
-       {cart.length > 0 && (
+       {isCustomerLoggedIn && cart.length > 0 && (
          <div className="fixed bottom-8 right-8 z-50">
              <Link href="/book">
                 <Button size="lg" className="rounded-full shadow-lg text-lg">
@@ -417,7 +419,7 @@ export default function Home() {
                 <TabsTrigger value="services"><ShoppingBag className="mr-2 h-5 w-5" />Services</TabsTrigger>
                 <TabsTrigger value="artists"><Palette className="mr-2 h-5 w-5" />Artists</TabsTrigger>
                 <TabsTrigger value="recommendations" className="text-accent"><Sparkles className="mr-2 h-5 w-5"/>AI Match</TabsTrigger>
-                <TabsTrigger value="gallery"><Image className="mr-2 h-5 w-5" />Our Work</TabsTrigger>
+                <TabsTrigger value="gallery"><ImageIcon className="mr-2 h-5 w-5" />Our Work</TabsTrigger>
             </TabsList>
             <TabsContent value="services">
                 <Packages onServiceSelect={(service) => { setSelectedService(service); setIsServiceModalOpen(true); }} />

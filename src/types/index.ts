@@ -176,4 +176,5 @@ export type TeamMember = {
 export type CartItem = {
     masterPackage: MasterServicePackage;
     category: PackageCategory;
-    artist?: Artist; // Optional: if
+    artist?: Artist; // Optional: if an artist is chosen for this item
+};

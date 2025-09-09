@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -25,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 export default function BookingPage() {
     const router = useRouter();

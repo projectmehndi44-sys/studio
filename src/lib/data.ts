@@ -1,4 +1,5 @@
 
+
 import type { Artist, Booking, Customer, ServicePackage, Promotion, Review } from '@/types';
 
 export const artists: Artist[] = [
@@ -23,6 +24,10 @@ export const artists: Artist[] = [
     unavailableDates: [],
     reviews: [
         { id: 'ar_1_1', customerName: 'Priya Patel', rating: 5, comment: 'Amazing detailed work!' }
+    ],
+    serviceOfferings: [
+        { masterPackageId: 'pkg_bridal_mehndi', categoryName: 'Normal', artistPrice: 3500, isEnabled: true },
+        { masterPackageId: 'pkg_bridal_mehndi', categoryName: 'Premium', artistPrice: 6000, isEnabled: true },
     ]
   },
   {
@@ -44,6 +49,11 @@ export const artists: Artist[] = [
     rating: 4.8,
     styleTags: ['glam', 'natural', 'wedding'],
     unavailableDates: [],
+    serviceOfferings: [
+        { masterPackageId: 'pkg_party_makeup', categoryName: 'Normal', artistPrice: 2500, isEnabled: true },
+        { masterPackageId: 'pkg_party_makeup', categoryName: 'Premium', artistPrice: 4500, isEnabled: true },
+        { masterPackageId: 'pkg_party_makeup', categoryName: 'ULTRA PREMIUM', artistPrice: 7500, isEnabled: true },
+    ]
   },
   {
     id: '3',

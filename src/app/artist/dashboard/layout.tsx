@@ -162,6 +162,7 @@ export default function ArtistDashboardLayout({
         { href: '/artist/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/artist/dashboard/bookings', label: 'Bookings', icon: Briefcase },
         { href: '/artist/dashboard/availability', label: 'Availability', icon: CalendarOff },
+        { href: '/artist/dashboard/services', label: 'My Services', icon: Package },
         { href: '/artist/dashboard/profile', label: 'Profile', icon: User },
     ];
 
@@ -216,7 +217,7 @@ export default function ArtistDashboardLayout({
     
     const BottomNav = () => (
          <div className="fixed bottom-0 left-0 right-0 h-16 bg-background border-t shadow-lg md:hidden z-50">
-            <nav className="grid h-full grid-cols-4">
+            <nav className="grid h-full grid-cols-5">
                 {bottomNavLinks.map(link => (
                     <BottomNavLink key={link.href} {...link} pathname={pathname} >
                         {link.label === 'Notifications' && unreadCount > 0 && (

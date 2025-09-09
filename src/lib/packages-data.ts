@@ -1,6 +1,6 @@
 import type { MasterServicePackage } from '@/types';
 
-export const packages: MasterServicePackage[] = [
+export const masterServices: MasterServicePackage[] = [
   {
     id: 'pkg_bridal_mehndi',
     name: 'Bridal Mehendi',
@@ -31,7 +31,6 @@ export const packages: MasterServicePackage[] = [
     name: 'Party & Event Makeup',
     service: 'makeup',
     description: 'Get ready for any event with our professional makeup services, designed to make you shine.',
-    price: 4500,
     image: 'https://picsum.photos/600/400?random=308',
     tags: ['Glam', 'Evening Look', 'Sangeet'],
      categories: [
@@ -57,7 +56,6 @@ export const packages: MasterServicePackage[] = [
     name: 'Event Photography',
     service: 'photography',
     description: 'Capture the precious moments of your special event with our professional photography services.',
-    price: 25000,
     image: 'https://picsum.photos/600/400?random=309',
     tags: ['Candid', 'Wedding', 'Pre-Wedding'],
      categories: [
@@ -80,5 +78,5 @@ export const packages: MasterServicePackage[] = [
   },
 ];
 
-// Compatibility export
-export const masterServices = packages;
+// Compatibility export for older files that might use it.
+export const packages = masterServices;
