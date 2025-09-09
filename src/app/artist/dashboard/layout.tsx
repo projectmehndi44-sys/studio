@@ -137,7 +137,7 @@ export default function ArtistDashboardLayout({
         setNotifications(artistNotifications.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
         setUnreadCount(artistNotifications.filter((n: Notification) => !n.isRead).length);
 
-    }, [router, toast, handleLogout, getArtists]);
+    }, [router, toast, handleLogout]);
 
     React.useEffect(() => {
         const isArtistAuthenticated = localStorage.getItem('isArtistAuthenticated');
@@ -280,7 +280,7 @@ export default function ArtistDashboardLayout({
                             </DropdownMenuTrigger>
                         </DropdownMenu>
                     </header>
-                    <main className="flex-1 p-4 lg:p-6 bg-background pb-20 md:pb-6">
+                    <main className="flex-1 p-4 lg:p-6 bg-muted/20 pb-20 md:pb-6">
                         {children}
                     </main>
                 </div>
