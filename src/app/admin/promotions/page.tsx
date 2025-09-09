@@ -26,7 +26,7 @@ const promotionSchema = z.object({
   code: z.string().min(4, 'Code must be at least 4 characters').regex(/^[A-Z0-9]+$/, 'Code must be uppercase letters and numbers only.'),
   discount: z.coerce.number().min(1, 'Discount must be at least 1%').max(100, 'Discount cannot exceed 100%'),
   usageLimit: z.coerce.number().min(0, 'Usage limit must be a positive number. 0 for unlimited.'),
-  expiryDate: z.date({ required_error: 'An expiry date is required.'}),
+  expiryDate: z.date().optional(),
 });
 
 type PromotionFormValues = z.infer<typeof promotionSchema>;
@@ -71,18 +71,37 @@ export default function PromotionsPage() {
 
         const newPromotion: Promotion = {
             id: `promo_${Date.now()}`,
-            ...data,
-            expiryDate: format(data.expiryDate, 'yyyy-MM-dd'),
-            isActive: new Date(data.expiryDate) > new Date(),
+            code: data.code,
+            discount: data.discount,
+            usageLimit: data.usageLimit,
+            isActive: true, // New codes are active by default
         };
+        
+        if (data.expiryDate) {
+            newPromotion.expiryDate = format(data.expiryDate, 'yyyy-MM-dd');
+            newPromotion.isActive = new Date(data.expiryDate) > new Date();
+        }
 
         savePromotions([newPromotion, ...promotions]);
         toast({ title: 'Promotion Created', description: `Code ${data.code} has been added.` });
-        form.reset({ code: '', discount: 10, usageLimit: 1 });
+        form.reset({ code: '', discount: 10, usageLimit: 1, expiryDate: undefined });
     };
 
     const toggleStatus = (id: string) => {
-        const updated = promotions.map(p => p.id === id ? { ...p, isActive: !p.isActive } : p);
+        const updated = promotions.map(p => {
+            if (p.id === id) {
+                // If there's an expiry date and it's in the past, don't allow activation.
+                if (!p.isActive && p.expiryDate && new Date(p.expiryDate) < new Date()) {
+                    toast({
+                        title: 'Cannot Activate Expired Code',
+                        variant: 'destructive',
+                    });
+                    return p;
+                }
+                return { ...p, isActive: !p.isActive };
+            }
+            return p;
+        });
         savePromotions(updated);
         toast({ title: 'Status Updated' });
     };
@@ -117,7 +136,7 @@ export default function PromotionsPage() {
                                     <FormItem><FormLabel>Uses Per Customer</FormLabel><FormControl><Input type="number" placeholder="1 (0 for unlimited)" {...field} /></FormControl><FormMessage /></FormItem>
                                 )} />
                                     <FormField control={form.control} name="expiryDate" render={({ field }) => (
-                                    <FormItem><FormLabel>Expiry Date</FormLabel>
+                                    <FormItem><FormLabel>Expiry Date (Optional)</FormLabel>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                             <FormControl>
@@ -161,7 +180,7 @@ export default function PromotionsPage() {
                                         <TableCell className="font-mono">{promo.code}</TableCell>
                                         <TableCell>{promo.discount}%</TableCell>
                                         <TableCell>{promo.usageLimit === 0 ? 'Unlimited' : `${promo.usageLimit} per customer`}</TableCell>
-                                        <TableCell>{format(new Date(promo.expiryDate), 'PPP')}</TableCell>
+                                        <TableCell>{promo.expiryDate ? format(new Date(promo.expiryDate), 'PPP') : 'Never'}</TableCell>
                                         <TableCell>
                                             <Badge variant={promo.isActive ? 'default' : 'destructive'}>{promo.isActive ? 'Active' : 'Inactive'}</Badge>
                                         </TableCell>

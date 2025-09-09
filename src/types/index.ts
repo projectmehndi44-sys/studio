@@ -3,6 +3,7 @@
 
 
 
+
 export type PackageCategory = {
   name: 'Normal' | 'Premium' | 'ULTRA PREMIUM';
   description: string;
@@ -124,7 +125,7 @@ export type Promotion = {
     id: string;
     code: string;
     discount: number; // Percentage
-    expiryDate: string;
+    expiryDate?: string;
     isActive: boolean;
     usageLimit: number; // How many times a single customer can use this code. 0 for unlimited.
 };
