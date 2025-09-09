@@ -18,6 +18,7 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '../ui/card';
+import Image from 'next/image';
 
 interface ServiceSelectionModalProps {
   service: MasterServicePackage;
@@ -120,7 +121,7 @@ export function ServiceSelectionModal({ service, artists, isOpen, onOpenChange, 
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle className="text-primary font-bold text-2xl">{service.name}</DialogTitle>
           <DialogDescription>
@@ -134,13 +135,18 @@ export function ServiceSelectionModal({ service, artists, isOpen, onOpenChange, 
                 <h3 className="text-lg font-semibold text-center mb-4">Select a Tier</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {service.categories.map(category => (
-                        <Card key={category.name} className="flex flex-col">
+                        <Card key={category.name} className="flex flex-col overflow-hidden">
+                             {category.image && (
+                                <div className="relative w-full aspect-video">
+                                    <Image src={category.image} alt={category.name} layout="fill" className="object-cover"/>
+                                </div>
+                            )}
                             <CardHeader>
                                 <CardTitle className="text-accent">{category.name}</CardTitle>
                                 <CardDescription>{category.description}</CardDescription>
                             </CardHeader>
                             <CardContent className="flex-grow"></CardContent>
-                            <CardFooter className="flex flex-col items-start gap-2 mt-auto">
+                            <CardFooter className="flex flex-col items-start gap-2 mt-auto p-4">
                                 <p className="text-xs text-muted-foreground">Starts from</p>
                                 <p className="font-bold text-xl flex items-center"><IndianRupee className="w-4 h-4 mr-1"/>{category.basePrice.toLocaleString()}</p>
                                 <Button className="w-full" onClick={() => handleSelectCategory(category)}>Select {category.name}</Button>

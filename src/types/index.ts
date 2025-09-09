@@ -1,9 +1,11 @@
 
 
+
 export type PackageCategory = {
   name: 'Normal' | 'Premium' | 'ULTRA PREMIUM';
   description: string;
   basePrice: number;
+  image?: string;
 };
 
 export type MasterServicePackage = {

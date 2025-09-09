@@ -1,3 +1,4 @@
+
 import type { MasterServicePackage } from '@/types';
 
 export const masterServices: MasterServicePackage[] = [
@@ -13,16 +14,19 @@ export const masterServices: MasterServicePackage[] = [
         name: 'Normal',
         description: 'Covers both hands (front and back) up to wrist length with beautiful, standard bridal designs.',
         basePrice: 3000,
+        image: 'https://picsum.photos/400/300?random=401'
       },
       { 
         name: 'Premium',
         description: 'Covers both hands (front and back) up to mid-elbow with more intricate, dense, and personalized designs. Includes feet up to the ankle.',
         basePrice: 5000,
+        image: 'https://picsum.photos/400/300?random=402'
       },
       { 
         name: 'ULTRA PREMIUM',
         description: 'Full coverage for both hands up to the elbows and feet up to the calf. Features hyper-detailed, portrait-style, or fully custom story-based designs. Uses premium, long-lasting organic henna.',
         basePrice: 8000,
+        image: 'https://picsum.photos/400/300?random=403'
       }
     ]
   },
@@ -38,16 +42,19 @@ export const masterServices: MasterServicePackage[] = [
         name: 'Normal',
         description: 'Classic party makeup including a flawless base, elegant eye makeup, and lipstick. Perfect for attending functions.',
         basePrice: 2500,
+        image: 'https://picsum.photos/400/300?random=404'
       },
       { 
         name: 'Premium',
         description: 'HD Makeup application for a camera-ready finish. Includes contouring, highlighting, and false lashes. Hairstyle included.',
         basePrice: 4500,
+        image: 'https://picsum.photos/400/300?random=405'
       },
       { 
         name: 'ULTRA PREMIUM',
         description: 'Airbrush makeup for the most durable and perfect finish. Includes premium skin prep, advanced hairstyling, and draping of your outfit.',
         basePrice: 7000,
+        image: 'https://picsum.photos/400/300?random=406'
       }
     ]
   },
@@ -63,16 +70,19 @@ export const masterServices: MasterServicePackage[] = [
         name: 'Normal',
         description: 'Coverage for a 3-hour event (e.g., engagement, small party). Includes 100-150 edited, high-resolution digital photos.',
         basePrice: 12000,
+        image: 'https://picsum.photos/400/300?random=407'
       },
       { 
         name: 'Premium',
         description: 'Coverage for a 6-hour event (e.g., wedding ceremony). Includes 250-300 edited photos and a 30-page printed photo album.',
         basePrice: 25000,
+        image: 'https://picsum.photos/400/300?random=408'
       },
       { 
         name: 'ULTRA PREMIUM',
         description: 'Full-day coverage (up to 10 hours) with two photographers. Includes candid and traditional shots, a premium 50-page album, and a cinematic highlights video (3-5 mins).',
         basePrice: 50000,
+        image: 'https://picsum.photos/400/300?random=409'
       }
     ]
   },

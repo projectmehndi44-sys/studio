@@ -26,6 +26,7 @@ const categorySchema = z.object({
   name: z.enum(['Normal', 'Premium', 'ULTRA PREMIUM']),
   description: z.string().min(10, 'Description must be at least 10 characters.'),
   basePrice: z.coerce.number().min(0, 'Base price must be a positive number.'),
+  image: z.any().optional(),
 });
 
 const packageSchema = z.object({
@@ -47,14 +48,16 @@ export default function PackageManagementPage() {
     const [masterServices, setMasterServices] = React.useState<MasterServicePackage[]>([]);
     const [editingPackage, setEditingPackage] = React.useState<MasterServicePackage | null>(null);
     const [imagePreview, setImagePreview] = React.useState<string | null>(null);
+    const [categoryImagePreviews, setCategoryImagePreviews] = React.useState<Record<number, string | null>>({});
+
     const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     const form = useForm<PackageFormValues>({
         resolver: zodResolver(packageSchema),
         defaultValues: { name: '', description: '', tags: '', image: null, service: 'mehndi', categories: [
-             { name: 'Normal', description: '', basePrice: 0 },
-             { name: 'Premium', description: '', basePrice: 0 },
-             { name: 'ULTRA PREMIUM', description: '', basePrice: 0 },
+             { name: 'Normal', description: '', basePrice: 0, image: null },
+             { name: 'Premium', description: '', basePrice: 0, image: null },
+             { name: 'ULTRA PREMIUM', description: '', basePrice: 0, image: null },
         ]},
     });
     
@@ -86,6 +89,14 @@ export default function PackageManagementPage() {
             setImagePreview(URL.createObjectURL(file));
         }
     };
+    
+    const handleCategoryImgeChange = (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            form.setValue(`categories.${index}.image`, file);
+            setCategoryImagePreviews(prev => ({...prev, [index]: URL.createObjectURL(file)}));
+        }
+    }
 
     const onSubmit: SubmitHandler<PackageFormValues> = (data) => {
         const newPackage: MasterServicePackage = {
@@ -95,7 +106,10 @@ export default function PackageManagementPage() {
             description: data.description,
             tags: data.tags?.split(',').map(tag => tag.trim()).filter(Boolean) || [],
             image: imagePreview || editingPackage?.image || 'https://picsum.photos/600/400?random=1', // fallback
-            categories: data.categories
+            categories: data.categories.map((cat, index) => ({
+                ...cat,
+                image: categoryImagePreviews[index] || editingPackage?.categories[index]?.image || 'https://picsum.photos/200/200?random=' + (10 + index),
+            }))
         };
 
         let updatedPackages;
@@ -123,6 +137,12 @@ export default function PackageManagementPage() {
             categories: pkg.categories,
         });
         setImagePreview(pkg.image);
+        
+        const previews: Record<number, string | null> = {};
+        pkg.categories.forEach((cat, index) => {
+            if(cat.image) previews[index] = cat.image;
+        });
+        setCategoryImagePreviews(previews);
     };
 
     const handleDelete = (id: string) => {
@@ -134,6 +154,7 @@ export default function PackageManagementPage() {
     const handleCancelEdit = () => {
         setEditingPackage(null);
         setImagePreview(null);
+        setCategoryImagePreviews({});
         form.reset({ name: '', description: '', tags: '', image: null, service: 'mehndi', categories: [
             { name: 'Normal', description: '', basePrice: 0 },
             { name: 'Premium', description: '', basePrice: 0 },
@@ -197,6 +218,23 @@ export default function PackageManagementPage() {
                                                  <FormField control={form.control} name={`categories.${index}.basePrice`} render={({ field }) => (
                                                     <FormItem className="mt-2"><FormLabel>Base Price (Floor Price)</FormLabel><div className="relative"><IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground"/><FormControl><Input type="number" placeholder="5000" {...field} className="pl-8"/></FormControl></div><FormMessage /></FormItem>
                                                 )} />
+                                                <FormField control={form.control} name={`categories.${index}.image`} render={({field}) => (
+                                                    <FormItem className="mt-2">
+                                                        <FormLabel>Tier Image</FormLabel>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="relative border-2 border-dashed border-muted-foreground/50 rounded-lg p-2 text-center hover:border-accent flex-1">
+                                                                <Upload className="mx-auto h-6 w-6 text-muted-foreground" />
+                                                                <FormControl><Input type="file" className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer" accept="image/*" onChange={(e) => handleCategoryImgeChange(e, index)}/></FormControl>
+                                                            </div>
+                                                            { (categoryImagePreviews[index] || field.value) && (
+                                                                <div className="w-16 h-16 rounded-md overflow-hidden border shrink-0">
+                                                                    <NextImage src={categoryImagePreviews[index] || field.value} alt="Preview" width={64} height={64} className="w-full h-full object-cover" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <FormMessage/>
+                                                    </FormItem>
+                                                )} />
                                             </Card>
                                         ))}
                                     </div>
@@ -238,10 +276,13 @@ export default function PackageManagementPage() {
                                         </CardHeader>
                                         <CardContent className="grid grid-cols-3 gap-2 flex-grow">
                                              {pkg.categories.map(cat => (
-                                                <div key={cat.name} className="p-2 border rounded-md bg-background">
-                                                    <h4 className="font-semibold text-accent">{cat.name}</h4>
-                                                    <p className="text-xs text-muted-foreground line-clamp-2">{cat.description}</p>
-                                                    <p className="text-sm font-bold mt-1">from ₹{cat.basePrice.toLocaleString()}</p>
+                                                <div key={cat.name} className="p-2 border rounded-md bg-background relative overflow-hidden aspect-square flex flex-col justify-end">
+                                                    {cat.image && <NextImage src={cat.image} alt={cat.name} layout="fill" className="object-cover -z-10"/>}
+                                                    <div className="bg-black/40 text-white p-1 rounded">
+                                                        <h4 className="font-semibold text-white">{cat.name}</h4>
+                                                        <p className="text-xs text-white/80 line-clamp-2">{cat.description}</p>
+                                                        <p className="text-sm font-bold mt-1">₹{cat.basePrice.toLocaleString()}</p>
+                                                    </div>
                                                 </div>
                                              ))}
                                         </CardContent>
