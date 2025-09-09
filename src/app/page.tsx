@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -214,6 +213,7 @@ export default function Home() {
     const [priceRange, setPriceRange] = React.useState([20000]);
     const [selectedStyles, setSelectedStyles] = React.useState<string[]>([]);
     
+    // Filter packages specific to this tab's service type
     const relevantPackages = allPackages.filter(p => p.service === serviceType);
     
     const allStyleTags = React.useMemo(() => {
@@ -405,26 +405,29 @@ export default function Home() {
           </div>
         )}
 
-        <Tabs defaultValue="mehndi" className="w-full mt-8">
-            <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto">
-                <TabsTrigger value="mehndi"><MehndiIcon className="mr-2 h-5 w-5"/>Mehndi</TabsTrigger>
-                <TabsTrigger value="makeup"><MakeupIcon className="mr-2 h-5 w-5"/>Makeup</TabsTrigger>
-                <TabsTrigger value="photography"><PhotographyIcon className="mr-2 h-5 w-5" />Photography</TabsTrigger>
-            </TabsList>
-            <TabsContent value="mehndi">
-                <CategoryTabContent serviceType="mehndi" />
-            </TabsContent>
-            <TabsContent value="makeup">
-                <CategoryTabContent serviceType="makeup" />
-            </TabsContent>
-             <TabsContent value="photography">
-                <CategoryTabContent serviceType="photography" />
-            </TabsContent>
-        </Tabs>
-
-        <Separator className="my-8"/>
-
-        <RecommendationsTab onBookingRequest={handleBookingRequest}/>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-8">
+            <div className="lg:col-span-3">
+                <Tabs defaultValue="mehndi" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto">
+                        <TabsTrigger value="mehndi"><MehndiIcon className="mr-2 h-5 w-5"/>Mehndi</TabsTrigger>
+                        <TabsTrigger value="makeup"><MakeupIcon className="mr-2 h-5 w-5"/>Makeup</TabsTrigger>
+                        <TabsTrigger value="photography"><PhotographyIcon className="mr-2 h-5 w-5" />Photography</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="mehndi">
+                        <CategoryTabContent serviceType="mehndi" />
+                    </TabsContent>
+                    <TabsContent value="makeup">
+                        <CategoryTabContent serviceType="makeup" />
+                    </TabsContent>
+                    <TabsContent value="photography">
+                        <CategoryTabContent serviceType="photography" />
+                    </TabsContent>
+                </Tabs>
+            </div>
+            <div className="lg:col-span-1">
+                 <RecommendationsTab onBookingRequest={handleBookingRequest}/>
+            </div>
+        </div>
 
         <Separator className="my-8"/>
 

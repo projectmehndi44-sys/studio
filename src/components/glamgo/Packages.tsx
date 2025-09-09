@@ -8,10 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { MakeupIcon, MehndiIcon, PhotographyIcon } from '@/components/icons';
 import type { MasterServicePackage } from '@/types';
 import { PackageSearch } from 'lucide-react';
-import { masterServices as initialMasterServices } from '@/lib/packages-data';
-
 
 interface PackagesProps {
+    packages: MasterServicePackage[];
     onServiceSelect: (service: MasterServicePackage) => void;
 }
 
@@ -25,18 +24,12 @@ const getServiceIcon = (service: MasterServicePackage['service']) => {
 }
 
 
-export function Packages({ onServiceSelect }: PackagesProps) {
-    const [services, setServices] = React.useState<MasterServicePackage[]>([]);
+export function Packages({ packages, onServiceSelect }: PackagesProps) {
 
-    React.useEffect(() => {
-        const storedServices = localStorage.getItem('masterServices');
-        setServices(storedServices ? JSON.parse(storedServices) : initialMasterServices);
-    }, []);
-
-    if (services.length === 0) {
+    if (packages.length === 0) {
         return (
             <div className="text-center py-16">
-                <p className="text-lg text-muted-foreground">No services have been configured by the administrator yet.</p>
+                <p className="text-lg text-muted-foreground">No services have been configured for this category yet.</p>
             </div>
         );
     }
@@ -44,8 +37,8 @@ export function Packages({ onServiceSelect }: PackagesProps) {
     return (
         <div className="py-12">
             <h2 className="text-center font-headline text-5xl text-primary mb-8">Our Services</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-                {services.map((service) => {
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {packages.map((service) => {
                     const lowestPrice = Math.min(...service.categories.map(c => c.basePrice));
                     return (
                         <div key={service.id} className="p-1 h-full">
