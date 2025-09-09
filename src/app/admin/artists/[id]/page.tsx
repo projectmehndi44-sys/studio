@@ -34,6 +34,15 @@ export default function ArtistDetailPage() {
     const [artist, setArtist] = React.useState<Artist | null>(null);
     const [bookings, setBookings] = React.useState<Booking[]>([]);
     const [reviews] = React.useState<Review[]>(mockReviews);
+    
+    const getArtists = React.useCallback((): Artist[] => {
+        const storedArtists = localStorage.getItem('artists');
+        const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
+        const allArtistsMap = new Map<string, Artist>();
+        initialArtists.forEach(a => allArtistsMap.set(a.id, a));
+        localArtists.forEach(a => allArtistsMap.set(a.id, a));
+        return Array.from(allArtistsMap.values());
+    }, []);
 
     React.useEffect(() => {
         const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
@@ -41,9 +50,8 @@ export default function ArtistDetailPage() {
             router.push('/admin/login');
         }
 
-        // Fetch artist details from localStorage
-        const storedArtists = localStorage.getItem('artists');
-        const allArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : initialArtists;
+        // Fetch artist details using the corrected logic
+        const allArtists: Artist[] = getArtists();
         const foundArtist = allArtists.find(a => a.id === artistId);
         
         if (foundArtist) {
@@ -65,7 +73,7 @@ export default function ArtistDetailPage() {
             .map(b => ({...b, date: new Date(b.date)}));
         setBookings(artistBookings);
 
-    }, [router, artistId, toast]);
+    }, [router, artistId, toast, getArtists]);
 
     const handleDownload = (format: 'json' | 'pdf' | 'excel') => {
         if (!artist) return;
