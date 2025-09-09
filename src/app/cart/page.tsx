@@ -26,6 +26,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { ArtistProfileModal } from '@/components/glamgo/ArtistProfileModal';
 
 export default function CartPage() {
     const router = useRouter();
@@ -35,6 +36,10 @@ export default function CartPage() {
     const [availableLocations, setAvailableLocations] = React.useState<Record<string, string[]>>({});
     const [customer, setCustomer] = React.useState<Customer | null>(null);
     
+    // State for Artist Profile Modal
+    const [isArtistModalOpen, setIsArtistModalOpen] = React.useState(false);
+    const [selectedArtist, setSelectedArtist] = React.useState<Artist | null>(null);
+
     // Form state
     const [name, setName] = React.useState('');
     const [phone, setPhone] = React.useState('');
@@ -183,6 +188,11 @@ export default function CartPage() {
             });
         }
     };
+    
+    const viewArtistProfile = (artist: Artist) => {
+        setSelectedArtist(artist);
+        setIsArtistModalOpen(true);
+    }
 
 
     const availableStates = Object.keys(availableLocations);
@@ -200,6 +210,7 @@ export default function CartPage() {
     const taxes = total - taxableAmount;
     
     return (
+        <>
         <div className="bg-background min-h-screen">
             <header className="p-4 border-b">
                  <Button variant="outline" asChild>
@@ -223,12 +234,21 @@ export default function CartPage() {
                         <CardContent className="space-y-4">
                             {cart.map((item, index) => {
                                 let price = item.category.basePrice;
-                                let artistName = <span className="text-muted-foreground">Artist will be assigned</span>;
+                                let artistDisplay;
 
                                 if (item.artist) {
                                      const offering = item.artist.serviceOfferings?.find(o => o.masterPackageId === item.masterPackage.id && o.categoryName === item.category.name);
                                      price = offering?.artistPrice || item.category.basePrice;
-                                     artistName = <span>with <span className="font-semibold text-accent">{item.artist.name}</span></span>;
+                                     artistDisplay = (
+                                        <button 
+                                            onClick={() => viewArtistProfile(item.artist!)} 
+                                            className="text-left hover:underline"
+                                        >
+                                            with <span className="font-semibold text-accent">{item.artist.name}</span>
+                                        </button>
+                                     );
+                                } else {
+                                    artistDisplay = <span className="text-muted-foreground">Artist will be assigned</span>;
                                 }
 
                                 return (
@@ -237,14 +257,14 @@ export default function CartPage() {
                                             <Image src={item.masterPackage.image} alt={item.masterPackage.name} width={64} height={64} className="rounded-md object-cover aspect-square"/>
                                             <div>
                                                 <div className="font-semibold">{item.masterPackage.name} <Badge variant="secondary">{item.category.name}</Badge></div>
-                                                <div className="text-sm text-muted-foreground">{artistName}</div>
+                                                <div className="text-sm">{artistDisplay}</div>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <p className="text-lg font-bold text-primary flex items-center">
+                                            <div className="text-lg font-bold text-primary flex items-center">
                                                 <IndianRupee className="w-4 h-4 mr-0.5"/>
                                                 {price.toLocaleString()}
-                                            </p>
+                                            </div>
                                             <Button variant="ghost" size="icon" onClick={() => handleRemoveFromCart(index)}>
                                                 <Trash2 className="h-5 w-5 text-destructive"/>
                                             </Button>
@@ -424,5 +444,11 @@ export default function CartPage() {
                 )}
             </main>
         </div>
+        <ArtistProfileModal 
+            artist={selectedArtist}
+            isOpen={isArtistModalOpen}
+            onOpenChange={setIsArtistModalOpen}
+        />
+        </>
     );
 }
