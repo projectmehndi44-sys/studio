@@ -1,6 +1,7 @@
 
 
 
+
 export type PackageCategory = {
   name: 'Normal' | 'Premium' | 'ULTRA PREMIUM';
   description: string;
@@ -79,6 +80,7 @@ export type Booking = {
   amount: number;
   status: 'Completed' | 'Confirmed' | 'Cancelled' | 'Pending Approval' | 'Needs Assignment' | 'Disputed';
   paidOut?: boolean;
+  completionCode?: string; // Unique 6-digit code for completion verification
   
   // New detailed fields
   eventType: string;

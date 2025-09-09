@@ -12,16 +12,41 @@ import type { Booking } from '@/types';
 import { useArtistPortal } from '../layout';
 import { MapPin, User, Phone } from 'lucide-react';
 import { format } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function ArtistBookingsPage() {
     const { artistBookings, allBookings } = useArtistPortal();
     const { toast } = useToast();
+    const [isCompletionModalOpen, setIsCompletionModalOpen] = React.useState(false);
+    const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
+    const [completionCode, setCompletionCode] = React.useState('');
 
-    const handleStatusUpdate = (bookingId: string, status: 'Completed') => {
-        // This function simulates updating the booking status.
-        // In a real app, this would be a server action that updates your database.
+    const handleStatusUpdate = () => {
+        if (!selectedBooking) return;
+        
+        // Validate the completion code
+        if (selectedBooking.completionCode !== completionCode) {
+            toast({
+                title: "Invalid Code",
+                description: "The completion code you entered is incorrect. Please check with the customer.",
+                variant: "destructive"
+            });
+            return;
+        }
+
         const newAllBookings = allBookings.map((b: Booking) => 
-            b.id === bookingId ? { ...b, status } : b
+            b.id === selectedBooking.id ? { ...b, status: 'Completed' } : b
         );
         localStorage.setItem('bookings', JSON.stringify(newAllBookings));
 
@@ -29,10 +54,20 @@ export default function ArtistBookingsPage() {
         window.dispatchEvent(new Event('storage'));
         
         toast({
-            title: "Booking Updated!",
-            description: `Booking #${bookingId} has been marked as ${status}. Your payout will be processed in the next cycle.`
+            title: "Booking Completed!",
+            description: `Booking #${selectedBooking.id} has been successfully marked as completed. Your payout will be processed in the next cycle.`
         });
+
+        // Close and reset the modal
+        setIsCompletionModalOpen(false);
+        setSelectedBooking(null);
+        setCompletionCode('');
     }
+
+    const openCompletionModal = (booking: Booking) => {
+        setSelectedBooking(booking);
+        setIsCompletionModalOpen(true);
+    };
 
     const getStatusVariant = (status: Booking['status']) => {
         switch (status) {
@@ -60,10 +95,11 @@ export default function ArtistBookingsPage() {
     }
 
     return (
+        <>
         <Card>
             <CardHeader>
                 <CardTitle>Your Bookings</CardTitle>
-                <CardDescription>Manage your upcoming and past bookings. Mark bookings as 'Completed' once the service is done to request your payout.</CardDescription>
+                <CardDescription>Manage your upcoming and past bookings. Use the customer's unique completion code to mark bookings as 'Completed' and request your payout.</CardDescription>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -125,8 +161,8 @@ export default function ArtistBookingsPage() {
                                 </TableCell>
                                 <TableCell className="text-right">
                                     {booking.status === 'Confirmed' && (
-                                        <Button size="sm" onClick={() => handleStatusUpdate(booking.id, 'Completed')}>
-                                            Mark as Completed
+                                        <Button size="sm" onClick={() => openCompletionModal(booking)}>
+                                            Complete Job
                                         </Button>
                                     )}
                                 </TableCell>
@@ -140,5 +176,32 @@ export default function ArtistBookingsPage() {
                 </Table>
             </CardContent>
         </Card>
+        
+        <AlertDialog open={isCompletionModalOpen} onOpenChange={setIsCompletionModalOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Complete Booking & Request Payout</AlertDialogTitle>
+                    <AlertDialogDescription>
+                       To confirm that the service has been successfully delivered, please ask the customer for their unique 6-digit completion code and enter it below.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="py-4">
+                    <Label htmlFor="completion-code">Customer's Completion Code</Label>
+                    <Input 
+                        id="completion-code" 
+                        value={completionCode}
+                        onChange={(e) => setCompletionCode(e.target.value)}
+                        placeholder="e.g., 123456"
+                        maxLength={6}
+                    />
+                </div>
+                <AlertDialogFooter>
+                    <AlertDialogCancel onClick={() => setCompletionCode('')}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleStatusUpdate}>Submit &amp; Mark as Completed</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+        </>
     );
 }

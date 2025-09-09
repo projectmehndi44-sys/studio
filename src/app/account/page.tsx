@@ -8,20 +8,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import type { Booking, Customer } from '@/types';
+import type { Booking, Customer, Artist } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogOut, Briefcase, CalendarCheck2, History, Download } from 'lucide-react';
-import { allBookings as initialBookings, initialCustomers } from '@/lib/data';
+import { LogOut, Briefcase, CalendarCheck2, History, Download, ShieldCheck } from 'lucide-react';
+import { allBookings as initialBookings, initialCustomers, artists as initialArtists } from '@/lib/data';
 import { format } from 'date-fns';
 import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
 import { generateCustomerInvoice } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function AccountPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [customer, setCustomer] = React.useState<Customer | null>(null);
     const [bookings, setBookings] = React.useState<Booking[]>([]);
+    const [artists, setArtists] = React.useState<Artist[]>([]);
 
     const handleLogout = React.useCallback(() => {
         localStorage.removeItem('currentCustomerId');
@@ -30,12 +32,23 @@ export default function AccountPage() {
 
     useInactivityTimeout(handleLogout);
 
+    const getArtists = React.useCallback((): Artist[] => {
+        const storedArtists = localStorage.getItem('artists');
+        const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
+        const allArtistsMap = new Map<string, Artist>();
+        initialArtists.forEach(a => allArtistsMap.set(a.id, a));
+        localArtists.forEach(a => allArtistsMap.set(a.id, a));
+        return Array.from(allArtistsMap.values());
+    }, []);
+
     const fetchCustomerData = React.useCallback(() => {
         const customerId = localStorage.getItem('currentCustomerId');
         if (!customerId) {
             router.push('/');
             return;
         }
+        
+        setArtists(getArtists());
 
         const allCustomersData = localStorage.getItem('customers');
         const allCustomers: Customer[] = allCustomersData ? JSON.parse(allCustomersData) : initialCustomers;
@@ -47,7 +60,7 @@ export default function AccountPage() {
         
         const customerBookings = allBookings.filter(b => b.customerId === customerId);
         setBookings(customerBookings.sort((a,b) => b.date.getTime() - a.date.getTime()));
-    }, [router]);
+    }, [router, getArtists]);
     
     React.useEffect(() => {
         fetchCustomerData();
@@ -89,12 +102,52 @@ export default function AccountPage() {
 
     const upcomingBookings = bookings.filter(b => new Date(b.date) >= new Date() && (b.status === 'Confirmed' || b.status === 'Pending Approval' || b.status === 'Needs Assignment'));
     const pastBookings = bookings.filter(b => new Date(b.date) < new Date() || b.status === 'Completed' || b.status === 'Cancelled' || b.status === 'Disputed');
+    
+    const renderBookingRow = (booking: Booking) => {
+        const assignedArtists = artists.filter(a => booking.artistIds && booking.artistIds.includes(a.id));
+        return (
+             <TableRow key={booking.id}>
+                <TableCell className="font-medium">{booking.service}</TableCell>
+                <TableCell>
+                    {assignedArtists.length > 0 ? (
+                         <div className="flex flex-col">
+                            {assignedArtists.map(artist => (
+                                <span key={artist.id}>{artist.name}</span>
+                            ))}
+                        </div>
+                    ) : (
+                         <span className="text-muted-foreground">To be assigned</span>
+                    )}
+                </TableCell>
+                <TableCell>
+                    <div className="flex flex-col gap-1">
+                        {booking.serviceDates.map((date, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                                {format(date, "PPP")}
+                            </Badge>
+                        ))}
+                    </div>
+                </TableCell>
+                <TableCell>₹{booking.amount.toLocaleString(undefined, {maximumFractionDigits: 0})}</TableCell>
+                <TableCell><Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge></TableCell>
+                <TableCell className="text-right">
+                    {booking.status !== 'Cancelled' && booking.status !== 'Needs Assignment' && (
+                        <Button variant="ghost" size="icon" onClick={() => handleDownloadInvoice(booking)}>
+                            <Download className="h-4 w-4" />
+                            <span className="sr-only">Download Invoice</span>
+                        </Button>
+                    )}
+                </TableCell>
+            </TableRow>
+        );
+    }
 
-    const renderBookingTable = (bookingsToShow: Booking[]) => (
+    const renderUpcomingBookingTable = (bookingsToShow: Booking[]) => (
         <Table>
             <TableHeader>
                 <TableRow>
                     <TableHead>Service</TableHead>
+                    <TableHead>Artist(s)</TableHead>
                     <TableHead>Service Dates</TableHead>
                     <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
@@ -103,33 +156,49 @@ export default function AccountPage() {
             </TableHeader>
             <TableBody>
                 {bookingsToShow.length > 0 ? bookingsToShow.map(booking => (
-                    <TableRow key={booking.id}>
-                        <TableCell className="font-medium">{booking.service}</TableCell>
-                        <TableCell>
-                            <div className="flex flex-col gap-1">
-                                {booking.serviceDates.map((date, index) => (
-                                    <Badge key={index} variant="outline" className="text-xs">
-                                        {format(date, "PPP")}
-                                    </Badge>
-                                ))}
-                            </div>
-                        </TableCell>
-                        <TableCell>₹{booking.amount.toLocaleString(undefined, {maximumFractionDigits: 0})}</TableCell>
-                        <TableCell><Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge></TableCell>
-                        <TableCell className="text-right">
-                            {booking.status !== 'Cancelled' && booking.status !== 'Needs Assignment' && (
-                                <Button variant="ghost" size="icon" onClick={() => handleDownloadInvoice(booking)}>
-                                    <Download className="h-4 w-4" />
-                                    <span className="sr-only">Download Invoice</span>
-                                </Button>
-                            )}
-                        </TableCell>
-                    </TableRow>
+                   <React.Fragment key={`frag-${booking.id}`}>
+                        {renderBookingRow(booking)}
+                        {booking.status === 'Confirmed' && booking.completionCode && (
+                             <TableRow key={`code-${booking.id}`} className="bg-muted/50">
+                                 <TableCell colSpan={6} className="p-0">
+                                     <Alert variant="default" className="border-0 border-l-4 border-primary rounded-none">
+                                        <ShieldCheck className="h-4 w-4 text-primary" />
+                                        <AlertTitle className="font-semibold">Your Service Completion Code</AlertTitle>
+                                        <AlertDescription>
+                                            Share this code with your artist only after your service is fully completed: <strong className="text-lg tracking-widest ml-2">{booking.completionCode}</strong>
+                                        </AlertDescription>
+                                    </Alert>
+                                 </TableCell>
+                             </TableRow>
+                        )}
+                   </React.Fragment>
                 )) : (
                     <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground">You have no bookings in this category.</TableCell>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">You have no bookings in this category.</TableCell>
                     </TableRow>
                 )}
+            </TableBody>
+        </Table>
+    );
+    
+    const renderPastBookingTable = (bookingsToShow: Booking[]) => (
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>Service</TableHead>
+                    <TableHead>Artist(s)</TableHead>
+                    <TableHead>Service Dates</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Invoice</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                 {bookingsToShow.length > 0 ? bookingsToShow.map(renderBookingRow) : (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground">You have no bookings in this category.</TableCell>
+                    </TableRow>
+                 )}
             </TableBody>
         </Table>
     );
@@ -168,7 +237,7 @@ export default function AccountPage() {
                         <CardDescription>These are your future bookings. You will be notified of any status changes.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                         {renderBookingTable(upcomingBookings)}
+                         {renderUpcomingBookingTable(upcomingBookings)}
                     </CardContent>
                 </Card>
 
@@ -178,7 +247,7 @@ export default function AccountPage() {
                         <CardDescription>A history of all your past bookings with us.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {renderBookingTable(pastBookings)}
+                        {renderPastBookingTable(pastBookings)}
                     </CardContent>
                 </Card>
 

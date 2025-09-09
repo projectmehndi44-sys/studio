@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -77,8 +78,9 @@ export default function CartPage() {
              toast({ title: "Could not find customer data.", variant: "destructive" });
         }
 
-        const savedLocations = localStorage.getItem('availableLocations');
-        setAvailableLocations(savedLocations ? JSON.parse(savedLocations) : AVAILABLE_LOCATIONS);
+        const savedLocationsData = localStorage.getItem('availableLocations');
+        const savedLocations = savedLocationsData ? JSON.parse(savedLocationsData) : AVAILABLE_LOCATIONS;
+        setAvailableLocations(savedLocations);
     }, [router, toast]);
 
 
@@ -146,6 +148,7 @@ export default function CartPage() {
             mapLink,
             note,
             instagramId,
+            completionCode: Math.floor(100000 + Math.random() * 900000).toString(),
         };
 
         const allBookings = JSON.parse(localStorage.getItem('bookings') || '[]');
