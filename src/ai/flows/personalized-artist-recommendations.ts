@@ -64,6 +64,7 @@ const personalizedArtistRecommendationsPrompt = ai.definePrompt({
   name: 'personalizedArtistRecommendationsPrompt',
   input: {schema: PersonalizedArtistRecommendationsInputSchema},
   output: {schema: PersonalizedArtistRecommendationsOutputSchema},
+  model: 'googleai/gemini-2.5-flash',
   prompt: `You are an AI assistant designed to provide personalized recommendations for mehndi and makeup artists.
 
   Based on the user's history, style preferences, and optionally their location, recommend artists that best match their needs.
