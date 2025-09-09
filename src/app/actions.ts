@@ -5,6 +5,7 @@ import {
   type PersonalizedArtistRecommendationsInput,
   type PersonalizedArtistRecommendationsOutput,
 } from '@/ai/flows/personalized-artist-recommendations';
+import { getStyleMatch, type StyleMatchInput, type StyleMatchOutput } from '@/ai/flows/style-match';
 import type { Artist } from '@/types';
 
 /**
@@ -25,4 +26,11 @@ export async function fetchRecommendations(
     // In a real app, you would have more robust error handling
     return [];
   }
+}
+
+export async function fetchStyleMatch(
+  input: StyleMatchInput
+): Promise<StyleMatchOutput> {
+    const recommendations = await getStyleMatch(input);
+    return recommendations;
 }

@@ -32,6 +32,7 @@ import { RecommendationsTab } from '@/components/glamgo/RecommendationsTab';
 import { ServiceSelectionModal } from '@/components/glamgo/ServiceSelectionModal';
 import { MehndiIcon, MakeupIcon, PhotographyIcon } from '@/components/icons';
 import { PwaInstallBanner } from '@/components/glamgo/PwaInstallBanner';
+import { StyleMatch } from '@/components/glamgo/StyleMatch';
 
 
 const galleryImages = [
@@ -250,6 +251,12 @@ export default function Home() {
                  </Link>
             </div>
           </div>
+        )}
+
+        {isCustomerLoggedIn && (
+            <div id="style-match" className="py-8">
+                <StyleMatch />
+            </div>
         )}
 
         <div className="mt-8">
