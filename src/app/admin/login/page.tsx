@@ -21,7 +21,7 @@ export default function ArtistLoginPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [email, setEmail] = React.useState('admin');
-    const [password, setPassword] = React.useState('Abhi@204567');
+    const [password, setPassword] = React.useState('');
     const [isLoading, setIsLoading] = React.useState(false);
     const auth = getAuth(app);
     
@@ -35,9 +35,10 @@ export default function ArtistLoginPage() {
             if (superAdminSeed && superAdminSeed.password) {
                 try {
                     await createUser('admin@mehndify.com', superAdminSeed.password);
-                    console.log("Super Admin user created successfully in Firebase Authentication.");
+                    console.log("Super Admin user created/verified successfully in Firebase Authentication.");
                 } catch (error: any) {
                     if (error.code === 'auth/email-already-in-use') {
+                        // This is expected and fine. The user exists.
                         console.log("Super Admin user already exists. Setup is correct.");
                     } else {
                         // For any other errors, log them to diagnose potential issues.
@@ -65,10 +66,12 @@ export default function ArtistLoginPage() {
                 const teamMembers = await getTeamMembers();
                 let memberProfile = teamMembers.find(m => m.id === user.uid);
 
+                // This logic handles the very first login, to sync the placeholder ID with the real Firebase UID
                 if (!memberProfile && isSuperAdminLogin) {
                     const placeholderAdmin = teamMembers.find(m => m.id === 'user_001' && m.role === 'Super Admin');
                     if (placeholderAdmin) {
                         await updateTeamMemberId('user_001', user.uid);
+                        // Re-fetch the team members to get the updated profile
                         const updatedTeamMembers = await getTeamMembers();
                         memberProfile = updatedTeamMembers.find(m => m.id === user.uid);
                     }
