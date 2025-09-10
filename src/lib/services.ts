@@ -1,7 +1,4 @@
 
-
-'use client';
-
 import { db } from './firebase';
 import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, query, where, deleteDoc, Timestamp, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import type { Artist, Booking, Customer, MasterServicePackage, PayoutHistory, TeamMember, Notification, Promotion } from '@/types';
@@ -20,11 +17,28 @@ async function getConfigDocument<T>(docId: string, defaultValue: T): Promise<T> 
     const docRef = doc(db, 'config', docId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
+        const data = docSnap.data();
+        // The nested key is the same as the docId, but plural
+        const nestedKey = `${docId}s`;
+        if (data && data[nestedKey]) {
+            return data[nestedKey] as T;
+        }
+        // Handle cases like masterServices where the key is different ('packages')
+        if (data && data.packages) {
+            return data.packages as T;
+        }
+        if (data && data.members) {
+            return data.members as T;
+        }
+         if (data && data.promos) {
+            return data.promos as T;
+        }
+        // Fallback for flat config docs like companyProfile
         return docSnap.data() as T;
     }
     // If it doesn't exist, create it with the default value
     await setDoc(docRef, defaultValue);
-    return defaultValue;
+    return defaultValue as T;
 }
 
 // Generic function to set a config document
@@ -97,18 +111,24 @@ export const createArtist = async (id: string, data: Omit<Artist, 'id'>): Promis
     // Use email as the document ID for artists created via admin onboarding
     const artistRef = doc(db, "artists", id);
     await setDoc(artistRef, data);
-    window.dispatchEvent(new Event('storage'));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('storage'));
+    }
     return id;
 };
 export const updateArtist = async (id: string, data: Partial<Artist>): Promise<void> => {
     const artistRef = doc(db, "artists", id);
     await updateDoc(artistRef, data);
-    window.dispatchEvent(new Event('storage'));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('storage'));
+    }
 };
 export const deleteArtist = async (id: string): Promise<void> => {
     const artistRef = doc(db, "artists", id);
     await deleteDoc(artistRef);
-    window.dispatchEvent(new Event('storage'));
+    if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('storage'));
+    }
 }
 
 
@@ -177,13 +197,13 @@ export const saveFinancialSettings = (data: any) => setConfigDocument('financial
 
 export const getTeamMembers = async (): Promise<TeamMember[]> => {
     const data = await getConfigDocument<{ members: TeamMember[] }>('teamMembers', { members: initialTeamMembers });
-    return data.members;
+    return data.members || initialTeamMembers;
 };
 export const saveTeamMembers = (members: TeamMember[]) => setConfigDocument('teamMembers', { members });
 
 export const getPromotions = async (): Promise<Promotion[]> => {
     const data = await getConfigDocument<{ promos: Promotion[] }>('promotions', { promos: [] });
-    return data.promos;
+    return data.promos || [];
 };
 export const savePromotions = (promos: Promotion[]) => setConfigDocument('promotions', { promos });
 

@@ -111,10 +111,8 @@ export default function ArtistProfilePage() {
                 referralCode: artist.referralCode || artist.name.split(' ')[0].toUpperCase() + '10',
                 referralDiscount: artist.referralDiscount || 10,
             });
-        } else {
-             router.push('/artist/login');
         }
-    }, [artist, router, form]);
+    }, [artist, form]);
 
     const onSubmit = async (data: ProfileFormValues) => {
         if (!artist) return;

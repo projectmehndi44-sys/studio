@@ -27,7 +27,9 @@ export default function AccountPage() {
     const [isLoading, setIsLoading] = React.useState(true);
 
     const handleLogout = React.useCallback(() => {
-        localStorage.removeItem('currentCustomerId');
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('currentCustomerId');
+        }
         router.push('/');
     }, [router]);
 
@@ -35,7 +37,11 @@ export default function AccountPage() {
 
     const fetchCustomerData = React.useCallback(async () => {
         setIsLoading(true);
-        const customerId = localStorage.getItem('currentCustomerId');
+        let customerId: string | null = null;
+        if (typeof window !== 'undefined') {
+            customerId = localStorage.getItem('currentCustomerId');
+        }
+
         if (!customerId) {
             router.push('/');
             return;
