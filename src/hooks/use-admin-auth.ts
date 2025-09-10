@@ -3,7 +3,8 @@
 'use client';
 
 import * as React from 'react';
-import { teamMembers as initialTeamMembers, TeamMember, Permissions } from '@/lib/team-data';
+import type { TeamMember, Permissions } from '@/lib/team-data';
+import { getTeamMembers } from '@/lib/services';
 
 interface AuthState {
     isLoading: boolean;
@@ -22,24 +23,31 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated') === 'true';
-        if (isAdminAuthenticated) {
-            const username = localStorage.getItem('adminUsername');
-            const teamMembersData = localStorage.getItem('teamMembers');
-            const teamMembers: TeamMember[] = teamMembersData ? JSON.parse(teamMembersData) : initialTeamMembers;
-            const currentUser = teamMembers.find((m: TeamMember) => m.username === username);
+        const checkAuth = async () => {
+            const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated') === 'true';
+            if (isAdminAuthenticated) {
+                const username = localStorage.getItem('adminUsername');
+                try {
+                    const teamMembers: TeamMember[] = await getTeamMembers();
+                    const currentUser = teamMembers.find((m: TeamMember) => m.username === username);
 
-            if (currentUser) {
-                setAuthState({ isLoading: false, isAuthenticated: true, user: currentUser });
+                    if (currentUser) {
+                        setAuthState({ isLoading: false, isAuthenticated: true, user: currentUser });
+                    } else {
+                        localStorage.removeItem('isAdminAuthenticated');
+                        localStorage.removeItem('adminRole');
+                        localStorage.removeItem('adminUsername');
+                        setAuthState({ isLoading: false, isAuthenticated: false, user: null });
+                    }
+                } catch(error) {
+                    console.error("Failed to load team members for auth check", error);
+                    setAuthState({ isLoading: false, isAuthenticated: false, user: null });
+                }
             } else {
-                localStorage.removeItem('isAdminAuthenticated');
-                localStorage.removeItem('adminRole');
-                localStorage.removeItem('adminUsername');
                 setAuthState({ isLoading: false, isAuthenticated: false, user: null });
             }
-        } else {
-            setAuthState({ isLoading: false, isAuthenticated: false, user: null });
         }
+        checkAuth();
     }, []);
 
     const hasPermission = React.useCallback((module: keyof Permissions, level: 'view' | 'edit'): boolean => {

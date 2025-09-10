@@ -17,7 +17,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { listenToCollection } from '@/lib/services';
+import { listenToCollection, getFinancialSettings } from '@/lib/services';
 import type { Artist, Booking } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
@@ -77,28 +77,21 @@ export default function AdminPage() {
 
      // Effect for calculating financials
     React.useEffect(() => {
-        const calculateRevenue = (filteredBookings: Booking[]) => {
-            let platformFeePercentage = 0.1;
-            let refundFee = 500;
-            
-            if (typeof window !== 'undefined') {
-                const storedFee = localStorage.getItem('platformFeePercentage');
-                platformFeePercentage = storedFee ? parseFloat(storedFee) / 100 : 0.1;
-
-                const storedRefundFee = localStorage.getItem('platformRefundFee');
-                refundFee = storedRefundFee ? parseFloat(storedRefundFee) : 500;
-            }
+        const calculateRevenue = async (filteredBookings: Booking[]) => {
+            const { platformFeePercentage, platformRefundFee } = await getFinancialSettings();
             
             const completed = filteredBookings.filter(b => b.status === 'Completed');
             const totalRevenue = completed.reduce((sum, b) => sum + b.amount, 0);
-            const platformFee = totalRevenue * platformFeePercentage;
-            const refunds = refundFee; // Mocked data for now
+            const platformFee = totalRevenue * (platformFeePercentage / 100);
+            const refunds = platformRefundFee; // Mocked data for now
             const netProfit = platformFee - refunds; // Platform profit is the commission minus refunds
 
             return { totalRevenue, platformFee, netProfit };
         };
-
-        setFinancials(calculateRevenue(bookings));
+        
+        if (bookings.length > 0) {
+            calculateRevenue(bookings).then(setFinancials);
+        }
 
     }, [bookings]);
 

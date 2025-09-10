@@ -11,7 +11,7 @@ import { useArtistPortal } from '../layout';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { listenToCollection } from '@/lib/services';
+import { listenToCollection, getFinancialSettings } from '@/lib/services';
 
 
 export default function ArtistPayoutsPage() {
@@ -22,10 +22,9 @@ export default function ArtistPayoutsPage() {
     const platformFeePercentage = React.useRef(0.1);
 
     React.useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const fee = localStorage.getItem('platformFeePercentage');
-            platformFeePercentage.current = fee ? parseFloat(fee) / 100 : 0.1;
-        }
+        getFinancialSettings().then(settings => {
+             platformFeePercentage.current = settings.platformFeePercentage / 100;
+        });
     }, []);
 
     React.useEffect(() => {

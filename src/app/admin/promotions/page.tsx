@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { getPromotions, savePromotions } from '@/lib/services';
 
 const promotionSchema = z.object({
   code: z.string().min(4, 'Code must be at least 4 characters').regex(/^[A-Z0-9]+$/, 'Code must be uppercase letters and numbers only.'),
@@ -31,14 +32,7 @@ const promotionSchema = z.object({
 
 type PromotionFormValues = z.infer<typeof promotionSchema>;
 
-const initialPromotions: Promotion[] = [
-    { id: 'promo_1', code: 'WELCOME10', discount: 10, expiryDate: '2024-12-31', isActive: true, usageLimit: 1 },
-    { id: 'promo_2', code: 'FESTIVE20', discount: 20, expiryDate: '2024-10-31', isActive: true, usageLimit: 0 },
-    { id: 'promo_3', code: 'SUMMER15', discount: 15, expiryDate: '2024-06-30', isActive: false, usageLimit: 3 },
-];
-
 export default function PromotionsPage() {
-    const router = useRouter();
     const { toast } = useToast();
     const { hasPermission } = useAdminAuth();
     const [promotions, setPromotions] = React.useState<Promotion[]>([]);
@@ -49,21 +43,10 @@ export default function PromotionsPage() {
     });
 
     React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
-        if (isAdminAuthenticated !== 'true') {
-            router.push('/admin/login');
-        }
-        
-        const storedPromos = localStorage.getItem('promotions');
-        setPromotions(storedPromos ? JSON.parse(storedPromos) : initialPromotions);
-    }, [router]);
+        getPromotions().then(setPromotions);
+    }, []);
     
-    const savePromotions = (updatedPromos: Promotion[]) => {
-        setPromotions(updatedPromos);
-        localStorage.setItem('promotions', JSON.stringify(updatedPromos));
-    }
-
-    const onSubmit: SubmitHandler<PromotionFormValues> = (data) => {
+    const onSubmit: SubmitHandler<PromotionFormValues> = async (data) => {
         if (promotions.some(p => p.code === data.code)) {
             form.setError('code', { message: 'This code already exists.' });
             return;
@@ -82,7 +65,7 @@ export default function PromotionsPage() {
             newPromotion.isActive = new Date(data.expiryDate) > new Date();
         }
 
-        savePromotions([newPromotion, ...promotions]);
+        await savePromotions([newPromotion, ...promotions]);
         toast({ title: 'Promotion Created', description: `Code ${data.code} has been added.` });
         form.reset({ code: '', discount: 10, usageLimit: 1, expiryDate: undefined });
     };
@@ -106,9 +89,9 @@ export default function PromotionsPage() {
         toast({ title: 'Status Updated' });
     };
 
-    const deletePromotion = (id: string) => {
+    const deletePromotion = async (id: string) => {
         const updated = promotions.filter(p => p.id !== id);
-        savePromotions(updated);
+        await savePromotions(updated);
         toast({ title: 'Promotion Deleted', variant: 'destructive' });
     };
 

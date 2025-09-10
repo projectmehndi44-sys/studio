@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from '@/hooks/use-toast';
 import { IndianRupee, BarChart, Star, Users, Briefcase, Calendar as CalendarIcon, Image as ImageIcon, Download, ChevronDown, ArrowLeft } from 'lucide-react';
 import type { Artist, Booking, Review } from '@/types';
-import { getArtist, listenToCollection } from '@/lib/services';
+import { getArtist, listenToCollection, getFinancialSettings } from '@/lib/services';
 import NextImage from 'next/image';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { exportToExcel, exportToPdf } from '@/lib/export';
@@ -29,11 +29,9 @@ export default function ArtistDetailPage() {
     const [platformFeePercentage, setPlatformFeePercentage] = React.useState(0.1); // Default value
 
     React.useEffect(() => {
-        // This code now safely runs only on the client
-        if (typeof window !== 'undefined') {
-            const fee = localStorage.getItem('platformFeePercentage');
-            setPlatformFeePercentage(fee ? parseFloat(fee) / 100 : 0.1);
-        }
+        getFinancialSettings().then(settings => {
+            setPlatformFeePercentage(settings.platformFeePercentage / 100);
+        });
     }, []);
     
     React.useEffect(() => {

@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { IndianRupee, MoreHorizontal, Download, FileText } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Booking, Artist, Payout, PayoutHistory } from '@/types';
-import { listenToCollection, updateBooking } from '@/lib/services';
+import { listenToCollection, updateBooking, getFinancialSettings } from '@/lib/services';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -31,12 +31,9 @@ export default function PayoutManagementPage() {
     const [payoutHistory, setPayoutHistory] = React.useState<PayoutHistory[]>([]);
 
 
-    const calculatePayouts = React.useCallback(() => {
-        let platformFeePercentage = 0.1;
-        if (typeof window !== 'undefined') {
-            const storedFee = localStorage.getItem('platformFeePercentage');
-            platformFeePercentage = storedFee ? parseFloat(storedFee) / 100 : 0.1;
-        }
+    const calculatePayouts = React.useCallback(async () => {
+        let { platformFeePercentage } = await getFinancialSettings();
+        platformFeePercentage = platformFeePercentage / 100;
 
         const payoutMap: Record<string, Payout> = {};
 

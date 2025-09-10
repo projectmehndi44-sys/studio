@@ -14,17 +14,16 @@ import { useToast } from '@/hooks/use-toast';
 import { Save, Percent, IndianRupee } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { getFinancialSettings, saveFinancialSettings } from '@/lib/services';
 
 const settingsSchema = z.object({
-  gstin: z.string().regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, { message: 'Invalid GSTIN format.' }).or(z.literal('')),
-  platformFee: z.coerce.number().min(0, 'Fee cannot be negative.').max(100, 'Fee cannot exceed 100%.'),
-  refundFee: z.coerce.number().min(0, 'Refund fee cannot be negative.'),
+  platformFeePercentage: z.coerce.number().min(0, 'Fee cannot be negative.').max(100, 'Fee cannot exceed 100%.'),
+  platformRefundFee: z.coerce.number().min(0, 'Refund fee cannot be negative.'),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 export default function FinancialSettingsPage() {
-    const router = useRouter();
     const { toast } = useToast();
     const { hasPermission } = useAdminAuth();
     const [isLoading, setIsLoading] = React.useState(false);
@@ -32,48 +31,37 @@ export default function FinancialSettingsPage() {
     const form = useForm<SettingsFormValues>({
         resolver: zodResolver(settingsSchema),
         defaultValues: {
-            gstin: '',
-            platformFee: 10,
-            refundFee: 500,
+            platformFeePercentage: 10,
+            platformRefundFee: 500,
         },
     });
 
     React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
-        if (isAdminAuthenticated !== 'true') {
-            router.push('/admin/login');
-        }
-
-        // Load saved settings from localStorage
-        const savedGstin = localStorage.getItem('platformGstin');
-        const savedFee = localStorage.getItem('platformFeePercentage');
-        const savedRefundFee = localStorage.getItem('platformRefundFee');
-        
-        form.reset({
-            gstin: savedGstin || '',
-            platformFee: savedFee ? parseFloat(savedFee) : 10,
-            refundFee: savedRefundFee ? parseFloat(savedRefundFee) : 500,
+        getFinancialSettings().then(settings => {
+            if (settings) {
+                form.reset(settings);
+            }
         });
+    }, [form]);
 
-    }, [router, form]);
-
-    const onSubmit: SubmitHandler<SettingsFormValues> = (data) => {
+    const onSubmit: SubmitHandler<SettingsFormValues> = async (data) => {
         setIsLoading(true);
         
-        localStorage.setItem('platformGstin', data.gstin);
-        localStorage.setItem('platformFeePercentage', data.platformFee.toString());
-        localStorage.setItem('platformRefundFee', data.refundFee.toString());
-
-        // Dispatch a storage event to notify other components if they need to update
-        window.dispatchEvent(new Event('storage'));
-
-        setTimeout(() => {
+        try {
+            await saveFinancialSettings(data);
             toast({
                 title: 'Settings Saved',
                 description: 'Your financial settings have been updated successfully.',
             });
+        } catch (error) {
+            toast({
+                title: 'Error Saving Settings',
+                description: 'Could not update your financial settings.',
+                variant: 'destructive',
+            });
+        } finally {
             setIsLoading(false);
-        }, 1000);
+        }
     };
 
     return (
@@ -85,22 +73,15 @@ export default function FinancialSettingsPage() {
                 <CardHeader>
                     <CardTitle>Manage Financial Rules</CardTitle>
                     <CardDescription>
-                        Set your platform's GST number, commission fees, and other financial parameters. These will be applied globally.
+                        Set your platform's commission fees, and other financial parameters. These will be applied globally.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                            {/* Standard Settings */}
-                            <div className="grid md:grid-cols-3 gap-6">
-                                <FormField control={form.control} name="gstin" render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Platform GSTIN</FormLabel>
-                                        <FormControl><Input placeholder="e.g., 27ABCDE1234F1Z5" {...field} /></FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )} />
-                                <FormField control={form.control} name="platformFee" render={({ field }) => (
+                            <div className="grid md:grid-cols-2 gap-6">
+                                <FormField control={form.control} name="platformFeePercentage" render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Platform Fee Percentage</FormLabel>
                                         <div className="relative">
@@ -110,7 +91,7 @@ export default function FinancialSettingsPage() {
                                         <FormMessage />
                                     </FormItem>
                                 )} />
-                                <FormField control={form.control} name="refundFee" render={({ field }) => (
+                                <FormField control={form.control} name="platformRefundFee" render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Refund Processing Fee</FormLabel>
                                         <div className="relative">

@@ -25,15 +25,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { updateBooking } from '@/lib/services';
+import { updateBooking, getFinancialSettings } from '@/lib/services';
 
-const BookingDetailsModal = ({ booking, isOpen, onOpenChange }: { booking: Booking | null; isOpen: boolean; onOpenChange: (isOpen: boolean) => void }) => {
+const BookingDetailsModal = ({ booking, isOpen, onOpenChange, platformFeePercentage }: { booking: Booking | null; isOpen: boolean; onOpenChange: (isOpen: boolean) => void; platformFeePercentage: number; }) => {
     if (!booking) return null;
-
-    let platformFeePercentage = 0.1;
-    if(typeof window !== 'undefined'){
-       platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10') / 100;
-    }
 
     const taxableAmount = booking.amount / 1.18;
     const gstOnService = booking.amount - taxableAmount;
@@ -132,6 +127,14 @@ export default function ArtistBookingsPage() {
     const [isDetailsModalOpen, setIsDetailsModalOpen] = React.useState(false);
     const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
     const [completionCode, setCompletionCode] = React.useState('');
+    const [platformFee, setPlatformFee] = React.useState(0.1);
+
+    React.useEffect(() => {
+        getFinancialSettings().then(settings => {
+            setPlatformFee(settings.platformFeePercentage / 100);
+        });
+    }, []);
+
 
     const handleStatusUpdate = async () => {
         if (!selectedBooking) return;
@@ -275,6 +278,7 @@ export default function ArtistBookingsPage() {
             booking={selectedBooking}
             isOpen={isDetailsModalOpen}
             onOpenChange={setIsDetailsModalOpen}
+            platformFeePercentage={platformFee}
         />
 
         </>

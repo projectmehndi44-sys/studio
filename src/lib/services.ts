@@ -4,7 +4,8 @@
 
 import { db } from './firebase';
 import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, query, where, deleteDoc, Timestamp, onSnapshot, Unsubscribe } from 'firebase/firestore';
-import type { Artist, Booking, Customer, MasterServicePackage, PayoutHistory, TeamMember, Notification } from '@/types';
+import type { Artist, Booking, Customer, MasterServicePackage, PayoutHistory, TeamMember, Notification, Promotion } from '@/types';
+import { teamMembers as initialTeamMembers } from './team-data';
 
 
 // Generic function to get a single document
@@ -14,16 +15,39 @@ async function getDocument<T>(collectionName: string, id: string): Promise<T | n
     return docSnap.exists() ? ({ id: docSnap.id, ...docSnap.data() } as unknown as T) : null;
 }
 
+// Generic function to get a config document
+async function getConfigDocument<T>(docId: string, defaultValue: T): Promise<T> {
+    const docRef = doc(db, 'config', docId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return docSnap.data() as T;
+    }
+    // If it doesn't exist, create it with the default value
+    await setDoc(docRef, defaultValue);
+    return defaultValue;
+}
+
+// Generic function to set a config document
+async function setConfigDocument(docId: string, data: any): Promise<void> {
+    const docRef = doc(db, 'config', docId);
+    await setDoc(docRef, data);
+}
+
+
 // --- Listener Functions for Real-Time Data ---
 
 export const listenToCollection = <T>(collectionName: string, callback: (data: T[]) => void): Unsubscribe => {
-    // Special case for masterServices which is a single doc in the 'config' collection
-    if (collectionName === 'masterServices') {
-        const docRef = doc(db, 'config', 'masterServices');
+    // Special cases for data stored in single docs within 'config'
+    const configCollections = ['masterServices', 'teamMembers', 'promotions'];
+    if (configCollections.includes(collectionName)) {
+        const docId = collectionName;
+        const docRef = doc(db, 'config', docId);
         const unsubscribe = onSnapshot(docRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                callback(data.packages || []);
+                // Data is nested under a key, e.g., { packages: [] } or { members: [] }
+                const key = collectionName === 'masterServices' ? 'packages' : (collectionName === 'teamMembers' ? 'members' : 'promos');
+                callback(data[key] || []);
             } else {
                 callback([]);
             }
@@ -128,9 +152,41 @@ export const createCustomer = async (data: Omit<Customer, 'id'> & {id?: string})
 
 // Config
 export const getAvailableLocations = async (): Promise<Record<string, string[]>> => {
-    const docSnap = await getDoc(doc(db, "config", "availableLocations"));
-    return docSnap.exists() ? docSnap.data().locations : {};
+    const config = await getConfigDocument<{ locations: Record<string, string[]> }>('availableLocations', { locations: {} });
+    return config.locations;
 };
+export const getCompanyProfile = async () => {
+    return getConfigDocument('companyProfile', {
+        companyName: 'MehendiFy Platform',
+        address: '123 Glamour Lane, Mumbai, MH, 400001',
+        phone: '+91 98765 43210',
+        email: 'contact@mehendify.com',
+        gstin: '',
+        website: 'https://www.mehendify.com',
+    });
+};
+export const saveCompanyProfile = (data: any) => setConfigDocument('companyProfile', data);
+
+export const getFinancialSettings = async () => {
+    return getConfigDocument('financialSettings', {
+        platformFeePercentage: 10,
+        platformRefundFee: 500,
+    });
+};
+export const saveFinancialSettings = (data: any) => setConfigDocument('financialSettings', data);
+
+export const getTeamMembers = async (): Promise<TeamMember[]> => {
+    const data = await getConfigDocument<{ members: TeamMember[] }>('teamMembers', { members: initialTeamMembers });
+    return data.members;
+};
+export const saveTeamMembers = (members: TeamMember[]) => setConfigDocument('teamMembers', { members });
+
+export const getPromotions = async (): Promise<Promotion[]> => {
+    const data = await getConfigDocument<{ promos: Promotion[] }>('promotions', { promos: [] });
+    return data.promos;
+};
+export const savePromotions = (promos: Promotion[]) => setConfigDocument('promotions', { promos });
+
 
 // Pending Artists
 export const createPendingArtist = async (data: any): Promise<string> => {
@@ -168,5 +224,3 @@ export const getMasterServices = async (): Promise<MasterServicePackage[]> => {
     }
     return [];
 };
-
-    

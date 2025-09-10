@@ -16,10 +16,12 @@ import { PlusCircle, Trash2, MoreHorizontal, UserCog } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { teamMembers as initialTeamMembers, TeamMember, Permissions, PERMISSION_MODULES, PermissionLevel } from '@/lib/team-data';
+import type { TeamMember, Permissions } from '@/lib/team-data';
+import { PERMISSION_MODULES } from '@/lib/team-data';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { getTeamMembers, saveTeamMembers } from '@/lib/services';
 
 
 const memberSchema = z.object({
@@ -73,26 +75,12 @@ export default function TeamManagementPage() {
         },
     });
 
-    const getTeamMembers = React.useCallback((): TeamMember[] => {
-        const storedMembers = localStorage.getItem('teamMembers');
-        if (storedMembers) {
-            return JSON.parse(storedMembers);
-        }
-        localStorage.setItem('teamMembers', JSON.stringify(initialTeamMembers));
-        return initialTeamMembers;
-    }, []);
-
-    const saveTeamMembers = (members: TeamMember[]) => {
-        localStorage.setItem('teamMembers', JSON.stringify(members));
-        setTeamMembers(members);
-    };
-
     React.useEffect(() => {
-       setTeamMembers(getTeamMembers());
-    }, [getTeamMembers]);
+       getTeamMembers().then(setTeamMembers);
+    }, []);
     
-    const onSubmit: SubmitHandler<MemberFormValues> = (data) => {
-        const currentMembers = getTeamMembers();
+    const onSubmit: SubmitHandler<MemberFormValues> = async (data) => {
+        const currentMembers = await getTeamMembers();
         
         if (!editingMember && currentMembers.some(member => member.username === data.username)) {
             form.setError('username', { type: 'manual', message: 'Username already exists.' });
@@ -115,12 +103,13 @@ export default function TeamManagementPage() {
             toast({ title: 'Team Member Added', description: `${data.name} has been added to the team.` });
         }
         
-        saveTeamMembers(updatedMembers);
+        await saveTeamMembers(updatedMembers);
+        setTeamMembers(updatedMembers);
         form.reset();
         setEditingMember(null);
     };
 
-    const handleDelete = (memberId: string) => {
+    const handleDelete = async (memberId: string) => {
         if (memberId === 'user_001') {
             toast({
                 title: 'Cannot Delete Admin',
@@ -129,8 +118,10 @@ export default function TeamManagementPage() {
             });
             return;
         }
-        const updatedMembers = teamMembers.filter(member => member.id !== memberId);
-        saveTeamMembers(updatedMembers);
+        const currentMembers = await getTeamMembers();
+        const updatedMembers = currentMembers.filter(member => member.id !== memberId);
+        await saveTeamMembers(updatedMembers);
+        setTeamMembers(updatedMembers);
         
         toast({
             title: 'Member Removed',

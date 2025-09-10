@@ -4,6 +4,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import type { Artist, Booking, Review, Payout, PayoutHistory, Transaction, Customer } from '@/types';
+import { getCompanyProfile } from './services';
 
 type ArtistExportData = {
     artist: Artist;
@@ -15,7 +16,7 @@ type ArtistExportData = {
  * Generates a PDF report for a single artist.
  * @param data - The artist's data including bookings and reviews.
  */
-export const exportToPdf = (data: ArtistExportData) => {
+export const exportToPdf = async (data: ArtistExportData) => {
     const { artist, bookings, reviews } = data;
     const doc = new jsPDF();
 
@@ -191,26 +192,13 @@ export const exportPayoutToPdf = (payout: Payout | PayoutHistory) => {
   doc.save(`payout-summary-${payout.artistName.replace(/\s/g, '-')}.pdf`);
 };
 
-const getCompanyProfile = () => {
-    const savedProfile = localStorage.getItem('companyProfile');
-    if (savedProfile) {
-        return JSON.parse(savedProfile);
-    }
-    return {
-        companyName: 'MehendiFy Platform',
-        address: '123 Glamour Lane, Mumbai, MH, 400001',
-        gstin: 'Not Set',
-    };
-};
-
-
 /**
  * Generates a GST invoice for the platform fee charged to an artist.
  * @param payout - The payout data object for which to generate the commission invoice.
  */
-export const generateGstInvoiceForPlatformFee = (payout: Payout | PayoutHistory) => {
+export const generateGstInvoiceForPlatformFee = async (payout: Payout | PayoutHistory) => {
     const doc = new jsPDF();
-    const companyProfile = getCompanyProfile();
+    const companyProfile = await getCompanyProfile();
     const platformFee = payout.platformFees;
 
     // Invoice Header
@@ -261,9 +249,9 @@ export const generateGstInvoiceForPlatformFee = (payout: Payout | PayoutHistory)
  * @param booking The booking object.
  * @param customer The customer object.
  */
-export const generateCustomerInvoice = (booking: Booking, customer: Customer) => {
+export const generateCustomerInvoice = async (booking: Booking, customer: Customer) => {
     const doc = new jsPDF();
-    const companyProfile = getCompanyProfile();
+    const companyProfile = await getCompanyProfile();
     const totalAmount = booking.amount;
     const taxableAmount = totalAmount / 1.18;
     const gstAmount = totalAmount - taxableAmount;

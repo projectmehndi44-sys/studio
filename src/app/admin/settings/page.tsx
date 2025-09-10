@@ -15,10 +15,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useAdminAuth } from '@/hooks/use-admin-auth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { getFinancialSettings, saveFinancialSettings, getCompanyProfile, saveCompanyProfile } from '@/lib/services';
 
 const financialSchema = z.object({
-  platformFee: z.coerce.number().min(0, 'Fee cannot be negative.').max(100, 'Fee cannot exceed 100%.'),
-  refundFee: z.coerce.number().min(0, 'Refund fee cannot be negative.'),
+  platformFeePercentage: z.coerce.number().min(0, 'Fee cannot be negative.').max(100, 'Fee cannot exceed 100%.'),
+  platformRefundFee: z.coerce.number().min(0, 'Refund fee cannot be negative.'),
 });
 
 const companySchema = z.object({
@@ -41,8 +42,8 @@ export default function SettingsPage() {
     const financialForm = useForm<FinancialFormValues>({
         resolver: zodResolver(financialSchema),
         defaultValues: {
-            platformFee: 10,
-            refundFee: 500,
+            platformFeePercentage: 10,
+            platformRefundFee: 500,
         },
     });
 
@@ -59,40 +60,32 @@ export default function SettingsPage() {
     });
 
     React.useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const savedFee = localStorage.getItem('platformFeePercentage');
-            const savedRefundFee = localStorage.getItem('platformRefundFee');
-            financialForm.reset({
-                platformFee: savedFee ? parseFloat(savedFee) : 10,
-                refundFee: savedRefundFee ? parseFloat(savedRefundFee) : 500,
-            });
-
-            const savedProfile = localStorage.getItem('companyProfile');
-            if (savedProfile) {
-                companyForm.reset(JSON.parse(savedProfile));
-            }
-        }
+        getFinancialSettings().then(settings => financialForm.reset(settings));
+        getCompanyProfile().then(profile => companyForm.reset(profile));
     }, [financialForm, companyForm]);
 
-    const onFinancialSubmit = (data: FinancialFormValues) => {
+    const onFinancialSubmit = async (data: FinancialFormValues) => {
         setIsLoading(true);
-        localStorage.setItem('platformFeePercentage', data.platformFee.toString());
-        localStorage.setItem('platformRefundFee', data.refundFee.toString());
-        window.dispatchEvent(new Event('storage'));
-        setTimeout(() => {
+        try {
+            await saveFinancialSettings(data);
             toast({ title: 'Financial Settings Saved' });
+        } catch (error) {
+            toast({ title: 'Error Saving Settings', variant: 'destructive' });
+        } finally {
             setIsLoading(false);
-        }, 1000);
+        }
     };
 
-    const onCompanySubmit = (data: CompanyFormValues) => {
+    const onCompanySubmit = async (data: CompanyFormValues) => {
         setIsLoading(true);
-        localStorage.setItem('companyProfile', JSON.stringify(data));
-        window.dispatchEvent(new Event('storage'));
-        setTimeout(() => {
+        try {
+            await saveCompanyProfile(data);
             toast({ title: 'Company Profile Saved' });
+        } catch (error) {
+            toast({ title: 'Error Saving Profile', variant: 'destructive' });
+        } finally {
             setIsLoading(false);
-        }, 1000);
+        }
     };
 
     return (
@@ -117,7 +110,7 @@ export default function SettingsPage() {
                              <Form {...financialForm}>
                                 <form onSubmit={financialForm.handleSubmit(onFinancialSubmit)} className="space-y-8">
                                     <div className="grid md:grid-cols-2 gap-6">
-                                        <FormField control={financialForm.control} name="platformFee" render={({ field }) => (
+                                        <FormField control={financialForm.control} name="platformFeePercentage" render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Platform Fee Percentage</FormLabel>
                                                 <div className="relative">
@@ -127,7 +120,7 @@ export default function SettingsPage() {
                                                 <FormMessage />
                                             </FormItem>
                                         )} />
-                                        <FormField control={financialForm.control} name="refundFee" render={({ field }) => (
+                                        <FormField control={financialForm.control} name="platformRefundFee" render={({ field }) => (
                                             <FormItem>
                                                 <FormLabel>Refund Processing Fee</FormLabel>
                                                 <div className="relative">

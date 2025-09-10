@@ -15,6 +15,7 @@ import { Save, Building, User, MapPin, Phone, Mail, Globe } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { getCompanyProfile, saveCompanyProfile } from '@/lib/services';
 
 const profileSchema = z.object({
   companyName: z.string().min(1, 'Company Name is required.'),
@@ -37,44 +38,42 @@ export default function CompanyProfilePage() {
     const form = useForm<ProfileFormValues>({
         resolver: zodResolver(profileSchema),
         defaultValues: {
-            companyName: 'MehendiFy Platform',
-            ownerName: 'Abhishek Soni',
-            address: '123 Glamour Lane, Mumbai, MH, 400001',
-            phone: '+91 98765 43210',
-            email: 'contact@mehendify.com',
+            companyName: '',
+            ownerName: '',
+            address: '',
+            phone: '',
+            email: '',
             gstin: '',
-            website: 'https://www.mehendify.com',
+            website: '',
         },
     });
 
     React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
-        if (isAdminAuthenticated !== 'true') {
-            router.push('/admin/login');
-        }
+        getCompanyProfile().then(profile => {
+            if (profile) {
+                form.reset(profile);
+            }
+        });
+    }, [form]);
 
-        const savedProfile = localStorage.getItem('companyProfile');
-        if (savedProfile) {
-            form.reset(JSON.parse(savedProfile));
-        }
-
-    }, [router, form]);
-
-    const onSubmit: SubmitHandler<ProfileFormValues> = (data) => {
+    const onSubmit: SubmitHandler<ProfileFormValues> = async (data) => {
         setIsLoading(true);
         
-        localStorage.setItem('companyProfile', JSON.stringify(data));
-
-        // Dispatch a storage event to notify other components (like invoicing) if they need to update
-        window.dispatchEvent(new Event('storage'));
-
-        setTimeout(() => {
+        try {
+            await saveCompanyProfile(data);
             toast({
                 title: 'Company Profile Saved',
                 description: 'Your company details have been updated successfully.',
             });
+        } catch (error) {
+             toast({
+                title: 'Error Saving Profile',
+                description: 'Could not update your company details.',
+                variant: 'destructive',
+            });
+        } finally {
             setIsLoading(false);
-        }, 1000);
+        }
     };
 
     return (

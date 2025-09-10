@@ -13,7 +13,8 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { User, Save } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { teamMembers as initialTeamMembers, TeamMember } from '@/lib/team-data';
+import type { TeamMember } from '@/lib/team-data';
+import { getTeamMembers, saveTeamMembers } from '@/lib/services';
 
 
 const profileSchema = z.object({
@@ -45,20 +46,6 @@ export default function ProfileManagementPage() {
         },
     });
 
-    const getTeamMembers = (): TeamMember[] => {
-        if (typeof window !== 'undefined') {
-            const storedMembers = localStorage.getItem('teamMembers');
-            return storedMembers ? JSON.parse(storedMembers) : initialTeamMembers;
-        }
-        return initialTeamMembers;
-    };
-
-    const saveTeamMembers = (members: TeamMember[]) => {
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('teamMembers', JSON.stringify(members));
-        }
-    };
-
     React.useEffect(() => {
         if (typeof window !== 'undefined') {
             const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
@@ -76,23 +63,23 @@ export default function ProfileManagementPage() {
                 return;
             }
 
-            const teamMembers = getTeamMembers();
-            const currentUser = teamMembers.find(member => member.username === currentUsername && member.role === role);
-            
-            if (currentUser) {
-                form.reset({
-                    name: currentUser.name,
-                    username: currentUser.username,
-                });
-            }
+            getTeamMembers().then(teamMembers => {
+                const currentUser = teamMembers.find(member => member.username === currentUsername && member.role === role);
+                if (currentUser) {
+                    form.reset({
+                        name: currentUser.name,
+                        username: currentUser.username,
+                    });
+                }
+            });
         }
     }, [router, toast, form]);
 
 
-    const onSubmit: SubmitHandler<ProfileFormValues> = (data) => {
+    const onSubmit: SubmitHandler<ProfileFormValues> = async (data) => {
         setIsLoading(true);
         const currentUsername = localStorage.getItem('adminUsername');
-        const teamMembers = getTeamMembers();
+        const teamMembers = await getTeamMembers();
         const userIndex = teamMembers.findIndex(member => member.username === currentUsername);
 
         if (userIndex === -1) {
@@ -109,7 +96,7 @@ export default function ProfileManagementPage() {
         }
         
         teamMembers[userIndex] = updatedUser;
-        saveTeamMembers(teamMembers);
+        await saveTeamMembers(teamMembers);
         
         // Update the username in localStorage for the current session
         localStorage.setItem('adminUsername', updatedUser.username);

@@ -10,9 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Home } from 'lucide-react';
-import { teamMembers as initialTeamMembers, TeamMember } from '@/lib/team-data';
+import { type TeamMember } from '@/lib/team-data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import Image from 'next/image';
+import { getTeamMembers } from '@/lib/services';
+
 
 export default function AdminLoginPage() {
     const router = useRouter();
@@ -21,32 +22,8 @@ export default function AdminLoginPage() {
     const [password, setPassword] = React.useState('');
     const [userType, setUserType] = React.useState<'admin' | 'team-member' | ''>('');
     const [isLoading, setIsLoading] = React.useState(false);
-    const [teamMembers, setTeamMembers] = React.useState<TeamMember[]>([]);
-
-    const getTeamMembers = React.useCallback((): TeamMember[] => {
-        if (typeof window === 'undefined') return [];
-        const storedMembers = localStorage.getItem('teamMembers');
-        if (storedMembers) {
-            try {
-                // Safely parse the stored members
-                return JSON.parse(storedMembers);
-            } catch (e) {
-                // If parsing fails, fall back to initial members
-                console.error("Failed to parse team members from localStorage", e);
-                localStorage.setItem('teamMembers', JSON.stringify(initialTeamMembers));
-                return initialTeamMembers;
-            }
-        }
-        // If nothing in local storage, initialize with default admin
-        localStorage.setItem('teamMembers', JSON.stringify(initialTeamMembers));
-        return initialTeamMembers;
-    }, []);
-
-    React.useEffect(() => {
-        setTeamMembers(getTeamMembers());
-    }, [getTeamMembers]);
     
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
@@ -60,8 +37,8 @@ export default function AdminLoginPage() {
             return;
         }
         
-        setTimeout(() => {
-            const allMembers = getTeamMembers();
+        try {
+            const allMembers = await getTeamMembers();
             const member = allMembers.find(m => m.username === username && m.password === password && m.role === userType);
 
             if (member) {
@@ -81,7 +58,15 @@ export default function AdminLoginPage() {
                 });
                  setIsLoading(false);
             }
-        }, 1000);
+        } catch(error) {
+            console.error("Failed to fetch team members:", error);
+            toast({
+                title: 'Login Error',
+                description: 'Could not verify credentials. Please try again later.',
+                variant: 'destructive',
+            });
+            setIsLoading(false);
+        }
     };
 
     return (
