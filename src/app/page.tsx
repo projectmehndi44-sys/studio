@@ -58,7 +58,7 @@ const backgroundImages = [
 export default function Home() {
   const router = useRouter();
   const [artists, setArtists] = React.useState<Artist[]>([]);
-  const [allPackages, setAllPackages] = React.useState<MasterServicePackage[]>([]);
+  const [masterServices, setMasterServices] = React.useState<MasterServicePackage[]>([]);
   
   const [isArtistRegistrationModalOpen, setIsArtistRegistrationModalOpen] =
     React.useState(false);
@@ -116,7 +116,7 @@ export default function Home() {
     checkLoggedInCustomer();
 
     const unsubscribeArtists = listenToCollection<Artist>('artists', setArtists);
-    const unsubscribePackages = listenToCollection<MasterServicePackage>('masterServices', setAllPackages);
+    const unsubscribePackages = listenToCollection<MasterServicePackage>('masterServices', setMasterServices);
 
     const intervalId = setInterval(() => {
       setCurrentBgIndex((prevIndex) => (prevIndex + 1) % backgroundImages.length);
@@ -179,7 +179,7 @@ export default function Home() {
   }
 
   const CategoryTabContent = ({ serviceType }: { serviceType: 'mehndi' | 'makeup' | 'photography' }) => {
-    const relevantPackages = allPackages.filter(p => p.service === serviceType);
+    const relevantPackages = masterServices.filter(p => p.service === serviceType);
     
     return (
       <div className="space-y-8 mt-8">
