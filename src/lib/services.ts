@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { db } from './firebase';
@@ -16,6 +17,23 @@ async function getDocument<T>(collectionName: string, id: string): Promise<T | n
 // --- Listener Functions for Real-Time Data ---
 
 export const listenToCollection = <T>(collectionName: string, callback: (data: T[]) => void): Unsubscribe => {
+    // Special case for masterServices which is a single doc in the 'config' collection
+    if (collectionName === 'masterServices') {
+        const docRef = doc(db, 'config', 'masterServices');
+        const unsubscribe = onSnapshot(docRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                callback(data.packages || []);
+            } else {
+                callback([]);
+            }
+        }, (error) => {
+            console.error(`Error listening to ${collectionName}: `, error);
+        });
+        return unsubscribe;
+    }
+
+
     const q = query(collection(db, collectionName));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const data: T[] = querySnapshot.docs.map(doc => {

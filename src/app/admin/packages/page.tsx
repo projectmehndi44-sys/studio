@@ -15,7 +15,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Package, PlusCircle, Trash2, Edit, Upload, IndianRupee, Tag, GripVertical } from 'lucide-react';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import type { MasterServicePackage } from '@/types';
-import { initialMasterServices } from '@/lib/packages-data';
 import NextImage from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -23,6 +22,7 @@ import { useAdminAuth } from '@/hooks/use-admin-auth';
 import { Separator } from '@/components/ui/separator';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { listenToCollection } from '@/lib/services';
 
 const categorySchema = z.object({
   name: z.enum(['Normal', 'Premium', 'ULTRA PREMIUM']),
@@ -69,18 +69,14 @@ export default function PackageManagementPage() {
     });
 
     React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
-        if (isAdminAuthenticated !== 'true') {
-            router.push('/admin/login');
-        }
-        
-        const storedPackages = localStorage.getItem('masterServices');
-        setMasterServices(storedPackages ? JSON.parse(storedPackages) : initialMasterServices);
-    }, [router]);
+        const unsubscribe = listenToCollection<MasterServicePackage>('masterServices', (data) => {
+            setMasterServices(data);
+        });
+        return () => unsubscribe();
+    }, []);
     
     const savePackages = async (updatedPackages: MasterServicePackage[]) => {
         setMasterServices(updatedPackages);
-        localStorage.setItem('masterServices', JSON.stringify(updatedPackages));
         // Also save to Firestore
         await setDoc(doc(db, "config", "masterServices"), { packages: updatedPackages });
         window.dispatchEvent(new Event('storage'));
