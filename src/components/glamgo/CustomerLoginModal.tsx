@@ -182,7 +182,7 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
             Enter your phone number to receive a login OTP.
           </DialogDescription>
         </DialogHeader>
-        <div id="recaptcha-container-login"></div>
+        <div id="recaptcha-container-login" />
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField control={form.control} name="phone" render={({ field }) => (

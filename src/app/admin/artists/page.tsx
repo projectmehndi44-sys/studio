@@ -63,7 +63,7 @@ export default function ArtistManagementPage() {
                 ...p,
                 id: p.email,
                 originalId: p.id,
-                date: new Date(p.submissionDate).toLocaleDateString(), 
+                date: p.submissionDate ? new Date(p.submissionDate).toLocaleDateString() : 'N/A', 
                 name: p.fullName,
                 location: `${p.district}, ${p.state}`
              }));

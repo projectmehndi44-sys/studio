@@ -45,7 +45,7 @@ interface CustomerRegistrationModalProps {
 export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRegister }: CustomerRegistrationModalProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [isVerifyingOtp, setIsVerifyingOtp] = React.useState(false);
+  const [isSendingOtp, setIsSendingOtp] = React.useState(false);
   const [isOtpSent, setIsOtpSent] = React.useState(false);
 
 
@@ -78,7 +78,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
         return;
     }
 
-    setIsVerifyingOtp(true);
+    setIsSendingOtp(true);
     try {
       const confirmationResult = await sendOtp(phone);
       window.confirmationResult = confirmationResult;
@@ -95,7 +95,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
            variant: 'destructive',
        });
     } finally {
-        setIsVerifyingOtp(false);
+        setIsSendingOtp(false);
     }
   }
 
@@ -146,7 +146,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
       form.reset();
       setIsSubmitting(false);
       setIsOtpSent(false);
-      setIsVerifyingOtp(false);
+      setIsSendingOtp(false);
     }, 300);
   }
 
@@ -200,7 +200,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
             Join MehendiFy to start booking amazing artists.
           </DialogDescription>
         </DialogHeader>
-         <div id="recaptcha-container-register"></div>
+         <div id="recaptcha-container-register" />
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                  <FormField control={form.control} name="fullName" render={({ field }) => (
@@ -216,8 +216,8 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
                         <FormControl>
                             <Input type="tel" placeholder="9876543210" {...field} disabled={isOtpSent} />
                         </FormControl>
-                        <Button type="button" onClick={handlePhoneVerify} disabled={isVerifyingOtp || isOtpSent}>
-                            {isVerifyingOtp ? 'Sending...' : (isOtpSent ? 'Sent' : 'Verify')}
+                        <Button type="button" onClick={handlePhoneVerify} disabled={isSendingOtp || isOtpSent}>
+                            {isSendingOtp ? 'Sending...' : (isOtpSent ? 'Sent' : 'Verify')}
                         </Button>
                         </div>
                         <FormMessage />
