@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -20,6 +19,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
+import { signOutUser } from '@/lib/firebase';
+import { onAuthStateChanged, getAuth } from 'firebase/auth';
+import { app } from '@/lib/firebase';
 
 // 1. Create a context for the artist portal
 interface ArtistPortalContextType {
@@ -76,6 +78,7 @@ export default function ArtistDashboardLayout({
     const { toast } = useToast();
     const pathname = usePathname();
     const isMobile = useIsMobile();
+    const auth = getAuth(app);
     
     // Centralized state for the portal
     const [artist, setArtist] = React.useState<Artist | null>(null);
@@ -83,46 +86,45 @@ export default function ArtistDashboardLayout({
     const [notifications, setNotifications] = React.useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = React.useState(0);
     const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+    const [isLoading, setIsLoading] = React.useState(true);
 
-    const handleLogout = React.useCallback(() => {
-        localStorage.removeItem('isArtistAuthenticated');
-        localStorage.removeItem('artistId');
+    const handleLogout = React.useCallback(async () => {
+        await signOutUser();
+        toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
         router.push('/');
-    }, [router]);
+    }, [router, toast]);
 
     useInactivityTimeout(handleLogout);
 
-    const fetchData = React.useCallback(async () => {
-        const currentArtistId = localStorage.getItem('artistId');
-        if (!currentArtistId) {
-            router.push('/artist/login');
-            return;
-        }
-        
-        const currentArtist = await getArtist(currentArtistId);
+    const fetchData = React.useCallback(async (uid: string) => {
+        const currentArtist = await getArtist(uid);
         
         if (currentArtist) {
             setArtist(currentArtist);
         } else {
             toast({
                 title: "Login Error",
-                description: "Could not find your artist profile. Please log in again.",
+                description: "Could not find your artist profile.",
                 variant: "destructive"
             });
             handleLogout();
-            return;
         }
-    }, [router, toast, handleLogout]);
+        setIsLoading(false);
+    }, [toast, handleLogout]);
 
     React.useEffect(() => {
-        const isArtistAuthenticated = localStorage.getItem('isArtistAuthenticated');
-        if (isArtistAuthenticated !== 'true') {
-            router.push('/artist/login');
-            return;
-        }
-        
-        fetchData();
-    }, [fetchData, router]);
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is signed in. Fetch their artist profile.
+                fetchData(user.uid);
+            } else {
+                // User is signed out.
+                router.push('/artist/login');
+            }
+        });
+
+        return () => unsubscribe();
+    }, [auth, fetchData, router]);
 
     React.useEffect(() => {
         if (!artist?.id) return;
@@ -134,7 +136,6 @@ export default function ArtistDashboardLayout({
             setArtistBookings(currentArtistBookings);
         });
 
-        // This would be a real-time listener in a full implementation
         const unsubscribeNotifications = listenToCollection<Notification>('notifications', (allNotifications) => {
             const artistNotifications = allNotifications
                 .filter(n => n.artistId === artist.id)
@@ -151,7 +152,7 @@ export default function ArtistDashboardLayout({
     }, [artist?.id]);
 
 
-    if (!artist) {
+    if (isLoading || !artist) {
         return <div className="flex items-center justify-center min-h-screen">Loading Artist Portal...</div>;
     }
 
@@ -173,7 +174,6 @@ export default function ArtistDashboardLayout({
 
     const getPageTitle = () => {
         const allLinks = [...mainNavLinks, ...sidebarNavLinks];
-        // Ensure the most specific path wins, e.g. /artist/dashboard/bookings before /artist/dashboard
         const sortedLinks = allLinks.sort((a, b) => b.href.length - a.href.length);
         const currentLink = sortedLinks.find(l => pathname.startsWith(l.href));
         if (currentLink) return currentLink.label;
@@ -236,7 +236,7 @@ export default function ArtistDashboardLayout({
         unreadCount,
         setArtist,
         setNotifications,
-        fetchData,
+        fetchData: () => fetchData(artist.id),
     };
 
     return (

@@ -1,7 +1,6 @@
 
-
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, User, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, User, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence, Firestore } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 
@@ -69,15 +68,7 @@ export const getDb = async (): Promise<Firestore> => {
 
 
 const signInWithGoogle = (): Promise<User> => {
-  return new Promise((resolve, reject) => {
-    signInWithPopup(auth, googleProvider)
-      .then((result) => {
-        resolve(result.user);
-      })
-      .catch((error) => {
-        reject(error);
-      });
-  });
+  return signInWithPopup(auth, googleProvider).then(result => result.user);
 };
 
 const setupRecaptcha = (containerId: string) => {
@@ -87,9 +78,7 @@ const setupRecaptcha = (containerId: string) => {
         }
         window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
             'size': 'invisible',
-            'callback': (response: any) => {
-                // reCAPTCHA solved, allow signInWithPhoneNumber.
-            }
+            'callback': (response: any) => {},
         });
     }
 }
@@ -131,8 +120,17 @@ const onForegroundMessage = () => {
     });
 }
 
+const createUser = async (email: string, password: string):Promise<User> => {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
+}
 
-export { app, auth, signInWithGoogle, getFCMToken, onForegroundMessage, setupRecaptcha, sendOtp };
+const signOutUser = () => {
+    return signOut(auth);
+}
+
+
+export { app, auth, signInWithGoogle, getFCMToken, onForegroundMessage, setupRecaptcha, sendOtp, createUser, signOutUser };
 declare global {
     interface Window {
         recaptchaVerifier: RecaptchaVerifier;

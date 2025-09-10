@@ -4,15 +4,23 @@
     "databases": {
       "{database}": {
         "documents": {
-          "config": {
-            "teamMembers": {
-              ".read": "true",
-              ".write": "false"
-            }
+          // Default-deny all access. Rules below will grant specific access.
+          "match /{document=**}": {
+            "allow read, write": "if false;"
           },
-          "{document=**}": {
-            ".read": "request.auth != null",
-            ".write": "request.auth != null"
+
+          // PUBLIC: Allow anyone to read team members for login verification,
+          // master services for display, and available locations for registration forms.
+          // Write access is denied to prevent public modification.
+          "match /config/{docId}": {
+             "allow read": "if docId in ['teamMembers', 'masterServices', 'availableLocations', 'companyProfile', 'financialSettings'];",
+             "allow write": "if false;"
+          },
+
+          // AUTHENTICATED USERS:
+          // This rule block applies only if a user is successfully logged in (request.auth != null).
+          "match /{path=**}": {
+            "allow read, write": "if request.auth != null;"
           }
         }
       }

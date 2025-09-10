@@ -1,5 +1,4 @@
 
-
 import { getDb } from './firebase';
 import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, query, where, deleteDoc, Timestamp, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import type { Artist, Booking, Customer, MasterServicePackage, PayoutHistory, TeamMember, Notification, Promotion } from '@/types';
@@ -23,26 +22,29 @@ async function getConfigDocument<T>(docId: string, defaultValue: T): Promise<T> 
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
         const data = docSnap.data();
-        // The nested key is the same as the docId, but plural
-        const nestedKey = `${docId}s`;
-        if (data && data[nestedKey]) {
-            return data[nestedKey] as T;
+        if (data && data.hasOwnProperty('members')) {
+            return (data as any).members as T;
         }
-        // Handle cases like masterServices where the key is different ('packages')
-        if (data && data.packages) {
-            return data.packages as T;
+        if (data && data.hasOwnProperty('packages')) {
+            return (data as any).packages as T;
         }
-        if (data && data.members) {
-            return data.members as T;
+         if (data && data.hasOwnProperty('promos')) {
+            return (data as any).promos as T;
         }
-         if (data && data.promos) {
-            return data.promos as T;
+         if (data && data.hasOwnProperty('locations')) {
+            return (data as any).locations as T;
         }
-        // Fallback for flat config docs like companyProfile
+        // Fallback for flat config docs
         return docSnap.data() as T;
     }
-    // If it doesn't exist, create it with the default value
-    await setDoc(docRef, defaultValue);
+    // If it doesn't exist, create it with a structured default value
+    const dataToSet = { [`${docId.slice(0, -1)}s`]: defaultValue };
+    if (docId === 'teamMembers') await setDoc(docRef, { members: defaultValue });
+    else if (docId === 'masterServices') await setDoc(docRef, { packages: defaultValue });
+    else if (docId === 'promotions') await setDoc(docRef, { promos: defaultValue });
+    else if (docId === 'availableLocations') await setDoc(docRef, { locations: defaultValue });
+    else await setDoc(docRef, defaultValue);
+    
     return defaultValue as T;
 }
 
@@ -50,7 +52,14 @@ async function getConfigDocument<T>(docId: string, defaultValue: T): Promise<T> 
 async function setConfigDocument(docId: string, data: any): Promise<void> {
     const db = await getDb();
     const docRef = doc(db, 'config', docId);
-    await setDoc(docRef, data);
+    
+    let dataToSet = data;
+    if(docId === 'teamMembers') dataToSet = { members: data };
+    else if (docId === 'masterServices') dataToSet = { packages: data };
+    else if (docId === 'promotions') dataToSet = { promos: data };
+    else if (docId === 'availableLocations') dataToSet = { locations: data };
+    
+    await setDoc(docRef, dataToSet);
 }
 
 
@@ -67,6 +76,8 @@ export const listenToCollection = <T>(collectionName: string, callback: (data: T
                 Object.keys(docData).forEach(key => {
                     if (docData[key] instanceof Timestamp) {
                         docData[key] = docData[key].toDate();
+                    } else if (Array.isArray(docData[key])) {
+                        docData[key] = docData[key].map(item => item instanceof Timestamp ? item.toDate() : item);
                     }
                 });
                 return { id: doc.id, ...docData } as T;
@@ -95,10 +106,8 @@ export const getArtist = async (id: string): Promise<Artist | null> => {
 };
 export const createArtist = async (id: string, data: Omit<Artist, 'id'>): Promise<string> => {
     const db = await getDb();
-    // Use email as the document ID for artists created via admin onboarding
     const artistRef = doc(db, "artists", id);
     await setDoc(artistRef, data);
-    window.dispatchEvent(new Event('storage')); // Trigger UI updates
     return id;
 };
 export const updateArtist = async (id: string, data: Partial<Artist>): Promise<void> => {
@@ -148,9 +157,9 @@ export const getCustomerByEmail = async (email: string): Promise<Customer | null
     const doc = querySnapshot.docs[0];
     return { id: doc.id, ...doc.data() } as Customer;
 };
-export const createCustomer = async (data: Omit<Customer, 'id'> & {id?: string}): Promise<string> => {
+export const createCustomer = async (data: Omit<Customer, 'id'> & {id: string}): Promise<string> => {
     const db = await getDb();
-    const customerId = data.id || data.phone; // Use UID from Google or phone number
+    const customerId = data.id; // Use UID from Google or phone auth
     const customerRef = doc(db, "customers", customerId);
     const { id, ...dataToSave } = data;
     await setDoc(customerRef, dataToSave, { merge: true });
@@ -159,12 +168,11 @@ export const createCustomer = async (data: Omit<Customer, 'id'> & {id?: string})
 
 // Config
 export const getAvailableLocations = async (): Promise<Record<string, string[]>> => {
-    const config = await getConfigDocument<{ locations: Record<string, string[]> }>('availableLocations', { locations: {} });
-    return config.locations;
+    const config = await getConfigDocument<Record<string, string[]>>('availableLocations', {});
+    return config;
 };
 export const saveAvailableLocations = async (locations: Record<string, string[]>): Promise<void> => {
-    const db = await getDb();
-    await setDoc(doc(db, "config", "availableLocations"), { locations });
+    await setConfigDocument('availableLocations', locations);
 };
 
 export const getCompanyProfile = async () => {
@@ -189,16 +197,16 @@ export const getFinancialSettings = async () => {
 export const saveFinancialSettings = (data: any) => setConfigDocument('financialSettings', data);
 
 export const getTeamMembers = async (): Promise<TeamMember[]> => {
-    const data = await getConfigDocument<{ members: TeamMember[] }>('teamMembers', { members: initialTeamMembers });
-    return data.members || initialTeamMembers;
+    const members = await getConfigDocument<TeamMember[]>('teamMembers', initialTeamMembers);
+    return members;
 };
-export const saveTeamMembers = (members: TeamMember[]) => setConfigDocument('teamMembers', { members });
+export const saveTeamMembers = (members: TeamMember[]) => setConfigDocument('teamMembers', members);
 
 export const getPromotions = async (): Promise<Promotion[]> => {
-    const data = await getConfigDocument<{ promos: Promotion[] }>('promotions', { promos: [] });
-    return data.promos || [];
+    const promos = await getConfigDocument<Promotion[]>('promotions', []);
+    return promos;
 };
-export const savePromotions = (promos: Promotion[]) => setConfigDocument('promotions', { promos });
+export const savePromotions = (promos: Promotion[]) => setConfigDocument('promotions', promos);
 
 
 // Pending Artists
@@ -241,11 +249,6 @@ export const getBookings = async (): Promise<Booking[]> => getCollection<Booking
 export const getCustomers = async (): Promise<Customer[]> => getCollection<Customer>('customers');
 
 export const getMasterServices = async (): Promise<MasterServicePackage[]> => {
-    const db = await getDb();
-    const docSnap = await getDoc(doc(db, "config", "masterServices"));
-    if (docSnap.exists()) {
-        const data = docSnap.data();
-        return data.packages || [];
-    }
-    return [];
+    const data = await getConfigDocument<MasterServicePackage[]>('masterServices', []);
+    return data;
 };

@@ -1,5 +1,4 @@
 
-
 import { Timestamp } from 'firebase/firestore';
 
 export type PackageCategory = {
@@ -27,11 +26,10 @@ export type ArtistServiceOffering = {
 };
 
 export type Artist = {
-  id: string;
+  id: string; // Firebase Auth UID
   name: string;
   email: string;
   phone: string;
-  password?: string;
   fcmToken?: string;
   profilePicture: string;
   workImages: string[];
@@ -59,7 +57,7 @@ export type Artist = {
 };
 
 export type Customer = {
-  id: string; // Can be email or a unique ID from Firebase/phone auth
+  id: string; // Firebase Auth UID
   name: string;
   phone: string;
   email?: string;
@@ -187,11 +185,10 @@ export type Permissions = {
 };
 
 export type TeamMember = {
-    id: string;
+    id: string; // Firebase Auth UID
     name: string;
     username: string;
-    password?: string;
-    role: 'admin' | 'team-member';
+    role: 'Super Admin' | 'team-member';
     permissions: Permissions;
     fcmToken?: string;
 };

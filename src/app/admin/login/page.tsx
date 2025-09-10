@@ -12,7 +12,8 @@ import { Home } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getTeamMembers } from '@/lib/services';
 import type { TeamMember } from '@/types';
-
+import { signInWithEmailAndPassword, getAuth, onAuthStateChanged, User } from 'firebase/auth';
+import { app } from '@/lib/firebase';
 
 export default function AdminLoginPage() {
     const router = useRouter();
@@ -21,61 +22,65 @@ export default function AdminLoginPage() {
     const [password, setPassword] = React.useState('');
     const [userType, setUserType] = React.useState<'admin' | 'team-member' | ''>('');
     const [isLoading, setIsLoading] = React.useState(false);
-    
+    const auth = getAuth(app);
+
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
         if (!userType) {
-            toast({
-                title: 'Login Failed',
-                description: 'Please select a user type.',
-                variant: 'destructive',
-            });
+            toast({ title: 'Login Failed', description: 'Please select a user type.', variant: 'destructive' });
             setIsLoading(false);
             return;
         }
-        
-        try {
-            const teamMembers = await getTeamMembers();
-            let member: TeamMember | undefined;
-            
-            if (userType === 'admin') {
-                member = teamMembers.find(m => m.role === 'Super Admin' && m.username === username);
-            } else { // team-member
-                member = teamMembers.find(m => m.role === 'team-member' && m.username === username);
-            }
 
-            if (member && member.password === password) {
-                 toast({
-                    title: 'Login Successful',
-                    description: `Welcome, ${member.name}! Redirecting...`,
-                });
+        let emailToLogin: string;
+        if (userType === 'admin') {
+            emailToLogin = 'admin@mehndify.com';
+        } else {
+            // Team members log in with username@mehndify.team to avoid email conflicts
+            emailToLogin = `${username.trim()}@mehndify.team`;
+        }
+
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, emailToLogin, password);
+            const user = userCredential.user;
+
+            if (user) {
+                // Now that we are authenticated, we can fetch the user's role from Firestore
+                const teamMembers = await getTeamMembers();
+                const memberProfile = teamMembers.find(m => m.id === user.uid);
                 
-                // Store session info
-                localStorage.setItem('isAdminAuthenticated', 'true');
-                localStorage.setItem('adminRole', member.role);
-                localStorage.setItem('adminUsername', member.username);
-                localStorage.setItem('adminUserId', member.id);
+                if (!memberProfile) {
+                    throw new Error("User profile not found in database.");
+                }
+
+                // Verify that the userType selected matches the role in the database
+                if ((userType === 'admin' && memberProfile.role !== 'Super Admin') || (userType === 'team-member' && memberProfile.role !== 'team-member')) {
+                     throw new Error("Role mismatch. Please select the correct user type.");
+                }
+
+                toast({
+                    title: 'Login Successful',
+                    description: `Welcome, ${memberProfile.name}! Redirecting...`,
+                });
+
+                // Store session info using the authenticated user's UID
+                localStorage.setItem('adminAuthenticated', 'true');
+                localStorage.setItem('adminUserId', user.uid);
                 
                 router.push('/admin');
-
-            } else {
-                 toast({
-                    title: 'Authentication Failed',
-                    description: 'Invalid username or password. Please try again.',
-                    variant: 'destructive',
-                });
             }
-
-        } catch(error: any) {
+        } catch (error: any) {
             console.error("Admin Login Error:", error);
-            let description = 'Could not verify credentials. Please try again.';
-            if (error.code === 'permission-denied') {
-                description = 'Permission denied. Please check your Firestore security rules.';
+            let description = 'Invalid username or password. Please try again.';
+            if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+                description = 'Invalid credentials. Please check your username and password.';
+            } else if (error.message.includes('User profile not found') || error.message.includes('Role mismatch')) {
+                description = error.message;
             }
             toast({
-                title: 'Login Error',
+                title: 'Authentication Failed',
                 description: description,
                 variant: 'destructive',
             });
@@ -83,6 +88,17 @@ export default function AdminLoginPage() {
             setIsLoading(false);
         }
     };
+    
+    // Redirect if already logged in
+    React.useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user && localStorage.getItem('adminAuthenticated') === 'true') {
+                 router.push('/admin');
+            }
+        });
+        return () => unsubscribe();
+    }, [auth, router]);
+
 
     return (
         <div className="w-full flex items-center justify-center min-h-screen bg-muted/30">

@@ -4,6 +4,9 @@
 import * as React from 'react';
 import type { TeamMember, Permissions } from '@/types';
 import { getTeamMembers } from '@/lib/services';
+import { onAuthStateChanged, getAuth } from 'firebase/auth';
+import { app } from '@/lib/firebase';
+import { useRouter } from 'next/navigation';
 
 interface AuthState {
     isLoading: boolean;
@@ -15,47 +18,49 @@ const authContext = React.createContext<AuthState & { hasPermission: (module: ke
 
 
 export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
+    const router = useRouter();
     const [authState, setAuthState] = React.useState<AuthState>({
         isLoading: true,
         isAuthenticated: false,
         user: null,
     });
-
+    
     React.useEffect(() => {
-        const checkUser = async () => {
-            const adminIsAuth = localStorage.getItem('isAdminAuthenticated') === 'true';
-            const username = localStorage.getItem('adminUsername');
+        const auth = getAuth(app);
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // User is signed in via Firebase Auth.
+                // Now, fetch their profile from our Firestore team list to get roles/permissions.
+                try {
+                    const teamMembers = await getTeamMembers();
+                    const memberProfile = teamMembers.find(m => m.id === user.uid);
 
-            if (adminIsAuth && username) {
-                 try {
-                    const teamMembers: TeamMember[] = await getTeamMembers();
-                    const currentUser = teamMembers.find((m: TeamMember) => m.username === username);
-
-                    if (currentUser) {
-                        setAuthState({ isLoading: false, isAuthenticated: true, user: currentUser });
+                    if (memberProfile) {
+                        // Successfully found the user's profile. They are a valid admin/team member.
+                        localStorage.setItem('adminAuthenticated', 'true');
+                        setAuthState({ isLoading: false, isAuthenticated: true, user: memberProfile });
                     } else {
-                        // Mismatch, clear session
-                        localStorage.clear();
+                        // This person is logged into Firebase, but is NOT in our team list.
+                        // This could be a customer or artist. Log them out of the admin context.
+                        await auth.signOut();
+                        localStorage.removeItem('adminAuthenticated');
                         setAuthState({ isLoading: false, isAuthenticated: false, user: null });
+                        router.push('/admin/login');
                     }
                 } catch (error) {
-                    console.error("Failed to load team members for auth check", error);
+                    console.error("Failed to fetch team members for auth check", error);
                     setAuthState({ isLoading: false, isAuthenticated: false, user: null });
                 }
             } else {
+                // No user is signed in.
+                localStorage.removeItem('adminAuthenticated');
                 setAuthState({ isLoading: false, isAuthenticated: false, user: null });
             }
-        };
+        });
 
-        checkUser();
-        
-        // Also listen for storage events to sync across tabs
-        const handleStorageChange = () => checkUser();
-        window.addEventListener('storage', handleStorageChange);
-        
-        return () => window.removeEventListener('storage', handleStorageChange);
-
-    }, []);
+        // Cleanup subscription on unmount
+        return () => unsubscribe();
+    }, [router]);
 
     const hasPermission = React.useCallback((module: keyof Permissions, level: 'view' | 'edit'): boolean => {
         const { user } = authState;

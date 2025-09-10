@@ -1,10 +1,9 @@
 
-
 'use client';
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, SubmitHandler, Controller } from 'react-hook-form';
+import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,12 +15,13 @@ import { PlusCircle, Trash2, MoreHorizontal, UserCog } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import type { TeamMember, Permissions } from '@/lib/team-data';
+import type { TeamMember, Permissions } from '@/types';
 import { PERMISSION_MODULES } from '@/lib/team-data';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { getTeamMembers, saveTeamMembers } from '@/lib/services';
+import { createUser } from '@/lib/firebase';
 
 
 const memberSchema = z.object({
@@ -95,22 +95,32 @@ export default function TeamManagementPage() {
             );
             toast({ title: 'Team Member Updated', description: `${data.name}'s permissions have been updated.` });
         } else {
-             const newMember: TeamMember = {
-                id: `user_${Date.now()}`,
-                ...data,
-            };
-            updatedMembers = [...currentMembers, newMember];
-            toast({ title: 'Team Member Added', description: `${data.name} has been added to the team.` });
+            try {
+                // Team member emails are suffixed with .team to avoid conflicts
+                const authUser = await createUser(`${data.username}@mehndify.team`, data.password);
+                const newMember: TeamMember = {
+                    id: authUser.uid,
+                    name: data.name,
+                    username: data.username,
+                    role: data.role,
+                    permissions: data.permissions
+                };
+                updatedMembers = [...currentMembers, newMember];
+                toast({ title: 'Team Member Added', description: `${data.name} has been added to the team.` });
+            } catch (error: any) {
+                 toast({ title: 'Creation Failed', description: error.message, variant: 'destructive'});
+                 return;
+            }
         }
         
         await saveTeamMembers(updatedMembers);
         setTeamMembers(updatedMembers);
-        form.reset();
+        form.reset({ name: '', username: '', password: '', role: 'team-member', permissions: form.getValues('permissions')});
         setEditingMember(null);
     };
 
     const handleDelete = async (memberId: string) => {
-        if (memberId === 'user_001') {
+        if (memberId === 'user_001_placeholder') { // Replace with actual logic if needed
             toast({
                 title: 'Cannot Delete Admin',
                 description: 'The default admin account cannot be deleted.',
@@ -118,6 +128,8 @@ export default function TeamManagementPage() {
             });
             return;
         }
+        // NOTE: This does not delete the user from Firebase Auth, which should be done via a server-side function in a real app
+        // for security reasons. We will just remove them from the list here.
         const currentMembers = await getTeamMembers();
         const updatedMembers = currentMembers.filter(member => member.id !== memberId);
         await saveTeamMembers(updatedMembers);
@@ -125,7 +137,7 @@ export default function TeamManagementPage() {
         
         toast({
             title: 'Member Removed',
-            description: 'The team member has been removed.',
+            description: 'The team member has been removed from the list. Their auth account still exists.',
             variant: 'destructive',
         });
     };
@@ -133,9 +145,10 @@ export default function TeamManagementPage() {
     const handleEdit = (member: TeamMember) => {
         setEditingMember(member);
         form.reset({
+            id: member.id,
             name: member.name,
             username: member.username,
-            password: member.password || '********', // Don't show real password
+            password: '●●●●●●●●', // Placeholder, not real password
             role: 'team-member',
             permissions: member.permissions
         });
@@ -178,7 +191,7 @@ export default function TeamManagementPage() {
                                             <FormItem><FormLabel>Username</FormLabel><FormControl><Input placeholder="e.g., jane_d" {...field} disabled={!!editingMember} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                         <FormField control={form.control} name="password" render={({ field }) => (
-                                            <FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" {...field} disabled={!!editingMember} /></FormControl>{editingMember && <FormDescription>Password cannot be changed.</FormDescription>}<FormMessage /></FormItem>
+                                            <FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" {...field} disabled={!!editingMember} /></FormControl>{editingMember && <FormDescription>Password cannot be changed. Reset if needed.</FormDescription>}<FormMessage /></FormItem>
                                         )} />
                                     </div>
                                     
