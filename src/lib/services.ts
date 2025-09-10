@@ -142,12 +142,6 @@ export const deletePendingArtist = async (id: string): Promise<void> => {
     const artistRef = doc(db, "pendingArtists", id);
     await deleteDoc(artistRef);
 };
-export const createArtistFromPending = async (data: Artist): Promise<string> => {
-    const artistRef = doc(db, "artists", data.id);
-    await setDoc(artistRef, data);
-    window.dispatchEvent(new Event('storage'));
-    return data.id;
-};
 
 // Generic function to get a collection
 export async function getCollection<T>(collectionName: string): Promise<T[]> {

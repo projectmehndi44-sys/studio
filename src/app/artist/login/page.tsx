@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Home } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import type { Artist } from '@/types';
-import { listenToCollection, updateArtist } from '@/lib/services';
+import { getArtists, updateArtist } from '@/lib/services';
 
 export default function ArtistLoginPage() {
     const router = useRouter();
@@ -33,8 +33,8 @@ export default function ArtistLoginPage() {
     const [verifiedArtist, setVerifiedArtist] = React.useState<Artist | null>(null);
 
     React.useEffect(() => {
-        const unsubscribe = listenToCollection<Artist>('artists', setApprovedArtists);
-        return () => unsubscribe();
+        // We use getArtists here because login is a one-time action. A listener is not necessary.
+        getArtists().then(setApprovedArtists);
     }, []);
 
     const handleLogin = (e: React.FormEvent) => {

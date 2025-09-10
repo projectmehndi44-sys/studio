@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from '@/hooks/use-toast';
 import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Pencil, Trash2, UserPlus, ShieldOff } from 'lucide-react';
 import type { Artist } from '@/types';
-import { listenToCollection, createArtist, createArtistFromPending, deletePendingArtist, deleteArtist, updateArtist } from '@/lib/services';
+import { listenToCollection, createArtist, deletePendingArtist, deleteArtist, updateArtist } from '@/lib/services';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { exportToExcel } from '@/lib/export';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -81,7 +81,7 @@ export default function ArtistManagementPage() {
         if (!artistToApprove) return;
         
         const newArtist: Artist = {
-            id: artistToApprove.email,
+            id: artistToApprove.email, // The document ID will be the email
             name: artistToApprove.fullName,
             email: artistToApprove.email,
             phone: artistToApprove.phone,
@@ -100,7 +100,8 @@ export default function ArtistManagementPage() {
             status: 'active',
         };
         
-        await createArtistFromPending(newArtist);
+        // The createArtist function will now use the email as the ID
+        await createArtist(newArtist.email, newArtist);
         await deletePendingArtist(artistToApprove.originalId);
         
         toast({
