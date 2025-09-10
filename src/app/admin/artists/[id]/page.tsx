@@ -26,6 +26,14 @@ export default function ArtistDetailPage() {
 
     const [artist, setArtist] = React.useState<Artist | null>(null);
     const [bookings, setBookings] = React.useState<Booking[]>([]);
+    const [platformFeePercentage, setPlatformFeePercentage] = React.useState(0.1);
+
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const fee = localStorage.getItem('platformFeePercentage');
+            setPlatformFeePercentage(fee ? parseFloat(fee) / 100 : 0.1);
+        }
+    }, []);
     
     React.useEffect(() => {
         if (!artistId) return;
@@ -96,11 +104,6 @@ export default function ArtistDetailPage() {
     const completedBookings = bookings.filter(b => b.status === 'Completed');
     const totalRevenue = completedBookings.reduce((acc, booking) => acc + booking.amount, 0);
     
-    let platformFeePercentage = 0.1; // default 10%
-    if(typeof window !== 'undefined'){
-       platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10') / 100;
-    }
-
     const platformFee = totalRevenue * platformFeePercentage;
     const netPayout = totalRevenue - platformFee;
     const bookedDates = bookings.flatMap(b => b.serviceDates || []);
