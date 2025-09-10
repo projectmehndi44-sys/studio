@@ -148,3 +148,21 @@ export const createArtistFromPending = async (data: Artist): Promise<string> => 
     window.dispatchEvent(new Event('storage'));
     return data.id;
 };
+
+// Generic function to get a collection
+export async function getCollection<T>(collectionName: string): Promise<T[]> {
+  const querySnapshot = await getDocs(collection(db, collectionName));
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
+}
+
+export const getArtists = async (): Promise<Artist[]> => getCollection<Artist>('artists');
+export const getBookings = async (): Promise<Booking[]> => getCollection<Booking>('bookings');
+export const getCustomers = async (): Promise<Customer[]> => getCollection<Customer>('customers');
+
+export const getMasterServices = async (): Promise<MasterServicePackage[]> => {
+    const docSnap = await getDoc(doc(db, "config", "masterServices"));
+    if (docSnap.exists()) {
+        return docSnap.data().packages || [];
+    }
+    return [];
+};
