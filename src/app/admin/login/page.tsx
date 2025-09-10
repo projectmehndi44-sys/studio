@@ -12,8 +12,6 @@ import { Home } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getTeamMembers } from '@/lib/services';
 import type { TeamMember } from '@/types';
-import { signInAsAdmin, auth } from '@/lib/firebase';
-import { signOut } from 'firebase/auth';
 
 
 export default function AdminLoginPage() {
@@ -39,60 +37,33 @@ export default function AdminLoginPage() {
         }
         
         try {
-            // First, sign out any existing Firebase user to ensure a clean login.
-            if (auth.currentUser) {
-                await signOut(auth);
-            }
-
             const teamMembers = await getTeamMembers();
             let member: TeamMember | undefined;
-            let authEmail: string = '';
             
             if (userType === 'admin') {
-                // Find the Super Admin to get their username for localStorage
-                member = teamMembers.find(m => m.role === 'Super Admin');
-                if (member) {
-                    // The Super Admin's auth email is hardcoded for security
-                    authEmail = 'admin@mehndify.com';
-                }
+                member = teamMembers.find(m => m.role === 'Super Admin' && m.username === username);
             } else { // team-member
-                member = teamMembers.find(m => m.username === username);
-                if (member) {
-                    authEmail = `${member.username}@mehndify.com`;
-                }
+                member = teamMembers.find(m => m.role === 'team-member' && m.username === username);
             }
 
-            if (!member || !authEmail) {
-                toast({
-                    title: 'Login Failed',
-                    description: 'Could not find a user with the provided details.',
-                    variant: 'destructive',
-                });
-                setIsLoading(false);
-                return;
-            }
-
-            // This will throw an error if Firebase Auth fails, which is caught below.
-            const userCredential = await signInAsAdmin(authEmail, password);
-
-            if (userCredential) {
+            if (member && member.password === password) {
                  toast({
                     title: 'Login Successful',
                     description: `Welcome, ${member.name}! Redirecting...`,
                 });
-                // THIS IS THE CRITICAL STEP: Store the role and username for the auth hook to use.
+                
+                // Store session info
                 localStorage.setItem('isAdminAuthenticated', 'true');
                 localStorage.setItem('adminRole', member.role);
                 localStorage.setItem('adminUsername', member.username);
                 localStorage.setItem('adminUserId', member.id);
                 
-                // Use a full page reload to ensure all auth contexts and states are reset correctly.
-                window.location.href = '/admin';
+                router.push('/admin');
+
             } else {
-                 // This case should not be reached if signInAsAdmin throws on failure.
                  toast({
                     title: 'Authentication Failed',
-                    description: 'Invalid credentials. Please try again.',
+                    description: 'Invalid username or password. Please try again.',
                     variant: 'destructive',
                 });
             }
@@ -100,8 +71,8 @@ export default function AdminLoginPage() {
         } catch(error: any) {
             console.error("Admin Login Error:", error);
             let description = 'Could not verify credentials. Please try again.';
-            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-                description = 'Invalid username or password. Please check and try again.';
+            if (error.code === 'permission-denied') {
+                description = 'Permission denied. Please check your Firestore security rules.';
             }
             toast({
                 title: 'Login Error',

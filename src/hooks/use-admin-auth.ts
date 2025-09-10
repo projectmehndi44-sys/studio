@@ -4,13 +4,11 @@
 import * as React from 'react';
 import type { TeamMember, Permissions } from '@/types';
 import { getTeamMembers } from '@/lib/services';
-import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
 
 interface AuthState {
     isLoading: boolean;
     isAuthenticated: boolean;
     user: TeamMember | null;
-    firebaseUser: User | null;
 }
 
 const authContext = React.createContext<AuthState & { hasPermission: (module: keyof Permissions, level: 'view' | 'edit') => boolean; } | null>(null);
@@ -21,46 +19,42 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: true,
         isAuthenticated: false,
         user: null,
-        firebaseUser: null,
     });
 
     React.useEffect(() => {
-        const auth = getAuth();
-        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-            if (firebaseUser) {
-                 const username = localStorage.getItem('adminUsername');
-                 if (username) {
-                    try {
-                        const teamMembers: TeamMember[] = await getTeamMembers();
-                        const currentUser = teamMembers.find((m: TeamMember) => m.username === username);
+        const checkUser = async () => {
+            const adminIsAuth = localStorage.getItem('isAdminAuthenticated') === 'true';
+            const username = localStorage.getItem('adminUsername');
 
-                        if (currentUser) {
-                            localStorage.setItem('isAdminAuthenticated', 'true');
-                            setAuthState({ isLoading: false, isAuthenticated: true, user: currentUser, firebaseUser });
-                        } else {
-                            // If user is in Firebase Auth but not in our team list, something is wrong. Log them out.
-                            await signOut(auth);
-                        }
-                    } catch (error) {
-                        console.error("Failed to load team members for auth check", error);
-                        await signOut(auth); // Logout on error
+            if (adminIsAuth && username) {
+                 try {
+                    const teamMembers: TeamMember[] = await getTeamMembers();
+                    const currentUser = teamMembers.find((m: TeamMember) => m.username === username);
+
+                    if (currentUser) {
+                        setAuthState({ isLoading: false, isAuthenticated: true, user: currentUser });
+                    } else {
+                        // Mismatch, clear session
+                        localStorage.clear();
+                        setAuthState({ isLoading: false, isAuthenticated: false, user: null });
                     }
-                 } else {
-                    // Logged into Firebase, but no session data in localStorage. Clean up.
-                     await signOut(auth);
-                 }
+                } catch (error) {
+                    console.error("Failed to load team members for auth check", error);
+                    setAuthState({ isLoading: false, isAuthenticated: false, user: null });
+                }
             } else {
-                // Not logged into Firebase, ensure all local session data is cleared.
-                localStorage.removeItem('isAdminAuthenticated');
-                localStorage.removeItem('adminRole');
-                localStorage.removeItem('adminUsername');
-                localStorage.removeItem('adminUserId');
-                setAuthState({ isLoading: false, isAuthenticated: false, user: null, firebaseUser: null });
+                setAuthState({ isLoading: false, isAuthenticated: false, user: null });
             }
-        });
+        };
 
-        // Cleanup subscription on unmount
-        return () => unsubscribe();
+        checkUser();
+        
+        // Also listen for storage events to sync across tabs
+        const handleStorageChange = () => checkUser();
+        window.addEventListener('storage', handleStorageChange);
+        
+        return () => window.removeEventListener('storage', handleStorageChange);
+
     }, []);
 
     const hasPermission = React.useCallback((module: keyof Permissions, level: 'view' | 'edit'): boolean => {

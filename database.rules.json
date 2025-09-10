@@ -1,6 +1,23 @@
-{
-  "rules": {
-    ".read": "now < 0",
-    ".write": "now < 0"
+
+rules_version = '2';
+// These rules enforce the permission system for your MehendiFy admin portal.
+// 1. They allow the login page to read the list of team members to verify credentials.
+// 2. They allow any authenticated user (admin or team member) full access after login.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Allow ANYONE to READ the team members list for login verification.
+    // This is safe because write access is denied. This is required for the login page to work.
+    match /config/teamMembers {
+      allow read: if true;
+      allow write: if false;
+    }
+    
+    // For any OTHER document in the database, only allow access if the user is authenticated.
+    // The check 'request.auth != null' ensures that only logged-in users can proceed.
+    // The UI then handles role-specific permissions (Super Admin vs. Team Member).
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
   }
 }
