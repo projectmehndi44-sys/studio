@@ -1,20 +1,24 @@
 
 {
   "rules": {
-    "databases": {
-      "{database}": {
-        "documents": {
-          "artists/{artistId}": {
-            "allow read": "if true;",
-            "allow write": "if request.auth != null;"
-          },
-          "config/{docId}": {
-            "allow read": "if true;",
-            "allow write": "if request.auth != null;"
-          },
-          "{document=**}": {
-            "allow read, write": "if request.auth != null;"
-          }
+    "service cloud.firestore": {
+      "match /databases/{database}/documents": {
+        // Allow public read for artists list on the homepage
+        "match /artists/{artistId}": {
+          "allow get, list": "if true;",
+          "allow write": "if request.auth != null;"
+        },
+        
+        // Allow authenticated users to read configuration (like team members, service packages)
+        "match /config/{docId=**}": {
+           "allow get, list": "if request.auth != null;",
+           "allow write": "if request.auth != null;"
+        },
+
+        // Allow any authenticated user to create bookings, see their own customer profile, etc.
+        // More specific rules can be added later if needed.
+        "match /{document=**}": {
+          "allow read, write": "if request.auth != null;"
         }
       }
     }
