@@ -31,28 +31,24 @@ export default function ArtistLoginPage() {
     // One-time setup to ensure the admin user exists in Firebase Auth
     React.useEffect(() => {
         const setupAdminUser = async () => {
-            try {
-                // Try to sign in silently to check if user exists. This will fail if the user doesn't exist.
-                // We use a dummy password to avoid exposing the real one here.
-                await signInWithEmailAndPassword(auth, 'admin@mehndify.com', 'check-if-exists-fails').catch(async (error) => {
-                     if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
-                        // User does not exist, so create them.
-                        console.log("Super Admin does not exist in Firebase Auth. Creating...");
-                        const superAdminSeed = initialTeamMembers.find(m => m.role === 'Super Admin');
-                        if (superAdminSeed && superAdminSeed.password) {
-                            await createUser('admin@mehndify.com', superAdminSeed.password);
-                            console.log("Super Admin user created in Firebase Authentication.");
-                        }
+            const superAdminSeed = initialTeamMembers.find(m => m.role === 'Super Admin');
+            if (superAdminSeed && superAdminSeed.password) {
+                try {
+                    await createUser('admin@mehndify.com', superAdminSeed.password);
+                    console.log("Super Admin user created successfully in Firebase Authentication.");
+                } catch (error: any) {
+                    if (error.code === 'auth/email-already-in-use') {
+                        console.log("Super Admin user already exists. Setup is correct.");
+                    } else {
+                        // For any other errors, log them to diagnose potential issues.
+                        console.error("Error during admin user setup:", error);
                     }
-                });
-            } catch (error) {
-                // This catch block is for unexpected errors during the setup process.
-                console.error("Error during admin user setup check:", error);
+                }
             }
         };
 
         setupAdminUser();
-    }, [auth]);
+    }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
