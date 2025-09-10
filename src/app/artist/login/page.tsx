@@ -219,69 +219,57 @@ export default function ArtistLoginPage() {
 
     return (
         <>
-        <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2">
-             <div className="flex items-center justify-center py-12">
-                <div className="mx-auto grid w-[350px] gap-6">
-                    <div className="grid gap-2 text-center">
-                        <h1 className="text-3xl font-bold text-primary">Artist Portal Login</h1>
-                        <p className="text-balance text-muted-foreground">
-                            Enter your credentials to access your dashboard
-                        </p>
+        <div className="w-full flex items-center justify-center min-h-screen bg-muted/30">
+            <div className="mx-auto grid w-[350px] gap-6">
+                <div className="grid gap-2 text-center">
+                    <h1 className="text-3xl font-bold text-primary">Artist Portal Login</h1>
+                    <p className="text-balance text-muted-foreground">
+                        Enter your credentials to access your dashboard
+                    </p>
+                </div>
+                 <form onSubmit={handleLogin} className="grid gap-4">
+                    <div className="grid gap-2">
+                        <Label htmlFor="email">Email (Username)</Label>
+                        <Input
+                            id="email"
+                            type="email"
+                            placeholder="your.email@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                        />
                     </div>
-                     <form onSubmit={handleLogin} className="grid gap-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="email">Email (Username)</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                placeholder="your.email@example.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                            />
+                    <div className="grid gap-2">
+                         <div className="flex items-center">
+                            <Label htmlFor="password">Password</Label>
+                            <Button variant="link" type="button" className="ml-auto inline-block text-sm underline" onClick={() => setIsForgotPasswordOpen(true)}>
+                                Forgot Password?
+                            </Button>
                         </div>
-                        <div className="grid gap-2">
-                             <div className="flex items-center">
-                                <Label htmlFor="password">Password</Label>
-                                <Button variant="link" type="button" className="ml-auto inline-block text-sm underline" onClick={() => setIsForgotPasswordOpen(true)}>
-                                    Forgot Password?
-                                </Button>
-                            </div>
-                            <Input
-                                id="password"
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading ? 'Logging in...' : 'Login'}
-                        </Button>
-                    </form>
-                     <div className="mt-4 text-center text-sm">
-                            Don't have an account?{' '}
-                            <Link href="/#artist-register" className="underline">
-                               Register here
-                            </Link>
-                        </div>
-                     <div className="mt-2 text-center text-sm">
-                        <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors">
-                            <Home className="mr-1 h-4 w-4" />
-                            Back to Home
+                        <Input
+                            id="password"
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            required
+                        />
+                    </div>
+                    <Button type="submit" className="w-full" disabled={isLoading}>
+                        {isLoading ? 'Logging in...' : 'Login'}
+                    </Button>
+                </form>
+                 <div className="mt-4 text-center text-sm">
+                        Don't have an account?{' '}
+                        <Link href="/#artist-register" className="underline">
+                           Register here
                         </Link>
                     </div>
+                 <div className="mt-2 text-center text-sm">
+                    <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors">
+                        <Home className="mr-1 h-4 w-4" />
+                        Back to Home
+                    </Link>
                 </div>
-            </div>
-            <div className="hidden bg-muted lg:block">
-                 <Image
-                    src="https://picsum.photos/1200/1500?random=206"
-                    alt="Image"
-                    width="1920"
-                    height="1080"
-                    className="h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-                    data-ai-hint="mehndi artist portrait"
-                />
             </div>
         </div>
            
