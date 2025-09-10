@@ -12,6 +12,8 @@ import { Home } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getTeamMembers } from '@/lib/services';
 import type { TeamMember } from '@/types';
+import { signInAsAdmin, auth } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 
 
 export default function AdminLoginPage() {
@@ -37,41 +39,60 @@ export default function AdminLoginPage() {
         }
         
         try {
-            const allMembers = await getTeamMembers();
-            
-            const expectedRole = userType === 'admin' ? 'Super Admin' : 'team-member';
-            const memberByUsername = allMembers.find(m => m.username === username);
+            // First, sign out any existing Firebase user to ensure a clean login.
+            if (auth.currentUser) {
+                await signOut(auth);
+            }
 
-            if (memberByUsername && memberByUsername.role === expectedRole) {
-                if (memberByUsername.password === password) {
-                    toast({
+            // Attempt to sign in with Firebase Auth. We use the username (as email) and password.
+            // This requires the user to exist in Firebase Authentication.
+            // For this project, we'll use a single hardcoded login and then check their role from Firestore.
+            // The default admin email is derived from the username for Firebase Auth.
+            const adminAuthEmail = 'admin@mehndify.com';
+            
+            // This will throw an error if Firebase Auth fails, which is caught below.
+            const userCredential = await signInAsAdmin(adminAuthEmail, password);
+
+            if (userCredential) {
+                const teamMembers = await getTeamMembers();
+                const expectedRole = userType === 'admin' ? 'Super Admin' : 'team-member';
+                const member = teamMembers.find(m => m.username === username && m.role === expectedRole);
+
+                if (member) {
+                     toast({
                         title: 'Login Successful',
-                        description: `Welcome, ${memberByUsername.name}! Redirecting...`,
+                        description: `Welcome, ${member.name}! Redirecting...`,
                     });
                     localStorage.setItem('isAdminAuthenticated', 'true');
-                    localStorage.setItem('adminRole', memberByUsername.role); // Store the actual role
-                    localStorage.setItem('adminUsername', memberByUsername.username);
-                    localStorage.setItem('adminUserId', memberByUsername.id); // Store the user ID for rules
-                    window.location.href = '/admin'; // Use window.location.href for a full refresh
+                    localStorage.setItem('adminRole', member.role);
+                    localStorage.setItem('adminUsername', member.username);
+                    localStorage.setItem('adminUserId', member.id);
+                    window.location.href = '/admin'; // Full refresh to re-trigger auth context
                 } else {
-                     toast({
-                        title: 'Login Failed',
-                        description: 'Invalid password. Please try again.',
+                    await signOut(auth); // Sign out if they are not a valid team member
+                    toast({
+                        title: 'Authorization Failed',
+                        description: `You are authenticated, but not authorized to access this role.`,
                         variant: 'destructive',
                     });
                 }
             } else {
                  toast({
-                    title: 'Login Failed',
-                    description: `No ${userType} account found with that username or role.`,
+                    title: 'Authentication Failed',
+                    description: 'Invalid credentials. Please try again.',
                     variant: 'destructive',
                 });
             }
-        } catch(error) {
-            console.error("Failed to fetch team members:", error);
+
+        } catch(error: any) {
+            console.error("Admin Login Error:", error);
+             let description = 'Could not verify credentials. Please try again.';
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                description = 'Invalid username or password. Please check and try again.';
+            }
             toast({
                 title: 'Login Error',
-                description: 'Could not verify credentials. Please check your security rules.',
+                description: description,
                 variant: 'destructive',
             });
         } finally {
