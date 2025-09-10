@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from '@/hooks/use-toast';
 import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Pencil, Trash2, UserPlus } from 'lucide-react';
 import type { Artist } from '@/types';
-import { listenToCollection, createArtistFromPending, deletePendingArtist } from '@/lib/services';
+import { listenToCollection, createArtist, createArtistFromPending, deletePendingArtist } from '@/lib/services';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { exportToExcel } from '@/lib/export';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -185,8 +185,7 @@ export default function ArtistManagementPage() {
             return;
         }
 
-        const newArtist: Artist = {
-            id: data.email, // Using email as a unique ID for admin-added artists
+        const newArtistData: Omit<Artist, 'id'> = {
             name: data.name,
             email: data.email,
             phone: data.phone,
@@ -204,11 +203,11 @@ export default function ArtistManagementPage() {
             styleTags: ['new', 'verified'],
         };
         
-        await createArtistFromPending(newArtist);
+        await createArtist(newArtistData);
 
         toast({
             title: "Artist Onboarded",
-            description: `${newArtist.name} has been added to the platform.`,
+            description: `${data.name} has been added to the platform.`,
         });
         form.reset();
     };

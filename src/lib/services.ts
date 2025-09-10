@@ -51,6 +51,12 @@ export const listenToCollection = <T>(collectionName: string, callback: (data: T
 
 // Artists
 export const getArtist = async (id: string): Promise<Artist | null> => getDocument<Artist>('artists', id);
+export const createArtist = async (data: Omit<Artist, 'id'>): Promise<string> => {
+    // Use email as the document ID for artists created via admin onboarding
+    const artistRef = doc(db, "artists", data.email);
+    await setDoc(artistRef, data);
+    return data.email;
+};
 export const updateArtist = async (id: string, data: Partial<Artist>): Promise<void> => {
     const artistRef = doc(db, "artists", id);
     await updateDoc(artistRef, data);
