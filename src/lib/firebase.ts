@@ -38,7 +38,7 @@ const initializeDb = async (): Promise<Firestore> => {
             console.log("Firebase Offline Persistence enabled.");
         } catch (err: any) {
             if (err.code === 'failed-precondition') {
-                console.info("Firestore persistence failed-precondition. Multiple tabs open?");
+                console.info("Firestore persistence failed-precondition. This can happen with multiple tabs open.");
             } else if (err.code === 'unimplemented') {
                 console.warn("Firestore persistence is not supported in this browser.");
             } else {
@@ -50,9 +50,16 @@ const initializeDb = async (): Promise<Firestore> => {
     return db;
 };
 
+// Eagerly initialize the database as soon as this module is loaded.
+if (typeof window !== 'undefined') {
+    dbInitializationPromise = initializeDb();
+}
+
+
 // Use this function in your services to get the initialized DB instance
-export const getDb = (): Promise<Firestore> => {
+export const getDb = async (): Promise<Firestore> => {
     if (!dbInitializationPromise) {
+        // This will handle server-side rendering or cases where the eager init hasn't run.
         dbInitializationPromise = initializeDb();
     }
     return dbInitializationPromise;
