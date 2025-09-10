@@ -52,23 +52,37 @@ export default function PayoutManagementPage() {
                         platformFees: 0,
                         gst: 0,
                         netPayout: 0,
-                        bookingIds: []
+                        bookingIds: [],
+                        commissionOwed: 0, // Commission from offline payments
+                        payoutDue: 0, // Payout from online payments
                     };
                 }
 
                 const payout = payoutMap[artistId];
                 payout.totalBookings += 1;
-                payout.grossRevenue += booking.amount;
                 payout.bookingIds.push(booking.id);
+                
+                const bookingAmount = booking.amount / (booking.artistIds.length); // Split amount between artists
+                
+                if (booking.paymentMethod === 'offline') {
+                    // Artist collected cash, owes commission to platform
+                    const commissionableValue = bookingAmount / 1.18; // Assume price is GST-inclusive
+                    payout.commissionOwed += commissionableValue * platformFeePercentage;
+                } else {
+                    // Platform collected online, owes payout to artist
+                    const taxableAmount = bookingAmount / 1.18;
+                    const platformFee = taxableAmount * platformFeePercentage;
+                    payout.payoutDue += taxableAmount - platformFee;
+                    payout.grossRevenue += bookingAmount; // only online revenue is "gross" for platform
+                }
             });
         });
 
-        // Calculate fees and net payout based on new logic
+        // Calculate final net payout
         Object.values(payoutMap).forEach(payout => {
-            const taxableAmount = payout.grossRevenue / 1.18;
-            payout.gst = payout.grossRevenue - taxableAmount;
-            payout.platformFees = taxableAmount * platformFeePercentage;
-            payout.netPayout = taxableAmount - payout.platformFees;
+           payout.netPayout = payout.payoutDue - payout.commissionOwed;
+           payout.platformFees = (payout.grossRevenue / 1.18) * platformFeePercentage;
+           payout.gst = payout.grossRevenue - (payout.grossRevenue / 1.18);
         });
 
         setPayouts(Object.values(payoutMap));
@@ -132,6 +146,37 @@ export default function PayoutManagementPage() {
         });
     }
 
+    const PayoutRow = ({ payout }: { payout: Payout | PayoutHistory }) => (
+         <TableRow>
+            <TableCell className="font-medium">{'paymentDate' in payout ? new Date(payout.paymentDate).toLocaleDateString() : payout.artistName}</TableCell>
+            <TableCell>{'paymentDate' in payout ? payout.artistName : payout.totalBookings}</TableCell>
+            <TableCell>₹{payout.payoutDue.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
+            <TableCell className="text-red-600">- ₹{payout.commissionOwed.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
+            <TableCell className="font-bold text-green-600">₹{payout.netPayout.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
+            <TableCell className="text-right space-x-2">
+                <Button onClick={() => handleMarkAsPaid(payout as Payout)} disabled={hasPermission('payouts', 'edit')}>Mark as Paid</Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onSelect={() => exportPayoutToPdf(payout)}>
+                            <Download className="mr-2 h-4 w-4" />
+                            Download PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => generateGstInvoiceForPlatformFee(payout)}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Generate Commission Invoice
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </TableCell>
+        </TableRow>
+    );
+
     return (
         <>
             <div className="flex items-center justify-between">
@@ -143,7 +188,7 @@ export default function PayoutManagementPage() {
                         <IndianRupee className="w-6 h-6 text-primary"/> Payout Management
                     </CardTitle>
                     <CardDescription>
-                        Calculate and manage payouts for artists based on their completed bookings. Base prices are inclusive of 18% GST.
+                        Calculate and manage artist payouts. The system automatically handles commission from both online and offline (Pay at Venue) bookings.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -159,42 +204,15 @@ export default function PayoutManagementPage() {
                                         <TableRow>
                                             <TableHead>Artist</TableHead>
                                             <TableHead>Completed Bookings</TableHead>
-                                            <TableHead>Gross Booking Value (Incl. GST)</TableHead>
-                                            <TableHead>Platform Fees</TableHead>
+                                            <TableHead>Payout Due (from Online)</TableHead>
+                                            <TableHead>Commission Owed (from Offline)</TableHead>
                                             <TableHead className="font-bold text-primary">Net Payout</TableHead>
                                             <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {payouts.map(payout => (
-                                            <TableRow key={payout.artistId}>
-                                                <TableCell className="font-medium">{payout.artistName}</TableCell>
-                                                <TableCell>{payout.totalBookings}</TableCell>
-                                                <TableCell>₹{payout.grossRevenue.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
-                                                <TableCell>- ₹{payout.platformFees.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
-                                                <TableCell className="font-bold text-green-600">₹{payout.netPayout.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
-                                                <TableCell className="text-right space-x-2">
-                                                    <Button onClick={() => handleMarkAsPaid(payout)} disabled={!hasPermission('payouts', 'edit')}>Mark as Paid</Button>
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                                <MoreHorizontal className="h-4 w-4" />
-                                                                <span className="sr-only">Toggle menu</span>
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onSelect={() => exportPayoutToPdf(payout)}>
-                                                                <Download className="mr-2 h-4 w-4" />
-                                                                Download PDF
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onSelect={() => generateGstInvoiceForPlatformFee(payout)}>
-                                                                <FileText className="mr-2 h-4 w-4" />
-                                                                Generate Commission Invoice
-                                                            </DropdownMenuItem>
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                </TableCell>
-                                            </TableRow>
+                                           <PayoutRow key={payout.artistId} payout={payout}/>
                                         ))}
                                     </TableBody>
                                 </Table>
@@ -215,18 +233,20 @@ export default function PayoutManagementPage() {
                                         <TableRow>
                                             <TableHead>Payment Date</TableHead>
                                             <TableHead>Artist</TableHead>
-                                            <TableHead>Bookings Paid</TableHead>
+                                            <TableHead>Payout (from Online)</TableHead>
+                                            <TableHead>Commission (from Offline)</TableHead>
                                             <TableHead>Net Amount Paid</TableHead>
                                             <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {payoutHistory.map(history => (
-                                                <TableRow key={history.id}>
-                                                <TableCell>{new Date(history.paymentDate).toLocaleString()}</TableCell>
+                                            <TableRow key={history.id}>
+                                                <TableCell>{new Date(history.paymentDate).toLocaleDateString()}</TableCell>
                                                 <TableCell className="font-medium">{history.artistName}</TableCell>
-                                                <TableCell>{history.totalBookings}</TableCell>
-                                                <TableCell>₹{history.netPayout.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
+                                                <TableCell>₹{history.payoutDue.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
+                                                <TableCell>- ₹{history.commissionOwed.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
+                                                <TableCell className="font-bold">₹{history.netPayout.toLocaleString(undefined, { maximumFractionDigits: 2 })}</TableCell>
                                                 <TableCell className="text-right">
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
@@ -247,7 +267,7 @@ export default function PayoutManagementPage() {
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
                                                 </TableCell>
-                                                </TableRow>
+                                            </TableRow>
                                         ))}
                                     </TableBody>
                                 </Table>

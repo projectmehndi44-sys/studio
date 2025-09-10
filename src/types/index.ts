@@ -9,6 +9,7 @@
 
 
 
+
 export type PackageCategory = {
   name: 'Normal' | 'Premium' | 'ULTRA PREMIUM';
   description: string;
@@ -89,7 +90,7 @@ export type Booking = {
   serviceDates: Date[]; // For multi-day bookings
   service: string;
   amount: number;
-  status: 'Completed' | 'Confirmed' | 'Cancelled' | 'Pending Approval' | 'Needs Assignment' | 'Disputed';
+  status: 'Completed' | 'Confirmed' | 'Cancelled' | 'Pending Approval' | 'Needs Assignment' | 'Disputed' | 'Pending Confirmation';
   paidOut?: boolean;
   completionCode?: string; // Unique 6-digit code for completion verification
   
@@ -103,6 +104,7 @@ export type Booking = {
   note?: string;
   instagramId?: string;
   referencePhoto?: string;
+  paymentMethod: 'online' | 'offline';
   guestMehndi?: {
     included: boolean;
     expectedCount: number;
@@ -146,10 +148,12 @@ export type Payout = {
   artistId: string;
   artistName:string;
   totalBookings: number;
-  grossRevenue: number;
+  grossRevenue: number; // From online bookings this payout cycle
+  payoutDue: number; // Money owed to artist from online bookings
+  commissionOwed: number; // Commission owed by artist from offline bookings
   platformFees: number;
   gst: number;
-  netPayout: number;
+  netPayout: number; // The final settlement amount (payoutDue - commissionOwed)
   bookingIds: string[];
 };
 

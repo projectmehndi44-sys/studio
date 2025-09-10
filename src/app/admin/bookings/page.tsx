@@ -7,7 +7,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Briefcase, MoreHorizontal, AlertOctagon } from 'lucide-react';
+import { Briefcase, MoreHorizontal, AlertOctagon, CheckSquare } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import type { Booking, Artist, Notification } from '@/types';
@@ -60,6 +60,7 @@ export default function BookingManagementPage() {
             message,
             timestamp: new Date().toISOString(),
             isRead: false,
+            type: 'booking',
         };
         localStorage.setItem('notifications', JSON.stringify([newNotification, ...existingNotifications]));
     };
@@ -73,6 +74,19 @@ export default function BookingManagementPage() {
         localStorage.setItem('bookings', JSON.stringify(updatedBookings));
         window.dispatchEvent(new Event('storage'));
     };
+
+    const handleOfflineConfirm = (bookingId: string) => {
+        const booking = bookings.find(b => b.id === bookingId);
+        if (!booking) return;
+
+        const newStatus = booking.artistIds.length > 0 ? 'Pending Approval' : 'Needs Assignment';
+        updateBookingStatus(bookingId, newStatus);
+        
+        toast({
+            title: "Booking Manually Confirmed",
+            description: `Booking ${bookingId} is now moved to the pending queue.`,
+        });
+    }
     
     const handleApproveBooking = (bookingId: string) => {
         const booking = bookings.find(b => b.id === bookingId);
@@ -159,7 +173,8 @@ export default function BookingManagementPage() {
         if (!booking) return;
         
         const originalArtistIds = booking.artistIds || [];
-        updateBookingStatus(bookingId, 'Confirmed', assignedArtistIds);
+        const newStatus = booking.paymentMethod === 'offline' ? 'Pending Approval' : 'Confirmed';
+        updateBookingStatus(bookingId, newStatus, assignedArtistIds);
         
         assignedArtistIds.forEach(artistId => {
             const artist = artists.find(a => a.id === artistId);
@@ -187,6 +202,7 @@ export default function BookingManagementPage() {
             case 'Confirmed': return 'default';
             case 'Pending Approval': return 'secondary';
             case 'Needs Assignment': return 'destructive';
+            case 'Pending Confirmation': return 'outline';
             case 'Disputed': return 'destructive';
             case 'Cancelled': return 'destructive';
             default: return 'outline';
@@ -200,7 +216,10 @@ export default function BookingManagementPage() {
         if (tab === 'disputed') {
             return bookings.filter(b => b.status === 'Disputed');
         }
-        return bookings.filter(b => b.status !== 'Disputed');
+        if (tab === 'offline') {
+            return bookings.filter(b => b.status === 'Pending Confirmation');
+        }
+        return bookings.filter(b => b.status !== 'Disputed' && b.status !== 'Pending Confirmation');
     };
 
     const initialTab = searchParams.get('filter') || 'all';
@@ -266,6 +285,12 @@ export default function BookingManagementPage() {
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                             <DropdownMenuSeparator />
+                                            {booking.status === 'Pending Confirmation' && (
+                                                <DropdownMenuItem onSelect={() => handleOfflineConfirm(booking.id)}>
+                                                    <CheckSquare className="mr-2 h-4 w-4" />
+                                                    Manually Confirm
+                                                </DropdownMenuItem>
+                                            )}
                                             {booking.status === 'Pending Approval' && (
                                                 <>
                                                     <DropdownMenuItem onSelect={() => handleApproveBooking(booking.id)} disabled={assignedArtists.length === 0}>Approve</DropdownMenuItem>
@@ -322,9 +347,10 @@ export default function BookingManagementPage() {
                 </CardHeader>
                 <CardContent>
                     <Tabs defaultValue={initialTab} onValueChange={(tab) => router.push(`/admin/bookings?filter=${tab}`)}>
-                        <TabsList>
+                        <TabsList className="grid w-full grid-cols-4">
                             <TabsTrigger value="all">All Bookings</TabsTrigger>
                             <TabsTrigger value="pending">Pending</TabsTrigger>
+                            <TabsTrigger value="offline">Offline Confirmation</TabsTrigger>
                             <TabsTrigger value="disputed">
                                 <AlertOctagon className="mr-2 h-4 w-4" />
                                 Disputed Bookings

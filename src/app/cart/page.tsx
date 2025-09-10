@@ -167,7 +167,7 @@ export default function CartPage() {
         return true;
     };
 
-    const handleCreateBooking = () => {
+    const handleCreateBooking = (paymentMethod: 'online' | 'offline') => {
         if (!isFormValid() || !customer) return;
 
         let totalAmount = 0;
@@ -217,7 +217,7 @@ export default function CartPage() {
             date: serviceDates[0],
             service: serviceDescription,
             amount: totalAmount,
-            status: bookingArtistIds.size > 0 ? 'Pending Approval' : 'Needs Assignment',
+            status: paymentMethod === 'offline' ? 'Pending Confirmation' : (bookingArtistIds.size > 0 ? 'Pending Approval' : 'Needs Assignment'),
             eventType,
             eventDate: eventDate!,
             state,
@@ -226,6 +226,7 @@ export default function CartPage() {
             mapLink,
             note,
             instagramId,
+            paymentMethod,
             appliedReferralCode: appliedReferral?.artist.referralCode,
             completionCode: Math.floor(100000 + Math.random() * 900000).toString(),
         };
@@ -236,8 +237,8 @@ export default function CartPage() {
         window.dispatchEvent(new Event('storage'));
 
         toast({
-            title: 'Booking Created!',
-            description: 'Your booking request has been submitted. The admin will review it shortly.',
+            title: 'Booking Request Submitted!',
+            description: 'Your booking has been received. The admin will review it shortly.',
         });
 
         router.push('/account');
@@ -559,7 +560,10 @@ export default function CartPage() {
                            The advance amount is only refunded if the booking is cancelled 72 hours prior to the service date. This is because the date will be exclusively reserved for you. Thank you for your understanding.
                         </AlertDescription>
                     </Alert>
-                    <Button onClick={handleCreateBooking} disabled={!isFormValid()} size="lg" className="w-full">Confirm &amp; Proceed to Payment</Button>
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <Button onClick={() => handleCreateBooking('online')} disabled={!isFormValid()} size="lg" className="w-full">Confirm &amp; Pay Online</Button>
+                        <Button onClick={() => handleCreateBooking('offline')} disabled={!isFormValid()} size="lg" className="w-full" variant="outline">Confirm &amp; Pay at Venue</Button>
+                    </div>
                 </div>
                 )}
             </main>
