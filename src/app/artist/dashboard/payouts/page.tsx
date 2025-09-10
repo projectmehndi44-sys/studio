@@ -21,9 +21,10 @@ export default function ArtistPayoutsPage() {
     const platformFeePercentage = React.useRef(0.1);
 
     React.useEffect(() => {
-        // In a real app, this value should come from a secure config
-        const fee = localStorage.getItem('platformFeePercentage');
-        platformFeePercentage.current = fee ? parseFloat(fee) / 100 : 0.1;
+        if (typeof window !== 'undefined') {
+            const fee = localStorage.getItem('platformFeePercentage');
+            platformFeePercentage.current = fee ? parseFloat(fee) / 100 : 0.1;
+        }
     }, []);
 
     const calculatePayouts = React.useCallback(() => {
@@ -44,7 +45,7 @@ export default function ArtistPayoutsPage() {
 
 
         // Fetch this artist's payout history from localStorage
-        const allPayoutHistory: PayoutHistory[] = JSON.parse(localStorage.getItem('payoutHistory') || '[]');
+        const allPayoutHistory: PayoutHistory[] = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('payoutHistory') || '[]') : [];
         const artistHistory = allPayoutHistory.filter(p => p.artistId === artist?.id);
         setPayoutHistory(artistHistory.sort((a,b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()));
 
@@ -52,8 +53,6 @@ export default function ArtistPayoutsPage() {
 
     React.useEffect(() => {
         calculatePayouts();
-        window.addEventListener('storage', calculatePayouts);
-        return () => window.removeEventListener('storage', calculatePayouts);
     }, [calculatePayouts]);
 
     return (

@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { LayoutDashboard, Briefcase, Bell, User, LogOut, Palette, CalendarOff, IndianRupee, Package, Star, PanelLeft } from 'lucide-react';
 import type { Artist, Booking, Notification } from '@/types';
-import { artists as initialArtists, allBookings as initialBookings } from '@/lib/data';
+import { getArtists, getBookings, getCustomer } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -25,11 +25,11 @@ import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
 interface ArtistPortalContextType {
     artist: Artist | null;
     artistBookings: Booking[];
-    allBookings: Booking[];
     notifications: Notification[];
     unreadCount: number;
     setArtist: React.Dispatch<React.SetStateAction<Artist | null>>;
     setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
+    fetchData: () => Promise<void>;
 }
 
 export const ArtistPortalContext = React.createContext<ArtistPortalContextType | null>(null);
@@ -79,7 +79,6 @@ export default function ArtistDashboardLayout({
     
     // Centralized state for the portal
     const [artist, setArtist] = React.useState<Artist | null>(null);
-    const [allBookings, setAllBookings] = React.useState<Booking[]>([]);
     const [artistBookings, setArtistBookings] = React.useState<Booking[]>([]);
     const [notifications, setNotifications] = React.useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = React.useState(0);
@@ -93,24 +92,14 @@ export default function ArtistDashboardLayout({
 
     useInactivityTimeout(handleLogout);
 
-
-    const getArtists = (): Artist[] => {
-         const storedArtists = localStorage.getItem('artists');
-         const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
-         const allArtistsMap = new Map<string, Artist>();
-         initialArtists.forEach(a => allArtistsMap.set(a.id, a));
-         localArtists.forEach(a => allArtistsMap.set(a.id, a));
-         return Array.from(allArtistsMap.values());
-    }
-
-    const fetchData = React.useCallback(() => {
+    const fetchData = React.useCallback(async () => {
         const currentArtistId = localStorage.getItem('artistId');
         if (!currentArtistId) {
             router.push('/artist/login');
             return;
         }
         
-        const allArtists = getArtists();
+        const allArtists = await getArtists();
         const currentArtist = allArtists.find((a: Artist) => a.id === currentArtistId);
         
         if (currentArtist) {
@@ -125,14 +114,12 @@ export default function ArtistDashboardLayout({
             return;
         }
 
-        // Fetch and manage all data here
-        const storedBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || JSON.stringify(initialBookings)).map((b: any) => ({...b, date: new Date(b.date), serviceDates: b.serviceDates.map((d: string) => new Date(d))}));
-        setAllBookings(storedBookings);
-
-        const currentArtistBookings = storedBookings.filter(b => b.artistIds.includes(currentArtistId));
+        const storedBookings = await getBookings();
+        const currentArtistBookings = storedBookings.filter(b => b.artistIds && b.artistIds.includes(currentArtistId));
         setArtistBookings(currentArtistBookings.sort((a,b) => b.date.getTime() - a.date.getTime()));
         
-        const allNotifications: Notification[] = JSON.parse(localStorage.getItem('notifications') || '[]');
+        // Mock notifications for now, as they are not stored in Firestore yet
+        const allNotifications: Notification[] = [];
         const artistNotifications = allNotifications.filter((n: Notification) => n.artistId === currentArtistId);
         setNotifications(artistNotifications.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
         setUnreadCount(artistNotifications.filter((n: Notification) => !n.isRead).length);
@@ -147,10 +134,6 @@ export default function ArtistDashboardLayout({
         }
         
         fetchData();
-        window.addEventListener('storage', fetchData);
-        return () => {
-            window.removeEventListener('storage', fetchData);
-        };
     }, [fetchData, router]);
 
 
@@ -233,11 +216,11 @@ export default function ArtistDashboardLayout({
     const contextValue = {
         artist,
         artistBookings,
-        allBookings,
         notifications,
         unreadCount,
         setArtist,
         setNotifications,
+        fetchData,
     };
 
     return (

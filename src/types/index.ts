@@ -11,6 +11,7 @@
 
 
 
+
 export type PackageCategory = {
   name: 'Normal' | 'Premium' | 'ULTRA PREMIUM';
   description: string;
@@ -82,7 +83,7 @@ export type CartItem = {
 
 export type Booking = {
   id: string;
-  artistIds: (string | null)[];
+  artistIds: string[];
   customerId: string; // Link to customer
   customerName: string;
   customerContact?: string;

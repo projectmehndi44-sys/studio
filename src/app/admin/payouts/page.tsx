@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { IndianRupee, MoreHorizontal, Download, FileText } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Booking, Artist, Payout, PayoutHistory } from '@/types';
-import { artists as initialArtists, allBookings as initialBookings } from '@/lib/data';
+import { getArtists, getBookings, updateBooking } from '@/lib/services';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -23,20 +23,21 @@ export default function PayoutManagementPage() {
     const router = useRouter();
     const { toast } = useToast();
     const { hasPermission } = useAdminAuth();
-    const [artists, setArtists] = React.useState<Artist[]>(initialArtists);
+    const [artists, setArtists] = React.useState<Artist[]>([]);
     const [bookings, setBookings] = React.useState<Booking[]>([]);
     const [payouts, setPayouts] = React.useState<Payout[]>([]);
     const [payoutHistory, setPayoutHistory] = React.useState<PayoutHistory[]>([]);
 
 
     const calculatePayouts = React.useCallback(() => {
-        const platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10') / 100;
+        const platformFeePercentage = typeof window !== 'undefined' ? parseFloat(localStorage.getItem('platformFeePercentage') || '10') / 100 : 0.1;
         const payoutMap: Record<string, Payout> = {};
 
         // Only consider completed and not-yet-paid-out bookings for payout calculation
         const bookingsToPay = bookings.filter(b => b.status === 'Completed' && !b.paidOut);
 
         bookingsToPay.forEach(booking => {
+            if (!booking.artistIds) return;
             booking.artistIds.forEach(artistId => {
                 if (!artistId) return;
 
@@ -89,17 +90,20 @@ export default function PayoutManagementPage() {
 
     }, [bookings, artists]);
 
-     const fetchData = React.useCallback(() => {
-        const storedBookings = localStorage.getItem('bookings');
-        const currentBookings = storedBookings ? JSON.parse(storedBookings).map((b: any) => ({...b, date: new Date(b.date)})) : initialBookings;
-        setBookings(currentBookings);
-        
-        const storedPayoutHistory = localStorage.getItem('payoutHistory');
-        setPayoutHistory(storedPayoutHistory ? JSON.parse(storedPayoutHistory) : []);
-        
-        const storedArtists = localStorage.getItem('artists');
-        setArtists(storedArtists ? JSON.parse(storedArtists) : initialArtists);
+     const fetchData = React.useCallback(async () => {
+        setBookings(await getBookings());
+        setArtists(await getArtists());
+        const history = await getCollection<PayoutHistory>('payoutHistory');
+        setPayoutHistory(history);
     }, []);
+    
+    // Helper to get a collection, in case it's needed for other data
+    async function getCollection<T>(collectionName: string): Promise<T[]> {
+        // This is a placeholder. In a real app, this would be your Firestore fetch logic.
+        const storedData = localStorage.getItem(collectionName);
+        return storedData ? JSON.parse(storedData) : [];
+    }
+
 
     React.useEffect(() => {
         const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
@@ -107,18 +111,13 @@ export default function PayoutManagementPage() {
             router.push('/admin/login');
         }
         fetchData();
-        window.addEventListener('storage', fetchData);
-
-        return () => {
-            window.removeEventListener('storage', fetchData);
-        }
     }, [router, fetchData]);
 
     React.useEffect(() => {
         calculatePayouts();
     }, [bookings, artists, calculatePayouts]);
     
-    const handleMarkAsPaid = (payout: Payout) => {
+    const handleMarkAsPaid = async (payout: Payout) => {
         // Create a new history record
         const newHistoryRecord: PayoutHistory = {
             id: `payout_${Date.now()}`,
@@ -127,18 +126,18 @@ export default function PayoutManagementPage() {
         };
 
         // Update bookings to mark them as paidOut
-        const updatedBookings = bookings.map(b => 
-            payout.bookingIds.includes(b.id) ? { ...b, paidOut: true } : b
+        const bookingUpdatePromises = payout.bookingIds.map(bookingId => 
+            updateBooking(bookingId, { paidOut: true })
         );
-
-        setBookings(updatedBookings);
-        localStorage.setItem('bookings', JSON.stringify(updatedBookings));
-
-        const updatedHistory = [newHistoryRecord, ...payoutHistory];
-        setPayoutHistory(updatedHistory);
-        localStorage.setItem('payoutHistory', JSON.stringify(updatedHistory));
+        await Promise.all(bookingUpdatePromises);
         
-        window.dispatchEvent(new Event('storage'));
+        // Save the payout record to history
+        // In a real app, this would be `await addDoc(collection(db, "payoutHistory"), newHistoryRecord);`
+        const newHistory = [newHistoryRecord, ...payoutHistory];
+        localStorage.setItem('payoutHistory', JSON.stringify(newHistory));
+        
+        // Refetch all data to update the UI
+        fetchData();
 
         toast({
             title: "Payout Marked as Paid",
@@ -154,7 +153,7 @@ export default function PayoutManagementPage() {
             <TableCell className="text-red-600">- ₹{payout.commissionOwed.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
             <TableCell className="font-bold text-green-600">₹{payout.netPayout.toLocaleString(undefined, {maximumFractionDigits: 2})}</TableCell>
             <TableCell className="text-right space-x-2">
-                <Button onClick={() => handleMarkAsPaid(payout as Payout)} disabled={hasPermission('payouts', 'edit')}>Mark as Paid</Button>
+                <Button onClick={() => handleMarkAsPaid(payout as Payout)} disabled={!hasPermission('payouts', 'edit')}>Mark as Paid</Button>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button aria-haspopup="true" size="icon" variant="ghost">

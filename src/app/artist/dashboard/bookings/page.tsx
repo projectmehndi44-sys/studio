@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { Booking } from '@/types';
 import { useArtistPortal } from '../layout';
-import { MapPin, User, Phone, Calendar, IndianRupee, FileText, Check, AlertTriangle, Clock } from 'lucide-react';
+import { MapPin, User, Calendar, IndianRupee, FileText, Check, AlertTriangle, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   AlertDialog,
@@ -25,11 +25,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { updateBooking } from '@/lib/services';
 
 const BookingDetailsModal = ({ booking, isOpen, onOpenChange }: { booking: Booking | null; isOpen: boolean; onOpenChange: (isOpen: boolean) => void }) => {
     if (!booking) return null;
 
-    const platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10') / 100;
+    let platformFeePercentage = 0.1;
+    if(typeof window !== 'undefined'){
+       platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10') / 100;
+    }
+
     const taxableAmount = booking.amount / 1.18;
     const gstOnService = booking.amount - taxableAmount;
     const platformFee = taxableAmount * platformFeePercentage;
@@ -54,7 +59,11 @@ const BookingDetailsModal = ({ booking, isOpen, onOpenChange }: { booking: Booki
                         </CardHeader>
                         <CardContent className="text-sm space-y-2">
                              <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-muted-foreground" /> <span>Event: {booking.eventType} on {format(new Date(booking.eventDate), 'PPP')}</span></div>
-                             <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-muted-foreground" /> <a href={booking.mapLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{booking.serviceAddress}</a></div>
+                             {booking.mapLink ? (
+                                <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-muted-foreground" /> <a href={booking.mapLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{booking.serviceAddress}</a></div>
+                             ) : (
+                                 <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-muted-foreground" /> <span>{booking.serviceAddress}</span></div>
+                             )}
                         </CardContent>
                     </Card>
 
@@ -64,7 +73,7 @@ const BookingDetailsModal = ({ booking, isOpen, onOpenChange }: { booking: Booki
                             <CardTitle className="text-base">Service Dates</CardTitle>
                         </CardHeader>
                         <CardContent className="flex flex-wrap gap-2">
-                             {booking.serviceDates.map((date, index) => (
+                             {(booking.serviceDates || []).map((date, index) => (
                                 <Badge key={index} variant="secondary">
                                     {format(new Date(date), "E, PPP")}
                                 </Badge>
@@ -115,7 +124,7 @@ const BookingDetailsModal = ({ booking, isOpen, onOpenChange }: { booking: Booki
 
 
 export default function ArtistBookingsPage() {
-    const { artistBookings, allBookings } = useArtistPortal();
+    const { artistBookings, fetchData } = useArtistPortal();
     const { toast } = useToast();
     
     // State for the modals
@@ -124,7 +133,7 @@ export default function ArtistBookingsPage() {
     const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
     const [completionCode, setCompletionCode] = React.useState('');
 
-    const handleStatusUpdate = () => {
+    const handleStatusUpdate = async () => {
         if (!selectedBooking) return;
         
         if (selectedBooking.completionCode !== completionCode) {
@@ -136,11 +145,8 @@ export default function ArtistBookingsPage() {
             return;
         }
 
-        const newAllBookings = allBookings.map((b: Booking) => 
-            b.id === selectedBooking.id ? { ...b, status: 'Completed' } : b
-        );
-        localStorage.setItem('bookings', JSON.stringify(newAllBookings));
-        window.dispatchEvent(new Event('storage'));
+        await updateBooking(selectedBooking.id, { status: 'Completed' });
+        await fetchData(); // Refetch data
         
         toast({
             title: "Booking Completed!",

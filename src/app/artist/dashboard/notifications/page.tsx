@@ -8,6 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { useArtistPortal } from '../layout';
 import { useRouter } from 'next/navigation';
+import { getBookings } from '@/lib/services';
+
 
 interface NotificationCardProps {
     notification: Notification;
@@ -50,11 +52,17 @@ function NotificationCard({ notification, allBookings, onMarkAsRead }: Notificat
 }
 
 export default function ArtistNotificationsPage() {
-    const { artist, allBookings, notifications, setNotifications } = useArtistPortal();
+    const { artist, notifications, setNotifications } = useArtistPortal();
+    const [allBookings, setAllBookings] = React.useState<Booking[]>([]);
+
+    React.useEffect(() => {
+        getBookings().then(setAllBookings);
+    }, []);
     
     if (!artist) return null;
 
     const updateNotificationsInStorage = (updated: Notification[]) => {
+        // This is a mock function. In a real app, you'd update this in Firestore.
         const allNotifications: Notification[] = JSON.parse(localStorage.getItem('notifications') || '[]');
         const otherArtistsNotifications = allNotifications.filter(n => n.artistId !== artist.id);
         localStorage.setItem('notifications', JSON.stringify([...updated, ...otherArtistsNotifications]));
@@ -73,7 +81,7 @@ export default function ArtistNotificationsPage() {
         updateNotificationsInStorage(updated);
     };
 
-    if (!notifications || !allBookings) {
+    if (!notifications) {
         return (
              <Card>
                 <CardHeader>

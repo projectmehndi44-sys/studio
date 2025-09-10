@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -16,7 +17,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { artists as initialArtists, allBookings as initialBookings } from '@/lib/data';
+import { getArtists, getBookings } from '@/lib/services';
 import type { Artist, Booking } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
@@ -56,20 +57,12 @@ export default function AdminPage() {
         netProfit: 0
     });
 
-    const fetchAdminData = React.useCallback(() => {
-        // Fetch approved artists
-        const storedArtists = localStorage.getItem('artists');
-        const localArtists = storedArtists ? JSON.parse(storedArtists) : [];
-        const allApproved = [...initialArtists.filter(a => !localArtists.some((la: Artist) => la.id === a.id)), ...localArtists];
-        setApprovedArtists(allApproved);
-        
-        // Fetch and count pending bookings
-        const storedBookings = localStorage.getItem('bookings');
-        const currentBookings: Booking[] = storedBookings ? JSON.parse(storedBookings).map((b: any) => ({...b, date: new Date(b.date)})) : initialBookings;
+    const fetchAdminData = React.useCallback(async () => {
+        setApprovedArtists(await getArtists());
+        const currentBookings = await getBookings();
         setBookings(currentBookings);
         const pendingCount = currentBookings.filter((b: Booking) => b.status === 'Pending Approval' || b.status === 'Needs Assignment').length;
         setPendingBookingCount(pendingCount);
-
     }, []);
 
     React.useEffect(() => {
@@ -77,16 +70,19 @@ export default function AdminPage() {
             router.push('/admin/login');
         } else if (isAuthenticated) {
             fetchAdminData();
-            window.addEventListener('storage', fetchAdminData);
-            return () => window.removeEventListener('storage', fetchAdminData);
+            // Optional: If you need real-time updates without polling, you could set up a Firestore listener here
         }
     }, [isLoading, isAuthenticated, router, fetchAdminData]);
 
      // Effect for calculating financials
     React.useEffect(() => {
         const calculateRevenue = (filteredBookings: Booking[]) => {
-            const platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10') / 100;
-            const refundFee = parseFloat(localStorage.getItem('platformRefundFee') || '500');
+            let platformFeePercentage = 0.1; // Default
+            if (typeof window !== 'undefined') {
+                platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10') / 100;
+            }
+            
+            const refundFee = typeof window !== 'undefined' ? parseFloat(localStorage.getItem('platformRefundFee') || '500') : 500;
 
             const completed = filteredBookings.filter(b => b.status === 'Completed');
             const totalRevenue = completed.reduce((sum, b) => sum + b.amount, 0);
@@ -240,7 +236,7 @@ export default function AdminPage() {
                             </TableHeader>
                             <TableBody>
                                 {bookings.slice(0, 5).map((booking) => {
-                                    const assignedArtists = approvedArtists.filter(a => booking.artistIds.includes(a.id));
+                                    const assignedArtists = approvedArtists.filter(a => booking.artistIds && booking.artistIds.includes(a.id));
                                     return (
                                         <TableRow key={booking.id}>
                                             <TableCell>{booking.customerName}</TableCell>

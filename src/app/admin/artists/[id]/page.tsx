@@ -18,13 +18,6 @@ import NextImage from 'next/image';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { exportToExcel, exportToPdf } from '@/lib/export';
 
-// Mock data for reviews - in a real app, this would be fetched from the artist's document
-const mockReviews: Review[] = [
-    { id: 'rev_01', customerName: 'Priya Patel', rating: 5, comment: 'Absolutely stunning work! Made my wedding day perfect.' },
-    { id: 'rev_02', customerName: 'Anjali Sharma', rating: 4, comment: 'Great makeup, but was a little late. Overall happy with the result.' },
-];
-
-
 export default function ArtistDetailPage() {
     const router = useRouter();
     const params = useParams();
@@ -33,7 +26,6 @@ export default function ArtistDetailPage() {
 
     const [artist, setArtist] = React.useState<Artist | null>(null);
     const [bookings, setBookings] = React.useState<Booking[]>([]);
-    const [reviews] = React.useState<Review[]>(mockReviews);
     
     React.useEffect(() => {
         const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
@@ -50,7 +42,7 @@ export default function ArtistDetailPage() {
                 setArtist(foundArtist);
                  // Fetch bookings to calculate financials
                 const allBookings = await getBookings();
-                const artistBookings = allBookings.filter(b => b.artistIds.includes(artistId));
+                const artistBookings = allBookings.filter(b => b.artistIds && b.artistIds.includes(artistId));
                 setBookings(artistBookings);
             } else {
                 toast({
@@ -106,10 +98,15 @@ export default function ArtistDetailPage() {
 
     const completedBookings = bookings.filter(b => b.status === 'Completed');
     const totalRevenue = completedBookings.reduce((acc, booking) => acc + booking.amount, 0);
-    const platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10') / 100;
+    
+    let platformFeePercentage = 0.1; // default 10%
+    if(typeof window !== 'undefined'){
+       platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10') / 100;
+    }
+
     const platformFee = totalRevenue * platformFeePercentage;
     const netPayout = totalRevenue - platformFee;
-    const bookedDates = bookings.flatMap(b => b.serviceDates);
+    const bookedDates = bookings.flatMap(b => b.serviceDates || []);
 
     return (
         <>
@@ -146,7 +143,7 @@ export default function ArtistDetailPage() {
                             <CardTitle className="text-3xl">{artist.name}</CardTitle>
                             <CardDescription>{artist.location}</CardDescription>
                             <div className="flex flex-wrap items-center gap-2">
-                                    {artist.services.map((service) => (
+                                    {(artist.services || []).map((service) => (
                                     <Badge key={service} variant="secondary" className="capitalize">{service}</Badge>
                                 ))}
                                 <Badge variant="default">{artist.rating} <Star className="ml-1 h-3 w-3"/></Badge>
@@ -276,7 +273,7 @@ export default function ArtistDetailPage() {
                             <CardDescription>Portfolio images uploaded by the artist.</CardDescription>
                         </CardHeader>
                         <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            {artist.workImages.map((src, index) => (
+                            {(artist.workImages || []).map((src, index) => (
                                 <div key={index} className="relative aspect-w-1 aspect-h-1">
                                     <NextImage src={src} alt={`${artist.name}'s work ${index + 1}`} layout="fill" className="rounded-md object-cover"/>
                                 </div>
