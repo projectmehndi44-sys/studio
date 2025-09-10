@@ -2,6 +2,10 @@
   "name": "MehendiFy",
   "short_name": "MehendiFy",
   "description": "Discover and book the most talented mehndi and makeup artists near you.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F5DC",
+  "theme_color": "#8B4513",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
@@ -23,10 +27,5 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ],
-  "theme_color": "#8B4513",
-  "background_color": "#F5F5DC",
-  "start_url": "/",
-  "display": "standalone",
-  "orientation": "portrait"
+  ]
 }
