@@ -10,6 +10,7 @@
 
 
 
+
 export type PackageCategory = {
   name: 'Normal' | 'Premium' | 'ULTRA PREMIUM';
   description: string;
@@ -84,7 +85,7 @@ export type Booking = {
   artistIds: (string | null)[];
   customerId: string; // Link to customer
   customerName: string;
-  customerContact: string;
+  customerContact?: string;
   serviceAddress: string;
   date: Date; // For backward compatibility & main date
   serviceDates: Date[]; // For multi-day bookings
@@ -104,7 +105,7 @@ export type Booking = {
   note?: string;
   instagramId?: string;
   referencePhoto?: string;
-  paymentMethod: 'online' | 'offline';
+  paymentMethod?: 'online' | 'offline';
   guestMehndi?: {
     included: boolean;
     expectedCount: number;

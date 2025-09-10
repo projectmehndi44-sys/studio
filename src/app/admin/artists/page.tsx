@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from '@/hooks/use-toast';
 import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Pencil, Trash2, UserPlus } from 'lucide-react';
 import type { Artist } from '@/types';
-import { artists as initialArtists } from '@/lib/data';
+import { getArtists, getPendingArtists, createArtistFromPending, deletePendingArtist } from '@/lib/services';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { exportToExcel } from '@/lib/export';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -25,15 +25,9 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
 
-type PendingArtist = {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  location: string;
-  date: string;
+type PendingArtist = Omit<Artist, 'id'> & {
+  id: string; // email is used as ID here
   status: 'Pending';
-  password?: string;
   [key: string]: any;
 };
 
@@ -62,39 +56,23 @@ export default function ArtistManagementPage() {
         defaultValues: { name: '', email: '', phone: '', password: '', location: '', charge: 2500 },
     });
 
-    const getArtists = React.useCallback((): Artist[] => {
-        const storedArtists = localStorage.getItem('artists');
-        const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
-        const allArtistsMap = new Map<string, Artist>();
-        initialArtists.forEach(a => allArtistsMap.set(a.id, a));
-        localArtists.forEach(a => allArtistsMap.set(a.id, a));
-        return Array.from(allArtistsMap.values());
+    const fetchAdminData = React.useCallback(async () => {
+        setApprovedArtists(await getArtists());
+        const pending = await getPendingArtists();
+        setPendingArtists(pending.map((p: any) => ({...p, id: p.email, date: new Date(p.submissionDate).toLocaleDateString(), name: p.fullName, location: `${p.district}, ${p.state}` })));
     }, []);
-
-    const fetchAdminData = React.useCallback(() => {
-        setApprovedArtists(getArtists());
-        const storedPending = localStorage.getItem('pendingArtists');
-        try {
-            const pending = storedPending ? JSON.parse(storedPending) : [];
-            setPendingArtists(pending.map((p: any) => ({...p, id: p.email, date: new Date(p.submissionDate).toLocaleDateString(), name: p.fullName, location: `${p.district}, ${p.state}` })));
-        } catch (e) {
-            setPendingArtists([]);
-        }
-    }, [getArtists]);
 
     React.useEffect(() => {
         fetchAdminData();
-        window.addEventListener('storage', fetchAdminData);
-        return () => window.removeEventListener('storage', fetchAdminData);
     }, [fetchAdminData]);
 
-    const handleApprove = (artistId: string) => {
+    const handleApprove = async (artistId: string) => {
         const artistToApprove = pendingArtists.find(p => p.id === artistId);
         if (!artistToApprove) return;
         
         const newArtist: Artist = {
-            id: artistToApprove.id,
-            name: artistToApprove.name,
+            id: artistToApprove.email,
+            name: artistToApprove.fullName,
             email: artistToApprove.email,
             phone: artistToApprove.phone,
             password: artistToApprove.password,
@@ -110,13 +88,9 @@ export default function ArtistManagementPage() {
             rating: 0,
             styleTags: ['new', 'verified'],
         };
-        const currentArtists = getArtists();
-        const updatedApprovedArtists = [...currentArtists, newArtist];
-        const updatedLocalArtists = JSON.parse(localStorage.getItem('artists') || '[]').filter((a: Artist) => a.id !== newArtist.id);
-        localStorage.setItem('artists', JSON.stringify([...updatedLocalArtists, newArtist]));
-
-        const updatedPendingArtists = pendingArtists.filter(p => p.id !== artistId);
-        localStorage.setItem('pendingArtists', JSON.stringify(updatedPendingArtists));
+        
+        await createArtistFromPending(newArtist);
+        await deletePendingArtist(artistToApprove.originalId); // Assuming original Firestore doc id is available
         
         fetchAdminData();
 
@@ -126,13 +100,11 @@ export default function ArtistManagementPage() {
         });
     };
 
-     const handleReject = (artistId: string) => {
+     const handleReject = async (artistId: string) => {
         const artistToReject = pendingArtists.find(p => p.id === artistId);
         if (!artistToReject) return;
 
-        const updatedPendingArtists = pendingArtists.filter(p => p.id !== artistId);
-        localStorage.setItem('pendingArtists', JSON.stringify(updatedPendingArtists.map(({ id, ...rest }) => rest)));
-        
+        await deletePendingArtist(artistToReject.originalId);
         fetchAdminData();
         
         toast({
@@ -200,8 +172,8 @@ export default function ArtistManagementPage() {
         setSelectedArtistIds([]);
     };
     
-    const onOnboardSubmit: SubmitHandler<OnboardFormValues> = (data) => {
-        const currentArtists = getArtists();
+    const onOnboardSubmit: SubmitHandler<OnboardFormValues> = async (data) => {
+        const currentArtists = await getArtists();
         if (currentArtists.some(a => a.email === data.email)) {
             form.setError('email', { message: 'An artist with this email already exists.' });
             return;
@@ -226,8 +198,7 @@ export default function ArtistManagementPage() {
             styleTags: ['new', 'verified'],
         };
         
-        const updatedLocalArtists = JSON.parse(localStorage.getItem('artists') || '[]');
-        localStorage.setItem('artists', JSON.stringify([...updatedLocalArtists, newArtist]));
+        await createArtistFromPending(newArtist);
 
         fetchAdminData();
         toast({

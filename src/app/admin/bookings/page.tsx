@@ -11,7 +11,7 @@ import { Briefcase, MoreHorizontal, AlertOctagon, CheckSquare } from 'lucide-rea
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import type { Booking, Artist, Notification } from '@/types';
-import { artists as initialArtists, allBookings as initialBookings } from '@/lib/data';
+import { getArtists, getBookings, updateBooking, createBooking } from '@/lib/services';
 import { AssignArtistModal } from '@/components/glamgo/AssignArtistModal';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -28,59 +28,40 @@ export default function BookingManagementPage() {
     const [isAssignModalOpen, setIsAssignModalOpen] = React.useState(false);
     const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
 
-    const getArtists = React.useCallback((): Artist[] => {
-        const storedArtists = localStorage.getItem('artists');
-        const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
-        const allArtistsMap = new Map<string, Artist>();
-        initialArtists.forEach(a => allArtistsMap.set(a.id, a));
-        localArtists.forEach(a => allArtistsMap.set(a.id, a));
-        return Array.from(allArtistsMap.values());
+    const fetchData = React.useCallback(async () => {
+        setArtists(await getArtists());
+        setBookings(await getBookings());
     }, []);
-
-    const fetchData = React.useCallback(() => {
-        setArtists(getArtists());
-
-        const storedBookings = localStorage.getItem('bookings');
-        setBookings(storedBookings ? JSON.parse(storedBookings).map((b: any) => ({...b, date: new Date(b.date), eventDate: b.eventDate ? new Date(b.eventDate) : new Date(b.date), serviceDates: b.serviceDates.map((d: string) => new Date(d)) })) : initialBookings);
-    }, [getArtists]);
 
     React.useEffect(() => {
         fetchData();
-        window.addEventListener('storage', fetchData);
-        return () => window.removeEventListener('storage', fetchData);
+        // Add a poller or listener if real-time updates are needed
     }, [fetchData]);
     
     const sendNotification = (artistId: string, booking: Booking, title: string, message: string) => {
-        const existingNotifications = JSON.parse(localStorage.getItem('notifications') || '[]');
-        const newNotification: Notification = {
-            id: `notif_${Date.now()}_${artistId}`,
-            artistId,
-            bookingId: booking.id,
-            title,
-            message,
-            timestamp: new Date().toISOString(),
-            isRead: false,
-            type: 'booking',
-        };
-        localStorage.setItem('notifications', JSON.stringify([newNotification, ...existingNotifications]));
+        // In a real app, this would be a server-side function to send a push notification
+        console.log(`Sending notification to ${artistId}: ${title} - ${message}`);
     };
 
-    const updateBookingStatus = (bookingId: string, status: Booking['status'], artistIds?: string[]) => {
-        const updatedBookings = bookings.map(b => 
-            b.id === bookingId 
-            ? { ...b, status, artistIds: artistIds !== undefined ? artistIds : b.artistIds } 
-            : b
-        );
-        localStorage.setItem('bookings', JSON.stringify(updatedBookings));
-        window.dispatchEvent(new Event('storage'));
+    const handleUpdateBookingStatus = async (bookingId: string, status: Booking['status'], artistIds?: string[]) => {
+        const bookingToUpdate = bookings.find(b => b.id === bookingId);
+        if (!bookingToUpdate) return;
+        
+        const updateData: Partial<Booking> = { status };
+        if (artistIds !== undefined) {
+            updateData.artistIds = artistIds;
+        }
+
+        await updateBooking(bookingId, updateData);
+        await fetchData(); // Re-fetch data to reflect changes
     };
 
-    const handleOfflineConfirm = (bookingId: string) => {
+    const handleOfflineConfirm = async (bookingId: string) => {
         const booking = bookings.find(b => b.id === bookingId);
         if (!booking) return;
 
         const newStatus = booking.artistIds.length > 0 ? 'Pending Approval' : 'Needs Assignment';
-        updateBookingStatus(bookingId, newStatus);
+        await handleUpdateBookingStatus(bookingId, newStatus);
         
         toast({
             title: "Booking Manually Confirmed",
@@ -88,11 +69,11 @@ export default function BookingManagementPage() {
         });
     }
     
-    const handleApproveBooking = (bookingId: string) => {
+    const handleApproveBooking = async (bookingId: string) => {
         const booking = bookings.find(b => b.id === bookingId);
         if (!booking || !booking.artistIds || booking.artistIds.length === 0) return;
 
-        updateBookingStatus(bookingId, 'Confirmed');
+        await handleUpdateBookingStatus(bookingId, 'Confirmed');
         
         booking.artistIds.forEach(artistId => {
             if (artistId) {
@@ -111,11 +92,11 @@ export default function BookingManagementPage() {
         });
     };
     
-    const handleCancelBooking = (bookingId: string) => {
+    const handleCancelBooking = async (bookingId: string) => {
         const booking = bookings.find(b => b.id === bookingId);
         if (!booking) return;
 
-        updateBookingStatus(bookingId, 'Cancelled');
+        await handleUpdateBookingStatus(bookingId, 'Cancelled');
 
         if(booking.artistIds && booking.artistIds.length > 0) {
             booking.artistIds.forEach(artistId => {
@@ -137,11 +118,11 @@ export default function BookingManagementPage() {
         });
     };
 
-    const handleDisputeBooking = (bookingId: string) => {
+    const handleDisputeBooking = async (bookingId: string) => {
         const booking = bookings.find(b => b.id === bookingId);
         if (!booking) return;
 
-        updateBookingStatus(bookingId, 'Disputed');
+        await handleUpdateBookingStatus(bookingId, 'Disputed');
         
         if (booking.artistIds && booking.artistIds.length > 0) {
              booking.artistIds.forEach(artistId => {
@@ -168,13 +149,13 @@ export default function BookingManagementPage() {
         setIsAssignModalOpen(true);
     };
     
-    const handleAssignArtist = (bookingId: string, assignedArtistIds: string[]) => {
+    const handleAssignArtist = async (bookingId: string, assignedArtistIds: string[]) => {
         const booking = bookings.find(b => b.id === bookingId);
         if (!booking) return;
         
         const originalArtistIds = booking.artistIds || [];
         const newStatus = booking.paymentMethod === 'offline' ? 'Pending Approval' : 'Confirmed';
-        updateBookingStatus(bookingId, newStatus, assignedArtistIds);
+        await handleUpdateBookingStatus(bookingId, newStatus, assignedArtistIds);
         
         assignedArtistIds.forEach(artistId => {
             const artist = artists.find(a => a.id === artistId);
@@ -310,7 +291,7 @@ export default function BookingManagementPage() {
                                             )}
                                             {booking.status === 'Disputed' && (
                                                 <>
-                                                    <DropdownMenuItem onSelect={() => updateBookingStatus(booking.id, 'Completed')}>Resolve (Mark as Complete)</DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => handleUpdateBookingStatus(booking.id, 'Completed')}>Resolve (Mark as Complete)</DropdownMenuItem>
                                                     <DropdownMenuItem onSelect={() => handleCancelBooking(booking.id)}>Resolve (Cancel Booking)</DropdownMenuItem>
                                                 </>
                                             )}

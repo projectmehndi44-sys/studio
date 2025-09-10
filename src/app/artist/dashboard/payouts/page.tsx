@@ -18,7 +18,13 @@ export default function ArtistPayoutsPage() {
     const [payouts, setPayouts] = React.useState<Booking[]>([]);
     const [payoutHistory, setPayoutHistory] = React.useState<PayoutHistory[]>([]);
     const [pendingAmount, setPendingAmount] = React.useState(0);
-    const platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10') / 100;
+    const platformFeePercentage = React.useRef(0.1);
+
+    React.useEffect(() => {
+        // In a real app, this value should come from a secure config
+        const fee = localStorage.getItem('platformFeePercentage');
+        platformFeePercentage.current = fee ? parseFloat(fee) / 100 : 0.1;
+    }, []);
 
     const calculatePayouts = React.useCallback(() => {
         if (!artist) return;
@@ -26,10 +32,14 @@ export default function ArtistPayoutsPage() {
         const pendingPayouts = artistBookings.filter(b => b.status === 'Completed' && !b.paidOut);
         setPayouts(pendingPayouts);
         
-        const totalPendingGross = pendingPayouts.reduce((sum, b) => sum + b.amount, 0);
+        const totalPendingGross = pendingPayouts.reduce((sum, b) => {
+            // If offline payment, artist has the cash, so it doesn't contribute to what the platform pays out.
+            if (b.paymentMethod === 'offline') return sum;
+            return sum + b.amount;
+        }, 0);
         
         const taxableAmount = totalPendingGross / 1.18;
-        const platformFee = taxableAmount * platformFeePercentage;
+        const platformFee = taxableAmount * platformFeePercentage.current;
         setPendingAmount(taxableAmount - platformFee);
 
 
@@ -38,7 +48,7 @@ export default function ArtistPayoutsPage() {
         const artistHistory = allPayoutHistory.filter(p => p.artistId === artist?.id);
         setPayoutHistory(artistHistory.sort((a,b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()));
 
-    }, [artistBookings, artist, platformFeePercentage]);
+    }, [artistBookings, artist]);
 
     React.useEffect(() => {
         calculatePayouts();
@@ -75,6 +85,7 @@ export default function ArtistPayoutsPage() {
                                                     <TableHead>Customer</TableHead>
                                                     <TableHead>Service Date</TableHead>
                                                     <TableHead>Gross Amount</TableHead>
+                                                    <TableHead>Payment Method</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
@@ -83,13 +94,21 @@ export default function ArtistPayoutsPage() {
                                                         <TableCell>{booking.customerName}</TableCell>
                                                         <TableCell>{new Date(booking.date).toLocaleDateString()}</TableCell>
                                                         <TableCell>₹{booking.amount.toLocaleString()}</TableCell>
+                                                        <TableCell><Badge variant={booking.paymentMethod === 'online' ? 'default' : 'secondary'}>{booking.paymentMethod === 'online' ? 'Paid Online' : 'Pay at Venue'}</Badge></TableCell>
                                                     </TableRow>
                                                 ))}
                                             </TableBody>
                                         </Table>
                                         <div className="mt-4 text-right font-bold text-lg text-primary">
-                                            Total Pending Payout: ₹{pendingAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                                            Total Pending Payout (from Online Payments): ₹{pendingAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}
                                         </div>
+                                         <Alert variant="default" className="mt-4">
+                                            <Terminal className="h-4 w-4" />
+                                            <AlertTitle>How Payouts Work</AlertTitle>
+                                            <AlertDescription>
+                                               Your "Pending Payout" amount is calculated based on bookings paid online. For "Pay at Venue" bookings, you collect cash directly from the customer, and the platform's commission will be automatically deducted from your total payout by the admin.
+                                            </AlertDescription>
+                                        </Alert>
                                     </>
                                 ) : (
                                     <Alert>

@@ -13,12 +13,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from '@/hooks/use-toast';
 import { IndianRupee, BarChart, Star, Users, Briefcase, Calendar as CalendarIcon, Image as ImageIcon, Download, ChevronDown, ArrowLeft } from 'lucide-react';
 import type { Artist, Booking, Review } from '@/types';
-import { artists as initialArtists, allBookings as initialBookings } from '@/lib/data';
+import { getArtist, getBookings } from '@/lib/services';
 import NextImage from 'next/image';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { exportToExcel, exportToPdf } from '@/lib/export';
 
-// Mock data for reviews - in a real app, this would be fetched
+// Mock data for reviews - in a real app, this would be fetched from the artist's document
 const mockReviews: Review[] = [
     { id: 'rev_01', customerName: 'Priya Patel', rating: 5, comment: 'Absolutely stunning work! Made my wedding day perfect.' },
     { id: 'rev_02', customerName: 'Anjali Sharma', rating: 4, comment: 'Great makeup, but was a little late. Overall happy with the result.' },
@@ -35,45 +35,36 @@ export default function ArtistDetailPage() {
     const [bookings, setBookings] = React.useState<Booking[]>([]);
     const [reviews] = React.useState<Review[]>(mockReviews);
     
-    const getArtists = React.useCallback((): Artist[] => {
-        const storedArtists = localStorage.getItem('artists');
-        const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
-        const allArtistsMap = new Map<string, Artist>();
-        initialArtists.forEach(a => allArtistsMap.set(a.id, a));
-        localArtists.forEach(a => allArtistsMap.set(a.id, a));
-        return Array.from(allArtistsMap.values());
-    }, []);
-
     React.useEffect(() => {
         const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
         if (isAdminAuthenticated !== 'true') {
             router.push('/admin/login');
         }
 
-        // Fetch artist details using the corrected logic
-        const allArtists: Artist[] = getArtists();
-        const foundArtist = allArtists.find(a => a.id === artistId);
-        
-        if (foundArtist) {
-            setArtist(foundArtist);
-        } else {
-            toast({
-                title: 'Artist not found',
-                description: 'The requested artist could not be found.',
-                variant: 'destructive',
-            });
-            router.push('/admin/artists');
-        }
-        
-        // Fetch bookings to calculate financials
-        const storedBookings = localStorage.getItem('bookings');
-        const allBookings: Booking[] = storedBookings ? JSON.parse(storedBookings) : initialBookings;
-        const artistBookings = allBookings
-            .filter(b => b.artistIds.includes(artistId))
-            .map(b => ({...b, date: new Date(b.date)}));
-        setBookings(artistBookings);
+        if (!artistId) return;
 
-    }, [router, artistId, toast, getArtists]);
+        const fetchData = async () => {
+            const foundArtist = await getArtist(artistId);
+            
+            if (foundArtist) {
+                setArtist(foundArtist);
+                 // Fetch bookings to calculate financials
+                const allBookings = await getBookings();
+                const artistBookings = allBookings.filter(b => b.artistIds.includes(artistId));
+                setBookings(artistBookings);
+            } else {
+                toast({
+                    title: 'Artist not found',
+                    description: 'The requested artist could not be found.',
+                    variant: 'destructive',
+                });
+                router.push('/admin/artists');
+            }
+        };
+
+        fetchData();
+
+    }, [router, artistId, toast]);
 
     const handleDownload = (format: 'json' | 'pdf' | 'excel') => {
         if (!artist) return;
@@ -83,7 +74,7 @@ export default function ArtistDetailPage() {
         const dataToDownload = {
             artist,
             bookings: artistBookings,
-            reviews,
+            reviews: artist.reviews || [],
         };
 
         if (format === 'json') {
@@ -118,7 +109,7 @@ export default function ArtistDetailPage() {
     const platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10') / 100;
     const platformFee = totalRevenue * platformFeePercentage;
     const netPayout = totalRevenue - platformFee;
-    const bookedDates = bookings.map(b => b.date);
+    const bookedDates = bookings.flatMap(b => b.serviceDates);
 
     return (
         <>
@@ -233,7 +224,7 @@ export default function ArtistDetailPage() {
                                     {bookings.slice(0, 5).map(booking => (
                                         <TableRow key={booking.id}>
                                             <TableCell>{booking.customerName}</TableCell>
-                                            <TableCell>{booking.date.toLocaleDateString()}</TableCell>
+                                            <TableCell>{new Date(booking.date).toLocaleDateString()}</TableCell>
                                             <TableCell>₹{booking.amount}</TableCell>
                                             <TableCell>
                                                 <Badge variant={booking.status === 'Completed' ? 'default' : 'secondary'}>
@@ -258,10 +249,10 @@ export default function ArtistDetailPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2"><Users className="w-5 h-5 text-primary"/> Customer Reviews</CardTitle>
-                            <CardDescription>{reviews.length} reviews received</CardDescription>
+                            <CardDescription>{(artist.reviews || []).length} reviews received</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {reviews.map(review => (
+                            {(artist.reviews || []).map(review => (
                                 <div key={review.id} className="border-l-4 border-accent pl-4">
                                     <div className="flex items-center justify-between">
                                         <p className="font-semibold">{review.customerName}</p>
@@ -273,7 +264,7 @@ export default function ArtistDetailPage() {
                                     <p className="text-sm text-muted-foreground italic">"{review.comment}"</p>
                                 </div>
                             ))}
-                             {reviews.length === 0 && (
+                             {(artist.reviews || []).length === 0 && (
                                 <p className="text-center text-muted-foreground">No reviews yet for this artist.</p>
                              )}
                         </CardContent>

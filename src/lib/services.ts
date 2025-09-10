@@ -2,7 +2,7 @@
 'use client';
 
 import { db } from './firebase';
-import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, query, where, Timestamp } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, query, where, deleteDoc, Timestamp } from 'firebase/firestore';
 import type { Artist, Booking, Customer, MasterServicePackage, Notification, PayoutHistory, Promotion, TeamMember } from '@/types';
 import { artists as initialArtists } from './data';
 import { masterServices as initialMasterServices } from './packages-data';
@@ -69,9 +69,9 @@ export const getBookings = async (): Promise<Booking[]> => {
     // Convert Firestore Timestamps to JS Dates
     return bookings.map(b => ({
         ...b,
-        date: (b.date as unknown as Timestamp).toDate(),
-        eventDate: (b.eventDate as unknown as Timestamp).toDate(),
-        serviceDates: b.serviceDates.map(d => (d as unknown as Timestamp).toDate()),
+        date: b.date ? (b.date as unknown as Timestamp).toDate() : new Date(),
+        eventDate: b.eventDate ? (b.eventDate as unknown as Timestamp).toDate() : new Date(),
+        serviceDates: b.serviceDates?.map(d => (d as unknown as Timestamp).toDate()) || [],
     }));
 };
 
@@ -98,9 +98,10 @@ export const getCustomerByEmail = async (email: string): Promise<Customer | null
     return { id: doc.id, ...doc.data() } as Customer;
 };
 export const createCustomer = async (data: Omit<Customer, 'id'> & {id?: string}): Promise<string> => {
-    const customerRef = doc(db, "customers", data.id || data.phone);
+    const customerId = data.id || data.phone;
+    const customerRef = doc(db, "customers", customerId);
     await setDoc(customerRef, data, { merge: true }); // Merge to avoid overwriting if doc exists
-    return data.id || data.phone;
+    return customerId;
 };
 
 // Master Services
@@ -123,10 +124,8 @@ export const createPendingArtist = async (data: any): Promise<string> => {
      return docRef.id;
 };
 export const deletePendingArtist = async (id: string): Promise<void> => {
-    // In a real app, this might be a soft delete or move to another collection
     const artistRef = doc(db, "pendingArtists", id);
-    // await deleteDoc(artistRef);
-    console.log(`Would delete pending artist ${id}`);
+    await deleteDoc(artistRef);
 };
 export const createArtistFromPending = async (data: Artist): Promise<string> => {
     const artistRef = doc(db, "artists", data.id);
