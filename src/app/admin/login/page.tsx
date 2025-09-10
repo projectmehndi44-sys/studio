@@ -44,19 +44,21 @@ export default function AdminLoginPage() {
                 await signOut(auth);
             }
 
-            // Attempt to sign in with Firebase Auth. We use the username (as email) and password.
-            // This requires the user to exist in Firebase Authentication.
-            // For this project, we'll use a single hardcoded login and then check their role from Firestore.
-            // The default admin email is derived from the username for Firebase Auth.
-            const adminAuthEmail = 'admin@mehndify.com';
+            // Determine the email to use for Firebase Authentication based on the user type.
+            // For 'admin', we use the hardcoded super admin email.
+            // For 'team-member', we construct the email from their username.
+            const authEmail = userType === 'admin' 
+                ? 'admin@mehndify.com' 
+                : `${username}@mehndify.com`;
+
             
             // This will throw an error if Firebase Auth fails, which is caught below.
-            const userCredential = await signInAsAdmin(adminAuthEmail, password);
+            const userCredential = await signInAsAdmin(authEmail, password);
 
             if (userCredential) {
                 const teamMembers = await getTeamMembers();
-                const expectedRole = userType === 'admin' ? 'Super Admin' : 'team-member';
-                const member = teamMembers.find(m => m.username === username && m.role === expectedRole);
+                // Find the team member document that matches the entered username.
+                const member = teamMembers.find(m => m.username === username);
 
                 if (member) {
                      toast({
@@ -69,7 +71,7 @@ export default function AdminLoginPage() {
                     localStorage.setItem('adminUserId', member.id);
                     window.location.href = '/admin'; // Full refresh to re-trigger auth context
                 } else {
-                    await signOut(auth); // Sign out if they are not a valid team member
+                    await signOut(auth); // Sign out if they are not a valid team member in Firestore
                     toast({
                         title: 'Authorization Failed',
                         description: `You are authenticated, but not authorized to access this role.`,
