@@ -130,7 +130,7 @@ export default function ArtistDashboardLayout({
         const unsubscribeBookings = listenToCollection<Booking>('bookings', (allBookings) => {
             const currentArtistBookings = allBookings
                 .filter(b => b.artistIds && b.artistIds.includes(artist.id))
-                .sort((a,b) => b.date.getTime() - a.date.getTime());
+                .sort((a,b) => b.date.toMillis() - a.date.toMillis());
             setArtistBookings(currentArtistBookings);
         });
 

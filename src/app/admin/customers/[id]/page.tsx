@@ -39,7 +39,7 @@ export default function CustomerDetailPage() {
                     setCustomer(customerData);
                     setArtists(artistsData);
                     const customerBookings = bookingsData.filter(b => b.customerId === customerId);
-                    setBookings(customerBookings.sort((a, b) => b.date.getTime() - a.date.getTime()));
+                    setBookings(customerBookings.sort((a, b) => b.date.toMillis() - a.date.toMillis()));
                 } else {
                     toast({
                         title: 'Customer not found',
@@ -98,7 +98,7 @@ export default function CustomerDetailPage() {
                     <div className="flex flex-col gap-1">
                         {booking.serviceDates?.map((date, index) => (
                             <Badge key={index} variant="outline" className="text-xs">
-                                {format(date, "PPP")}
+                                {format(date.toDate(), "PPP")}
                             </Badge>
                         ))}
                     </div>

@@ -40,7 +40,7 @@ function NotificationCard({ notification, allBookings, onMarkAsRead }: Notificat
                         <Card className="mt-2 text-xs text-muted-foreground p-2 bg-background/50">
                             <p><strong>Customer:</strong> {booking.customerName}</p>
                             <p><strong>Service:</strong> {booking.service}</p>
-                            <p><strong>Date:</strong> {new Date(booking.date).toLocaleDateString()}</p>
+                            <p><strong>Date:</strong> {booking.date.toDate().toLocaleDateString()}</p>
                             <p><strong>Address:</strong> {booking.serviceAddress}</p>
                         </Card>
                     )}

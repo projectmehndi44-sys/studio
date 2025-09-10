@@ -46,7 +46,7 @@ export default function TransactionsPage() {
                 bookingsData.filter(b => b.status === 'Completed').forEach(b => {
                     newTransactions.push({
                         id: `rev-${b.id}`,
-                        date: new Date(b.date),
+                        date: b.date.toDate(),
                         type: 'Revenue',
                         description: `Booking #${b.id} for ${b.service}`,
                         amount: b.amount,

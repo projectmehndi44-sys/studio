@@ -68,7 +68,7 @@ export default function AccountPage() {
             setArtists(fetchedArtists);
 
             const customerBookings = allBookings.filter(b => b.customerId === customerId);
-            setBookings(customerBookings.sort((a,b) => b.date.getTime() - a.date.getTime()));
+            setBookings(customerBookings.sort((a,b) => b.date.toMillis() - a.date.toMillis()));
 
         } catch (error) {
             console.error("Failed to fetch customer data:", error);
@@ -126,8 +126,8 @@ export default function AccountPage() {
         );
     }
 
-    const upcomingBookings = bookings.filter(b => b.date >= new Date() && (b.status === 'Confirmed' || b.status === 'Pending Approval' || b.status === 'Needs Assignment'));
-    const pastBookings = bookings.filter(b => b.date < new Date() || b.status === 'Completed' || b.status === 'Cancelled' || b.status === 'Disputed');
+    const upcomingBookings = bookings.filter(b => b.date.toDate() >= new Date() && (b.status === 'Confirmed' || b.status === 'Pending Approval' || b.status === 'Needs Assignment'));
+    const pastBookings = bookings.filter(b => b.date.toDate() < new Date() || b.status === 'Completed' || b.status === 'Cancelled' || b.status === 'Disputed');
     
     const renderBookingRow = (booking: Booking) => {
         const assignedArtists = artists.filter(a => booking.artistIds?.includes(a.id));
@@ -149,7 +149,7 @@ export default function AccountPage() {
                     <div className="flex flex-col gap-1">
                         {booking.serviceDates.map((date, index) => (
                             <Badge key={index} variant="outline" className="text-xs">
-                                {format(date, "PPP")}
+                                {format(date.toDate(), "PPP")}
                             </Badge>
                         ))}
                     </div>

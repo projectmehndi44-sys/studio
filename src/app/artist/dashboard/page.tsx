@@ -25,7 +25,7 @@ export default function ArtistDashboardPage() {
     const totalRevenue = completedBookings.reduce((sum, b) => sum + b.amount, 0);
     const totalBookings = artistBookings.length;
     const averageRating = artist.rating;
-    const upcomingBookingsCount = artistBookings.filter(b => b.status === 'Confirmed' && new Date(b.date) > new Date()).length;
+    const upcomingBookingsCount = artistBookings.filter(b => b.status === 'Confirmed' && b.date.toDate() > new Date()).length;
 
     // Recent activity data
     const recentBookings = [...artistBookings].slice(0, 5);
@@ -45,7 +45,7 @@ export default function ArtistDashboardPage() {
 
     // 1. Bookings over time
     const monthlyData = artistBookings.reduce((acc, booking) => {
-        const month = new Date(booking.date).toLocaleString('default', { month: 'short', year: 'numeric' });
+        const month = booking.date.toDate().toLocaleString('default', { month: 'short', year: 'numeric' });
         if (!acc[month]) {
             acc[month] = { name: month, bookings: 0 };
         }
@@ -189,7 +189,7 @@ export default function ArtistDashboardPage() {
                             {recentBookings.length > 0 ? recentBookings.map(booking => (
                                 <TableRow key={booking.id}>
                                     <TableCell>{booking.customerName}</TableCell>
-                                    <TableCell>{new Date(booking.date).toLocaleDateString()}</TableCell>
+                                    <TableCell>{booking.date.toDate().toLocaleDateString()}</TableCell>
                                     <TableCell>{booking.service}</TableCell>
                                     <TableCell>
                                         <Badge variant={getStatusVariant(booking.status)}>{booking.status}</Badge>

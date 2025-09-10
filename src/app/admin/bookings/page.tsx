@@ -31,7 +31,7 @@ export default function BookingManagementPage() {
     React.useEffect(() => {
         const unsubscribeArtists = listenToCollection<Artist>('artists', setArtists);
         const unsubscribeBookings = listenToCollection<Booking>('bookings', (data) => {
-            setBookings(data.sort((a, b) => b.date.getTime() - a.date.getTime()));
+            setBookings(data.sort((a, b) => b.date.toMillis() - a.date.toMillis()));
         });
 
         return () => {
@@ -244,7 +244,7 @@ export default function BookingManagementPage() {
                                 <div className="flex flex-col gap-1">
                                     {(booking.serviceDates || []).map((date, index) => (
                                         <Badge key={index} variant="outline" className="text-xs">
-                                            {format(new Date(date), "PPP")}
+                                            {format(date.toDate(), "PPP")}
                                         </Badge>
                                     ))}
                                 </div>

@@ -76,22 +76,6 @@ export const listenToCollection = <T>(collectionName: string, callback: (data: T
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const data: T[] = querySnapshot.docs.map(doc => {
             const docData = doc.data();
-            // Basic date conversion for top-level fields, can be expanded
-            if (docData.date && docData.date instanceof Timestamp) {
-                docData.date = docData.date.toDate();
-            }
-             if (docData.eventDate && docData.eventDate instanceof Timestamp) {
-                docData.eventDate = docData.eventDate.toDate();
-            }
-             if (docData.serviceDates && Array.isArray(docData.serviceDates)) {
-                docData.serviceDates = docData.serviceDates.map(d => (d instanceof Timestamp ? d.toDate() : d));
-            }
-             if (docData.submissionDate && docData.submissionDate instanceof Timestamp) {
-                docData.submissionDate = docData.submissionDate.toDate();
-            }
-             if (docData.paymentDate && docData.paymentDate instanceof Timestamp) {
-                docData.paymentDate = docData.paymentDate.toDate();
-            }
             return { id: doc.id, ...docData } as T;
         });
         callback(data);
@@ -111,24 +95,15 @@ export const createArtist = async (id: string, data: Omit<Artist, 'id'>): Promis
     // Use email as the document ID for artists created via admin onboarding
     const artistRef = doc(db, "artists", id);
     await setDoc(artistRef, data);
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('storage'));
-    }
     return id;
 };
 export const updateArtist = async (id: string, data: Partial<Artist>): Promise<void> => {
     const artistRef = doc(db, "artists", id);
     await updateDoc(artistRef, data);
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new Event('storage'));
-    }
 };
 export const deleteArtist = async (id: string): Promise<void> => {
     const artistRef = doc(db, "artists", id);
     await deleteDoc(artistRef);
-    if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('storage'));
-    }
 }
 
 

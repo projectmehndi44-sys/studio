@@ -109,7 +109,7 @@ export default function AdminPage() {
     
       // --- Chart Data Processing ---
     const monthlyData = bookings.reduce((acc, booking) => {
-        const month = new Date(booking.date).toLocaleString('default', { month: 'short', year: 'numeric' });
+        const month = booking.date.toDate().toLocaleString('default', { month: 'short', year: 'numeric' });
         if (!acc[month]) {
             acc[month] = { name: month, bookings: 0, revenue: 0 };
         }
@@ -253,7 +253,7 @@ export default function AdminPage() {
                                                     </div>
                                                 ) : <span className="text-muted-foreground">N/A</span>}
                                             </TableCell>
-                                            <TableCell>{new Date(booking.date).toLocaleDateString()}</TableCell>
+                                            <TableCell>{booking.date.toDate().toLocaleDateString()}</TableCell>
                                             <TableCell>₹{booking.amount}</TableCell>
                                             <TableCell>
                                                 <Badge variant={getStatusVariant(booking.status)}>

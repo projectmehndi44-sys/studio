@@ -70,7 +70,7 @@ export const exportToPdf = async (data: ArtistExportData) => {
     autoTable(doc, {
         startY: 25,
         head: [['Customer', 'Date', 'Service', 'Amount', 'Status']],
-        body: bookings.map(b => [b.customerName, new Date(b.date).toLocaleDateString(), b.service, `₹${b.amount}`, b.status]),
+        body: bookings.map(b => [b.customerName, b.date.toDate().toLocaleDateString(), b.service, `₹${b.amount}`, b.status]),
         theme: 'grid',
     });
 
@@ -121,7 +121,7 @@ export const exportToExcel = (data: ArtistExportData[], filename = 'artists-expo
             const bookings_ws = XLSX.utils.json_to_sheet(
                 bookings.map(b => ({
                     Customer: b.customerName,
-                    Date: new Date(b.date).toLocaleDateString(),
+                    Date: b.date.toDate().toLocaleDateString(),
                     Service: b.service,
                     Amount: b.amount,
                     Status: b.status,
@@ -269,7 +269,7 @@ export const generateCustomerInvoice = async (booking: Booking, customer: Custom
     if(customer.email) doc.text(`Email: ${customer.email}`, 14, 72);
 
     const invoiceId = `INV-CUST-${booking.id.substring(5)}`;
-    const invoiceDate = new Date(booking.date).toLocaleDateString();
+    const invoiceDate = booking.date.toDate().toLocaleDateString();
 
     doc.text(`Invoice #: ${invoiceId}`, 196, 60, { align: 'right' });
     doc.text(`Date: ${invoiceDate}`, 196, 66, { align: 'right' });
@@ -312,68 +312,3 @@ export const generateCustomerInvoice = async (booking: Booking, customer: Custom
 
     doc.save(`invoice-${invoiceId}.pdf`);
 }
-
-
-/**
- * Exports a list of transactions to a PDF file.
- * @param transactions - The array of transactions to export.
- */
-export const exportTransactionsToPdf = (transactions: Transaction[]) => {
-  const doc = new jsPDF();
-  const totalRevenue = transactions.filter(t => t.type === 'Revenue').reduce((sum, t) => sum + t.amount, 0);
-  const totalPayouts = transactions.filter(t => t.type === 'Payout').reduce((sum, t) => sum + t.amount, 0);
-
-  doc.setFontSize(22);
-  doc.text('Transaction Report', 14, 20);
-  
-  if (transactions.length > 0) {
-      doc.setFontSize(12);
-      doc.text(`Date Range: ${transactions[transactions.length-1].date.toLocaleDateString()} - ${transactions[0].date.toLocaleDateString()}`, 14, 28);
-      doc.text(`Total Revenue: +₹${totalRevenue.toLocaleString()}`, 14, 34);
-      doc.text(`Total Payouts: -₹${Math.abs(totalPayouts).toLocaleString()}`, 14, 40);
-  }
-
-  autoTable(doc, {
-    startY: 50,
-    head: [['Date', 'Type', 'Description', 'Amount']],
-    body: transactions.map(t => [
-      t.date.toLocaleDateString(),
-      t.type,
-      t.description,
-      t.amount > 0 ? `+₹${t.amount.toLocaleString()}` : `-₹${Math.abs(t.amount).toLocaleString()}`
-    ]),
-    theme: 'striped',
-    headStyles: { fillColor: '#34495e' },
-    didDrawCell: (data) => {
-        if (data.section === 'body' && data.column.index === 3) {
-            if (data.cell.text && data.cell.text[0]) {
-                const text = data.cell.text[0];
-                if (text.startsWith('+')) {
-                    doc.setTextColor(39, 174, 96); // green
-                } else if (text.startsWith('-')) {
-                    doc.setTextColor(192, 57, 43); // red
-                }
-            }
-        }
-    }
-  });
-
-  doc.save('transaction-report.pdf');
-};
-
-
-/**
- * Exports a list of transactions to an Excel file.
- * @param transactions - The array of transactions to export.
- */
-export const exportTransactionsToExcel = (transactions: Transaction[]) => {
-  const worksheet = XLSX.utils.json_to_sheet(transactions.map(t => ({
-    Date: t.date.toLocaleDateString(),
-    Type: t.type,
-    Description: t.description,
-    Amount: t.amount,
-  })));
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Transactions');
-  XLSX.writeFile(workbook, 'transaction-report.xlsx');
-};

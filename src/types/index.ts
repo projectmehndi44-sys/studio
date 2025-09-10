@@ -1,17 +1,6 @@
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+import { Timestamp } from 'firebase/firestore';
 
 export type PackageCategory = {
   name: 'Normal' | 'Premium' | 'ULTRA PREMIUM';
@@ -90,8 +79,8 @@ export type Booking = {
   customerName: string;
   customerContact?: string;
   serviceAddress: string;
-  date: Date; // For backward compatibility & main date
-  serviceDates: Date[]; // For multi-day bookings
+  date: Timestamp; // For backward compatibility & main date
+  serviceDates: Timestamp[]; // For multi-day bookings
   service: string;
   amount: number;
   status: 'Completed' | 'Confirmed' | 'Cancelled' | 'Pending Approval' | 'Needs Assignment' | 'Disputed' | 'Pending Confirmation';
@@ -100,7 +89,7 @@ export type Booking = {
   
   // New detailed fields
   eventType: string;
-  eventDate: Date;
+  eventDate: Timestamp;
   state: string;
   district: string;
   location: string; // Locality/Area

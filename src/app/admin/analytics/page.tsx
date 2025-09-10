@@ -23,7 +23,7 @@ export default function AnalyticsPage() {
 
     // 1. Bookings and Revenue over time
     const monthlyData = bookings.reduce((acc, booking) => {
-        const month = new Date(booking.date).toLocaleString('default', { month: 'short', year: 'numeric' });
+        const month = booking.date.toDate().toLocaleString('default', { month: 'short', year: 'numeric' });
         if (!acc[month]) {
             acc[month] = { name: month, bookings: 0, revenue: 0 };
         }

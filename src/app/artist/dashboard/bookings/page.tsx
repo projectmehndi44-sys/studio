@@ -53,7 +53,7 @@ const BookingDetailsModal = ({ booking, isOpen, onOpenChange, platformFeePercent
                             </div>
                         </CardHeader>
                         <CardContent className="text-sm space-y-2">
-                             <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-muted-foreground" /> <span>Event: {booking.eventType} on {format(new Date(booking.eventDate), 'PPP')}</span></div>
+                             <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-muted-foreground" /> <span>Event: {booking.eventType} on {format(booking.eventDate.toDate(), 'PPP')}</span></div>
                              {booking.mapLink ? (
                                 <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-muted-foreground" /> <a href={booking.mapLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{booking.serviceAddress}</a></div>
                              ) : (
@@ -70,7 +70,7 @@ const BookingDetailsModal = ({ booking, isOpen, onOpenChange, platformFeePercent
                         <CardContent className="flex flex-wrap gap-2">
                              {(booking.serviceDates || []).map((date, index) => (
                                 <Badge key={index} variant="secondary">
-                                    {format(new Date(date), "E, PPP")}
+                                    {format(date.toDate(), "E, PPP")}
                                 </Badge>
                             ))}
                         </CardContent>
@@ -216,7 +216,7 @@ export default function ArtistBookingsPage() {
                                         <div className="text-sm space-y-2">
                                             <div className="flex items-center gap-2">
                                                 <Calendar className="w-4 h-4 text-muted-foreground"/>
-                                                <span>{format(new Date(booking.serviceDates[0]), "PPP")} {booking.serviceDates.length > 1 ? `(+${booking.serviceDates.length - 1} more)` : ''}</span>
+                                                <span>{format(booking.serviceDates[0].toDate(), "PPP")} {booking.serviceDates.length > 1 ? `(+${booking.serviceDates.length - 1} more)` : ''}</span>
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <MapPin className="w-4 h-4 text-muted-foreground"/>
