@@ -13,9 +13,7 @@ import { MapPin, Save } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { INDIA_LOCATIONS } from '@/lib/india-locations';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
-import { getAvailableLocations } from '@/lib/services';
-import { setDoc, doc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getAvailableLocations, saveAvailableLocations } from '@/lib/services';
 
 export default function LocationManagementPage() {
     const router = useRouter();
@@ -66,7 +64,7 @@ export default function LocationManagementPage() {
     const handleSave = async () => {
         setIsLoading(true);
         try {
-            await setDoc(doc(db, "config", "availableLocations"), { locations: selectedLocations });
+            await saveAvailableLocations(selectedLocations);
             toast({
                 title: 'Locations Saved',
                 description: 'The list of available service locations has been updated.',

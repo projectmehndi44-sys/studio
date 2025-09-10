@@ -1,7 +1,7 @@
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, User, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
-import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
+import { getFirestore, enableIndexedDbPersistence, Firestore } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 
 const firebaseConfig = {
@@ -24,29 +24,46 @@ if (getApps().length === 0) {
 }
 
 const auth = getAuth(app);
-const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
+// --- Firestore Initialization with Offline Persistence ---
+let firestoreDb: Firestore;
+let dbInitializationPromise: Promise<Firestore>;
 
-// Enable offline persistence
-if (typeof window !== 'undefined') {
-    try {
-        enableIndexedDbPersistence(db)
-            .catch((err) => {
-                if (err.code == 'failed-precondition') {
-                    // Multiple tabs open, persistence can only be enabled in one.
-                    // This is a normal scenario.
-                    console.info("Firestore persistence failed-precondition. Multiple tabs open?");
-                } else if (err.code == 'unimplemented') {
-                    // The current browser does not support all of the
-                    // features required to enable persistence
-                    console.warn("Firestore persistence is not supported in this browser.");
-                }
-            });
-    } catch (error) {
-        console.error("Error enabling Firestore persistence", error);
+const initializeDb = async (): Promise<Firestore> => {
+    if (firestoreDb) {
+        return firestoreDb;
     }
+    
+    const db = getFirestore(app);
+
+    if (typeof window !== 'undefined') {
+        try {
+            await enableIndexedDbPersistence(db);
+            console.log("Firebase Offline Persistence enabled.");
+        } catch (err: any) {
+            if (err.code === 'failed-precondition') {
+                console.info("Firestore persistence failed-precondition. Multiple tabs open?");
+            } else if (err.code === 'unimplemented') {
+                console.warn("Firestore persistence is not supported in this browser.");
+            } else {
+                 console.error("Error enabling Firestore persistence", err);
+            }
+        }
+    }
+    
+    firestoreDb = db;
+    return firestoreDb;
+};
+
+// Use this function in your services to get the initialized DB instance
+export const getDb = (): Promise<Firestore> => {
+    if (!dbInitializationPromise) {
+        dbInitializationPromise = initializeDb();
+    }
+    return dbInitializationPromise;
 }
+// ---------------------------------------------------------
 
 
 const signInWithGoogle = (): Promise<User> => {
@@ -63,6 +80,9 @@ const signInWithGoogle = (): Promise<User> => {
 
 const setupRecaptcha = (containerId: string) => {
     if (typeof window !== 'undefined') {
+        if (window.recaptchaVerifier) {
+            window.recaptchaVerifier.clear();
+        }
         window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
             'size': 'invisible',
             'callback': (response: any) => {
@@ -110,7 +130,7 @@ const onForegroundMessage = () => {
 }
 
 
-export { app, auth, db, signInWithGoogle, getFCMToken, onForegroundMessage, setupRecaptcha, sendOtp };
+export { app, auth, signInWithGoogle, getFCMToken, onForegroundMessage, setupRecaptcha, sendOtp };
 declare global {
     interface Window {
         recaptchaVerifier: RecaptchaVerifier;

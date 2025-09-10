@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -9,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { IndianRupee, MoreHorizontal, Download, FileText } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Booking, Artist, Payout, PayoutHistory } from '@/types';
-import { listenToCollection, updateBooking, getFinancialSettings } from '@/lib/services';
+import { listenToCollection, updateBooking, getFinancialSettings, getArtists } from '@/lib/services';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -17,7 +18,7 @@ import { Terminal } from 'lucide-react';
 import { exportPayoutToPdf, generateGstInvoiceForPlatformFee } from '@/lib/export';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
 import { addDoc, collection } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getDb } from '@/lib/firebase';
 
 
 export default function PayoutManagementPage() {
@@ -36,13 +37,13 @@ export default function PayoutManagementPage() {
             setPlatformFeePercentage(settings.platformFeePercentage / 100);
         });
 
+        getArtists().then(setArtists);
+
         const unsubscribeBookings = listenToCollection<Booking>('bookings', setBookings);
-        const unsubscribeArtists = listenToCollection<Artist>('artists', setArtists);
         const unsubscribeHistory = listenToCollection<PayoutHistory>('payoutHistory', setPayoutHistory);
 
         return () => {
             unsubscribeBookings();
-            unsubscribeArtists();
             unsubscribeHistory();
         };
     }, []);
@@ -113,6 +114,7 @@ export default function PayoutManagementPage() {
     }, [calculatePayouts]);
     
     const handleMarkAsPaid = async (payout: Payout) => {
+        const db = await getDb();
         const newHistoryRecord: Omit<PayoutHistory, 'id'> = {
             paymentDate: new Date().toISOString(),
             ...payout
