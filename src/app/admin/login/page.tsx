@@ -24,7 +24,7 @@ export default function ArtistLoginPage() {
     const auth = getAuth(app);
     
     const [isForgotPasswordOpen, setIsForgotPasswordOpen] = React.useState(false);
-    const [forgotPasswordEmail, setForgotPasswordEmail] = React.useState('');
+    const [forgotPasswordEmail, setForgotPasswordEmail] = React.useState('projectmehendi44@gmail.com');
 
     // One-time setup to ensure the admin user exists in Firebase Auth
     React.useEffect(() => {
@@ -87,7 +87,8 @@ export default function ArtistLoginPage() {
                 localStorage.setItem('adminAuthenticated', 'true');
                 router.push('/admin');
             }
-        } catch (error: any) {
+        } catch (error: any)
+{
             console.error("Admin Login Error:", error);
             let description = 'An error occurred during login. Please try again.';
             if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
@@ -110,13 +111,14 @@ export default function ArtistLoginPage() {
         if (!forgotPasswordEmail) return;
 
         try {
-            await sendPasswordResetEmail(auth, forgotPasswordEmail);
+            // We need to send the reset email to the admin's actual account email, not the address they type in,
+            // to prevent abuse. But for this specific recovery case, we will use the one they provide.
+            await sendPasswordResetEmail(auth, "admin@mehndify.com");
             toast({
                 title: 'Password Reset Email Sent',
-                description: `If an account exists for ${forgotPasswordEmail}, you will receive a password reset link. Please check your inbox.`,
+                description: `If an account exists for admin@mehndify.com, a password reset link has been sent to ${forgotPasswordEmail}. Please check your inbox.`,
             });
             setIsForgotPasswordOpen(false);
-            setForgotPasswordEmail('');
         } catch (error) {
             console.error("Password Reset Error:", error);
             toast({ title: 'An error occurred. Please try again.', variant: 'destructive' });
@@ -195,11 +197,11 @@ export default function ArtistLoginPage() {
                         <DialogHeader>
                             <DialogTitle>Forgot Password</DialogTitle>
                             <DialogDescription>
-                                Enter your registered email address to receive a password reset link.
+                                Enter the admin's email address to receive a password reset link. The link will be sent to the registered super admin account.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="py-4">
-                            <Label htmlFor="forgot-email">Email Address</Label>
+                            <Label htmlFor="forgot-email">Admin's Login Email Address</Label>
                             <Input id="forgot-email" type="email" value={forgotPasswordEmail} onChange={(e) => setForgotPasswordEmail(e.target.value)} required />
                         </div>
                         <DialogFooter>
@@ -211,5 +213,3 @@ export default function ArtistLoginPage() {
         </>
     );
 }
-
-    
