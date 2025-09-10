@@ -106,6 +106,7 @@ export default function ArtistManagementPage() {
             title: "Artist Approved",
             description: `A notification has been sent to ${newArtist.name}.`,
         });
+        window.dispatchEvent(new Event('storage'));
     };
 
      const handleReject = async (artistId: string) => {
@@ -209,6 +210,7 @@ export default function ArtistManagementPage() {
             title: "Artist Onboarded",
             description: `${data.name} has been added to the platform.`,
         });
+        window.dispatchEvent(new Event('storage'));
         form.reset();
     };
 

@@ -15,12 +15,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Package, PlusCircle, Trash2, Edit, Upload, IndianRupee, Tag, GripVertical } from 'lucide-react';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import type { MasterServicePackage } from '@/types';
-import { masterServices as initialMasterServices } from '@/lib/packages-data';
+import { initialMasterServices } from '@/lib/packages-data';
 import NextImage from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
 import { Separator } from '@/components/ui/separator';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const categorySchema = z.object({
   name: z.enum(['Normal', 'Premium', 'ULTRA PREMIUM']),
@@ -76,9 +78,11 @@ export default function PackageManagementPage() {
         setMasterServices(storedPackages ? JSON.parse(storedPackages) : initialMasterServices);
     }, [router]);
     
-    const savePackages = (updatedPackages: MasterServicePackage[]) => {
+    const savePackages = async (updatedPackages: MasterServicePackage[]) => {
         setMasterServices(updatedPackages);
         localStorage.setItem('masterServices', JSON.stringify(updatedPackages));
+        // Also save to Firestore
+        await setDoc(doc(db, "config", "masterServices"), { packages: updatedPackages });
         window.dispatchEvent(new Event('storage'));
     }
 
@@ -98,7 +102,7 @@ export default function PackageManagementPage() {
         }
     }
 
-    const onSubmit: SubmitHandler<PackageFormValues> = (data) => {
+    const onSubmit: SubmitHandler<PackageFormValues> = async (data) => {
         const newPackage: MasterServicePackage = {
             id: editingPackage?.id || `pkg_${Date.now()}`,
             name: data.name,
@@ -121,7 +125,7 @@ export default function PackageManagementPage() {
             toast({ title: 'Master Service Created', description: `Service "${data.name}" has been added.` });
         }
         
-        savePackages(updatedPackages);
+        await savePackages(updatedPackages);
         handleCancelEdit();
     };
 
@@ -145,9 +149,9 @@ export default function PackageManagementPage() {
         setCategoryImagePreviews(previews);
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         const updated = masterServices.filter(p => p.id !== id);
-        savePackages(updated);
+        await savePackages(updated);
         toast({ title: 'Master Service Deleted', variant: 'destructive' });
     };
 
