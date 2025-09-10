@@ -27,14 +27,9 @@ const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
 // --- Firestore Initialization with Offline Persistence ---
-let firestoreDb: Firestore;
 let dbInitializationPromise: Promise<Firestore>;
 
 const initializeDb = async (): Promise<Firestore> => {
-    if (firestoreDb) {
-        return firestoreDb;
-    }
-    
     const db = getFirestore(app);
 
     if (typeof window !== 'undefined') {
@@ -52,8 +47,7 @@ const initializeDb = async (): Promise<Firestore> => {
         }
     }
     
-    firestoreDb = db;
-    return firestoreDb;
+    return db;
 };
 
 // Use this function in your services to get the initialized DB instance
