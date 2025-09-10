@@ -222,14 +222,16 @@ export default function ArtistManagementPage() {
 
         // Send a welcome notification to the artist
         const welcomeMessage = `Welcome to the platform! Your account is active. \nUsername: ${data.email}\nPassword: ${data.password}\nLogin at: ${window.location.origin}/artist/login`;
-        await createNotification({
+        const notification: Omit<Notification, 'id'> = {
             artistId: data.email,
             title: 'Welcome to MehendiFy!',
             message: welcomeMessage,
             type: 'announcement',
             isRead: false,
             timestamp: new Date().toISOString(),
-        });
+        };
+
+        await createNotification(notification);
 
         toast({
             title: "Artist Onboarded Successfully",
