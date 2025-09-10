@@ -193,7 +193,16 @@ export const getFinancialSettings = async () => {
 export const saveFinancialSettings = (data: any) => setConfigDocument('financialSettings', data);
 
 export const getTeamMembers = async (): Promise<TeamMember[]> => {
-    return await getConfigDocument<TeamMember[]>('teamMembers') || initialTeamMembers;
+    const db = await getDb();
+    const docRef = doc(db, 'config', 'teamMembers');
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        const data = docSnap.data();
+        return (data.members || []) as TeamMember[];
+    }
+    // If the document doesn't exist, seed it with initial data.
+    await setDoc(docRef, { members: initialTeamMembers });
+    return initialTeamMembers;
 };
 export const saveTeamMembers = (members: TeamMember[]) => setConfigDocument('teamMembers', members);
 

@@ -55,8 +55,8 @@ export default function AdminLoginPage() {
                 return;
             }
             
-            // Note: Firebase login email might be different if using a suffix, but here we assume it's the same.
-            const loginEmail = member.role === 'team-member' ? `${member.username}@mehndify.team` : member.username;
+            // In our new setup, the Firebase Auth email is the same as the username.
+            const loginEmail = email;
 
             await signInWithEmailAndPassword(auth, loginEmail, password);
             
@@ -65,7 +65,6 @@ export default function AdminLoginPage() {
                 description: `Welcome, ${member.name}! Redirecting...`,
             });
             
-            // This flag is read by the auth provider
             localStorage.setItem('adminAuthenticated', 'true');
             router.push('/admin');
 
@@ -100,7 +99,7 @@ export default function AdminLoginPage() {
              if (error.code === 'auth/user-not-found') {
                 description = 'This email address is not registered in our system.';
              }
-            toast({ title: description, variant: 'destructive' });
+            toast({ title: 'Error', description, variant: 'destructive' });
         }
     };
 
@@ -121,7 +120,7 @@ export default function AdminLoginPage() {
                     <div className="grid gap-2 text-center">
                         <h1 className="text-3xl font-bold text-primary">Admin Portal Login</h1>
                         <p className="text-balance text-muted-foreground">
-                            Enter your credentials to access your dashboard.
+                            Enter your team credentials to access your dashboard.
                         </p>
                     </div>
                     <Form {...form}>
@@ -135,7 +134,7 @@ export default function AdminLoginPage() {
                                     <FormControl>
                                         <Input
                                             type="email"
-                                            placeholder="admin@example.com"
+                                            placeholder="your.email@example.com"
                                             {...field}
                                         />
                                     </FormControl>
