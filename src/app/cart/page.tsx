@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { useToast } from '@/hooks/use-toast';
 
 import type { Booking, Artist, Customer, CartItem } from '@/types';
-import { getArtists, getAvailableLocations, createBooking } from '@/lib/services';
+import { getArtists, getAvailableLocations, createBooking, getCustomer, getBookings } from '@/lib/services';
 
 import { Calendar as CalendarIcon, ChevronLeft, Trash2, Upload, MapPin, Instagram, CheckCircle, AlertCircle, IndianRupee, Tag } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
@@ -62,29 +62,32 @@ export default function CartPage() {
     const [appliedReferral, setAppliedReferral] = React.useState<{ artist: Artist, discount: number } | null>(null);
 
     React.useEffect(() => {
-        const customerId = localStorage.getItem('currentCustomerId');
-        if (!customerId) {
-            router.push('/');
-            toast({ title: "Please login to continue", variant: "destructive" });
-            return;
-        }
-        
-        const allCustomers: Customer[] = JSON.parse(localStorage.getItem('customers') || '[]');
-        const currentCustomer = allCustomers.find(c => c.id === customerId);
-        if (currentCustomer) {
-            setCustomer(currentCustomer);
-            setName(currentCustomer.name);
-            setPhone(currentCustomer.phone);
+        const fetchInitialData = async () => {
+            const customerId = localStorage.getItem('currentCustomerId');
+            if (!customerId) {
+                router.push('/');
+                toast({ title: "Please login to continue", variant: "destructive" });
+                return;
+            }
 
-            const storedCart = localStorage.getItem(`cart_${customerId}`);
-            setCart(storedCart ? JSON.parse(storedCart) : []);
-        } else {
-             router.push('/');
-             toast({ title: "Could not find customer data.", variant: "destructive" });
-        }
+            const currentCustomer = await getCustomer(customerId);
 
-        getAvailableLocations().then(setAvailableLocations);
-        getArtists().then(setAllArtists);
+            if (currentCustomer) {
+                setCustomer(currentCustomer);
+                setName(currentCustomer.name);
+                setPhone(currentCustomer.phone);
+                const storedCart = localStorage.getItem(`cart_${customerId}`);
+                setCart(storedCart ? JSON.parse(storedCart) : []);
+            } else {
+                router.push('/');
+                toast({ title: "Could not find customer data.", variant: "destructive" });
+            }
+
+            getAvailableLocations().then(setAvailableLocations);
+            getArtists().then(setAllArtists);
+        };
+
+        fetchInitialData();
     }, [router, toast]);
 
     const handleRemoveFromCart = (index: number) => {
@@ -138,7 +141,7 @@ export default function CartPage() {
             booking.artistIds.includes(artist.id) &&
             (booking.status === 'Confirmed' || booking.status === 'Completed') &&
             booking.serviceDates.some(bookedDate =>
-                dates.some(newDate => isSameDay(new Date(bookedDate), newDate))
+                dates.some(newDate => isSameDay(new Date(bookedDate.toDate()), newDate))
             )
         );
 

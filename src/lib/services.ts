@@ -13,10 +13,6 @@ async function getDocument<T>(collectionName: string, id: string): Promise<T | n
     const docSnap = await getDoc(docRef);
     if (!docSnap.exists()) return null;
     const data = docSnap.data();
-    // Ensure charges object exists for artists
-    if (collectionName === 'artists' && !data.charges) {
-        data.charges = {};
-    }
     return { id: docSnap.id, ...data } as T;
 }
 
@@ -81,7 +77,13 @@ export const listenToCollection = <T>(collectionName: string, callback: (data: T
 // --- Specific Functions ---
 
 // Artists
-export const getArtist = async (id: string): Promise<Artist | null> => getDocument<Artist>('artists', id);
+export const getArtist = async (id: string): Promise<Artist | null> => {
+    const artist = await getDocument<Artist>('artists', id);
+    if (artist && !artist.charges) {
+        artist.charges = {};
+    }
+    return artist;
+};
 export const createArtist = async (id: string, data: Omit<Artist, 'id'>): Promise<string> => {
     const db = await getDb();
     // Use email as the document ID for artists created via admin onboarding
@@ -219,7 +221,13 @@ export async function getCollection<T>(collectionName: string): Promise<T[]> {
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
 }
 
-export const getArtists = async (): Promise<Artist[]> => getCollection<Artist>('artists');
+export const getArtists = async (): Promise<Artist[]> => {
+    const artists = await getCollection<Artist>('artists');
+    return artists.map(artist => ({
+        ...artist,
+        charges: artist.charges || {}, // Ensure charges object exists
+    }));
+};
 export const getBookings = async (): Promise<Booking[]> => getCollection<Booking>('bookings');
 export const getCustomers = async (): Promise<Customer[]> => getCollection<Customer>('customers');
 
