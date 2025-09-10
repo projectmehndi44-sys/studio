@@ -1,6 +1,5 @@
 
 
-
 'use client';
 
 import { db } from './firebase';
