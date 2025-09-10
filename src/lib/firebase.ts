@@ -1,6 +1,6 @@
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, User, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, User, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult, signInWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence, Firestore } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 
@@ -79,6 +79,18 @@ const signInWithGoogle = (): Promise<User> => {
   });
 };
 
+const signInAsAdmin = (email: string, password: string): Promise<User> => {
+    return new Promise((resolve, reject) => {
+        signInWithEmailAndPassword(auth, email, password)
+            .then(userCredential => {
+                resolve(userCredential.user);
+            })
+            .catch(error => {
+                reject(error);
+            });
+    });
+};
+
 const setupRecaptcha = (containerId: string) => {
     if (typeof window !== 'undefined') {
         if (window.recaptchaVerifier) {
@@ -131,7 +143,7 @@ const onForegroundMessage = () => {
 }
 
 
-export { app, auth, signInWithGoogle, getFCMToken, onForegroundMessage, setupRecaptcha, sendOtp };
+export { app, auth, signInWithGoogle, getFCMToken, onForegroundMessage, setupRecaptcha, sendOtp, signInAsAdmin };
 declare global {
     interface Window {
         recaptchaVerifier: RecaptchaVerifier;

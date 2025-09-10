@@ -1,98 +1,102 @@
+
 rules_version = '2';
 
+// These rules enforce the permission system for your MehendiFy admin portal.
+// 1. They allow the login page to read the list of team members to verify credentials.
+// 2. They give the 'Super Admin' full access to all data.
+// 3. They restrict 'team-member' access based on the permissions you set in the Admin Portal.
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions to check user roles and permissions
-    function getTeamMembers() {
-      return get(/databases/$(database)/documents/config/teamMembers).data.members;
-    }
-
+    // Helper function to get the logged-in user's data from the team members list.
     function getUserData(userId) {
-      // Find user by their auth UID. The 'id' field in team-data.ts must match the user's auth UID.
-      // For the default admin, this won't match, so we rely on isSuperAdmin.
-      // This is primarily for future-proofing if team members are linked to Firebase Auth users.
-      // For now, role is checked by username.
-      let matchingUsers = getTeamMembers().filter(member => member.username == request.auth.token.email);
+      // The user's list is stored in the 'members' array within the 'teamMembers' document.
+      let members = get(/databases/$(database)/documents/config/teamMembers).data.members;
+      // Filter the members array to find the user whose ID matches the logged-in user's ID.
+      let matchingUsers = members.filter(member => member.id == userId);
+      // If a user is found, return their data. Otherwise, return null.
       return matchingUsers.size() > 0 ? matchingUsers[0] : null;
     }
 
-    function isSuperAdmin() {
-      let userData = getUserData(request.auth.uid);
+    // Helper function to check if a user is the Super Admin.
+    function isSuperAdmin(userId) {
+      let userData = getUserData(userId);
       return userData != null && userData.role == 'Super Admin';
     }
-
-    function hasPermission(module, level) {
-      if (isSuperAdmin()) {
-        return true;
-      }
-      let userData = getUserData(request.auth.uid);
-      if (userData == null || !module in userData.permissions) {
-        return false;
-      }
-      let permission = userData.permissions[module];
-      if (level == 'edit') {
-        return permission == 'edit';
-      }
-      if (level == 'view') {
-        return permission == 'view' || permission == 'edit';
-      }
-      return false;
+    
+    // Helper function to check if a team member has permission to 'view' or 'edit'.
+    function canRead(userId, resource) {
+      let userData = getUserData(userId);
+      // Read access is granted if the user is a Super Admin OR
+      // if their permission for the specific resource is 'view' or 'edit'.
+      return isSuperAdmin(userId) || (userData != null && userData.permissions[resource] in ['view', 'edit']);
     }
 
-    // --- Public access for Login ---
-    // Allow the login page to read the list of team members to verify credentials.
+    // Helper function to check if a team member has permission to 'edit'.
+    function canWrite(userId, resource) {
+      let userData = getUserData(userId);
+      // Write access is granted only if the user is a Super Admin OR
+      // if their permission for the specific resource is 'edit'.
+      return isSuperAdmin(userId) || (userData != null && userData.permissions[resource] == 'edit');
+    }
+
+    // --- Rules for Data Collections ---
+
+    // Allow the login page (unauthenticated users) to read the list of team members.
+    // This is necessary to verify login credentials.
     match /config/teamMembers {
       allow get, list: if true;
     }
 
-    // Allow anyone to read master services and locations for the main site to function.
-    match /config/masterServices {
-      allow get, list: if true;
-    }
-     match /config/availableLocations {
-      allow get, list: if true;
-    }
-
-    // --- Authenticated Access Rules ---
+    // Artists Collection
     match /artists/{artistId} {
-      // Any logged-in user (admin/team) can view artists.
-      // Only users with 'artists:edit' permission can create/update/delete.
-      allow read: if hasPermission('artists', 'view');
-      allow write: if hasPermission('artists', 'edit');
+      allow read: if canRead(request.auth.uid, 'artists');
+      allow write: if canWrite(request.auth.uid, 'artists');
     }
-
+    
+    // Artist Directory is linked to the artists collection permissions
+    match /artist-directory/{docId} {
+      allow read: if canRead(request.auth.uid, 'artistDirectory');
+      allow write: if canWrite(request.auth.uid, 'artistDirectory');
+    }
+    
+    // Bookings Collection
     match /bookings/{bookingId} {
-      allow read: if hasPermission('bookings', 'view');
-      allow write: if hasPermission('bookings', 'edit');
+      allow read: if canRead(request.auth.uid, 'bookings');
+      allow write: if canWrite(request.auth.uid, 'bookings');
     }
-
+    
+    // Customers Collection
     match /customers/{customerId} {
-      allow read: if hasPermission('customers', 'view');
-      allow write: if hasPermission('customers', 'edit');
-    }
-
-    match /pendingArtists/{artistId} {
-        allow read, write: if hasPermission('artists', 'edit');
+      allow read: if canRead(request.auth.uid, 'customers');
+      allow write: if canWrite(request.auth.uid, 'customers');
     }
     
+    // Payouts and Transactions
     match /payoutHistory/{payoutId} {
-        allow read, write: if hasPermission('payouts', 'edit');
+       allow read: if canRead(request.auth.uid, 'payouts');
+       allow write: if canWrite(request.auth.uid, 'payouts');
+    }
+     match /transactions/{transactionId} {
+       allow read: if canRead(request.auth.uid, 'transactions');
+       allow write: if canWrite(request.auth.uid, 'transactions');
     }
 
-    // --- Settings & Config Rules (Admin/Edit Only) ---
+    // Pending Artists (for approval)
+    match /pendingArtists/{artistId} {
+      allow read, write: if canWrite(request.auth.uid, 'artists'); // Only those who can edit artists can manage pending list
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      allow read: if canRead(request.auth.uid, 'notifications');
+      allow write: if canWrite(request.auth.uid, 'notifications');
+    }
+
+    // Other Config documents (packages, settings, etc.)
     match /config/{docId} {
-        // This covers promotions, financialSettings, companyProfile, packages etc.
-        allow read, write: if hasPermission('settings', 'edit');
-    }
-    
-     match /notifications/{notificationId} {
-      allow read, write: if hasPermission('notifications', 'edit');
-    }
-
-    // Fallback rule: deny all other access
-    match /{path=**} {
-      allow read, write: if false;
+      // Deny read/write access to teamMembers here, as it's handled above.
+      allow read, write: if docId != 'teamMembers' && canWrite(request.auth.uid, 'settings');
     }
   }
 }

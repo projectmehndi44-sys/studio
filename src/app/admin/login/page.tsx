@@ -51,6 +51,7 @@ export default function AdminLoginPage() {
                     localStorage.setItem('isAdminAuthenticated', 'true');
                     localStorage.setItem('adminRole', memberByUsername.role); // Store the actual role
                     localStorage.setItem('adminUsername', memberByUsername.username);
+                    localStorage.setItem('adminUserId', memberByUsername.id); // Store the user ID for rules
                     window.location.href = '/admin'; // Use window.location.href for a full refresh
                 } else {
                      toast({
@@ -62,7 +63,7 @@ export default function AdminLoginPage() {
             } else {
                  toast({
                     title: 'Login Failed',
-                    description: `No ${userType} account found with that username.`,
+                    description: `No ${userType} account found with that username or role.`,
                     variant: 'destructive',
                 });
             }
@@ -70,7 +71,7 @@ export default function AdminLoginPage() {
             console.error("Failed to fetch team members:", error);
             toast({
                 title: 'Login Error',
-                description: 'Could not verify credentials. Please try again later.',
+                description: 'Could not verify credentials. Please check your security rules.',
                 variant: 'destructive',
             });
         } finally {

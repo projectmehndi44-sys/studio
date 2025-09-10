@@ -40,6 +40,7 @@ import {
 import { AdminAuthProvider, useAdminAuth } from '@/hooks/use-admin-auth';
 import type { Permissions } from '@/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { getAuth, signOut } from 'firebase/auth';
 
 const NavLink = ({ href, pathname, icon: Icon, label }: { href: string; pathname: string; icon: React.ElementType, label: string }) => (
     <Link
@@ -69,10 +70,13 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         }
     }, [isLoading, isAuthenticated, router, user, pathname]);
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        const auth = getAuth();
+        await signOut(auth);
         localStorage.removeItem('isAdminAuthenticated');
         localStorage.removeItem('adminRole');
         localStorage.removeItem('adminUsername');
+        localStorage.removeItem('adminUserId');
         router.push('/admin/login');
     };
 

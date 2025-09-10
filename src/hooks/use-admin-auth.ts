@@ -2,13 +2,15 @@
 'use client';
 
 import * as React from 'react';
-import type { TeamMember, Permissions } from '@/lib/team-data';
+import type { TeamMember, Permissions } from '@/types';
 import { getTeamMembers } from '@/lib/services';
+import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 
 interface AuthState {
     isLoading: boolean;
     isAuthenticated: boolean;
     user: TeamMember | null;
+    firebaseUser: User | null;
 }
 
 const authContext = React.createContext<AuthState & { hasPermission: (module: keyof Permissions, level: 'view' | 'edit') => boolean; } | null>(null);
@@ -19,34 +21,50 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: true,
         isAuthenticated: false,
         user: null,
+        firebaseUser: null,
     });
 
     React.useEffect(() => {
-        const checkAuth = async () => {
-            const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated') === 'true';
-            if (isAdminAuthenticated) {
-                const username = localStorage.getItem('adminUsername');
-                try {
-                    const teamMembers: TeamMember[] = await getTeamMembers();
-                    const currentUser = teamMembers.find((m: TeamMember) => m.username === username);
+        const auth = getAuth();
+        const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+            if (firebaseUser) {
+                 const username = localStorage.getItem('adminUsername');
+                 if (username) {
+                    try {
+                        const teamMembers: TeamMember[] = await getTeamMembers();
+                        const currentUser = teamMembers.find((m: TeamMember) => m.username === username);
 
-                    if (currentUser) {
-                        setAuthState({ isLoading: false, isAuthenticated: true, user: currentUser });
-                    } else {
-                        localStorage.removeItem('isAdminAuthenticated');
-                        localStorage.removeItem('adminRole');
-                        localStorage.removeItem('adminUsername');
-                        setAuthState({ isLoading: false, isAuthenticated: false, user: null });
+                        if (currentUser) {
+                            localStorage.setItem('isAdminAuthenticated', 'true');
+                            setAuthState({ isLoading: false, isAuthenticated: true, user: currentUser, firebaseUser });
+                        } else {
+                            // If no matching team member, clear local storage and set unauthenticated state
+                            localStorage.removeItem('isAdminAuthenticated');
+                            localStorage.removeItem('adminRole');
+                            localStorage.removeItem('adminUsername');
+                            localStorage.removeItem('adminUserId');
+                            setAuthState({ isLoading: false, isAuthenticated: false, user: null, firebaseUser: null });
+                        }
+                    } catch (error) {
+                        console.error("Failed to load team members for auth check", error);
+                        setAuthState({ isLoading: false, isAuthenticated: false, user: null, firebaseUser: null });
                     }
-                } catch(error) {
-                    console.error("Failed to load team members for auth check", error);
-                    setAuthState({ isLoading: false, isAuthenticated: false, user: null });
-                }
+                 } else {
+                    // Logged into Firebase, but not through our admin flow
+                     setAuthState({ isLoading: false, isAuthenticated: false, user: null, firebaseUser: null });
+                 }
             } else {
-                setAuthState({ isLoading: false, isAuthenticated: false, user: null });
+                // Not logged into Firebase
+                localStorage.removeItem('isAdminAuthenticated');
+                localStorage.removeItem('adminRole');
+                localStorage.removeItem('adminUsername');
+                localStorage.removeItem('adminUserId');
+                setAuthState({ isLoading: false, isAuthenticated: false, user: null, firebaseUser: null });
             }
-        }
-        checkAuth();
+        });
+
+        // Cleanup subscription on unmount
+        return () => unsubscribe();
     }, []);
 
     const hasPermission = React.useCallback((module: keyof Permissions, level: 'view' | 'edit'): boolean => {
