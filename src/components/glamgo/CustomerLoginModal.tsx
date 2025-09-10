@@ -117,33 +117,37 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
   }
   
   const handleGoogleSignIn = async () => {
-    try {
-      const user = await signInWithGoogle();
-      if (user && user.email) {
-          let customer = await getCustomerByEmail(user.email);
-          
-          if (!customer) {
-            const newCustomerData: Customer = {
-                id: user.uid,
-                name: user.displayName || 'Google User',
-                phone: user.phoneNumber || '',
-                email: user.email,
-            };
-            await createCustomer(newCustomerData);
-            customer = newCustomerData;
-          }
-          localStorage.setItem('currentCustomerId', customer.id);
-          onSuccessfulLogin(customer);
-          handleClose();
-      }
-    } catch (error) {
-      console.error("Google Sign-In Error:", error);
-      toast({
-        title: 'Google Sign-In Failed',
-        description: 'Could not sign in with Google. Please try again.',
-        variant: 'destructive',
+    signInWithGoogle()
+      .then(async (user) => {
+        if (user && user.email) {
+            let customer = await getCustomerByEmail(user.email);
+            
+            if (!customer) {
+              const newCustomerData: Customer = {
+                  id: user.uid,
+                  name: user.displayName || 'Google User',
+                  phone: user.phoneNumber || '',
+                  email: user.email,
+              };
+              await createCustomer(newCustomerData);
+              customer = newCustomerData;
+            }
+            localStorage.setItem('currentCustomerId', customer.id);
+            onSuccessfulLogin(customer);
+            handleClose();
+        }
+      })
+      .catch((error) => {
+        // This catches the auth/cancelled-popup-request error
+        if (error.code !== 'auth/cancelled-popup-request') {
+           console.error("Google Sign-In Error:", error);
+            toast({
+              title: 'Google Sign-In Failed',
+              description: 'Could not sign in with Google. Please try again.',
+              variant: 'destructive',
+            });
+        }
       });
-    }
   };
 
   return (

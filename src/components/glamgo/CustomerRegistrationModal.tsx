@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -110,42 +109,46 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
   }
 
   const handleGoogleSignUp = async () => {
-    try {
-      const user = await signInWithGoogle();
-      if (user && user.email) {
-          let customer = await getCustomerByEmail(user.email);
+    signInWithGoogle()
+      .then(async (user) => {
+        if (user && user.email) {
+            let customer = await getCustomerByEmail(user.email);
 
-          if (customer) { // If user exists, log them in
-             toast({
-                title: 'Welcome Back!',
-                description: `You are now logged in as ${customer.name}.`,
-             });
-          } else { // If user doesn't exist, create a new account
-             const newCustomerData = {
-                id: user.uid,
-                name: user.displayName || 'Google User',
-                phone: user.phoneNumber || '', // May be null
-                email: user.email,
-            };
-            await createCustomer(newCustomerData);
-            customer = newCustomerData;
+            if (customer) { // If user exists, log them in
+               toast({
+                  title: 'Welcome Back!',
+                  description: `You are now logged in as ${customer.name}.`,
+               });
+            } else { // If user doesn't exist, create a new account
+               const newCustomerData = {
+                  id: user.uid,
+                  name: user.displayName || 'Google User',
+                  phone: user.phoneNumber || '', // May be null
+                  email: user.email,
+              };
+              await createCustomer(newCustomerData);
+              customer = newCustomerData;
+              toast({
+                  title: "Registration Successful!",
+                  description: `Welcome to MehendiFy, ${customer.name}!`,
+              });
+            }
+            localStorage.setItem('currentCustomerId', customer.id);
+            onSuccessfulRegister(customer);
+            handleClose();
+        }
+      })
+      .catch((error) => {
+        // This catches the auth/cancelled-popup-request error
+        if (error.code !== 'auth/cancelled-popup-request') {
+            console.error("Google Sign-Up Error:", error);
             toast({
-                title: "Registration Successful!",
-                description: `Welcome to MehendiFy, ${customer.name}!`,
+              title: 'Google Sign-Up Failed',
+              description: 'Could not sign up with Google. Please try again.',
+              variant: 'destructive',
             });
-          }
-          localStorage.setItem('currentCustomerId', customer.id);
-          onSuccessfulRegister(customer);
-          handleClose();
-      }
-    } catch (error) {
-      console.error("Google Sign-Up Error:", error);
-      toast({
-        title: 'Google Sign-Up Failed',
-        description: 'Could not sign up with Google. Please try again.',
-        variant: 'destructive',
+        }
       });
-    }
   };
 
   return (
