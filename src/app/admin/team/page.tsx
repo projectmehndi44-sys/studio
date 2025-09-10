@@ -27,7 +27,7 @@ import { createUser } from '@/lib/firebase';
 const memberSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, 'Name is required'),
-  username: z.string().min(4, 'Username must be at least 4 characters'),
+  username: z.string().email('Username must be a valid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
   role: z.literal('team-member'),
   permissions: z.object({
@@ -96,7 +96,7 @@ export default function TeamManagementPage() {
             toast({ title: 'Team Member Updated', description: `${data.name}'s permissions have been updated.` });
         } else {
             try {
-                // Team member emails are suffixed with .team to avoid conflicts
+                // Team member emails are suffixed with .team to avoid conflicts with customer emails
                 const authUser = await createUser(`${data.username}@mehndify.team`, data.password);
                 const newMember: TeamMember = {
                     id: authUser.uid,
@@ -120,7 +120,7 @@ export default function TeamManagementPage() {
     };
 
     const handleDelete = async (memberId: string) => {
-        if (memberId === 'user_001_placeholder') { // Replace with actual logic if needed
+        if (memberId === 'user_001_placeholder') {
             toast({
                 title: 'Cannot Delete Admin',
                 description: 'The default admin account cannot be deleted.',
@@ -188,7 +188,7 @@ export default function TeamManagementPage() {
                                             <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="e.g., Jane Doe" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                         <FormField control={form.control} name="username" render={({ field }) => (
-                                            <FormItem><FormLabel>Username</FormLabel><FormControl><Input placeholder="e.g., jane_d" {...field} disabled={!!editingMember} /></FormControl><FormMessage /></FormItem>
+                                            <FormItem><FormLabel>Login Email</FormLabel><FormControl><Input type="email" placeholder="e.g., jane@example.com" {...field} disabled={!!editingMember} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                         <FormField control={form.control} name="password" render={({ field }) => (
                                             <FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" {...field} disabled={!!editingMember} /></FormControl>{editingMember && <FormDescription>Password cannot be changed. Reset if needed.</FormDescription>}<FormMessage /></FormItem>

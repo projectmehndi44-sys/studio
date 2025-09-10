@@ -4,6 +4,9 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,98 +14,72 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Home } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { signInWithEmailAndPassword, sendPasswordResetEmail, getAuth, onAuthStateChanged } from 'firebase/auth';
-import { app, createUser } from '@/lib/firebase';
-import { getTeamMembers, updateTeamMemberId } from '@/lib/services';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { getAuth, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
+import { app } from '@/lib/firebase';
+import { getTeamMembers } from '@/lib/services';
 
-export default function ArtistLoginPage() {
+const loginSchema = z.object({
+  email: z.string().email({ message: "Please enter a valid email." }),
+  password: z.string().min(1, { message: "Password is required." }),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+
+export default function AdminLoginPage() {
     const router = useRouter();
     const { toast } = useToast();
-    const [email, setEmail] = React.useState('admin');
-    const [password, setPassword] = React.useState('');
-    const [isLoading, setIsLoading] = React.useState(false);
     const auth = getAuth(app);
     
     const [isForgotPasswordOpen, setIsForgotPasswordOpen] = React.useState(false);
-    const [forgotPasswordEmail, setForgotPasswordEmail] = React.useState('projectmehendi44@gmail.com');
+    const [forgotPasswordEmail, setForgotPasswordEmail] = React.useState('');
 
-    // One-time setup to ensure the admin user exists in Firebase Auth
-    React.useEffect(() => {
-        const setupAdminUser = async () => {
-            // This password is used ONLY for the initial creation.
-            const initialPassword = "password123"; 
-            
-            try {
-                await createUser('admin@mehndify.com', initialPassword);
-                console.log("Super Admin user created/verified successfully in Firebase Authentication.");
-            } catch (error: any) {
-                if (error.code === 'auth/email-already-in-use') {
-                    // This is expected and fine. The user exists.
-                    console.log("Super Admin user already exists. Setup is correct.");
-                } else {
-                    // For any other errors, log them to diagnose potential issues.
-                    console.error("Error during admin user setup:", error);
-                }
-            }
-        };
+    const form = useForm<LoginFormValues>({
+        resolver: zodResolver(loginSchema),
+        defaultValues: { email: '', password: '' },
+    });
 
-        setupAdminUser();
-    }, []);
-
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
+    const handleLogin = async (data: LoginFormValues) => {
+        const { email, password } = data;
         
         try {
-            const isSuperAdminLogin = email === 'admin' || email === 'admin@mehndify.com';
-            const loginEmail = isSuperAdminLogin ? 'admin@mehndify.com' : email;
+            const teamMembers = await getTeamMembers();
+            const member = teamMembers.find(m => m.username === email);
 
-            const userCredential = await signInWithEmailAndPassword(auth, loginEmail, password);
-            const user = userCredential.user;
-
-            if (user) {
-                const teamMembers = await getTeamMembers();
-                let memberProfile = teamMembers.find(m => m.id === user.uid);
-
-                // This logic handles the very first login, to sync the placeholder ID with the real Firebase UID
-                if (!memberProfile && isSuperAdminLogin) {
-                    const placeholderAdmin = teamMembers.find(m => m.id === 'user_001' && m.role === 'Super Admin');
-                    if (placeholderAdmin) {
-                        await updateTeamMemberId('user_001', user.uid);
-                        // Re-fetch the team members to get the updated profile
-                        const updatedTeamMembers = await getTeamMembers();
-                        memberProfile = updatedTeamMembers.find(m => m.id === user.uid);
-                    }
-                }
-
-                if (!memberProfile) {
-                    throw new Error("User profile not found in the team members database.");
-                }
-
+            if (!member) {
                 toast({
-                    title: 'Login Successful',
-                    description: `Welcome, ${memberProfile.name}! Redirecting...`,
+                    title: 'Access Denied',
+                    description: 'This email is not registered as a team member.',
+                    variant: 'destructive',
                 });
-
-                localStorage.setItem('adminAuthenticated', 'true');
-                router.push('/admin');
+                return;
             }
-        } catch (error: any)
-{
+            
+            // Note: Firebase login email might be different if using a suffix, but here we assume it's the same.
+            const loginEmail = member.role === 'team-member' ? `${member.username}@mehndify.team` : member.username;
+
+            await signInWithEmailAndPassword(auth, loginEmail, password);
+            
+            toast({
+                title: 'Login Successful',
+                description: `Welcome, ${member.name}! Redirecting...`,
+            });
+            
+            // This flag is read by the auth provider
+            localStorage.setItem('adminAuthenticated', 'true');
+            router.push('/admin');
+
+        } catch (error: any) {
             console.error("Admin Login Error:", error);
             let description = 'An error occurred during login. Please try again.';
             if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
                 description = 'Invalid credentials. Please check your username and password.';
-            } else if (error.message.includes('User profile not found')) {
-                description = error.message;
             }
             toast({
                 title: 'Authentication Failed',
                 description: description,
                 variant: 'destructive',
             });
-        } finally {
-            setIsLoading(false);
         }
     };
     
@@ -111,20 +88,23 @@ export default function ArtistLoginPage() {
         if (!forgotPasswordEmail) return;
 
         try {
-            // We need to send the reset email to the admin's actual account email, not the address they type in,
-            // to prevent abuse. But for this specific recovery case, we will use the one they provide.
-            await sendPasswordResetEmail(auth, "admin@mehndify.com");
+            await sendPasswordResetEmail(auth, forgotPasswordEmail);
             toast({
                 title: 'Password Reset Email Sent',
-                description: `If an account exists for admin@mehndify.com, a password reset link has been sent to ${forgotPasswordEmail}. Please check your inbox.`,
+                description: `If an account exists for ${forgotPasswordEmail}, a password reset link has been sent. Please check your inbox.`,
             });
             setIsForgotPasswordOpen(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Password Reset Error:", error);
-            toast({ title: 'An error occurred. Please try again.', variant: 'destructive' });
+            let description = 'An error occurred. Please try again.';
+             if (error.code === 'auth/user-not-found') {
+                description = 'This email address is not registered in our system.';
+             }
+            toast({ title: description, variant: 'destructive' });
         }
     };
 
+    // Redirect if already logged in
     React.useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user && localStorage.getItem('adminAuthenticated') === 'true') {
@@ -134,62 +114,77 @@ export default function ArtistLoginPage() {
         return () => unsubscribe();
     }, [auth, router]);
 
-
     return (
         <>
-        <div className="w-full flex items-center justify-center min-h-screen bg-muted/30">
-            <div className="mx-auto grid w-[350px] gap-6">
-                <div className="grid gap-2 text-center">
-                    <h1 className="text-3xl font-bold text-primary">Admin Portal Login</h1>
-                    <p className="text-balance text-muted-foreground">
-                        Enter your credentials to access your dashboard
-                    </p>
-                </div>
-                 <form onSubmit={handleLogin} className="grid gap-4">
-                    <div className="grid gap-2">
-                        <Label htmlFor="email">Username or Email</Label>
-                        <Input
-                            id="email"
-                            type="text"
-                            placeholder="admin"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                        />
+            <div className="w-full flex items-center justify-center min-h-screen bg-muted/30">
+                <div className="mx-auto grid w-[400px] gap-6">
+                    <div className="grid gap-2 text-center">
+                        <h1 className="text-3xl font-bold text-primary">Admin Portal Login</h1>
+                        <p className="text-balance text-muted-foreground">
+                            Enter your credentials to access your dashboard.
+                        </p>
                     </div>
-                    <div className="grid gap-2">
-                         <div className="flex items-center">
-                            <Label htmlFor="password">Password</Label>
-                            <Button variant="link" type="button" className="ml-auto inline-block text-sm underline" onClick={() => setIsForgotPasswordOpen(true)}>
-                                Forgot Password?
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(handleLogin)} className="grid gap-4">
+                             <FormField
+                                control={form.control}
+                                name="email"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Email</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            type="email"
+                                            placeholder="admin@example.com"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="password"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <div className="flex items-center">
+                                        <FormLabel>Password</FormLabel>
+                                        <Button 
+                                            variant="link" 
+                                            type="button" 
+                                            className="ml-auto inline-block text-sm underline" 
+                                            onClick={() => {
+                                                setForgotPasswordEmail(form.getValues('email'));
+                                                setIsForgotPasswordOpen(true);
+                                            }}
+                                        >
+                                            Forgot Password?
+                                        </Button>
+                                    </div>
+                                    <FormControl>
+                                        <Input
+                                            type="password"
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                                {form.formState.isSubmitting ? 'Logging in...' : 'Login'}
                             </Button>
-                        </div>
-                        <Input
-                            id="password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                        {isLoading ? 'Logging in...' : 'Login'}
-                    </Button>
-                </form>
-                 <div className="mt-4 text-center text-sm">
-                        Don't have an account?{' '}
-                        <Link href="/#artist-register" className="underline">
-                           Register here
+                        </form>
+                    </Form>
+                     <div className="mt-4 text-center text-sm">
+                        <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors">
+                            <Home className="mr-1 h-4 w-4" />
+                            Back to Home
                         </Link>
                     </div>
-                 <div className="mt-2 text-center text-sm">
-                    <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors">
-                        <Home className="mr-1 h-4 w-4" />
-                        Back to Home
-                    </Link>
                 </div>
             </div>
-        </div>
            
             <Dialog open={isForgotPasswordOpen} onOpenChange={setIsForgotPasswordOpen}>
                  <DialogContent className="sm:max-w-md">
@@ -197,11 +192,11 @@ export default function ArtistLoginPage() {
                         <DialogHeader>
                             <DialogTitle>Forgot Password</DialogTitle>
                             <DialogDescription>
-                                Enter the admin's email address to receive a password reset link. The link will be sent to the registered super admin account.
+                                Enter your registered login email to receive a password reset link.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="py-4">
-                            <Label htmlFor="forgot-email">Admin's Login Email Address</Label>
+                            <Label htmlFor="forgot-email">Email Address</Label>
                             <Input id="forgot-email" type="email" value={forgotPasswordEmail} onChange={(e) => setForgotPasswordEmail(e.target.value)} required />
                         </div>
                         <DialogFooter>
