@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -10,9 +9,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Home } from 'lucide-react';
-import { type TeamMember } from '@/lib/team-data';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getTeamMembers } from '@/lib/services';
+import type { TeamMember } from '@/types';
 
 
 export default function AdminLoginPage() {
@@ -39,24 +38,31 @@ export default function AdminLoginPage() {
         
         try {
             const allMembers = await getTeamMembers();
-            const member = allMembers.find(m => m.username === username && m.password === password && m.role === userType);
+            const memberByUsername = allMembers.find(m => m.username === username && m.role === userType);
 
-            if (member) {
-                toast({
-                    title: 'Login Successful',
-                    description: `Welcome, ${member.name}! Redirecting...`,
-                });
-                localStorage.setItem('isAdminAuthenticated', 'true');
-                localStorage.setItem('adminRole', member.role);
-                localStorage.setItem('adminUsername', member.username);
-                window.location.href = '/admin'; // Use window.location.href for a full refresh
+            if (memberByUsername) {
+                if (memberByUsername.password === password) {
+                    toast({
+                        title: 'Login Successful',
+                        description: `Welcome, ${memberByUsername.name}! Redirecting...`,
+                    });
+                    localStorage.setItem('isAdminAuthenticated', 'true');
+                    localStorage.setItem('adminRole', memberByUsername.role);
+                    localStorage.setItem('adminUsername', memberByUsername.username);
+                    window.location.href = '/admin'; // Use window.location.href for a full refresh
+                } else {
+                     toast({
+                        title: 'Login Failed',
+                        description: 'Invalid password. Please try again.',
+                        variant: 'destructive',
+                    });
+                }
             } else {
                  toast({
                     title: 'Login Failed',
-                    description: 'Invalid credentials for the selected user type.',
+                    description: `No ${userType === 'admin' ? 'admin' : 'team member'} found with that username.`,
                     variant: 'destructive',
                 });
-                 setIsLoading(false);
             }
         } catch(error) {
             console.error("Failed to fetch team members:", error);
@@ -65,6 +71,7 @@ export default function AdminLoginPage() {
                 description: 'Could not verify credentials. Please try again later.',
                 variant: 'destructive',
             });
+        } finally {
             setIsLoading(false);
         }
     };
