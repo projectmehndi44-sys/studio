@@ -32,10 +32,14 @@ export default function PayoutManagementPage() {
 
 
     const calculatePayouts = React.useCallback(() => {
-        const platformFeePercentage = typeof window !== 'undefined' ? parseFloat(localStorage.getItem('platformFeePercentage') || '10') / 100 : 0.1;
+        let platformFeePercentage = 0.1;
+        if (typeof window !== 'undefined') {
+            const storedFee = localStorage.getItem('platformFeePercentage');
+            platformFeePercentage = storedFee ? parseFloat(storedFee) / 100 : 0.1;
+        }
+
         const payoutMap: Record<string, Payout> = {};
 
-        // Only consider completed and not-yet-paid-out bookings for payout calculation
         const bookingsToPay = bookings.filter(b => b.status === 'Completed' && !b.paidOut);
 
         bookingsToPay.forEach(booking => {
@@ -44,7 +48,7 @@ export default function PayoutManagementPage() {
                 if (!artistId) return;
 
                 const artist = artists.find(a => a.id === artistId);
-                if (!artist) return; // Skip if artist not found
+                if (!artist) return;
 
                 if (!payoutMap[artistId]) {
                     payoutMap[artistId] = {
@@ -56,8 +60,8 @@ export default function PayoutManagementPage() {
                         gst: 0,
                         netPayout: 0,
                         bookingIds: [],
-                        commissionOwed: 0, // Commission from offline payments
-                        payoutDue: 0, // Payout from online payments
+                        commissionOwed: 0,
+                        payoutDue: 0,
                     };
                 }
 
@@ -65,23 +69,20 @@ export default function PayoutManagementPage() {
                 payout.totalBookings += 1;
                 payout.bookingIds.push(booking.id);
                 
-                const bookingAmount = booking.amount / (booking.artistIds.length); // Split amount between artists
+                const bookingAmount = booking.amount / (booking.artistIds.length); 
                 
                 if (booking.paymentMethod === 'offline') {
-                    // Artist collected cash, owes commission to platform
-                    const commissionableValue = bookingAmount / 1.18; // Assume price is GST-inclusive
+                    const commissionableValue = bookingAmount / 1.18; 
                     payout.commissionOwed += commissionableValue * platformFeePercentage;
                 } else {
-                    // Platform collected online, owes payout to artist
                     const taxableAmount = bookingAmount / 1.18;
                     const platformFee = taxableAmount * platformFeePercentage;
                     payout.payoutDue += taxableAmount - platformFee;
-                    payout.grossRevenue += bookingAmount; // only online revenue is "gross" for platform
+                    payout.grossRevenue += bookingAmount;
                 }
             });
         });
 
-        // Calculate final net payout
         Object.values(payoutMap).forEach(payout => {
            payout.netPayout = payout.payoutDue - payout.commissionOwed;
            payout.platformFees = (payout.grossRevenue / 1.18) * platformFeePercentage;
@@ -105,23 +106,22 @@ export default function PayoutManagementPage() {
     }, []);
 
     React.useEffect(() => {
-        calculatePayouts();
+        if (artists.length > 0 && bookings.length > 0) {
+            calculatePayouts();
+        }
     }, [bookings, artists, calculatePayouts]);
     
     const handleMarkAsPaid = async (payout: Payout) => {
-        // Create a new history record
         const newHistoryRecord: Omit<PayoutHistory, 'id'> = {
             paymentDate: new Date().toISOString(),
             ...payout
         };
 
-        // Update bookings to mark them as paidOut
         const bookingUpdatePromises = payout.bookingIds.map(bookingId => 
             updateBooking(bookingId, { paidOut: true })
         );
         await Promise.all(bookingUpdatePromises);
         
-        // Save the payout record to history
         await addDoc(collection(db, "payoutHistory"), newHistoryRecord);
         
         toast({

@@ -21,8 +21,7 @@ export default function ArtistLoginPage() {
     const [email, setEmail] = React.useState('');
     const [password, setPassword] = React.useState('');
     const [isLoading, setIsLoading] = React.useState(false);
-    const [approvedArtists, setApprovedArtists] = React.useState<Artist[]>([]);
-
+    
     // State for the multi-step forgot password modal
     const [isForgotPasswordOpen, setIsForgotPasswordOpen] = React.useState(false);
     const [forgotPasswordStep, setForgotPasswordStep] = React.useState<'email' | 'phone' | 'reset'>('email');
@@ -32,15 +31,12 @@ export default function ArtistLoginPage() {
     const [confirmNewPassword, setConfirmNewPassword] = React.useState('');
     const [verifiedArtist, setVerifiedArtist] = React.useState<Artist | null>(null);
 
-    React.useEffect(() => {
-        // We use getArtists here because login is a one-time action. A listener is not necessary.
-        getArtists().then(setApprovedArtists);
-    }, []);
-
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
-
+        
+        const approvedArtists = await getArtists();
+        
         setTimeout(() => {
             const artist = approvedArtists.find(
                 (a: Artist) => a.email === email && a.password === password
@@ -75,8 +71,9 @@ export default function ArtistLoginPage() {
         setVerifiedArtist(null);
     };
 
-    const handleForgotPasswordEmailSubmit = (e: React.FormEvent) => {
+    const handleForgotPasswordEmailSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        const approvedArtists = await getArtists();
         const artist = approvedArtists.find(a => a.email === forgotPasswordEmail);
 
         if (artist) {

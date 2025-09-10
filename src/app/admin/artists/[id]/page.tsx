@@ -26,9 +26,10 @@ export default function ArtistDetailPage() {
 
     const [artist, setArtist] = React.useState<Artist | null>(null);
     const [bookings, setBookings] = React.useState<Booking[]>([]);
-    const [platformFeePercentage, setPlatformFeePercentage] = React.useState(0.1);
+    const [platformFeePercentage, setPlatformFeePercentage] = React.useState(0.1); // Default value
 
     React.useEffect(() => {
+        // This code now safely runs only on the client
         if (typeof window !== 'undefined') {
             const fee = localStorage.getItem('platformFeePercentage');
             setPlatformFeePercentage(fee ? parseFloat(fee) / 100 : 0.1);

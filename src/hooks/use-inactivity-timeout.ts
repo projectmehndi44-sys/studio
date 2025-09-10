@@ -14,6 +14,7 @@ const useInactivityTimeout = (logoutAction: () => void, timeout = 300000) => { /
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
         }
+        if (typeof window === 'undefined') return; // Don't run on server
         timeoutRef.current = setTimeout(() => {
             toast({
                 title: "Session Expired",
@@ -25,6 +26,8 @@ const useInactivityTimeout = (logoutAction: () => void, timeout = 300000) => { /
     }, [timeout, logoutAction, toast]);
 
     React.useEffect(() => {
+        if (typeof window === 'undefined') return; // Don't run on server
+
         const events = ['mousemove', 'keydown', 'click', 'scroll'];
         
         const eventListener = () => {

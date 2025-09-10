@@ -78,13 +78,17 @@ export default function AdminPage() {
      // Effect for calculating financials
     React.useEffect(() => {
         const calculateRevenue = (filteredBookings: Booking[]) => {
-            let platformFeePercentage = 0.1; // Default
+            let platformFeePercentage = 0.1;
+            let refundFee = 500;
+            
             if (typeof window !== 'undefined') {
-                platformFeePercentage = parseFloat(localStorage.getItem('platformFeePercentage') || '10') / 100;
+                const storedFee = localStorage.getItem('platformFeePercentage');
+                platformFeePercentage = storedFee ? parseFloat(storedFee) / 100 : 0.1;
+
+                const storedRefundFee = localStorage.getItem('platformRefundFee');
+                refundFee = storedRefundFee ? parseFloat(storedRefundFee) : 500;
             }
             
-            const refundFee = typeof window !== 'undefined' ? parseFloat(localStorage.getItem('platformRefundFee') || '500') : 500;
-
             const completed = filteredBookings.filter(b => b.status === 'Completed');
             const totalRevenue = completed.reduce((sum, b) => sum + b.amount, 0);
             const platformFee = totalRevenue * platformFeePercentage;

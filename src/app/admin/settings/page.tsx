@@ -59,16 +59,18 @@ export default function SettingsPage() {
     });
 
     React.useEffect(() => {
-        const savedFee = localStorage.getItem('platformFeePercentage');
-        const savedRefundFee = localStorage.getItem('platformRefundFee');
-        financialForm.reset({
-            platformFee: savedFee ? parseFloat(savedFee) : 10,
-            refundFee: savedRefundFee ? parseFloat(savedRefundFee) : 500,
-        });
+        if (typeof window !== 'undefined') {
+            const savedFee = localStorage.getItem('platformFeePercentage');
+            const savedRefundFee = localStorage.getItem('platformRefundFee');
+            financialForm.reset({
+                platformFee: savedFee ? parseFloat(savedFee) : 10,
+                refundFee: savedRefundFee ? parseFloat(savedRefundFee) : 500,
+            });
 
-        const savedProfile = localStorage.getItem('companyProfile');
-        if (savedProfile) {
-            companyForm.reset(JSON.parse(savedProfile));
+            const savedProfile = localStorage.getItem('companyProfile');
+            if (savedProfile) {
+                companyForm.reset(JSON.parse(savedProfile));
+            }
         }
     }, [financialForm, companyForm]);
 
