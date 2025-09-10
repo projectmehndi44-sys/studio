@@ -32,10 +32,10 @@ export default function ArtistLoginPage() {
     React.useEffect(() => {
         const setupAdminUser = async () => {
             const superAdminSeed = initialTeamMembers.find(m => m.role === 'Super Admin');
-            // NOTE: The password is now hardcoded here for setup and removed from team-data.ts
+            // NOTE: The password is now hardcoded here for setup.
             const initialPassword = "password"; 
             
-            if (superAdminSeed && initialPassword) {
+            if (superAdminSeed) {
                 try {
                     await createUser('admin@mehndify.com', initialPassword);
                     console.log("Super Admin user created/verified successfully in Firebase Authentication.");
