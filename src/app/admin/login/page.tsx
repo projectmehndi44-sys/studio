@@ -7,17 +7,21 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Home } from 'lucide-react';
+import { Home, AlertTriangle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { getAuth, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
 import { app } from '@/lib/firebase';
-import { getTeamMembers } from '@/lib/services';
+import { getTeamMembers, saveTeamMembers } from '@/lib/services';
+import { teamMembers as initialTeamMembers } from '@/lib/team-data';
+import { createUser } from '@/lib/firebase';
+import type { TeamMember } from '@/types';
+import { Alert, AlertTitle } from '@/components/ui/alert';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
@@ -33,36 +37,33 @@ export default function AdminLoginPage() {
     
     const [isForgotPasswordOpen, setIsForgotPasswordOpen] = React.useState(false);
     const [forgotPasswordEmail, setForgotPasswordEmail] = React.useState('');
+    const [superAdminExists, setSuperAdminExists] = React.useState(true); // Assume it exists initially
 
     const form = useForm<LoginFormValues>({
         resolver: zodResolver(loginSchema),
         defaultValues: { email: '', password: '' },
     });
 
+    // Check if super admin exists when component mounts
+    React.useEffect(() => {
+        const checkAdmin = async () => {
+            const members = await getTeamMembers();
+            const initialAdmin = initialTeamMembers[0];
+            const adminInDb = members.some(m => m.username === initialAdmin.username && m.role === 'Super Admin');
+            setSuperAdminExists(adminInDb);
+        };
+        checkAdmin();
+    }, []);
+
     const handleLogin = async (data: LoginFormValues) => {
         const { email, password } = data;
         
         try {
-            const teamMembers = await getTeamMembers();
-            const member = teamMembers.find(m => m.username === email);
-
-            if (!member) {
-                toast({
-                    title: 'Access Denied',
-                    description: 'This email is not registered as a team member.',
-                    variant: 'destructive',
-                });
-                return;
-            }
-            
-            // In our new setup, the Firebase Auth email is the same as the username.
-            const loginEmail = email;
-
-            await signInWithEmailAndPassword(auth, loginEmail, password);
+            await signInWithEmailAndPassword(auth, email, password);
             
             toast({
                 title: 'Login Successful',
-                description: `Welcome, ${member.name}! Redirecting...`,
+                description: `Welcome! Redirecting...`,
             });
             
             localStorage.setItem('adminAuthenticated', 'true');
@@ -102,6 +103,48 @@ export default function AdminLoginPage() {
             toast({ title: 'Error', description, variant: 'destructive' });
         }
     };
+
+    const handleCreateSuperAdmin = async () => {
+        const initialAdmin = initialTeamMembers[0];
+        try {
+            // 1. Create the user in Firebase Auth
+            const authUser = await createUser(initialAdmin.username, 'password123');
+            
+            // 2. Add the user to the Firestore database
+            const newAdminMember: TeamMember = {
+                id: authUser.uid,
+                name: initialAdmin.name,
+                username: initialAdmin.username,
+                role: initialAdmin.role,
+                permissions: initialAdmin.permissions,
+            };
+            
+            const currentMembers = await getTeamMembers();
+            const updatedMembers = [...currentMembers, newAdminMember];
+            await saveTeamMembers(updatedMembers);
+            
+            setSuperAdminExists(true); // Update state to hide the setup button
+            
+            toast({
+                title: "Super Admin Created Successfully!",
+                description: `User ${newAdminMember.username} created with password 'password123'. You can now log in.`,
+                duration: 9000,
+            });
+
+        } catch (error: any) {
+            if (error.code === 'auth/email-already-in-use') {
+                 toast({
+                    title: "Admin Already Exists",
+                    description: "The admin account seems to exist. Try using 'Forgot Password' or logging in directly.",
+                    variant: 'destructive'
+                });
+                setSuperAdminExists(true); // Hide the button as the user exists
+            } else {
+                toast({ title: 'Creation Failed', description: error.message, variant: 'destructive'});
+            }
+        }
+    };
+
 
     // Redirect if already logged in
     React.useEffect(() => {
@@ -182,6 +225,25 @@ export default function AdminLoginPage() {
                             Back to Home
                         </Link>
                     </div>
+
+                    {!superAdminExists && (
+                        <Card className="mt-6 bg-yellow-50 border-yellow-300">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2 text-base"><AlertTriangle className="text-yellow-600"/> One-Time Super Admin Setup</CardTitle>
+                                <CardDescription>The primary Super Admin account needs to be created.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Alert>
+                                    <AlertTitle className="text-xs">
+                                        Clicking this button will create the user <strong>{initialTeamMembers[0].username}</strong> with a temporary password of <strong>password123</strong>.
+                                    </AlertTitle>
+                                </Alert>
+                            </CardContent>
+                            <CardFooter>
+                                <Button className="w-full" onClick={handleCreateSuperAdmin}>Create Super Admin Account</Button>
+                            </CardFooter>
+                        </Card>
+                    )}
                 </div>
             </div>
            

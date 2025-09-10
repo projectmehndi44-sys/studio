@@ -11,18 +11,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, MoreHorizontal, UserCog, AlertTriangle } from 'lucide-react';
+import { PlusCircle, Trash2, MoreHorizontal, UserCog } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import type { TeamMember, Permissions } from '@/types';
-import { PERMISSION_MODULES, teamMembers as initialTeamMembers } from '@/lib/team-data';
+import { PERMISSION_MODULES } from '@/lib/team-data';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { getTeamMembers, saveTeamMembers } from '@/lib/services';
 import { createUser } from '@/lib/firebase';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 
 const memberSchema = z.object({
@@ -53,7 +52,6 @@ export default function TeamManagementPage() {
     const { user } = useAdminAuth();
     const [teamMembers, setTeamMembers] = React.useState<TeamMember[]>([]);
     const [editingMember, setEditingMember] = React.useState<TeamMember | null>(null);
-    const [superAdminExists, setSuperAdminExists] = React.useState(false);
 
     const form = useForm<MemberFormValues>({
         resolver: zodResolver(memberSchema),
@@ -78,50 +76,8 @@ export default function TeamManagementPage() {
     });
 
     React.useEffect(() => {
-       getTeamMembers().then(members => {
-           setTeamMembers(members);
-           // Check if the Super Admin from the initial data file exists.
-           const initialAdmin = initialTeamMembers[0];
-           const adminInDb = members.some(m => m.username === initialAdmin.username && m.role === 'Super Admin');
-           setSuperAdminExists(adminInDb);
-       });
+       getTeamMembers().then(setTeamMembers);
     }, []);
-    
-    const handleCreateSuperAdmin = async () => {
-        const initialAdmin = initialTeamMembers[0];
-        try {
-            const authUser = await createUser(initialAdmin.username, 'password123');
-            const newAdminMember: TeamMember = {
-                id: authUser.uid,
-                name: initialAdmin.name,
-                username: initialAdmin.username,
-                role: initialAdmin.role,
-                permissions: initialAdmin.permissions,
-            };
-            
-            const currentMembers = await getTeamMembers();
-            const updatedMembers = [...currentMembers, newAdminMember];
-            await saveTeamMembers(updatedMembers);
-            setTeamMembers(updatedMembers);
-            setSuperAdminExists(true);
-            
-            toast({
-                title: "Super Admin Created",
-                description: `User ${newAdminMember.username} created with temporary password 'password123'. Please login and change it.`,
-            });
-
-        } catch (error: any) {
-            if (error.code === 'auth/email-already-in-use') {
-                 toast({
-                    title: "Admin Already Exists in Auth",
-                    description: "The admin email is registered in Firebase Auth, but not in the database. Please resolve this manually or contact support.",
-                    variant: 'destructive'
-                });
-            } else {
-                toast({ title: 'Creation Failed', description: error.message, variant: 'destructive'});
-            }
-        }
-    };
 
     const onSubmit: SubmitHandler<MemberFormValues> = async (data) => {
         const currentMembers = await getTeamMembers();
@@ -209,34 +165,12 @@ export default function TeamManagementPage() {
             </div>
         );
     }
-    
-    const OneTimeAdminSetup = () => (
-        <Card className="mb-6 bg-yellow-50 border-yellow-300">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><AlertTriangle className="text-yellow-600"/> One-Time Super Admin Setup</CardTitle>
-                <CardDescription>The main Super Admin account has not been created yet. Click the button below to perform the initial setup.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Alert>
-                    <AlertTitle>Action Required</AlertTitle>
-                    <AlertDescription>
-                        This will create the user <strong>{initialTeamMembers[0].username}</strong> with a temporary password of <strong>password123</strong>. You should log in with these credentials immediately and change your password.
-                    </AlertDescription>
-                </Alert>
-            </CardContent>
-            <CardFooter>
-                <Button className="w-full" onClick={handleCreateSuperAdmin}>Create Super Admin User</Button>
-            </CardFooter>
-        </Card>
-    );
 
     return (
         <>
             <div className="flex items-center justify-between">
                 <h1 className="text-lg font-semibold md:text-2xl">Team Management</h1>
             </div>
-            
-            {!superAdminExists && <OneTimeAdminSetup />}
 
             <div className="grid gap-6 lg:grid-cols-3">
                 <div className="lg:col-span-1">
@@ -296,7 +230,7 @@ export default function TeamManagementPage() {
 
                                     <div className="flex gap-2">
                                         {editingMember && <Button type="button" variant="outline" onClick={() => { setEditingMember(null); form.reset(); }} className="w-full">Cancel</Button>}
-                                        <Button type="submit" className="w-full" disabled={!superAdminExists}>
+                                        <Button type="submit" className="w-full">
                                             {editingMember ? 'Update Member' : <><PlusCircle className="mr-2 h-4 w-4" /> Add Member</>}
                                         </Button>
                                     </div>
