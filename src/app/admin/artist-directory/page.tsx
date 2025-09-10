@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -8,26 +9,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from '@/components/ui/input';
 import { MapPin, Search } from 'lucide-react';
 import type { Artist } from '@/types';
-import { artists as initialArtists } from '@/lib/data';
+import { getArtists } from '@/lib/services';
 
 export default function ArtistDirectoryPage() {
     const [artists, setArtists] = React.useState<Artist[]>([]);
     const [searchTerm, setSearchTerm] = React.useState('');
 
-    const fetchArtists = React.useCallback(() => {
-        const storedArtists = localStorage.getItem('artists');
-        const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
-        const allArtistsMap = new Map<string, Artist>();
-        initialArtists.forEach(a => allArtistsMap.set(a.id, a));
-        localArtists.forEach(a => allArtistsMap.set(a.id, a));
-        setArtists(Array.from(allArtistsMap.values()));
-    }, []);
-
     React.useEffect(() => {
-        fetchArtists();
-        window.addEventListener('storage', fetchArtists);
-        return () => window.removeEventListener('storage', fetchArtists);
-    }, [fetchArtists]);
+        getArtists().then(setArtists);
+    }, []);
 
     const filteredArtists = artists.filter(artist => {
         const search = searchTerm.toLowerCase();

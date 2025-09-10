@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -8,28 +9,16 @@ import { BarChart, PieChart, Map } from 'lucide-react';
 import type { Booking } from '@/types';
 import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Pie, Cell } from 'recharts';
 import { BarChart as BarChartComponent, PieChart as PieChartComponent } from 'recharts';
-import { allBookings as initialBookings } from '@/lib/data';
+import { getBookings } from '@/lib/services';
 
 
 export default function AnalyticsPage() {
     const router = useRouter();
     const [bookings, setBookings] = React.useState<Booking[]>([]);
 
-    const fetchBookings = React.useCallback(() => {
-        const storedBookings = localStorage.getItem('bookings');
-        const currentBookings = storedBookings ? JSON.parse(storedBookings) : initialBookings;
-        setBookings(currentBookings.map((b: any) => ({...b, date: new Date(b.date)})));
-    }, []);
-
     React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
-        if (isAdminAuthenticated !== 'true') {
-            router.push('/admin/login');
-        }
-        fetchBookings();
-        window.addEventListener('storage', fetchBookings);
-        return () => window.removeEventListener('storage', fetchBookings);
-    }, [router, fetchBookings]);
+        getBookings().then(setBookings);
+    }, []);
     
     // --- Chart Data Processing ---
 

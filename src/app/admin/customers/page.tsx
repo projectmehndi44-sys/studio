@@ -12,8 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from '@/components/ui/badge';
 import type { Customer } from '@/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { initialCustomers } from '@/lib/data';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { getCustomers } from '@/lib/services';
 
 type CustomerWithStatus = Customer & { status: 'Active' | 'Suspended'; registeredOn: string; };
 
@@ -22,22 +22,15 @@ export default function CustomerManagementPage() {
     const { hasPermission } = useAdminAuth();
     const [customers, setCustomers] = React.useState<CustomerWithStatus[]>([]);
 
-    const fetchCustomers = React.useCallback(() => {
-        const storedCustomersData = localStorage.getItem('customers');
-        const storedCustomers = storedCustomersData ? JSON.parse(storedCustomersData) : initialCustomers;
-        // Add mock status and registration date for UI
-        setCustomers(storedCustomers.map((c: Customer) => ({
-            ...c,
-            status: c.name && c.name.includes('Sunita') ? 'Suspended' : 'Active', // Mocked status
-            registeredOn: new Date(Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 30).toLocaleDateString() // Mocked date
-        })));
-    }, []);
-
     React.useEffect(() => {
-        fetchCustomers();
-        window.addEventListener('storage', fetchCustomers);
-        return () => window.removeEventListener('storage', fetchCustomers);
-    }, [fetchCustomers]);
+        getCustomers().then(fetchedCustomers => {
+            setCustomers(fetchedCustomers.map((c: Customer) => ({
+                ...c,
+                status: c.name && c.name.includes('Sunita') ? 'Suspended' : 'Active', // Mocked status
+                registeredOn: new Date(Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 30).toLocaleDateString() // Mocked date
+            })));
+        });
+    }, []);
     
     const handleAction = (action: string, customerId: string) => {
         toast({

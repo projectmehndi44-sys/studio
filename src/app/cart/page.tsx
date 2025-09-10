@@ -3,7 +3,7 @@
 'use client';
 
 import * as React from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -17,9 +17,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
 
-import { AVAILABLE_LOCATIONS } from '@/lib/available-locations';
 import type { Booking, Artist, Customer, CartItem } from '@/types';
-import { artists as initialArtists } from '@/lib/data';
+import { getArtists, getAvailableLocations, createBooking } from '@/lib/services';
 
 import { Calendar as CalendarIcon, ChevronLeft, Trash2, Upload, MapPin, Instagram, CheckCircle, AlertCircle, IndianRupee, Tag } from 'lucide-react';
 import { format, isSameDay } from 'date-fns';
@@ -84,18 +83,8 @@ export default function CartPage() {
              toast({ title: "Could not find customer data.", variant: "destructive" });
         }
 
-        const savedLocationsData = localStorage.getItem('availableLocations');
-        const savedLocations = savedLocationsData ? JSON.parse(savedLocationsData) : AVAILABLE_LOCATIONS;
-        setAvailableLocations(savedLocations);
-        
-        // Fetch all artists
-        const storedArtists = localStorage.getItem('artists');
-        const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
-        const artistsMap = new Map<string, Artist>();
-        initialArtists.forEach(a => artistsMap.set(a.id, a));
-        localArtists.forEach(a => artistsMap.set(a.id, a));
-        setAllArtists(Array.from(artistsMap.values()));
-
+        getAvailableLocations().then(setAvailableLocations);
+        getArtists().then(setAllArtists);
     }, [router, toast]);
 
     const handleRemoveFromCart = (index: number) => {
@@ -143,9 +132,7 @@ export default function CartPage() {
         }
     };
 
-    const isArtistAvailable = (artist: Artist, dates: Date[]): boolean => {
-        const allBookings: Booking[] = JSON.parse(localStorage.getItem('bookings') || '[]');
-        
+    const isArtistAvailable = (artist: Artist, dates: Date[], allBookings: Booking[]): boolean => {
         // Check for conflicting confirmed bookings
         const hasConflictingBooking = allBookings.some(booking =>
             booking.artistIds.includes(artist.id) &&
@@ -167,7 +154,7 @@ export default function CartPage() {
         return true;
     };
 
-    const handleCreateBooking = (paymentMethod: 'online' | 'offline') => {
+    const handleCreateBooking = async (paymentMethod: 'online' | 'offline') => {
         if (!isFormValid() || !customer) return;
 
         let totalAmount = 0;
@@ -187,8 +174,9 @@ export default function CartPage() {
         if (appliedReferral) {
             totalAmount = totalAmount * (1 - appliedReferral.discount / 100);
             
-            // Referral Logic
-            const canAssignReferredArtist = isArtistAvailable(appliedReferral.artist, serviceDates);
+            // Fetch latest bookings to check availability
+            const allBookings = await getBookings();
+            const canAssignReferredArtist = isArtistAvailable(appliedReferral.artist, serviceDates, allBookings);
             if (canAssignReferredArtist) {
                 bookingArtistIds.add(appliedReferral.artist.id);
                 toast({
@@ -206,8 +194,7 @@ export default function CartPage() {
         
         serviceDescription = cart.map(item => `${item.masterPackage.name} (${item.category.name})`).join(', ');
 
-        const newBooking: Booking = {
-            id: `book_${Date.now()}`,
+        const newBookingData: Omit<Booking, 'id'> = {
             customerId: customer.id,
             artistIds: Array.from(bookingArtistIds),
             customerName: name,
@@ -231,10 +218,8 @@ export default function CartPage() {
             completionCode: Math.floor(100000 + Math.random() * 900000).toString(),
         };
 
-        const allBookings = JSON.parse(localStorage.getItem('bookings') || '[]');
-        localStorage.setItem('bookings', JSON.stringify([newBooking, ...allBookings]));
+        await createBooking(newBookingData);
         localStorage.removeItem(`cart_${customer.id}`);
-        window.dispatchEvent(new Event('storage'));
 
         toast({
             title: 'Booking Request Submitted!',

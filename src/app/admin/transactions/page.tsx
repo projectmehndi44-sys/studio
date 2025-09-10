@@ -15,7 +15,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { exportTransactionsToExcel, exportTransactionsToPdf } from '@/lib/export';
-import { allBookings as initialBookings } from '@/lib/data';
+import { getBookings } from '@/lib/services';
+
+async function getPayoutHistory(): Promise<PayoutHistory[]> {
+    if (typeof window === 'undefined') return [];
+    const data = localStorage.getItem('payoutHistory');
+    if (!data) return [];
+    return JSON.parse(data).map((p: any) => ({ ...p, paymentDate: new Date(p.paymentDate) }));
+}
+
 
 export default function TransactionsPage() {
     const router = useRouter();
@@ -24,53 +32,43 @@ export default function TransactionsPage() {
     const [filteredTransactions, setFilteredTransactions] = React.useState<Transaction[]>([]);
     const [dateRange, setDateRange] = React.useState<{from: Date | undefined, to: Date | undefined}>({ from: undefined, to: undefined });
 
-    const fetchTransactions = React.useCallback(() => {
-        const storedBookings = localStorage.getItem('bookings');
-        const currentBookings: Booking[] = storedBookings ? JSON.parse(storedBookings).map((b: any) => ({...b, date: new Date(b.date)})) : initialBookings;
-
-        const storedPayoutHistory = localStorage.getItem('payoutHistory');
-        const currentPayoutHistory: PayoutHistory[] = storedPayoutHistory ? JSON.parse(storedPayoutHistory).map((p:any) => ({...p, paymentDate: new Date(p.paymentDate)})) : [];
-
-        const allTransactions: Transaction[] = [];
-
-        // 1. Revenue from completed bookings
-        currentBookings.filter(b => b.status === 'Completed').forEach(b => {
-            allTransactions.push({
-                id: `rev-${b.id}`,
-                date: new Date(b.date),
-                type: 'Revenue',
-                description: `Booking #${b.id} for ${b.service}`,
-                amount: b.amount,
-                relatedId: b.id,
-            });
-        });
-
-        // 2. Payouts to artists
-        currentPayoutHistory.forEach(p => {
-            allTransactions.push({
-                id: `payout-${p.id}`,
-                date: new Date(p.paymentDate),
-                type: 'Payout',
-                description: `Payout to ${p.artistName}`,
-                amount: -p.netPayout,
-                relatedId: p.id,
-            });
-        });
-
-        allTransactions.sort((a,b) => b.date.getTime() - a.date.getTime());
-        setTransactions(allTransactions);
-        setFilteredTransactions(allTransactions);
-    }, []);
-
     React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
-        if (isAdminAuthenticated !== 'true') {
-            router.push('/admin/login');
-        }
+        const fetchTransactions = async () => {
+            const currentBookings = await getBookings();
+            const currentPayoutHistory = await getPayoutHistory();
+
+            const allTransactions: Transaction[] = [];
+
+            // 1. Revenue from completed bookings
+            currentBookings.filter(b => b.status === 'Completed').forEach(b => {
+                allTransactions.push({
+                    id: `rev-${b.id}`,
+                    date: new Date(b.date),
+                    type: 'Revenue',
+                    description: `Booking #${b.id} for ${b.service}`,
+                    amount: b.amount,
+                    relatedId: b.id,
+                });
+            });
+
+            // 2. Payouts to artists
+            currentPayoutHistory.forEach(p => {
+                allTransactions.push({
+                    id: `payout-${p.id}`,
+                    date: new Date(p.paymentDate),
+                    type: 'Payout',
+                    description: `Payout to ${p.artistName}`,
+                    amount: -p.netPayout,
+                    relatedId: p.id,
+                });
+            });
+
+            allTransactions.sort((a,b) => b.date.getTime() - a.date.getTime());
+            setTransactions(allTransactions);
+            setFilteredTransactions(allTransactions);
+        };
         fetchTransactions();
-        window.addEventListener('storage', fetchTransactions);
-        return () => window.removeEventListener('storage', fetchTransactions);
-    }, [router, fetchTransactions]);
+    }, []);
 
     const handleTransactionFilter = (filterType: 'all' | 'month' | 'year' | 'custom') => {
         const now = new Date();

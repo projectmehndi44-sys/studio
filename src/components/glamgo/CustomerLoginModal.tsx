@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -128,6 +129,7 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
             description: 'The OTP is incorrect. Please try again.',
             variant: 'destructive',
         });
+    } finally {
         setIsSubmitting(false);
     }
   };
@@ -163,7 +165,7 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
         }
     } catch (error: any) {
         // This catches the auth/cancelled-popup-request error
-        if (error.code !== 'auth/cancelled-popup-request') {
+        if (error.code !== 'auth/cancelled-popup-request' && error.code !== 'auth/popup-closed-by-user') {
            console.error("Google Sign-In Error:", error);
             toast({
               title: 'Google Sign-In Failed',

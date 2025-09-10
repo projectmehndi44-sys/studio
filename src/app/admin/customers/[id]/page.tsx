@@ -9,8 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { Booking, Customer, Artist } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ArrowLeft, Briefcase, Calendar, Download } from 'lucide-react';
-import { allBookings as initialBookings, initialCustomers, artists as initialArtists } from '@/lib/data';
+import { ArrowLeft, Briefcase } from 'lucide-react';
+import { getArtists, getBookings, getCustomer } from '@/lib/services';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 
@@ -23,46 +23,43 @@ export default function CustomerDetailPage() {
     const [customer, setCustomer] = React.useState<Customer | null>(null);
     const [bookings, setBookings] = React.useState<Booking[]>([]);
     const [artists, setArtists] = React.useState<Artist[]>([]);
-    
-    const getArtists = React.useCallback((): Artist[] => {
-        const storedArtists = localStorage.getItem('artists');
-        const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
-        const allArtistsMap = new Map<string, Artist>();
-        initialArtists.forEach(a => allArtistsMap.set(a.id, a));
-        localArtists.forEach(a => allArtistsMap.set(a.id, a));
-        return Array.from(allArtistsMap.values());
-    }, []);
 
     React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
-        if (isAdminAuthenticated !== 'true') {
-            router.push('/admin/login');
-        }
+        if (!customerId) return;
+        
+        const fetchData = async () => {
+            try {
+                const [customerData, artistsData, bookingsData] = await Promise.all([
+                    getCustomer(customerId),
+                    getArtists(),
+                    getBookings()
+                ]);
 
-        const allCustomersData = localStorage.getItem('customers');
-        const allCustomers: Customer[] = allCustomersData ? JSON.parse(allCustomersData) : initialCustomers;
-        const currentCustomer = allCustomers.find(c => c.id === customerId);
-        
-        if (currentCustomer) {
-            setCustomer(currentCustomer);
-        } else {
-            toast({
-                title: 'Customer not found',
-                description: 'The requested customer could not be found.',
-                variant: 'destructive',
-            });
-            router.push('/admin/customers');
-            return;
-        }
+                if (customerData) {
+                    setCustomer(customerData);
+                    setArtists(artistsData);
+                    const customerBookings = bookingsData.filter(b => b.customerId === customerId);
+                    setBookings(customerBookings.sort((a, b) => b.date.getTime() - a.date.getTime()));
+                } else {
+                    toast({
+                        title: 'Customer not found',
+                        description: 'The requested customer could not be found.',
+                        variant: 'destructive',
+                    });
+                    router.push('/admin/customers');
+                }
+            } catch (error) {
+                console.error("Failed to fetch customer details", error);
+                 toast({
+                    title: 'Error',
+                    description: 'Failed to load customer details.',
+                    variant: 'destructive',
+                });
+            }
+        };
 
-        setArtists(getArtists());
-        
-        const allBookingsData = localStorage.getItem('bookings');
-        const allBookings: Booking[] = (allBookingsData ? JSON.parse(allBookingsData) : initialBookings).map((b: any) => ({...b, date: new Date(b.date), serviceDates: b.serviceDates.map((d:string) => new Date(d)) }));
-        
-        const customerBookings = allBookings.filter(b => b.customerId === customerId);
-        setBookings(customerBookings.sort((a,b) => b.date.getTime() - a.date.getTime()));
-    }, [router, customerId, toast, getArtists]);
+        fetchData();
+    }, [router, customerId, toast]);
 
 
     const getStatusVariant = (status: Booking['status']) => {
@@ -82,7 +79,7 @@ export default function CustomerDetailPage() {
     }
 
     const renderBookingRow = (booking: Booking) => {
-        const assignedArtists = artists.filter(a => booking.artistIds && booking.artistIds.includes(a.id));
+        const assignedArtists = artists.filter(a => booking.artistIds?.includes(a.id));
         return (
              <TableRow key={booking.id}>
                 <TableCell className="font-medium">{booking.service}</TableCell>
@@ -99,7 +96,7 @@ export default function CustomerDetailPage() {
                 </TableCell>
                 <TableCell>
                     <div className="flex flex-col gap-1">
-                        {booking.serviceDates.map((date, index) => (
+                        {booking.serviceDates?.map((date, index) => (
                             <Badge key={index} variant="outline" className="text-xs">
                                 {format(date, "PPP")}
                             </Badge>

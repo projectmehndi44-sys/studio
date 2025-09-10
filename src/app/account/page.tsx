@@ -11,12 +11,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import type { Booking, Customer, Artist } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogOut, Briefcase, CalendarCheck2, History, Download, ShieldCheck } from 'lucide-react';
-import { allBookings as initialBookings, initialCustomers, artists as initialArtists } from '@/lib/data';
 import { format } from 'date-fns';
 import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
 import { generateCustomerInvoice } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { getArtists, getBookings, getCustomer } from '@/lib/services';
 
 export default function AccountPage() {
     const router = useRouter();
@@ -24,6 +24,7 @@ export default function AccountPage() {
     const [customer, setCustomer] = React.useState<Customer | null>(null);
     const [bookings, setBookings] = React.useState<Booking[]>([]);
     const [artists, setArtists] = React.useState<Artist[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
 
     const handleLogout = React.useCallback(() => {
         localStorage.removeItem('currentCustomerId');
@@ -32,40 +33,51 @@ export default function AccountPage() {
 
     useInactivityTimeout(handleLogout);
 
-    const getArtists = React.useCallback((): Artist[] => {
-        const storedArtists = localStorage.getItem('artists');
-        const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
-        const allArtistsMap = new Map<string, Artist>();
-        initialArtists.forEach(a => allArtistsMap.set(a.id, a));
-        localArtists.forEach(a => allArtistsMap.set(a.id, a));
-        return Array.from(allArtistsMap.values());
-    }, []);
-
-    const fetchCustomerData = React.useCallback(() => {
+    const fetchCustomerData = React.useCallback(async () => {
+        setIsLoading(true);
         const customerId = localStorage.getItem('currentCustomerId');
         if (!customerId) {
             router.push('/');
             return;
         }
-        
-        setArtists(getArtists());
 
-        const allCustomersData = localStorage.getItem('customers');
-        const allCustomers: Customer[] = allCustomersData ? JSON.parse(allCustomersData) : initialCustomers;
-        const currentCustomer = allCustomers.find(c => c.id === customerId);
-        setCustomer(currentCustomer || null);
+        try {
+            const [fetchedCustomer, fetchedArtists, allBookings] = await Promise.all([
+                getCustomer(customerId),
+                getArtists(),
+                getBookings(),
+            ]);
 
-        const allBookingsData = localStorage.getItem('bookings');
-        const allBookings: Booking[] = (allBookingsData ? JSON.parse(allBookingsData) : initialBookings).map((b: any) => ({...b, date: new Date(b.date), serviceDates: b.serviceDates.map((d:string) => new Date(d)) }));
-        
-        const customerBookings = allBookings.filter(b => b.customerId === customerId);
-        setBookings(customerBookings.sort((a,b) => b.date.getTime() - a.date.getTime()));
-    }, [router, getArtists]);
+            if (!fetchedCustomer) {
+                toast({
+                    title: "Error",
+                    description: "Could not find your account details.",
+                    variant: "destructive",
+                });
+                handleLogout();
+                return;
+            }
+
+            setCustomer(fetchedCustomer);
+            setArtists(fetchedArtists);
+
+            const customerBookings = allBookings.filter(b => b.customerId === customerId);
+            setBookings(customerBookings.sort((a,b) => b.date.getTime() - a.date.getTime()));
+
+        } catch (error) {
+            console.error("Failed to fetch customer data:", error);
+            toast({
+                title: "Error",
+                description: "Failed to load your account data. Please try again later.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [router, toast, handleLogout]);
     
     React.useEffect(() => {
         fetchCustomerData();
-        window.addEventListener('storage', fetchCustomerData);
-        return () => window.removeEventListener('storage', fetchCustomerData);
     }, [fetchCustomerData]);
 
     const handleDownloadInvoice = (booking: Booking) => {
@@ -96,15 +108,23 @@ export default function AccountPage() {
         }
     };
 
-    if (!customer) {
+    if (isLoading) {
         return <div className="flex items-center justify-center min-h-screen">Loading your account...</div>;
     }
+    
+    if (!customer) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                Could not load customer data. Please try logging in again.
+            </div>
+        );
+    }
 
-    const upcomingBookings = bookings.filter(b => new Date(b.date) >= new Date() && (b.status === 'Confirmed' || b.status === 'Pending Approval' || b.status === 'Needs Assignment'));
-    const pastBookings = bookings.filter(b => new Date(b.date) < new Date() || b.status === 'Completed' || b.status === 'Cancelled' || b.status === 'Disputed');
+    const upcomingBookings = bookings.filter(b => b.date >= new Date() && (b.status === 'Confirmed' || b.status === 'Pending Approval' || b.status === 'Needs Assignment'));
+    const pastBookings = bookings.filter(b => b.date < new Date() || b.status === 'Completed' || b.status === 'Cancelled' || b.status === 'Disputed');
     
     const renderBookingRow = (booking: Booking) => {
-        const assignedArtists = artists.filter(a => booking.artistIds && booking.artistIds.includes(a.id));
+        const assignedArtists = artists.filter(a => booking.artistIds?.includes(a.id));
         return (
              <TableRow key={booking.id}>
                 <TableCell className="font-medium">{booking.service}</TableCell>
@@ -223,9 +243,9 @@ export default function AccountPage() {
                     </CardHeader>
                     <CardFooter className="flex justify-between items-center">
                         <div className="flex gap-4">
-                            <div className="flex items-center text-sm text-muted-foreground"><CalendarCheck2 className="mr-2 h-4 w-4 text-green-500" /> <span>{upcomingBookings.length} Upcoming Bookings</span></div>
-                            <div className="flex items-center text-sm text-muted-foreground"><History className="mr-2 h-4 w-4 text-blue-500" /> <span>{pastBookings.length} Past Bookings</span></div>
-                             <div className="flex items-center text-sm text-muted-foreground"><Briefcase className="mr-2 h-4 w-4 text-purple-500" /> <span>{bookings.length} Total Bookings</span></div>
+                            <div className="flex items-center text-sm text-muted-foreground"><CalendarCheck2 className="mr-2 h-4 w-4 text-green-500" /> <span>{upcomingBookings.length} Upcoming</span></div>
+                            <div className="flex items-center text-sm text-muted-foreground"><History className="mr-2 h-4 w-4 text-blue-500" /> <span>{pastBookings.length} Past</span></div>
+                             <div className="flex items-center text-sm text-muted-foreground"><Briefcase className="mr-2 h-4 w-4 text-purple-500" /> <span>{bookings.length} Total</span></div>
                         </div>
                          <Button variant="ghost" onClick={handleLogout}><LogOut className="mr-2 h-4 w-4"/> Logout</Button>
                     </CardFooter>

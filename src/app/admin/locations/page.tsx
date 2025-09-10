@@ -12,8 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 import { MapPin, Save } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { INDIA_LOCATIONS } from '@/lib/india-locations';
-import { AVAILABLE_LOCATIONS } from '@/lib/available-locations';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { getAvailableLocations } from '@/lib/services';
+import { setDoc, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export default function LocationManagementPage() {
     const router = useRouter();
@@ -23,19 +25,10 @@ export default function LocationManagementPage() {
     const [isLoading, setIsLoading] = React.useState(false);
 
      React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
-        if (isAdminAuthenticated !== 'true') {
-            router.push('/admin/login');
-        }
-        
-        // Load saved locations from localStorage, or use defaults if none are saved
-        const savedLocations = localStorage.getItem('availableLocations');
-        if (savedLocations) {
-            setSelectedLocations(JSON.parse(savedLocations));
-        } else {
-            setSelectedLocations(AVAILABLE_LOCATIONS);
-        }
-    }, [router]);
+        getAvailableLocations().then(locations => {
+            setSelectedLocations(locations);
+        });
+    }, []);
     
     const handleStateChange = (state: string, checked: boolean | 'indeterminate') => {
         setSelectedLocations(prev => {
@@ -70,21 +63,24 @@ export default function LocationManagementPage() {
         });
     };
     
-    const handleSave = () => {
+    const handleSave = async () => {
         setIsLoading(true);
-        // Save the selected locations to localStorage to persist them.
-        localStorage.setItem('availableLocations', JSON.stringify(selectedLocations));
-        
-        // Dispatch a storage event to notify other components if they need to update
-        window.dispatchEvent(new Event('storage'));
-
-        setTimeout(() => {
+        try {
+            await setDoc(doc(db, "config", "availableLocations"), { locations: selectedLocations });
             toast({
                 title: 'Locations Saved',
                 description: 'The list of available service locations has been updated.',
             });
+        } catch (error) {
+             console.error("Failed to save locations:", error);
+             toast({
+                title: 'Error Saving Locations',
+                description: 'Could not update the locations in the database.',
+                variant: 'destructive',
+            });
+        } finally {
             setIsLoading(false);
-        }, 1000);
+        }
     };
 
     const allStates = Object.keys(INDIA_LOCATIONS);

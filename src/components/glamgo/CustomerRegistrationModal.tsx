@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -179,7 +180,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
             handleClose();
         }
     } catch (error: any) {
-        if (error.code !== 'auth/cancelled-popup-request') {
+        if (error.code !== 'auth/cancelled-popup-request' && error.code !== 'auth/popup-closed-by-user') {
             console.error("Google Sign-Up Error:", error);
             toast({
               title: 'Google Sign-Up Failed',
