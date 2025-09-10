@@ -44,40 +44,46 @@ export default function AdminLoginPage() {
                 await signOut(auth);
             }
 
-            // Determine the email to use for Firebase Authentication based on the user type.
-            // For 'admin', we use the hardcoded super admin email.
-            // For 'team-member', we construct the email from their username.
-            const authEmail = userType === 'admin' 
-                ? 'admin@mehndify.com' 
-                : `${username}@mehndify.com`;
-
+            const teamMembers = await getTeamMembers();
+            let member: TeamMember | undefined;
+            let authEmail: string = '';
             
+            if (userType === 'admin') {
+                member = teamMembers.find(m => m.role === 'Super Admin');
+                if (member) {
+                    authEmail = member.username === 'admin' ? 'admin@mehndify.com' : `${member.username}@mehndify.com`;
+                }
+            } else { // team-member
+                member = teamMembers.find(m => m.username === username);
+                if (member) {
+                    authEmail = `${member.username}@mehndify.com`;
+                }
+            }
+
+            if (!member || !authEmail) {
+                toast({
+                    title: 'Login Failed',
+                    description: 'Could not find a user with the provided details.',
+                    variant: 'destructive',
+                });
+                setIsLoading(false);
+                return;
+            }
+
             // This will throw an error if Firebase Auth fails, which is caught below.
             const userCredential = await signInAsAdmin(authEmail, password);
 
             if (userCredential) {
-                const teamMembers = await getTeamMembers();
-                // Find the team member document that matches the entered username.
-                const member = teamMembers.find(m => m.username === username);
-
-                if (member) {
-                     toast({
-                        title: 'Login Successful',
-                        description: `Welcome, ${member.name}! Redirecting...`,
-                    });
-                    localStorage.setItem('isAdminAuthenticated', 'true');
-                    localStorage.setItem('adminRole', member.role);
-                    localStorage.setItem('adminUsername', member.username);
-                    localStorage.setItem('adminUserId', member.id);
-                    window.location.href = '/admin'; // Full refresh to re-trigger auth context
-                } else {
-                    await signOut(auth); // Sign out if they are not a valid team member in Firestore
-                    toast({
-                        title: 'Authorization Failed',
-                        description: `You are authenticated, but not authorized to access this role.`,
-                        variant: 'destructive',
-                    });
-                }
+                 toast({
+                    title: 'Login Successful',
+                    description: `Welcome, ${member.name}! Redirecting...`,
+                });
+                localStorage.setItem('isAdminAuthenticated', 'true');
+                localStorage.setItem('adminRole', member.role);
+                localStorage.setItem('adminUsername', member.username);
+                localStorage.setItem('adminUserId', member.id);
+                // Use a full page reload to ensure all auth contexts are reset correctly.
+                window.location.href = '/admin';
             } else {
                  toast({
                     title: 'Authentication Failed',
@@ -88,7 +94,7 @@ export default function AdminLoginPage() {
 
         } catch(error: any) {
             console.error("Admin Login Error:", error);
-             let description = 'Could not verify credentials. Please try again.';
+            let description = 'Could not verify credentials. Please try again.';
             if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
                 description = 'Invalid username or password. Please check and try again.';
             }

@@ -80,16 +80,9 @@ const signInWithGoogle = (): Promise<User> => {
   });
 };
 
-const signInAsAdmin = (email: string, password: string): Promise<User> => {
-    return new Promise((resolve, reject) => {
-        signInWithEmailAndPassword(auth, email, password)
-            .then(userCredential => {
-                resolve(userCredential.user);
-            })
-            .catch(error => {
-                reject(error);
-            });
-    });
+const signInAsAdmin = async (email: string, password: string): Promise<User> => {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    return userCredential.user;
 };
 
 const setupRecaptcha = (containerId: string) => {
