@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from '@/hooks/use-toast';
 import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Pencil, Trash2, UserPlus } from 'lucide-react';
 import type { Artist } from '@/types';
-import { listenToCollection, createArtistFromPending, deletePendingArtist, getArtists } from '@/lib/services';
+import { listenToCollection, createArtistFromPending, deletePendingArtist } from '@/lib/services';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { exportToExcel } from '@/lib/export';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -180,8 +180,7 @@ export default function ArtistManagementPage() {
     };
     
     const onOnboardSubmit: SubmitHandler<OnboardFormValues> = async (data) => {
-        const currentArtists = await getArtists();
-        if (currentArtists.some(a => a.email === data.email)) {
+        if (approvedArtists.some(a => a.email === data.email)) {
             form.setError('email', { message: 'An artist with this email already exists.' });
             return;
         }
