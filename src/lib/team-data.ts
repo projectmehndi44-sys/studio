@@ -31,7 +31,7 @@ export const teamMembers: TeamMember[] = [
     {
         id: 'user_001',
         name: 'Abhishek Soni',
-        username: 'projectmehendi44@gmail.com',
+        username: 'projectmehndi44@gmail.com',
         role: 'Super Admin',
         permissions: { // Admin has all rights by default, this is illustrative
             dashboard: 'edit',
