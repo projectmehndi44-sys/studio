@@ -39,7 +39,6 @@ export default function AdminLoginPage() {
         try {
             const allMembers = await getTeamMembers();
             
-            // This is the corrected logic
             const expectedRole = userType === 'admin' ? 'Super Admin' : 'team-member';
             const memberByUsername = allMembers.find(m => m.username === username);
 
@@ -63,7 +62,7 @@ export default function AdminLoginPage() {
             } else {
                  toast({
                     title: 'Login Failed',
-                    description: `No ${userType === 'admin' ? 'admin' : 'team member'} account found with that username.`,
+                    description: `No ${userType} account found with that username.`,
                     variant: 'destructive',
                 });
             }
