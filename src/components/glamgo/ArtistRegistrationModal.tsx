@@ -23,9 +23,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Terminal, Upload } from 'lucide-react';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { INDIA_LOCATIONS } from '@/lib/india-locations';
 import { Separator } from '../ui/separator';
-import { AVAILABLE_LOCATIONS } from '@/lib/available-locations';
+import { getAvailableLocations, createPendingArtist } from '@/lib/services';
 
 
 const passwordSchema = z.string()
@@ -71,8 +70,6 @@ interface ArtistRegistrationModalProps {
 export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistrationModalProps) {
   const { toast } = useToast();
   const [isSubmitted, setIsSubmitted] = React.useState(false);
-  const [isVerifyingOtp, setIsVerifyingOtp] = React.useState(false);
-  const [isOtpSent, setIsOtpSent] = React.useState(false);
   const [availableLocations, setAvailableLocations] = React.useState<Record<string, string[]>>({});
   
   const form = useForm<RegistrationFormValues>({
@@ -97,14 +94,12 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
   // Effect to load available locations from localStorage when the modal opens
   React.useEffect(() => {
     if (isOpen) {
-        const savedLocations = localStorage.getItem('availableLocations');
-        const locations = savedLocations ? JSON.parse(savedLocations) : AVAILABLE_LOCATIONS;
-        
-        if (Object.keys(locations).length === 0) {
-           console.log("No service locations configured by admin.");
-        }
-
-        setAvailableLocations(locations);
+        getAvailableLocations().then(locations => {
+            if (Object.keys(locations).length === 0) {
+               console.log("No service locations configured by admin.");
+            }
+            setAvailableLocations(locations);
+        });
     }
   }, [isOpen]);
 
@@ -113,16 +108,9 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
   const districtsInSelectedState = selectedState ? (availableLocations[selectedState] || []) : [];
 
 
-  const onSubmit = (data: RegistrationFormValues) => {
-    const existingPending = JSON.parse(localStorage.getItem('pendingArtists') || '[]');
-    
-    // Check if email is already registered
-    if (existingPending.some((artist: any) => artist.email === data.email)) {
-        form.setError('email', { type: 'manual', message: 'This email is already registered.' });
-        return;
-    }
-    
-    // Omit workImages before saving to localStorage
+  const onSubmit = async (data: RegistrationFormValues) => {
+    // In a real app with file uploads, you'd handle the files here, e.g., upload to Firebase Storage.
+    // For this example, we'll store form data without the files.
     const { workImages, ...dataToStore } = data;
 
     const newPendingArtist = {
@@ -131,10 +119,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
         submissionDate: new Date().toISOString(),
     };
 
-    localStorage.setItem('pendingArtists', JSON.stringify([...existingPending, newPendingArtist]));
-     // Dispatch a storage event to notify other components (like the admin page)
-    window.dispatchEvent(new Event('storage'));
-
+    await createPendingArtist(newPendingArtist);
     setIsSubmitted(true);
   };
 
@@ -145,24 +130,6 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
         setIsSubmitted(false);
         form.reset();
     }, 300);
-  }
-
-  const handlePhoneVerify = () => {
-    const phone = form.getValues('phone');
-    if (!/^\d{10}$/.test(phone)) {
-        form.setError('phone', { type: 'manual', message: 'Please enter a valid 10-digit phone number to verify.' });
-        return;
-    }
-    // Mock OTP sending
-    setIsVerifyingOtp(true);
-    setTimeout(() => {
-        setIsOtpSent(true);
-        setIsVerifyingOtp(false);
-        toast({
-            title: 'OTP Sent',
-            description: `An OTP has been sent to ${phone}.`,
-        });
-    }, 1000);
   }
 
   return (
@@ -216,25 +183,13 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                            <FormField control={form.control} name="phone" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Phone Number</FormLabel>
-                                    <div className="flex gap-2">
                                     <FormControl>
-                                        <Input type="tel" placeholder="9876543210" {...field} disabled={isOtpSent} />
+                                        <Input type="tel" placeholder="9876543210" {...field} />
                                     </FormControl>
-                                    <Button type="button" onClick={handlePhoneVerify} disabled={isVerifyingOtp || isOtpSent} className="flex-shrink-0">
-                                        {isVerifyingOtp ? 'Sending...' : (isOtpSent ? 'Verified' : 'Verify')}
-                                    </Button>
-                                    </div>
                                     <FormMessage />
                                 </FormItem>
                             )} />
                         </div>
-                         {isOtpSent && (
-                            <div className="space-y-2">
-                               <Label htmlFor="otp">Enter OTP</Label>
-                               <Input id="otp" placeholder="Enter 6-digit OTP" />
-                               <p className="text-xs text-muted-foreground">For this demo, any OTP will work. In a real app, this would be validated.</p>
-                            </div>
-                        )}
                         <FormField control={form.control} name="aadharAddress" render={({ field }) => (
                              <FormItem><FormLabel>Address (As per Aadhaar)</FormLabel><FormControl><Textarea placeholder="Enter your official address" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />

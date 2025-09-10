@@ -20,9 +20,10 @@ import { useToast } from '@/hooks/use-toast';
 import { LogIn } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { GoogleIcon } from '../icons';
-import { signInWithGoogle } from '@/lib/firebase';
+import { signInWithGoogle, setupRecaptcha, sendOtp } from '@/lib/firebase';
 import type { Customer } from '@/types';
 import { getCustomers, getCustomerByEmail, createCustomer } from '@/lib/services';
+import type { ConfirmationResult } from 'firebase/auth';
 
 const loginSchema = z.object({
   phone: z.string().regex(/^\d{10}$/, { message: 'Please enter a valid 10-digit phone number.' }),
@@ -51,6 +52,13 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
     },
   });
 
+  React.useEffect(() => {
+    if (isOpen) {
+        // Setup reCAPTCHA verifier when modal opens
+        setTimeout(() => setupRecaptcha('recaptcha-container-login'), 100);
+    }
+  }, [isOpen]);
+
   const handleSendOtp = async () => {
     const phone = form.getValues('phone');
     if (!/^\d{10}$/.test(phone)) {
@@ -58,7 +66,6 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
         return;
     }
     
-    // Always fetch the latest customer list before checking
     setIsSendingOtp(true);
     const customers = await getCustomers();
     const existingCustomer = customers.find(c => c.phone === phone);
@@ -73,34 +80,52 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
         return;
     }
 
-    // Mock OTP sending
-    setTimeout(() => {
-        setIsOtpSent(true);
+    try {
+      const confirmationResult = await sendOtp(phone);
+      window.confirmationResult = confirmationResult;
+      setIsOtpSent(true);
+      toast({
+          title: 'OTP Sent',
+          description: `An OTP has been sent to ${phone}.`,
+      });
+    } catch (error) {
+       console.error("OTP Error:", error);
+       toast({
+           title: 'Failed to Send OTP',
+           description: 'Could not send OTP. Please check your phone number or try again later.',
+           variant: 'destructive',
+       });
+    } finally {
         setIsSendingOtp(false);
-        toast({
-            title: 'OTP Sent',
-            description: `An OTP has been sent to ${phone}.`,
-        });
-    }, 1000);
+    }
   }
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsSubmitting(true);
-    // In a real app, this would verify the OTP against a backend service
-    console.log(data);
-
-    const customers = await getCustomers();
-    const customer = customers.find(c => c.phone === data.phone);
-
-    if (customer) {
-      localStorage.setItem('currentCustomerId', customer.id);
-      onSuccessfulLogin(customer);
-      handleClose();
-    } else {
-        // This case should ideally not be hit due to the check in handleSendOtp
+    
+    if (!window.confirmationResult) {
+        toast({ title: 'Verification failed. Please request a new OTP.', variant: 'destructive' });
+        setIsSubmitting(false);
+        return;
+    }
+    
+    try {
+      await window.confirmationResult.confirm(data.otp);
+      const customers = await getCustomers();
+      const customer = customers.find(c => c.phone === data.phone);
+      
+      if (customer) {
+        localStorage.setItem('currentCustomerId', customer.id);
+        onSuccessfulLogin(customer);
+        handleClose();
+      } else {
+        throw new Error("Customer not found after OTP verification.");
+      }
+    } catch (error) {
+        console.error("OTP Confirmation Error:", error);
         toast({
             title: 'Login Failed',
-            description: 'An unexpected error occurred.',
+            description: 'The OTP is incorrect. Please try again.',
             variant: 'destructive',
         });
         setIsSubmitting(false);
@@ -117,13 +142,13 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
   }
   
   const handleGoogleSignIn = async () => {
-    signInWithGoogle()
-      .then(async (user) => {
+    try {
+        const user = await signInWithGoogle();
         if (user && user.email) {
             let customer = await getCustomerByEmail(user.email);
             
             if (!customer) {
-              const newCustomerData: Customer = {
+              const newCustomerData: Omit<Customer, 'id'> & {id: string} = {
                   id: user.uid,
                   name: user.displayName || 'Google User',
                   phone: user.phoneNumber || '',
@@ -136,8 +161,7 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
             onSuccessfulLogin(customer);
             handleClose();
         }
-      })
-      .catch((error) => {
+    } catch (error: any) {
         // This catches the auth/cancelled-popup-request error
         if (error.code !== 'auth/cancelled-popup-request') {
            console.error("Google Sign-In Error:", error);
@@ -147,7 +171,7 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
               variant: 'destructive',
             });
         }
-      });
+    }
   };
 
   return (
@@ -159,6 +183,7 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
             Enter your phone number to receive a login OTP.
           </DialogDescription>
         </DialogHeader>
+        <div id="recaptcha-container-login"></div>
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField control={form.control} name="phone" render={({ field }) => (

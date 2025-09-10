@@ -1,17 +1,17 @@
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, User } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, User, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 
 const firebaseConfig = {
-  projectId: "mehndify",
-  appId: "1:837518627913:web:2935b777173393da1d1b98",
-  storageBucket: "mehndify.firebasestorage.app",
-  apiKey: "AIzaSyCERepylTUMG_oujzlwIa6kwBPZxDV-O4I",
-  authDomain: "mehndify.firebaseapp.com",
-  measurementId: "",
-  messagingSenderId: "837518627913"
+  "projectId": "mehndify",
+  "appId": "1:837518627913:web:2935b777173393da1d1b98",
+  "storageBucket": "mehndify.firebasestorage.app",
+  "apiKey": "AIzaSyCERepylTUMG_oujzlwIa6kwBPZxDV-O4I",
+  "authDomain": "mehndify.firebaseapp.com",
+  "measurementId": "",
+  "messagingSenderId": "837518627913"
 };
 
 
@@ -61,6 +61,23 @@ const signInWithGoogle = (): Promise<User> => {
   });
 };
 
+const setupRecaptcha = (containerId: string) => {
+    if (typeof window !== 'undefined') {
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+            'size': 'invisible',
+            'callback': (response: any) => {
+                // reCAPTCHA solved, allow signInWithPhoneNumber.
+            }
+        });
+    }
+}
+
+const sendOtp = (phoneNumber: string): Promise<ConfirmationResult> => {
+    const appVerifier = window.recaptchaVerifier;
+    const fullPhoneNumber = `+91${phoneNumber}`; // Assuming Indian phone numbers
+    return signInWithPhoneNumber(auth, fullPhoneNumber, appVerifier);
+}
+
 const getFCMToken = async () => {
     const isMessagingSupported = await isSupported();
     if (!isMessagingSupported) {
@@ -93,4 +110,10 @@ const onForegroundMessage = () => {
 }
 
 
-export { app, auth, db, signInWithGoogle, getFCMToken, onForegroundMessage };
+export { app, auth, db, signInWithGoogle, getFCMToken, onForegroundMessage, setupRecaptcha, sendOtp };
+declare global {
+    interface Window {
+        recaptchaVerifier: RecaptchaVerifier;
+        confirmationResult?: ConfirmationResult;
+    }
+}
