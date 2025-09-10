@@ -29,7 +29,7 @@ export default function ArtistLoginPage() {
     // One-time setup to ensure the admin user exists in Firebase Auth
     React.useEffect(() => {
         const setupAdminUser = async () => {
-            // NOTE: This password MUST match the one used for manual login attempts.
+            // This password is used ONLY for the initial creation.
             const initialPassword = "password123"; 
             
             try {
@@ -211,3 +211,5 @@ export default function ArtistLoginPage() {
         </>
     );
 }
+
+    
