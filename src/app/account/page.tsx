@@ -68,7 +68,7 @@ export default function AccountPage() {
             setArtists(fetchedArtists);
 
             const customerBookings = allBookings.filter(b => b.customerId === customerId);
-            setBookings(customerBookings.sort((a,b) => b.date.toMillis() - a.date.toMillis()));
+            setBookings(customerBookings.sort((a,b) => b.date.toDate().getTime() - a.date.toDate().getTime()));
 
         } catch (error) {
             console.error("Failed to fetch customer data:", error);
@@ -126,8 +126,8 @@ export default function AccountPage() {
         );
     }
 
-    const upcomingBookings = bookings.filter(b => b.date.toDate() >= new Date() && (b.status === 'Confirmed' || b.status === 'Pending Approval' || b.status === 'Needs Assignment'));
-    const pastBookings = bookings.filter(b => b.date.toDate() < new Date() || b.status === 'Completed' || b.status === 'Cancelled' || b.status === 'Disputed');
+    const upcomingBookings = bookings.filter(b => b.eventDate.toDate() >= new Date() && (b.status === 'Confirmed' || b.status === 'Pending Approval' || b.status === 'Needs Assignment'));
+    const pastBookings = bookings.filter(b => b.eventDate.toDate() < new Date() || b.status === 'Completed' || b.status === 'Cancelled' || b.status === 'Disputed');
     
     const renderBookingRow = (booking: Booking) => {
         const assignedArtists = artists.filter(a => booking.artistIds?.includes(a.id));

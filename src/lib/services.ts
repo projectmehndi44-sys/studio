@@ -158,6 +158,7 @@ export const getCompanyProfile = async () => {
         email: 'contact@mehendify.com',
         gstin: '',
         website: 'https://www.mehendify.com',
+        ownerName: 'Your Name'
     });
 };
 export const saveCompanyProfile = (data: any) => setConfigDocument('companyProfile', data);
