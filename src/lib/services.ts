@@ -4,7 +4,7 @@
 
 import { db } from './firebase';
 import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, query, where, deleteDoc, Timestamp, onSnapshot, Unsubscribe } from 'firebase/firestore';
-import type { Artist, Booking, Customer, MasterServicePackage, PayoutHistory, TeamMember } from '@/types';
+import type { Artist, Booking, Customer, MasterServicePackage, PayoutHistory, TeamMember, Notification } from '@/types';
 
 
 // Generic function to get a single document
@@ -143,6 +143,14 @@ export const deletePendingArtist = async (id: string): Promise<void> => {
     await deleteDoc(artistRef);
 };
 
+// Notifications
+export const createNotification = async (data: Omit<Notification, 'id'>): Promise<string> => {
+    const notificationsCollection = collection(db, "notifications");
+    const docRef = await addDoc(notificationsCollection, data);
+    return docRef.id;
+};
+
+
 // Generic function to get a collection
 export async function getCollection<T>(collectionName: string): Promise<T[]> {
   const querySnapshot = await getDocs(collection(db, collectionName));
@@ -160,3 +168,5 @@ export const getMasterServices = async (): Promise<MasterServicePackage[]> => {
     }
     return [];
 };
+
+    

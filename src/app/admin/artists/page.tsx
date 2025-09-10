@@ -14,8 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
 import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Pencil, Trash2, UserPlus, ShieldOff } from 'lucide-react';
-import type { Artist } from '@/types';
-import { listenToCollection, createArtist, deletePendingArtist, deleteArtist, updateArtist } from '@/lib/services';
+import type { Artist, Notification } from '@/types';
+import { listenToCollection, createArtist, deletePendingArtist, deleteArtist, updateArtist, createNotification } from '@/lib/services';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { exportToExcel } from '@/lib/export';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -80,8 +80,7 @@ export default function ArtistManagementPage() {
         const artistToApprove = pendingArtists.find(p => p.id === artistId);
         if (!artistToApprove) return;
         
-        const newArtist: Artist = {
-            id: artistToApprove.email, // The document ID will be the email
+        const newArtist: Omit<Artist, 'id'> = {
             name: artistToApprove.fullName,
             email: artistToApprove.email,
             phone: artistToApprove.phone,
@@ -100,7 +99,6 @@ export default function ArtistManagementPage() {
             status: 'active',
         };
         
-        // The createArtist function will now use the email as the ID
         await createArtist(newArtist.email, newArtist);
         await deletePendingArtist(artistToApprove.originalId);
         
@@ -222,9 +220,20 @@ export default function ArtistManagementPage() {
         
         await createArtist(data.email, newArtistData);
 
+        // Send a welcome notification to the artist
+        const welcomeMessage = `Welcome to the platform! Your account is active. \nUsername: ${data.email}\nPassword: ${data.password}\nLogin at: ${window.location.origin}/artist/login`;
+        await createNotification({
+            artistId: data.email,
+            title: 'Welcome to MehendiFy!',
+            message: welcomeMessage,
+            type: 'announcement',
+            isRead: false,
+            timestamp: new Date().toISOString(),
+        });
+
         toast({
-            title: "Artist Onboarded",
-            description: `${data.name} has been added to the platform.`,
+            title: "Artist Onboarded Successfully",
+            description: `${data.name} has been added to the platform and a welcome notification has been sent.`,
         });
         form.reset();
     };
@@ -455,3 +464,5 @@ export default function ArtistManagementPage() {
         </>
     );
 }
+
+    
