@@ -16,36 +16,19 @@ async function getDocument<T>(collectionName: string, id: string): Promise<T | n
 }
 
 // Generic function to get a config document
-async function getConfigDocument<T>(docId: string, defaultValue: T): Promise<T> {
+async function getConfigDocument<T>(docId: string): Promise<T | null> {
     const db = await getDb();
     const docRef = doc(db, 'config', docId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
         const data = docSnap.data();
-        if (data && data.hasOwnProperty('members')) {
-            return (data as any).members as T;
-        }
-        if (data && data.hasOwnProperty('packages')) {
-            return (data as any).packages as T;
-        }
-         if (data && data.hasOwnProperty('promos')) {
-            return (data as any).promos as T;
-        }
-         if (data && data.hasOwnProperty('locations')) {
-            return (data as any).locations as T;
-        }
-        // Fallback for flat config docs
-        return docSnap.data() as T;
+        if (data && data.hasOwnProperty('packages')) return data.packages as T;
+        if (data && data.hasOwnProperty('members')) return data.members as T;
+        if (data && data.hasOwnProperty('promos')) return data.promos as T;
+        if (data && data.hasOwnProperty('locations')) return data.locations as T;
+        return data as T; // Fallback for flat config docs
     }
-    // If it doesn't exist, create it with a structured default value
-    const dataToSet = { [`${docId.slice(0, -1)}s`]: defaultValue };
-    if (docId === 'teamMembers') await setDoc(docRef, { members: defaultValue });
-    else if (docId === 'masterServices') await setDoc(docRef, { packages: defaultValue });
-    else if (docId === 'promotions') await setDoc(docRef, { promos: defaultValue });
-    else if (docId === 'availableLocations') await setDoc(docRef, { locations: defaultValue });
-    else await setDoc(docRef, defaultValue);
-    
-    return defaultValue as T;
+    return null;
 }
 
 // Generic function to set a config document
@@ -68,25 +51,39 @@ async function setConfigDocument(docId: string, data: any): Promise<void> {
 export const listenToCollection = <T>(collectionName: string, callback: (data: T[]) => void): Unsubscribe => {
     let unsub: Unsubscribe = () => {};
     getDb().then(db => {
-        const q = query(collection(db, collectionName));
-        unsub = onSnapshot(q, (querySnapshot) => {
-            const data: T[] = querySnapshot.docs.map(doc => {
-                const docData = doc.data();
-                // Convert Firestore Timestamps to JS Dates for client-side consistency
-                Object.keys(docData).forEach(key => {
-                    if (docData[key] instanceof Timestamp) {
-                        docData[key] = docData[key].toDate();
-                    } else if (Array.isArray(docData[key])) {
-                        docData[key] = docData[key].map(item => item instanceof Timestamp ? item.toDate() : item);
-                    }
+        // Special handling for config collections
+        if (['masterServices', 'teamMembers', 'promotions', 'availableLocations'].includes(collectionName)) {
+             unsub = onSnapshot(doc(db, "config", collectionName), (docSnap) => {
+                 if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    let result: T[] = [];
+                    if (collectionName === 'masterServices' && data.packages) result = data.packages;
+                    else if (collectionName === 'teamMembers' && data.members) result = data.members;
+                    else if (collectionName === 'promotions' && data.promos) result = data.promos;
+                    else if (collectionName === 'availableLocations' && data.locations) result = data.locations as any; // This is an object, not array
+                    callback(result);
+                 }
+             });
+        } else {
+             const q = query(collection(db, collectionName));
+            unsub = onSnapshot(q, (querySnapshot) => {
+                const data: T[] = querySnapshot.docs.map(doc => {
+                    const docData = doc.data();
+                    // Convert Firestore Timestamps to JS Dates for client-side consistency
+                    Object.keys(docData).forEach(key => {
+                        if (docData[key] instanceof Timestamp) {
+                            docData[key] = docData[key].toDate();
+                        } else if (Array.isArray(docData[key])) {
+                            docData[key] = docData[key].map(item => item instanceof Timestamp ? item.toDate() : item);
+                        }
+                    });
+                    return { id: doc.id, ...docData } as T;
                 });
-                return { id: doc.id, ...docData } as T;
+                callback(data);
+            }, (error) => {
+                console.error(`Error listening to ${collectionName}: `, error);
             });
-            callback(data);
-        }, (error) => {
-            console.error(`Error listening to ${collectionName}: `, error);
-            // You could also have a global error state update here
-        });
+        }
     }).catch(error => {
         console.error("Failed to get DB for listener:", error);
     });
@@ -168,15 +165,14 @@ export const createCustomer = async (data: Omit<Customer, 'id'> & {id: string}):
 
 // Config
 export const getAvailableLocations = async (): Promise<Record<string, string[]>> => {
-    const config = await getConfigDocument<Record<string, string[]>>('availableLocations', {});
-    return config;
+    return await getConfigDocument<Record<string, string[]>>('availableLocations') || {};
 };
 export const saveAvailableLocations = async (locations: Record<string, string[]>): Promise<void> => {
     await setConfigDocument('availableLocations', locations);
 };
 
 export const getCompanyProfile = async () => {
-    return getConfigDocument('companyProfile', {
+    return await getConfigDocument<any>('companyProfile') || {
         companyName: 'MehendiFy Platform',
         address: '123 Glamour Lane, Mumbai, MH, 400001',
         phone: '+91 98765 43210',
@@ -184,27 +180,25 @@ export const getCompanyProfile = async () => {
         gstin: '',
         website: 'https://www.mehendify.com',
         ownerName: 'Your Name'
-    });
+    };
 };
 export const saveCompanyProfile = (data: any) => setConfigDocument('companyProfile', data);
 
 export const getFinancialSettings = async () => {
-    return getConfigDocument('financialSettings', {
+    return await getConfigDocument<any>('financialSettings') || {
         platformFeePercentage: 10,
         platformRefundFee: 500,
-    });
+    };
 };
 export const saveFinancialSettings = (data: any) => setConfigDocument('financialSettings', data);
 
 export const getTeamMembers = async (): Promise<TeamMember[]> => {
-    const members = await getConfigDocument<TeamMember[]>('teamMembers', initialTeamMembers);
-    return members;
+    return await getConfigDocument<TeamMember[]>('teamMembers') || initialTeamMembers;
 };
 export const saveTeamMembers = (members: TeamMember[]) => setConfigDocument('teamMembers', members);
 
 export const getPromotions = async (): Promise<Promotion[]> => {
-    const promos = await getConfigDocument<Promotion[]>('promotions', []);
-    return promos;
+    return await getConfigDocument<Promotion[]>('promotions') || [];
 };
 export const savePromotions = (promos: Promotion[]) => setConfigDocument('promotions', promos);
 
@@ -249,6 +243,6 @@ export const getBookings = async (): Promise<Booking[]> => getCollection<Booking
 export const getCustomers = async (): Promise<Customer[]> => getCollection<Customer>('customers');
 
 export const getMasterServices = async (): Promise<MasterServicePackage[]> => {
-    const data = await getConfigDocument<MasterServicePackage[]>('masterServices', []);
+    const data = await getConfigDocument<MasterServicePackage[]>('masterServices') || [];
     return data;
 };
