@@ -12,6 +12,7 @@
 
 
 
+
 export type PackageCategory = {
   name: 'Normal' | 'Premium' | 'ULTRA PREMIUM';
   description: string;
@@ -65,6 +66,7 @@ export type Artist = {
   servingAreas?: string;
   referralCode?: string;
   referralDiscount?: number; // Percentage, e.g., 10 for 10%
+  status?: 'active' | 'suspended';
 };
 
 export type Customer = {

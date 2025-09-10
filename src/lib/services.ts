@@ -1,5 +1,6 @@
 
 
+
 'use client';
 
 import { db } from './firebase';
@@ -73,12 +74,20 @@ export const createArtist = async (data: Omit<Artist, 'id'>): Promise<string> =>
     // Use email as the document ID for artists created via admin onboarding
     const artistRef = doc(db, "artists", data.email);
     await setDoc(artistRef, data);
+    window.dispatchEvent(new Event('storage'));
     return data.email;
 };
 export const updateArtist = async (id: string, data: Partial<Artist>): Promise<void> => {
     const artistRef = doc(db, "artists", id);
     await updateDoc(artistRef, data);
+    window.dispatchEvent(new Event('storage'));
 };
+export const deleteArtist = async (id: string): Promise<void> => {
+    const artistRef = doc(db, "artists", id);
+    await deleteDoc(artistRef);
+    window.dispatchEvent(new Event('storage'));
+}
+
 
 // Bookings
 export const createBooking = async (data: Omit<Booking, 'id'>): Promise<string> => {
@@ -137,5 +146,6 @@ export const deletePendingArtist = async (id: string): Promise<void> => {
 export const createArtistFromPending = async (data: Artist): Promise<string> => {
     const artistRef = doc(db, "artists", data.id);
     await setDoc(artistRef, data);
+    window.dispatchEvent(new Event('storage'));
     return data.id;
 };

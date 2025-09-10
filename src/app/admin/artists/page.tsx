@@ -13,9 +13,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
-import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Pencil, Trash2, UserPlus } from 'lucide-react';
+import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Pencil, Trash2, UserPlus, ShieldOff } from 'lucide-react';
 import type { Artist } from '@/types';
-import { listenToCollection, createArtist, createArtistFromPending, deletePendingArtist } from '@/lib/services';
+import { listenToCollection, createArtist, createArtistFromPending, deletePendingArtist, deleteArtist, updateArtist } from '@/lib/services';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { exportToExcel } from '@/lib/export';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -97,6 +97,7 @@ export default function ArtistManagementPage() {
             charges: { mehndi: 2000, makeup: 3000 },
             rating: 0,
             styleTags: ['new', 'verified'],
+            status: 'active',
         };
         
         await createArtistFromPending(newArtist);
@@ -106,7 +107,6 @@ export default function ArtistManagementPage() {
             title: "Artist Approved",
             description: `A notification has been sent to ${newArtist.name}.`,
         });
-        window.dispatchEvent(new Event('storage'));
     };
 
      const handleReject = async (artistId: string) => {
@@ -122,12 +122,26 @@ export default function ArtistManagementPage() {
         });
     };
     
-    const handleAction = (action: string, type: string, id: string) => {
+    const handleDeleteArtist = async (artist: Artist) => {
+        if (window.confirm(`Are you sure you want to permanently delete ${artist.name}? This action cannot be undone.`)) {
+            await deleteArtist(artist.id);
+            toast({
+                title: "Artist Deleted",
+                description: `${artist.name} has been removed from the platform.`,
+                variant: 'destructive',
+            });
+        }
+    };
+
+    const handleToggleSuspend = async (artist: Artist) => {
+        const newStatus = artist.status === 'suspended' ? 'active' : 'suspended';
+        await updateArtist(artist.id, { status: newStatus });
         toast({
-            title: `${action} ${type}`,
-            description: `Action '${action}' performed on ${type} with ID ${id}.`,
+            title: `Artist ${newStatus === 'active' ? 'Reinstated' : 'Suspended'}`,
+            description: `${artist.name}'s status has been updated.`,
         });
     };
+
 
     const handleSelectAll = (checked: boolean) => {
         if (checked) {
@@ -181,7 +195,7 @@ export default function ArtistManagementPage() {
     };
     
     const onOnboardSubmit: SubmitHandler<OnboardFormValues> = async (data) => {
-        if (approvedArtists.some(a => a.email === data.email)) {
+         if (approvedArtists.some(a => a.email === data.email)) {
             form.setError('email', { message: 'An artist with this email already exists.' });
             return;
         }
@@ -202,6 +216,7 @@ export default function ArtistManagementPage() {
             charges: { mehndi: data.charge, makeup: data.charge },
             rating: 0,
             styleTags: ['new', 'verified'],
+            status: 'active',
         };
         
         await createArtist(newArtistData);
@@ -210,7 +225,6 @@ export default function ArtistManagementPage() {
             title: "Artist Onboarded",
             description: `${data.name} has been added to the platform.`,
         });
-        window.dispatchEvent(new Event('storage'));
         form.reset();
     };
 
@@ -261,7 +275,7 @@ export default function ArtistManagementPage() {
                                         </TableHead>
                                         <TableHead>Artist</TableHead>
                                         <TableHead>Contact Info</TableHead>
-                                        <TableHead>Services</TableHead>
+                                        <TableHead>Status</TableHead>
                                         <TableHead>Base Charge</TableHead>
                                         <TableHead>Rating</TableHead>
                                         <TableHead><span className="sr-only">Actions</span></TableHead>
@@ -269,7 +283,7 @@ export default function ArtistManagementPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {approvedArtists.map((artist) => (
-                                        <TableRow key={artist.id}>
+                                        <TableRow key={artist.id} className={artist.status === 'suspended' ? 'bg-red-50' : ''}>
                                             <TableCell>
                                                 <Checkbox
                                                     checked={selectedArtistIds.includes(artist.id)}
@@ -294,11 +308,7 @@ export default function ArtistManagementPage() {
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <div className="flex flex-wrap gap-1">
-                                                    {(artist.services || []).map(service => (
-                                                        <Badge key={service} variant="secondary" className="capitalize">{service}</Badge>
-                                                    ))}
-                                                </div>
+                                                <Badge variant={artist.status === 'suspended' ? 'destructive' : 'default'} className="capitalize">{artist.status || 'active'}</Badge>
                                             </TableCell>
                                             <TableCell>₹{artist.charge}</TableCell>
                                             <TableCell>{artist.rating}</TableCell>
@@ -316,12 +326,16 @@ export default function ArtistManagementPage() {
                                                             <Eye className="mr-2 h-4 w-4" />
                                                             View Details
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => handleAction('Edit', 'Artist', artist.id)} disabled={!hasPermission('artists', 'edit')}>
+                                                        <DropdownMenuItem onSelect={() => {}} disabled={!hasPermission('artists', 'edit')}>
                                                             <Pencil className="mr-2 h-4 w-4" />
                                                             Edit
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => handleAction('Delete', 'Artist', artist.id)} disabled={!hasPermission('artists', 'edit')}>
-                                                            <Trash2 className="mr-2 h-4 w-4 text-red-500" />
+                                                        <DropdownMenuItem onSelect={() => handleToggleSuspend(artist)} disabled={!hasPermission('artists', 'edit')}>
+                                                            <ShieldOff className="mr-2 h-4 w-4" />
+                                                            {artist.status === 'suspended' ? 'Reinstate' : 'Suspend'}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => handleDeleteArtist(artist)} disabled={!hasPermission('artists', 'edit')} className="text-red-600">
+                                                            <Trash2 className="mr-2 h-4 w-4" />
                                                             Delete
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
