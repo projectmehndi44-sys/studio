@@ -32,8 +32,9 @@ export default function ArtistLoginPage() {
         setIsLoading(true);
         
         try {
-            // Hardcode for Super Admin login to ensure correct email format
-            const loginEmail = email === 'admin' ? 'admin@mehndify.com' : email;
+            const isSuperAdminLogin = email === 'admin' || email === 'admin@mehndify.com';
+            const loginEmail = isSuperAdminLogin ? 'admin@mehndify.com' : email;
+
             const userCredential = await signInWithEmailAndPassword(auth, loginEmail, password);
             const user = userCredential.user;
 
@@ -44,7 +45,7 @@ export default function ArtistLoginPage() {
 
                 // --- ONE-TIME ID SYNC LOGIC ---
                 // If profile not found, check if this is the initial Super Admin login
-                if (!memberProfile && email === 'admin') {
+                if (!memberProfile && isSuperAdminLogin) {
                     const placeholderAdmin = teamMembers.find(m => m.id === 'user_001' && m.role === 'Super Admin');
                     if (placeholderAdmin) {
                         // This is the first login. Update the placeholder ID to the real Firebase UID.
