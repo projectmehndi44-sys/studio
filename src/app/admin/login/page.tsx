@@ -39,7 +39,7 @@ export default function AdminLoginPage() {
         try {
             const allMembers = await getTeamMembers();
             
-            // Adjust role check to match data
+            // This is the corrected logic
             const expectedRole = userType === 'admin' ? 'Super Admin' : 'team-member';
             const memberByUsername = allMembers.find(m => m.username === username);
 
@@ -50,7 +50,7 @@ export default function AdminLoginPage() {
                         description: `Welcome, ${memberByUsername.name}! Redirecting...`,
                     });
                     localStorage.setItem('isAdminAuthenticated', 'true');
-                    localStorage.setItem('adminRole', userType); // Store the dropdown value ('admin')
+                    localStorage.setItem('adminRole', memberByUsername.role); // Store the actual role
                     localStorage.setItem('adminUsername', memberByUsername.username);
                     window.location.href = '/admin'; // Use window.location.href for a full refresh
                 } else {
