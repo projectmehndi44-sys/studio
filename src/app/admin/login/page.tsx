@@ -72,7 +72,7 @@ export default function AdminLoginPage() {
                 localStorage.setItem('isAdminAuthenticated', 'true');
                 localStorage.setItem('adminRole', member.role);
                 localStorage.setItem('adminUsername', member.username);
-                router.push('/admin');
+                window.location.href = '/admin'; // Use window.location.href for a full refresh
             } else {
                  toast({
                     title: 'Login Failed',
