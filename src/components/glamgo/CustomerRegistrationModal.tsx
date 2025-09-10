@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -109,15 +108,16 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
     }
     
     try {
-      await window.confirmationResult.confirm(data.otp);
+      const userCredential = await window.confirmationResult.confirm(data.otp);
       
       const newCustomerData: Omit<Customer, 'id'> = {
           name: data.fullName,
           phone: data.phone,
           email: data.email,
+          fcmToken: userCredential.user.uid, // Storing Firebase UID
       };
       
-      const newId = await createCustomer(newCustomerData);
+      const newId = await createCustomer({ ...newCustomerData, id: userCredential.user.uid });
       const newCustomer = { ...newCustomerData, id: newId };
 
       toast({
@@ -207,7 +207,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
                     <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input placeholder="Your full name" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                  <FormField control={form.control} name="email" render={({ field }) => (
-                    <FormItem><FormLabel>Email Address</FormLabel><FormControl><Input placeholder="your.email@example.com" {...field} /></FormControl><FormMessage /></FormItem>
+                    <FormItem><FormLabel>Email Address (Optional)</FormLabel><FormControl><Input placeholder="your.email@example.com" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="phone" render={({ field }) => (
                     <FormItem>
