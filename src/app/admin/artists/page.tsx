@@ -219,7 +219,7 @@ export default function ArtistManagementPage() {
             status: 'active',
         };
         
-        await createArtist(newArtistData);
+        await createArtist(data.email, newArtistData);
 
         toast({
             title: "Artist Onboarded",
