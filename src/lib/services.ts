@@ -1,6 +1,6 @@
 
 import { getDb } from './firebase';
-import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, query, where, deleteDoc, Timestamp, onSnapshot, Unsubscribe } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, query, where, deleteDoc, Timestamp, onSnapshot, Unsubscribe, runTransaction } from 'firebase/firestore';
 import type { Artist, Booking, Customer, MasterServicePackage, PayoutHistory, TeamMember, Notification, Promotion } from '@/types';
 import { teamMembers as initialTeamMembers } from './team-data';
 
@@ -196,6 +196,29 @@ export const getTeamMembers = async (): Promise<TeamMember[]> => {
     return await getConfigDocument<TeamMember[]>('teamMembers') || initialTeamMembers;
 };
 export const saveTeamMembers = (members: TeamMember[]) => setConfigDocument('teamMembers', members);
+
+export const updateTeamMemberId = async (oldId: string, newId: string) => {
+    const db = await getDb();
+    const configRef = doc(db, 'config', 'teamMembers');
+    
+    await runTransaction(db, async (transaction) => {
+        const configDoc = await transaction.get(configRef);
+        if (!configDoc.exists()) {
+            throw "Team members config document does not exist!";
+        }
+        
+        const members = configDoc.data().members as TeamMember[];
+        const memberIndex = members.findIndex(m => m.id === oldId);
+        
+        if (memberIndex === -1) {
+            console.warn(`Tried to update non-existent team member with old ID: ${oldId}`);
+            return; // Or throw an error if this should not happen
+        }
+        
+        members[memberIndex].id = newId;
+        transaction.update(configRef, { members: members });
+    });
+};
 
 export const getPromotions = async (): Promise<Promotion[]> => {
     return await getConfigDocument<Promotion[]>('promotions') || [];
