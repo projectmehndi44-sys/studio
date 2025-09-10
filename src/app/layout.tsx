@@ -40,6 +40,8 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
        <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png"></link>
         <meta name="application-name" content="MehendiFy" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -47,6 +49,7 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#8B4513" />
+        <link rel="icon" href="/favicon.ico" />
       </head>
       <body className={cn('font-body antialiased min-h-screen', playfairDisplay.variable, roboto.variable, dancingScript.variable)}>
         {children}
