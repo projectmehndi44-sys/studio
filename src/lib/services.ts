@@ -1,15 +1,42 @@
 
-'use server';
+'use client';
 
 import { db } from '@/lib/firebase';
-import { collection, doc, getDoc, getDocs, setDoc, addDoc, writeBatch, query, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, addDoc, writeBatch, query, where, deleteDoc } from 'firebase/firestore';
 import type { Artist, Booking, Customer, MasterServicePackage, Notification, PayoutHistory, Promotion, TeamMember } from '@/types';
-import { artists as initialArtists } from './data';
+import { artists as initialArtists, allBookings as initialBookings, initialCustomers } from './data';
+import { masterServices as initialMasterServices } from './packages-data';
+import { teamMembers as initialTeamMembers } from './team-data';
+import { AVAILABLE_LOCATIONS } from './available-locations';
+
+
+// A helper to check if a collection is empty and seed it if needed.
+// This should be used cautiously to avoid re-seeding data.
+async function seedCollection<T extends {id: string}>(collectionName: string, initialData: T[]) {
+    const querySnapshot = await getDocs(collection(db, collectionName));
+    if (querySnapshot.empty) {
+        console.log(`Seeding ${collectionName}...`);
+        const batch = writeBatch(db);
+        initialData.forEach(item => {
+            const docRef = doc(db, collectionName, item.id);
+            batch.set(docRef, item);
+        });
+        await batch.commit();
+        return initialData;
+    }
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
+}
+
 
 // Generic fetch function
 async function getCollection<T>(collectionName: string): Promise<T[]> {
-    const querySnapshot = await getDocs(collection(db, collectionName));
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
+    try {
+        const querySnapshot = await getDocs(collection(db, collectionName));
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
+    } catch (error) {
+        console.error(`Error getting collection ${collectionName}:`, error);
+        return [];
+    }
 }
 
 // Generic set function
@@ -28,18 +55,8 @@ async function addDocument<T>(collectionName: string, data: T): Promise<string> 
 
 // Artists
 export const getArtists = async (): Promise<Artist[]> => {
-    const artists = await getCollection<Artist>('artists');
-    if (artists.length === 0) {
-        // Seed initial data if collection is empty
-        const batch = writeBatch(db);
-        initialArtists.forEach(artist => {
-            const docRef = doc(db, "artists", artist.id);
-            batch.set(docRef, artist);
-        });
-        await batch.commit();
-        return initialArtists;
-    }
-    return artists;
+    // This seeds the data if the collection is empty.
+    return seedCollection<Artist>('artists', initialArtists);
 }
 export const getArtist = async (id: string): Promise<Artist | null> => {
     const docRef = doc(db, 'artists', id);
@@ -54,7 +71,8 @@ export const createBooking = async (data: Booking): Promise<string> => addDocume
 export const updateBooking = async (id: string, data: Partial<Booking>): Promise<void> => setDocument('bookings', id, data);
 
 // Customers
-export const getCustomers = async (): Promise<Customer[]> => getCollection<Customer>('customers');
+export const getCustomers = async (): Promise<Customer[]> => seedCollection('customers', initialCustomers);
+
 export const getCustomer = async (id: string): Promise<Customer | null> => {
      const docRef = doc(db, 'customers', id);
     const docSnap = await getDoc(docRef);
@@ -64,8 +82,8 @@ export const getCustomerByEmail = async (email: string): Promise<Customer | null
     const q = query(collection(db, "customers"), where("email", "==", email));
     const querySnapshot = await getDocs(q);
     if (querySnapshot.empty) return null;
-    const doc = querySnapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as Customer;
+    const docData = querySnapshot.docs[0];
+    return { id: docData.id, ...docData.data() } as Customer;
 }
 export const createCustomer = async (data: Customer): Promise<string> => {
     // Since we use email as ID from Google Auth sometimes, we handle that here.
@@ -95,15 +113,15 @@ export const saveConfig = async <T>(configId: string, value: T): Promise<void> =
 }
 
 // Master Services
-export const getMasterServices = async (): Promise<MasterServicePackage[]> => getConfig('masterServices', []);
+export const getMasterServices = async (): Promise<MasterServicePackage[]> => getConfig('masterServices', initialMasterServices);
 export const saveMasterServices = async (services: MasterServicePackage[]): Promise<void> => saveConfig('masterServices', services);
 
 // Available Locations
-export const getAvailableLocations = async (): Promise<Record<string, string[]>> => getConfig('availableLocations', {});
+export const getAvailableLocations = async (): Promise<Record<string, string[]>> => getConfig('availableLocations', AVAILABLE_LOCATIONS);
 export const saveAvailableLocations = async (locations: Record<string, string[]>): Promise<void> => saveConfig('availableLocations', locations);
 
 // Team Members
-export const getTeamMembers = async (): Promise<TeamMember[]> => getConfig('teamMembers', []);
+export const getTeamMembers = async (): Promise<TeamMember[]> => getConfig('teamMembers', initialTeamMembers);
 export const saveTeamMembers = async (members: TeamMember[]): Promise<void> => saveConfig('teamMembers', members);
 
 // Promotions
@@ -141,5 +159,5 @@ export const updateNotification = async (id: string, data: Partial<Notification>
 export const getPendingArtists = async (): Promise<any[]> => getCollection('pendingArtists');
 export const createPendingArtist = async (data: any): Promise<string> => addDocument('pendingArtists', data);
 export const deletePendingArtist = async (id: string): Promise<void> => {
-    await db.collection('pendingArtists').doc(id).delete();
+    await deleteDoc(doc(db, "pendingArtists", id));
 }
