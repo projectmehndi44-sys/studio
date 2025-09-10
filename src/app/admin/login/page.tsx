@@ -30,7 +30,7 @@ export default function ArtistLoginPage() {
     React.useEffect(() => {
         const setupAdminUser = async () => {
             // NOTE: This password MUST match the one used for manual login attempts.
-            const initialPassword = "password"; 
+            const initialPassword = "password123"; 
             
             try {
                 await createUser('admin@mehndify.com', initialPassword);
