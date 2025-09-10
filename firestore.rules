@@ -3,16 +3,37 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow public read access to the teamMembers config for login verification.
-    // This is secure because it only contains non-sensitive data like usernames and roles.
-    match /config/teamMembers {
-      allow get: if true;
+
+    // Helper function to check if a user is an authenticated admin or team member
+    function isKnownUser(role) {
+      // The request.auth.uid is the unique ID from Firebase Authentication
+      // This rule assumes you will implement Firebase Auth for your users later.
+      // For now, we will allow read access to team data for login.
+      return request.auth != null;
     }
     
-    // Deny all other public reads or writes by default.
-    // Specific authenticated access can be added below this rule.
+    function isAdmin() {
+      return get(/databases/$(database)/documents/config/teamMembers).data.members[0].username == request.auth.token.email;
+    }
+
+    // Allow read access to team members list for login verification, but deny writes.
+    match /config/teamMembers {
+      get() { return true; }
+      list() { return true; }
+      write() { return false; } // Nobody can write to this from the client
+    }
+    
+    // Default-deny all other config documents
+    match /config/{docId} {
+       allow read, write: if false;
+    }
+
+    // Rules for the rest of the database collections
+    // This is a placeholder. You should define granular rules for your collections.
+    // For now, we allow any authenticated user to read/write.
+    // Replace this with more secure rules as you build your app.
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if request.auth != null;
     }
   }
 }
