@@ -17,6 +17,7 @@ import { generateCustomerInvoice } from '@/lib/export';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getArtists, getBookings, getCustomer } from '@/lib/services';
+import { Timestamp } from 'firebase/firestore';
 
 export default function AccountPage() {
     const router = useRouter();
@@ -68,7 +69,7 @@ export default function AccountPage() {
             setArtists(fetchedArtists);
 
             const customerBookings = allBookings.filter(b => b.customerId === customerId);
-            setBookings(customerBookings.sort((a,b) => b.date.toDate().getTime() - a.date.toDate().getTime()));
+            setBookings(customerBookings.sort((a,b) => (b.date as any).toDate().getTime() - (a.date as any).toDate().getTime()));
 
         } catch (error) {
             console.error("Failed to fetch customer data:", error);
@@ -125,9 +126,14 @@ export default function AccountPage() {
             </div>
         );
     }
+    
+    const getSafeDate = (date: Date | Timestamp): Date => {
+        return date instanceof Timestamp ? date.toDate() : date;
+    }
 
-    const upcomingBookings = bookings.filter(b => b.eventDate.toDate() >= new Date() && (b.status === 'Confirmed' || b.status === 'Pending Approval' || b.status === 'Needs Assignment'));
-    const pastBookings = bookings.filter(b => b.eventDate.toDate() < new Date() || b.status === 'Completed' || b.status === 'Cancelled' || b.status === 'Disputed');
+
+    const upcomingBookings = bookings.filter(b => getSafeDate(b.eventDate) >= new Date() && (b.status === 'Confirmed' || b.status === 'Pending Approval' || b.status === 'Needs Assignment'));
+    const pastBookings = bookings.filter(b => getSafeDate(b.eventDate) < new Date() || b.status === 'Completed' || b.status === 'Cancelled' || b.status === 'Disputed');
     
     const renderBookingRow = (booking: Booking) => {
         const assignedArtists = artists.filter(a => booking.artistIds?.includes(a.id));
@@ -149,7 +155,7 @@ export default function AccountPage() {
                     <div className="flex flex-col gap-1">
                         {booking.serviceDates.map((date, index) => (
                             <Badge key={index} variant="outline" className="text-xs">
-                                {format(date.toDate(), "PPP")}
+                                {format(getSafeDate(date), "PPP")}
                             </Badge>
                         ))}
                     </div>

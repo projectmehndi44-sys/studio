@@ -62,13 +62,22 @@ export const listenToCollection = <T>(collectionName: string, callback: (data: T
         const q = query(collection(db, collectionName));
         unsub = onSnapshot(q, (querySnapshot) => {
             const data: T[] = querySnapshot.docs.map(doc => {
-                return { id: doc.id, ...doc.data() } as T;
+                const docData = doc.data();
+                // Convert Firestore Timestamps to JS Dates for client-side consistency
+                Object.keys(docData).forEach(key => {
+                    if (docData[key] instanceof Timestamp) {
+                        docData[key] = docData[key].toDate();
+                    }
+                });
+                return { id: doc.id, ...docData } as T;
             });
             callback(data);
         }, (error) => {
             console.error(`Error listening to ${collectionName}: `, error);
             // You could also have a global error state update here
         });
+    }).catch(error => {
+        console.error("Failed to get DB for listener:", error);
     });
     return () => unsub();
 };

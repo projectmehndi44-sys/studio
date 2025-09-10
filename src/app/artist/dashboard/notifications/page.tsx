@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { useArtistPortal } from '../layout';
 import { useRouter } from 'next/navigation';
 import { getBookings } from '@/lib/services';
+import { Timestamp } from 'firebase/firestore';
 
 
 interface NotificationCardProps {
@@ -27,6 +28,18 @@ function NotificationCard({ notification, allBookings, onMarkAsRead }: Notificat
         }
         router.push('/artist/dashboard/bookings');
     }
+    
+    const getSafeDate = (date: Date | Timestamp | undefined): string => {
+        if (!date) return 'N/A';
+        if (date instanceof Timestamp) {
+            return date.toDate().toLocaleDateString();
+        }
+        if (date instanceof Date) {
+            return date.toLocaleDateString();
+        }
+        return 'Invalid Date';
+    }
+
 
     return (
         <div 
@@ -40,7 +53,7 @@ function NotificationCard({ notification, allBookings, onMarkAsRead }: Notificat
                         <Card className="mt-2 text-xs text-muted-foreground p-2 bg-background/50">
                             <p><strong>Customer:</strong> {booking.customerName}</p>
                             <p><strong>Service:</strong> {booking.service}</p>
-                            <p><strong>Date:</strong> {booking.date.toDate().toLocaleDateString()}</p>
+                            <p><strong>Date:</strong> {getSafeDate(booking.date)}</p>
                             <p><strong>Address:</strong> {booking.serviceAddress}</p>
                         </Card>
                     )}
@@ -57,12 +70,7 @@ export default function ArtistNotificationsPage() {
 
     React.useEffect(() => {
         getBookings().then((bookings) => {
-            setAllBookings(bookings.map(b => ({
-                ...b,
-                date: b.date.toDate ? b.date.toDate() : new Date(b.date),
-                eventDate: b.eventDate.toDate ? b.eventDate.toDate() : new Date(b.eventDate),
-                serviceDates: b.serviceDates.map(d => d.toDate ? d.toDate() : new Date(d)),
-            } as any)))
+            setAllBookings(bookings as any)
         });
     }, []);
     
