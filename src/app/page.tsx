@@ -218,33 +218,33 @@ export default function Home() {
                 Mehendi<span className="text-accent">f</span>y
             </h1>
             <p className="mt-2 font-dancing-script text-2xl text-foreground/90">Artistry at Your Fingertips</p>
-            <div className="mt-4 font-headline text-lg text-foreground/80 max-w-2xl mx-auto">
+            <div className="mt-4 font-body text-lg text-foreground/80 max-w-2xl mx-auto">
               <p>Discover and book the most talented mehendi and makeup artists near you.</p>
               <p>Your perfect look for any occasion is just a click away.</p>
             </div>
         </div>
 
         {!isCustomerLoggedIn && (
-           <div className="text-center py-12 bg-card/80 backdrop-blur-sm rounded-lg shadow-md max-w-lg mx-auto mt-4 space-y-6 flex flex-col items-center">
+           <div className="text-center py-8 md:py-12 bg-card/80 backdrop-blur-sm rounded-lg shadow-md max-w-lg mx-auto mt-4 space-y-6 flex flex-col items-center">
             <h2 className="text-2xl font-bold">Welcome!</h2>
             <p className="text-muted-foreground px-4">Login or create an account to book artists and manage your appointments.</p>
-            <div className="flex gap-4">
-                <Button onClick={handleCustomerLogin} size="lg">
+            <div className="flex flex-col sm:flex-row gap-4 px-4 w-full">
+                <Button onClick={handleCustomerLogin} size="lg" className="w-full">
                     <LogIn className="mr-2 h-4 w-4" />
                     Login
                 </Button>
-                <Button onClick={handleCustomerRegister} size="lg" variant="outline">
+                <Button onClick={handleCustomerRegister} size="lg" variant="outline" className="w-full">
                     <UserPlus className="mr-2 h-4 w-4" />
                     Sign Up
                 </Button>
             </div>
             <Separator className="my-4 w-4/5" />
-            <div className="space-y-4 flex flex-col items-center w-full">
-                 <Button variant="outline" onClick={handleArtistRegister} className="w-4/5">
+            <div className="space-y-4 flex flex-col items-center w-full px-4">
+                 <Button variant="outline" onClick={handleArtistRegister} className="w-full max-w-xs">
                     <Palette className="mr-2 h-4 w-4"/>
                     Are you an artist? Register here
                  </Button>
-                 <Link href="/artist/login" className="w-4/5">
+                 <Link href="/artist/login" className="w-full max-w-xs">
                     <Button className="w-full">
                         <Palette className="mr-2 h-4 w-4" /> Artist Login
                     </Button>
@@ -262,9 +262,9 @@ export default function Home() {
         <div className="mt-8">
             <Tabs defaultValue="mehndi" className="w-full">
                 <TabsList className="grid w-full grid-cols-3 max-w-xl mx-auto h-auto text-base sm:text-lg py-3">
-                    <TabsTrigger value="mehndi" className="py-2.5"><MehndiIcon className="mr-2 h-5 w-5"/>Mehndi</TabsTrigger>
-                    <TabsTrigger value="makeup" className="py-2.5"><MakeupIcon className="mr-2 h-5 w-5"/>Makeup</TabsTrigger>
-                    <TabsTrigger value="photography" className="py-2.5"><PhotographyIcon className="mr-2 h-5 w-5" />Photography</TabsTrigger>
+                    <TabsTrigger value="mehndi" className="py-2.5 flex items-center gap-2"><MehndiIcon className="h-5 w-5"/>Mehndi</TabsTrigger>
+                    <TabsTrigger value="makeup" className="py-2.5 flex items-center gap-2"><MakeupIcon className="h-5 w-5"/>Makeup</TabsTrigger>
+                    <TabsTrigger value="photography" className="py-2.5 flex items-center gap-2"><PhotographyIcon className="h-5 w-5" />Photography</TabsTrigger>
                 </TabsList>
                 <TabsContent value="mehndi">
                     <CategoryTabContent serviceType="mehndi" />

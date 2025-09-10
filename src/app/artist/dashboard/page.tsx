@@ -77,7 +77,7 @@ export default function ArtistDashboardPage() {
         <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Welcome back, {artist.name}!</CardTitle>
+                    <CardTitle className="text-2xl md:text-3xl">Welcome back, {artist.name}!</CardTitle>
                     <CardDescription>Here's a quick overview of your performance on MehendiFy.</CardDescription>
                 </CardHeader>
             </Card>
@@ -134,11 +134,11 @@ export default function ArtistDashboardPage() {
                          <ResponsiveContainer width="100%" height="100%">
                             <BarChartComponent data={bookingsChartData}>
                                 <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis />
+                                <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis fontSize={12} tickLine={false} axisLine={false}/>
                                 <Tooltip />
                                 <Legend />
-                                <Bar dataKey="bookings" fill="#8884d8" name="Bookings" />
+                                <Bar dataKey="bookings" fill="hsl(var(--primary))" name="Bookings" radius={[4, 4, 0, 0]}/>
                             </BarChartComponent>
                         </ResponsiveContainer>
                     </CardContent>
@@ -150,7 +150,7 @@ export default function ArtistDashboardPage() {
                     <CardContent className="h-80">
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChartComponent>
-                                <Pie data={serviceData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} fill="#8884d8" label>
+                                <Pie data={serviceData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} fill="#8884d8" label>
                                         {serviceData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
@@ -165,16 +165,17 @@ export default function ArtistDashboardPage() {
 
 
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between">
                     <div>
                         <CardTitle className="flex items-center gap-2"><Briefcase /> Recent Activity</CardTitle>
                         <CardDescription>Your last 5 bookings are shown here.</CardDescription>
                     </div>
                      <Link href="/artist/dashboard/bookings">
-                        <Button variant="outline" size="sm">View All</Button>
+                        <Button variant="outline" size="sm" className="mt-2 md:mt-0">View All</Button>
                     </Link>
                 </CardHeader>
                 <CardContent>
+                   <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -201,6 +202,7 @@ export default function ArtistDashboardPage() {
                             )}
                         </TableBody>
                     </Table>
+                   </div>
                 </CardContent>
             </Card>
         </div>

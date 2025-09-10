@@ -84,7 +84,7 @@ export default function AnalyticsPage() {
             <div className="flex items-center justify-between">
                 <h1 className="text-lg font-semibold md:text-2xl">Analytics</h1>
             </div>
-            <div className="grid gap-6">
+            <div className="grid gap-4 md:gap-8">
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><BarChart className="w-6 h-6 text-primary"/>Bookings & Revenue Over Time</CardTitle>
@@ -94,19 +94,19 @@ export default function AnalyticsPage() {
                             <ResponsiveContainer width="100%" height="100%">
                             <BarChartComponent data={bookingsChartData}>
                                 <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="name" />
-                                <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                                <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+                                <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis yAxisId="left" stroke="#8884d8" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" fontSize={12} tickLine={false} axisLine={false} />
                                 <Tooltip />
                                 <Legend />
-                                <Bar yAxisId="left" dataKey="bookings" fill="#8884d8" name="Total Bookings" />
-                                <Bar yAxisId="right" dataKey="revenue" fill="#82ca9d" name="Completed Revenue (₹)" />
+                                <Bar yAxisId="left" dataKey="bookings" fill="hsl(var(--primary))" name="Total Bookings" radius={[4, 4, 0, 0]} />
+                                <Bar yAxisId="right" dataKey="revenue" fill="hsl(var(--accent))" name="Completed Revenue (₹)" radius={[4, 4, 0, 0]} />
                             </BarChartComponent>
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
 
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
                         <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2"><PieChart className="w-6 h-6 text-primary"/>Service Popularity</CardTitle>

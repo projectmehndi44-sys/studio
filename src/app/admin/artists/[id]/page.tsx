@@ -122,7 +122,7 @@ export default function ArtistDetailPage() {
 
     return (
         <>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
                  <div className="flex items-center gap-4">
                     <Button variant="outline" size="icon" onClick={() => router.back()}>
                         <ArrowLeft className="h-4 w-4" />
@@ -133,7 +133,7 @@ export default function ArtistDetailPage() {
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline">
                             <Download className="mr-2 h-4 w-4"/>
-                            Download Report
+                            <span className="hidden sm:inline">Download Report</span>
                             <ChevronDown className="ml-2 h-4 w-4"/>
                         </Button>
                     </DropdownMenuTrigger>
@@ -144,9 +144,9 @@ export default function ArtistDetailPage() {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
-            <div className="grid gap-6">
+            <div className="grid gap-4 md:gap-8">
                 <Card>
-                    <CardHeader className="flex flex-row items-center gap-4">
+                    <CardHeader className="flex flex-col md:flex-row items-start md:items-center gap-4">
                         <Avatar className="h-20 w-20 border">
                             <AvatarImage src={artist.profilePicture} alt={artist.name}/>
                             <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
@@ -154,7 +154,7 @@ export default function ArtistDetailPage() {
                         <div className="grid gap-1">
                             <CardTitle className="text-3xl">{artist.name}</CardTitle>
                             <CardDescription>{artist.location}</CardDescription>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2">
                                     {artist.services.map((service) => (
                                     <Badge key={service} variant="secondary" className="capitalize">{service}</Badge>
                                 ))}
@@ -219,6 +219,7 @@ export default function ArtistDetailPage() {
                             <CardDescription>Most recent bookings for this artist.</CardDescription>
                         </CardHeader>
                         <CardContent>
+                           <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -248,6 +249,7 @@ export default function ArtistDetailPage() {
                                     )}
                                 </TableBody>
                             </Table>
+                           </div>
                         </CardContent>
                     </Card>
                 </div>

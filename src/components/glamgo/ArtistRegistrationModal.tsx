@@ -48,9 +48,9 @@ const registrationSchema = z.object({
   confirmPassword: z.string(),
   workImages: z.any()
     .refine((files) => files?.length >= 1, "At least one work image is required.")
-    .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 5MB.`)
+    .refine((files) => Array.from(files).every((file: any) => file.size <= MAX_FILE_SIZE), `Max file size is 5MB per image.`)
     .refine(
-      (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+      (files) => Array.from(files).every((file: any) => ACCEPTED_IMAGE_TYPES.includes(file.type)),
       ".jpg, .jpeg, .png and .webp files are accepted."
     ),
   agreed: z.boolean().refine((val) => val === true, { message: 'You must agree to the terms and conditions.' }),
@@ -110,7 +110,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
 
   const selectedState = form.watch('state');
   const availableStates = Object.keys(availableLocations);
-  const districtsInSelectedState = selectedState ? (INDIA_LOCATIONS[selectedState] || []) : [];
+  const districtsInSelectedState = selectedState ? (availableLocations[selectedState] || []) : [];
 
 
   const onSubmit = (data: RegistrationFormValues) => {

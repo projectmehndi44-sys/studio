@@ -101,7 +101,7 @@ export function StyleMatch() {
                     name="outfitPhoto"
                     render={() => (
                         <FormItem>
-                            <FormLabel>1. Upload Your Outfit Photo</FormLabel>
+                            <FormLabel className="text-lg font-semibold">1. Upload Your Outfit Photo</FormLabel>
                              <div className="relative border-2 border-dashed border-muted-foreground/50 rounded-lg p-4 text-center hover:border-accent cursor-pointer aspect-square flex items-center justify-center">
                                {imagePreview ? (
                                     <Image src={imagePreview} alt="Outfit preview" layout="fill" className="object-contain rounded-md p-2"/>
@@ -130,7 +130,7 @@ export function StyleMatch() {
                     name="eventDescription"
                     render={({ field }) => (
                     <FormItem>
-                        <FormLabel>2. Describe Your Event</FormLabel>
+                        <FormLabel className="text-lg font-semibold">2. Describe Your Event</FormLabel>
                         <FormControl>
                         <Textarea
                             placeholder="e.g., 'Attending my best friend's Sangeet at a palace hotel. The theme is royal and glamorous. I want my mehndi to be traditional but not too heavy.'"
@@ -180,7 +180,7 @@ export function StyleMatch() {
                         </Card>
                      </div>
                  ) : (
-                    <div className="flex items-center justify-center h-full rounded-lg bg-muted/50 p-8 text-center">
+                    <div className="flex items-center justify-center h-full rounded-lg bg-muted/50 p-8 text-center min-h-[200px]">
                         <p className="text-muted-foreground">Your recommendations will appear here once you submit your photo and event details.</p>
                     </div>
                  )}

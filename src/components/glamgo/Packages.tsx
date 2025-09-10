@@ -36,7 +36,7 @@ export function Packages({ packages, onServiceSelect }: PackagesProps) {
 
     return (
         <div className="py-12">
-            <h2 className="text-center font-headline text-5xl text-primary mb-8">Our Services</h2>
+            <h2 className="text-center font-headline text-4xl md:text-5xl text-primary mb-8">Our Services</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {packages.map((service) => {
                     const lowestPrice = Math.min(...service.categories.map(c => c.basePrice));
