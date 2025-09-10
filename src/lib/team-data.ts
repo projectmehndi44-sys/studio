@@ -5,7 +5,6 @@ export type TeamMember = {
     id: string;
     name: string;
     username: string;
-    password?: string;
     role: 'Super Admin' | 'team-member';
     permissions: Permissions;
 };
@@ -27,13 +26,12 @@ export const PERMISSION_MODULES: { key: keyof Permissions, label: string }[] = [
 
 
 // This data is used to seed the Firestore database for team members if it's empty.
-// The username and password here are the primary superadmin credentials.
+// The password is set in the login page's one-time setup effect.
 export const teamMembers: TeamMember[] = [
     {
         id: 'user_001',
         name: 'Abhishek Soni',
         username: 'admin',
-        password: 'password',
         role: 'Super Admin',
         permissions: { // Admin has all rights by default, this is illustrative
             dashboard: 'edit',

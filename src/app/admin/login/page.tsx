@@ -32,9 +32,12 @@ export default function ArtistLoginPage() {
     React.useEffect(() => {
         const setupAdminUser = async () => {
             const superAdminSeed = initialTeamMembers.find(m => m.role === 'Super Admin');
-            if (superAdminSeed && superAdminSeed.password) {
+            // NOTE: The password is now hardcoded here for setup and removed from team-data.ts
+            const initialPassword = "password"; 
+            
+            if (superAdminSeed && initialPassword) {
                 try {
-                    await createUser('admin@mehndify.com', superAdminSeed.password);
+                    await createUser('admin@mehndify.com', initialPassword);
                     console.log("Super Admin user created/verified successfully in Firebase Authentication.");
                 } catch (error: any) {
                     if (error.code === 'auth/email-already-in-use') {
@@ -91,7 +94,7 @@ export default function ArtistLoginPage() {
             }
         } catch (error: any) {
             console.error("Admin Login Error:", error);
-            let description = 'Invalid username or password. Please try again.';
+            let description = 'An error occurred during login. Please try again.';
             if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
                 description = 'Invalid credentials. Please check your username and password.';
             } else if (error.message.includes('User profile not found')) {
