@@ -3,16 +3,84 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Allow an unauthenticated user to read only the team members configuration
-    // This is required for the login page to verify credentials.
-    match /config/teamMembers {
-      allow get: if true;
-      allow list, create, update, delete: if false;
+    // --- Helper Functions ---
+    // These functions check the role of the user trying to access data.
+    
+    // Function to get the team member profile from the config document.
+    function getTeamMember() {
+      // The user's UID is their username (email) stored during auth.
+      let username = request.auth.uid;
+      // Access the list of members in the config document.
+      let members = get(/databases/$(database)/documents/config/teamMembers).data.members;
+      // Filter the list to find the member that matches the UID.
+      let matchingMembers = members.filter(member -> member.username == username);
+      // Return the first match if it exists.
+      return matchingMembers.size() > 0 ? matchingMembers[0] : null;
     }
 
-    // Allow any authenticated user (logged-in admin) to read and write to all other documents
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+    // Function to check if the user is a Super Admin.
+    function isSuperAdmin() {
+      let member = getTeamMember();
+      return member != null && member.role == 'Super Admin';
+    }
+    
+    // Function to check if a user can perform an action (read/write).
+    function hasPermission(resource, action) {
+       let member = getTeamMember();
+       if (member == null) {
+         return false;
+       }
+       // Super Admins can do anything.
+       if (member.role == 'Super Admin') {
+         return true;
+       }
+       // Check if the permission level is 'edit'.
+       if (action == 'write') {
+         return member.permissions[resource] == 'edit';
+       }
+       // Check if permission level is 'view' or 'edit' for read access.
+       if (action == 'read') {
+         return member.permissions[resource] == 'view' || member.permissions[resource] == 'edit';
+       }
+       return false;
+    }
+
+    // --- Rule Definitions ---
+
+    // Public rule: Allow anyone to read the team members list for login purposes.
+    // Deny writing to it publicly.
+    match /config/teamMembers {
+      allow get, list: if true;
+      allow write: if false;
+    }
+
+    // Bookings collection
+    match /bookings/{bookingId} {
+      allow read: if hasPermission('bookings', 'read');
+      allow write: if hasPermission('bookings', 'write');
+    }
+    
+    // Artists collection
+    match /artists/{artistId} {
+      allow read: if hasPermission('artists', 'read');
+      allow write: if hasPermission('artists', 'write');
+    }
+
+    // Customers collection
+    match /customers/{customerId} {
+      allow read: if hasPermission('customers', 'read');
+      allow write: if hasPermission('customers', 'write');
+    }
+
+    // All other config documents (Settings, Packages, etc.)
+    match /config/{docId} {
+       allow read: if hasPermission('settings', 'read');
+       allow write: if hasPermission('settings', 'write');
+    }
+    
+    // All other collections (payouts, transactions, etc.) require login.
+    match /{path=**} {
+      allow read, write: if isSuperAdmin();
     }
   }
 }
