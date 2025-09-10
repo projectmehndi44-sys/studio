@@ -53,7 +53,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         const { user } = authState;
         if (!user) return false;
         
-        if (user.role === 'admin') return true;
+        if (user.role === 'Super Admin') return true;
         
         const userPermission = user.permissions?.[module];
         if (!userPermission || userPermission === 'hidden') return false;

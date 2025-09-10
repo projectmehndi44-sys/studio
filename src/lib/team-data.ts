@@ -6,7 +6,7 @@ export type TeamMember = {
     name: string;
     username: string;
     password?: string;
-    role: 'admin' | 'team-member';
+    role: 'Super Admin' | 'team-member';
     permissions: Permissions;
 };
 
@@ -34,7 +34,7 @@ export const teamMembers: TeamMember[] = [
         name: 'Abhishek Soni',
         username: 'admin',
         password: 'Abhi@123',
-        role: 'admin',
+        role: 'Super Admin',
         permissions: { // Admin has all rights by default, this is illustrative
             dashboard: 'edit',
             bookings: 'edit',

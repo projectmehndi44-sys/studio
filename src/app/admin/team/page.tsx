@@ -141,7 +141,7 @@ export default function TeamManagementPage() {
         });
     }
 
-    if (user && user.role !== 'admin') {
+    if (user && user.role !== 'Super Admin') {
          return (
              <div className="flex min-h-full w-full flex-col items-center justify-center">
                 <Card className="p-8 text-center">
@@ -247,25 +247,25 @@ export default function TeamManagementPage() {
                                                 <TableCell className="font-medium">{member.name}</TableCell>
                                                 <TableCell>{member.username}</TableCell>
                                                 <TableCell>
-                                                    <Badge variant={member.role === 'admin' ? 'default' : 'secondary'} className="capitalize">
-                                                        {member.role === 'admin' ? 'Super Admin' : 'Team Member'}
+                                                    <Badge variant={member.role === 'Super Admin' ? 'default' : 'secondary'} className="capitalize">
+                                                        {member.role}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-right">
                                                         <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
-                                                            <Button aria-haspopup="true" size="icon" variant="ghost" disabled={member.role === 'admin'}>
+                                                            <Button aria-haspopup="true" size="icon" variant="ghost" disabled={member.role === 'Super Admin'}>
                                                                 <MoreHorizontal className="h-4 w-4" />
                                                                 <span className="sr-only">Toggle menu</span>
                                                             </Button>
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
                                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                             <DropdownMenuItem onSelect={() => handleEdit(member)} disabled={member.role === 'admin'}>
+                                                             <DropdownMenuItem onSelect={() => handleEdit(member)} disabled={member.role === 'Super Admin'}>
                                                                 <UserCog className="mr-2 h-4 w-4" />
                                                                 Edit Permissions
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuItem onSelect={() => handleDelete(member.id)} disabled={member.role === 'admin'}>
+                                                            <DropdownMenuItem onSelect={() => handleDelete(member.id)} disabled={member.role === 'Super Admin'}>
                                                                 <Trash2 className="mr-2 h-4 w-4 text-red-500" />
                                                                 Delete
                                                             </DropdownMenuItem>

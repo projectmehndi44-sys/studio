@@ -38,16 +38,19 @@ export default function AdminLoginPage() {
         
         try {
             const allMembers = await getTeamMembers();
-            const memberByUsername = allMembers.find(m => m.username === username && m.role === userType);
+            
+            // Adjust role check to match data
+            const expectedRole = userType === 'admin' ? 'Super Admin' : 'team-member';
+            const memberByUsername = allMembers.find(m => m.username === username);
 
-            if (memberByUsername) {
+            if (memberByUsername && memberByUsername.role === expectedRole) {
                 if (memberByUsername.password === password) {
                     toast({
                         title: 'Login Successful',
                         description: `Welcome, ${memberByUsername.name}! Redirecting...`,
                     });
                     localStorage.setItem('isAdminAuthenticated', 'true');
-                    localStorage.setItem('adminRole', memberByUsername.role);
+                    localStorage.setItem('adminRole', userType); // Store the dropdown value ('admin')
                     localStorage.setItem('adminUsername', memberByUsername.username);
                     window.location.href = '/admin'; // Use window.location.href for a full refresh
                 } else {
@@ -60,7 +63,7 @@ export default function AdminLoginPage() {
             } else {
                  toast({
                     title: 'Login Failed',
-                    description: `No ${userType === 'admin' ? 'admin' : 'team member'} found with that username.`,
+                    description: `No ${userType === 'admin' ? 'admin' : 'team member'} account found with that username.`,
                     variant: 'destructive',
                 });
             }
