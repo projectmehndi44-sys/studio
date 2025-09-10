@@ -12,8 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Home } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { signInWithEmailAndPassword, sendPasswordResetEmail, getAuth, onAuthStateChanged } from 'firebase/auth';
-import { app } from '@/lib/firebase';
+import { app, createUser } from '@/lib/firebase';
 import { getTeamMembers, updateTeamMemberId } from '@/lib/services';
+import { teamMembers as initialTeamMembers } from '@/lib/team-data';
+
 
 export default function ArtistLoginPage() {
     const router = useRouter();
@@ -23,9 +25,34 @@ export default function ArtistLoginPage() {
     const [isLoading, setIsLoading] = React.useState(false);
     const auth = getAuth(app);
     
-    // State for forgot password
     const [isForgotPasswordOpen, setIsForgotPasswordOpen] = React.useState(false);
     const [forgotPasswordEmail, setForgotPasswordEmail] = React.useState('');
+
+    // One-time setup to ensure the admin user exists in Firebase Auth
+    React.useEffect(() => {
+        const setupAdminUser = async () => {
+            try {
+                // Try to sign in silently to check if user exists. This will fail if the user doesn't exist.
+                // We use a dummy password to avoid exposing the real one here.
+                await signInWithEmailAndPassword(auth, 'admin@mehndify.com', 'check-if-exists-fails').catch(async (error) => {
+                     if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+                        // User does not exist, so create them.
+                        console.log("Super Admin does not exist in Firebase Auth. Creating...");
+                        const superAdminSeed = initialTeamMembers.find(m => m.role === 'Super Admin');
+                        if (superAdminSeed && superAdminSeed.password) {
+                            await createUser('admin@mehndify.com', superAdminSeed.password);
+                            console.log("Super Admin user created in Firebase Authentication.");
+                        }
+                    }
+                });
+            } catch (error) {
+                // This catch block is for unexpected errors during the setup process.
+                console.error("Error during admin user setup check:", error);
+            }
+        };
+
+        setupAdminUser();
+    }, [auth]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -39,26 +66,20 @@ export default function ArtistLoginPage() {
             const user = userCredential.user;
 
             if (user) {
-                // Now that we are authenticated, we can fetch the user's role from Firestore
                 const teamMembers = await getTeamMembers();
                 let memberProfile = teamMembers.find(m => m.id === user.uid);
 
-                // --- ONE-TIME ID SYNC LOGIC ---
-                // If profile not found, check if this is the initial Super Admin login
                 if (!memberProfile && isSuperAdminLogin) {
                     const placeholderAdmin = teamMembers.find(m => m.id === 'user_001' && m.role === 'Super Admin');
                     if (placeholderAdmin) {
-                        // This is the first login. Update the placeholder ID to the real Firebase UID.
                         await updateTeamMemberId('user_001', user.uid);
-                        // Re-fetch the team members to get the updated profile
                         const updatedTeamMembers = await getTeamMembers();
                         memberProfile = updatedTeamMembers.find(m => m.id === user.uid);
                     }
                 }
-                // --- END OF SYNC LOGIC ---
 
                 if (!memberProfile) {
-                    throw new Error("User profile not found in database.");
+                    throw new Error("User profile not found in the team members database.");
                 }
 
                 toast({
@@ -105,7 +126,6 @@ export default function ArtistLoginPage() {
         }
     };
 
-    // Redirect if already logged in
     React.useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user && localStorage.getItem('adminAuthenticated') === 'true') {
