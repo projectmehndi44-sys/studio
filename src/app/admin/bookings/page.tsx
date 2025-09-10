@@ -11,7 +11,7 @@ import { Briefcase, MoreHorizontal, AlertOctagon, CheckSquare } from 'lucide-rea
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from '@/components/ui/badge';
 import type { Booking, Artist, Notification } from '@/types';
-import { getArtists, getBookings, updateBooking, createBooking } from '@/lib/services';
+import { listenToCollection, updateBooking } from '@/lib/services';
 import { AssignArtistModal } from '@/components/glamgo/AssignArtistModal';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -28,15 +28,17 @@ export default function BookingManagementPage() {
     const [isAssignModalOpen, setIsAssignModalOpen] = React.useState(false);
     const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
 
-    const fetchData = React.useCallback(async () => {
-        setArtists(await getArtists());
-        setBookings(await getBookings());
-    }, []);
-
     React.useEffect(() => {
-        fetchData();
-        // Add a poller or listener if real-time updates are needed
-    }, [fetchData]);
+        const unsubscribeArtists = listenToCollection<Artist>('artists', setArtists);
+        const unsubscribeBookings = listenToCollection<Booking>('bookings', (data) => {
+            setBookings(data.sort((a, b) => b.date.getTime() - a.date.getTime()));
+        });
+
+        return () => {
+            unsubscribeArtists();
+            unsubscribeBookings();
+        };
+    }, []);
     
     const sendNotification = (artistId: string, booking: Booking, title: string, message: string) => {
         // In a real app, this would be a server-side function to send a push notification
@@ -53,14 +55,13 @@ export default function BookingManagementPage() {
         }
 
         await updateBooking(bookingId, updateData);
-        await fetchData(); // Re-fetch data to reflect changes
     };
 
     const handleOfflineConfirm = async (bookingId: string) => {
         const booking = bookings.find(b => b.id === bookingId);
         if (!booking) return;
 
-        const newStatus = booking.artistIds.length > 0 ? 'Pending Approval' : 'Needs Assignment';
+        const newStatus = booking.artistIds && booking.artistIds.length > 0 ? 'Pending Approval' : 'Needs Assignment';
         await handleUpdateBookingStatus(bookingId, newStatus);
         
         toast({
@@ -241,7 +242,7 @@ export default function BookingManagementPage() {
                             </TableCell>
                             <TableCell>
                                 <div className="flex flex-col gap-1">
-                                    {booking.serviceDates.map((date, index) => (
+                                    {(booking.serviceDates || []).map((date, index) => (
                                         <Badge key={index} variant="outline" className="text-xs">
                                             {format(new Date(date), "PPP")}
                                         </Badge>

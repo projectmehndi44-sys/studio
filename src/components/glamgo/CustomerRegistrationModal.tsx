@@ -23,14 +23,14 @@ import { Separator } from '@/components/ui/separator';
 import { GoogleIcon } from '../icons';
 import { signInWithGoogle, setupRecaptcha, sendOtp } from '@/lib/firebase';
 import type { Customer } from '@/types';
-import { getCustomers, createCustomer, getCustomerByEmail } from '@/lib/services';
+import { getCustomerByPhone, createCustomer, getCustomerByEmail } from '@/lib/services';
 import type { ConfirmationResult } from 'firebase/auth';
 
 
 const registrationSchema = z.object({
   fullName: z.string().min(1, { message: 'Full name is required.' }),
   phone: z.string().regex(/^\d{10}$/, { message: 'Please enter a valid 10-digit phone number.' }),
-  email: z.string().email({ message: 'Please enter a valid email address.' }),
+  email: z.string().email({ message: 'Please enter a valid email address.' }).optional().or(z.literal('')),
   otp: z.string().min(6, { message: 'OTP must be 6 digits.' }).max(6, { message: 'OTP must be 6 digits.' }),
 });
 
@@ -72,8 +72,8 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
         form.setError('phone', { type: 'manual', message: 'Please enter a valid 10-digit phone number to verify.' });
         return;
     }
-    const customers = await getCustomers();
-    if (customers.some(c => c.phone === phone)) {
+    const existingCustomer = await getCustomerByPhone(phone);
+    if (existingCustomer) {
         form.setError('phone', { type: 'manual', message: 'This phone number is already registered. Please login.' });
         return;
     }
@@ -162,7 +162,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
                   description: `You are now logged in as ${customer.name}.`,
                });
             } else { // If user doesn't exist, create a new account
-               const newCustomerData = {
+               const newCustomerData: Omit<Customer, 'id'> & {id: string} = {
                   id: user.uid,
                   name: user.displayName || 'Google User',
                   phone: user.phoneNumber || '', // May be null

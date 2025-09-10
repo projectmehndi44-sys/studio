@@ -11,6 +11,7 @@ import { useArtistPortal } from '../layout';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { listenToCollection } from '@/lib/services';
 
 
 export default function ArtistPayoutsPage() {
@@ -27,7 +28,20 @@ export default function ArtistPayoutsPage() {
         }
     }, []);
 
-    const calculatePayouts = React.useCallback(() => {
+    React.useEffect(() => {
+        if (!artist?.id) return;
+        
+        const unsub = listenToCollection<PayoutHistory>('payoutHistory', (allHistory) => {
+            const artistHistory = allHistory
+                .filter(p => p.artistId === artist.id)
+                .sort((a,b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime());
+            setPayoutHistory(artistHistory);
+        });
+
+        return () => unsub();
+    }, [artist?.id]);
+
+    React.useEffect(() => {
         if (!artist) return;
         // Bookings that are completed but not yet paid out
         const pendingPayouts = artistBookings.filter(b => b.status === 'Completed' && !b.paidOut);
@@ -43,17 +57,7 @@ export default function ArtistPayoutsPage() {
         const platformFee = taxableAmount * platformFeePercentage.current;
         setPendingAmount(taxableAmount - platformFee);
 
-
-        // Fetch this artist's payout history from localStorage
-        const allPayoutHistory: PayoutHistory[] = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('payoutHistory') || '[]') : [];
-        const artistHistory = allPayoutHistory.filter(p => p.artistId === artist?.id);
-        setPayoutHistory(artistHistory.sort((a,b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()));
-
     }, [artistBookings, artist]);
-
-    React.useEffect(() => {
-        calculatePayouts();
-    }, [calculatePayouts]);
 
     return (
         <Card>

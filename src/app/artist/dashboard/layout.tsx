@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { LayoutDashboard, Briefcase, Bell, User, LogOut, Palette, CalendarOff, IndianRupee, Package, Star, PanelLeft } from 'lucide-react';
 import type { Artist, Booking, Notification } from '@/types';
-import { getArtists, getBookings, getCustomer } from '@/lib/services';
+import { getArtist, listenToCollection } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -99,8 +99,7 @@ export default function ArtistDashboardLayout({
             return;
         }
         
-        const allArtists = await getArtists();
-        const currentArtist = allArtists.find((a: Artist) => a.id === currentArtistId);
+        const currentArtist = await getArtist(currentArtistId);
         
         if (currentArtist) {
             setArtist(currentArtist);
@@ -113,17 +112,6 @@ export default function ArtistDashboardLayout({
             handleLogout();
             return;
         }
-
-        const storedBookings = await getBookings();
-        const currentArtistBookings = storedBookings.filter(b => b.artistIds && b.artistIds.includes(currentArtistId));
-        setArtistBookings(currentArtistBookings.sort((a,b) => b.date.getTime() - a.date.getTime()));
-        
-        // Mock notifications for now, as they are not stored in Firestore yet
-        const allNotifications: Notification[] = [];
-        const artistNotifications = allNotifications.filter((n: Notification) => n.artistId === currentArtistId);
-        setNotifications(artistNotifications.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
-        setUnreadCount(artistNotifications.filter((n: Notification) => !n.isRead).length);
-
     }, [router, toast, handleLogout]);
 
     React.useEffect(() => {
@@ -135,6 +123,32 @@ export default function ArtistDashboardLayout({
         
         fetchData();
     }, [fetchData, router]);
+
+    React.useEffect(() => {
+        if (!artist?.id) return;
+        
+        const unsubscribeBookings = listenToCollection<Booking>('bookings', (allBookings) => {
+            const currentArtistBookings = allBookings
+                .filter(b => b.artistIds && b.artistIds.includes(artist.id))
+                .sort((a,b) => b.date.getTime() - a.date.getTime());
+            setArtistBookings(currentArtistBookings);
+        });
+
+        // This would be a real-time listener in a full implementation
+        const unsubscribeNotifications = listenToCollection<Notification>('notifications', (allNotifications) => {
+            const artistNotifications = allNotifications
+                .filter(n => n.artistId === artist.id)
+                .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            setNotifications(artistNotifications);
+            setUnreadCount(artistNotifications.filter(n => !n.isRead).length);
+        });
+        
+        return () => {
+            unsubscribeBookings();
+            unsubscribeNotifications();
+        };
+
+    }, [artist?.id]);
 
 
     if (!artist) {
@@ -159,9 +173,11 @@ export default function ArtistDashboardLayout({
 
     const getPageTitle = () => {
         const allLinks = [...mainNavLinks, ...sidebarNavLinks];
-        const currentLink = allLinks.find(l => pathname === l.href);
+        // Ensure the most specific path wins, e.g. /artist/dashboard/bookings before /artist/dashboard
+        const sortedLinks = allLinks.sort((a, b) => b.href.length - a.href.length);
+        const currentLink = sortedLinks.find(l => pathname.startsWith(l.href));
         if (currentLink) return currentLink.label;
-        if (pathname.startsWith('/artist/dashboard/notifications')) return 'Notifications';
+        if (pathname.startsWith('/artist/dashboard')) return 'Dashboard';
         return 'Dashboard';
     }
 
@@ -173,7 +189,7 @@ export default function ArtistDashboardLayout({
             </div>
              <nav className="flex flex-col gap-2 text-lg font-medium px-4">
                 {mainNavLinks.map(link => (
-                    <NavLink key={link.href} {...link} pathname={link.href === '/artist/dashboard' && pathname.startsWith('/artist/dashboard') ? pathname : link.href} onClick={() => setIsSidebarOpen(false)} />
+                    <NavLink key={link.href} {...link} pathname={pathname} onClick={() => setIsSidebarOpen(false)} />
                 ))}
             </nav>
             <div className="mt-4 pt-4 border-t mx-4">

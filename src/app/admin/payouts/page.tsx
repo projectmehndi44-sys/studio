@@ -10,13 +10,15 @@ import { useToast } from '@/hooks/use-toast';
 import { IndianRupee, MoreHorizontal, Download, FileText } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Booking, Artist, Payout, PayoutHistory } from '@/types';
-import { getArtists, getBookings, updateBooking } from '@/lib/services';
+import { listenToCollection, updateBooking } from '@/lib/services';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { exportPayoutToPdf, generateGstInvoiceForPlatformFee } from '@/lib/export';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { addDoc, collection } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 
 export default function PayoutManagementPage() {
@@ -90,28 +92,17 @@ export default function PayoutManagementPage() {
 
     }, [bookings, artists]);
 
-     const fetchData = React.useCallback(async () => {
-        setBookings(await getBookings());
-        setArtists(await getArtists());
-        const history = await getCollection<PayoutHistory>('payoutHistory');
-        setPayoutHistory(history);
-    }, []);
-    
-    // Helper to get a collection, in case it's needed for other data
-    async function getCollection<T>(collectionName: string): Promise<T[]> {
-        // This is a placeholder. In a real app, this would be your Firestore fetch logic.
-        const storedData = localStorage.getItem(collectionName);
-        return storedData ? JSON.parse(storedData) : [];
-    }
-
-
     React.useEffect(() => {
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated');
-        if (isAdminAuthenticated !== 'true') {
-            router.push('/admin/login');
-        }
-        fetchData();
-    }, [router, fetchData]);
+        const unsubscribeBookings = listenToCollection<Booking>('bookings', setBookings);
+        const unsubscribeArtists = listenToCollection<Artist>('artists', setArtists);
+        const unsubscribeHistory = listenToCollection<PayoutHistory>('payoutHistory', setPayoutHistory);
+
+        return () => {
+            unsubscribeBookings();
+            unsubscribeArtists();
+            unsubscribeHistory();
+        };
+    }, []);
 
     React.useEffect(() => {
         calculatePayouts();
@@ -119,8 +110,7 @@ export default function PayoutManagementPage() {
     
     const handleMarkAsPaid = async (payout: Payout) => {
         // Create a new history record
-        const newHistoryRecord: PayoutHistory = {
-            id: `payout_${Date.now()}`,
+        const newHistoryRecord: Omit<PayoutHistory, 'id'> = {
             paymentDate: new Date().toISOString(),
             ...payout
         };
@@ -132,13 +122,8 @@ export default function PayoutManagementPage() {
         await Promise.all(bookingUpdatePromises);
         
         // Save the payout record to history
-        // In a real app, this would be `await addDoc(collection(db, "payoutHistory"), newHistoryRecord);`
-        const newHistory = [newHistoryRecord, ...payoutHistory];
-        localStorage.setItem('payoutHistory', JSON.stringify(newHistory));
+        await addDoc(collection(db, "payoutHistory"), newHistoryRecord);
         
-        // Refetch all data to update the UI
-        fetchData();
-
         toast({
             title: "Payout Marked as Paid",
             description: `Payment of ₹${payout.netPayout.toLocaleString(undefined, {maximumFractionDigits: 2})} to ${payout.artistName} has been recorded.`

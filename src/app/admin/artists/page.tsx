@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from '@/hooks/use-toast';
 import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Pencil, Trash2, UserPlus } from 'lucide-react';
 import type { Artist } from '@/types';
-import { getArtists, getPendingArtists, createArtistFromPending, deletePendingArtist } from '@/lib/services';
+import { listenToCollection, createArtistFromPending, deletePendingArtist, getArtists } from '@/lib/services';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { exportToExcel } from '@/lib/export';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -55,16 +55,26 @@ export default function ArtistManagementPage() {
         resolver: zodResolver(onboardSchema),
         defaultValues: { name: '', email: '', phone: '', password: '', location: '', charge: 2500 },
     });
-
-    const fetchAdminData = React.useCallback(async () => {
-        setApprovedArtists(await getArtists());
-        const pending = await getPendingArtists();
-        setPendingArtists(pending.map((p: any) => ({...p, id: p.email, date: new Date(p.submissionDate).toLocaleDateString(), name: p.fullName, location: `${p.district}, ${p.state}` })));
-    }, []);
-
+    
     React.useEffect(() => {
-        fetchAdminData();
-    }, [fetchAdminData]);
+        const unsubscribeApproved = listenToCollection<Artist>('artists', setApprovedArtists);
+        const unsubscribePending = listenToCollection<any>('pendingArtists', (data) => {
+             const pending = data.map((p: any) => ({
+                ...p,
+                id: p.email,
+                originalId: p.id,
+                date: new Date(p.submissionDate).toLocaleDateString(), 
+                name: p.fullName,
+                location: `${p.district}, ${p.state}`
+             }));
+            setPendingArtists(pending);
+        });
+
+        return () => {
+            unsubscribeApproved();
+            unsubscribePending();
+        };
+    }, []);
 
     const handleApprove = async (artistId: string) => {
         const artistToApprove = pendingArtists.find(p => p.id === artistId);
@@ -90,10 +100,8 @@ export default function ArtistManagementPage() {
         };
         
         await createArtistFromPending(newArtist);
-        await deletePendingArtist(artistToApprove.originalId); // Assuming original Firestore doc id is available
+        await deletePendingArtist(artistToApprove.originalId);
         
-        fetchAdminData();
-
         toast({
             title: "Artist Approved",
             description: `A notification has been sent to ${newArtist.name}.`,
@@ -105,7 +113,6 @@ export default function ArtistManagementPage() {
         if (!artistToReject) return;
 
         await deletePendingArtist(artistToReject.originalId);
-        fetchAdminData();
         
         toast({
             title: "Artist Rejected",
@@ -200,7 +207,6 @@ export default function ArtistManagementPage() {
         
         await createArtistFromPending(newArtist);
 
-        fetchAdminData();
         toast({
             title: "Artist Onboarded",
             description: `${newArtist.name} has been added to the platform.`,
@@ -289,7 +295,7 @@ export default function ArtistManagementPage() {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-wrap gap-1">
-                                                    {artist.services.map(service => (
+                                                    {(artist.services || []).map(service => (
                                                         <Badge key={service} variant="secondary" className="capitalize">{service}</Badge>
                                                     ))}
                                                 </div>

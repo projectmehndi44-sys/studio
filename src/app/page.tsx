@@ -3,8 +3,8 @@
 'use client';
 
 import * as React from 'react';
-import type { Artist, ServicePackage, Customer, CartItem, MasterServicePackage } from '@/types';
-import { getArtists, getMasterServices, getCustomer as fetchCustomer, getCustomers, createCustomer } from '@/lib/services';
+import type { Artist, Customer, CartItem, MasterServicePackage } from '@/types';
+import { getCustomer, createCustomer, listenToCollection } from '@/lib/services';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -92,41 +92,42 @@ export default function Home() {
   useInactivityTimeout(isCustomerLoggedIn ? handleCustomerLogout : () => {});
 
 
-  const fetchData = React.useCallback(async () => {
-    setArtists(await getArtists());
-    setAllPackages(await getMasterServices());
-    
+  const checkLoggedInCustomer = React.useCallback(async () => {
     const customerId = localStorage.getItem('currentCustomerId');
     if (customerId) {
-        const currentCustomer = await fetchCustomer(customerId);
+        const currentCustomer = await getCustomer(customerId);
         if (currentCustomer) {
             setIsCustomerLoggedIn(true);
             setCustomer(currentCustomer);
             const storedCart = localStorage.getItem(`cart_${customerId}`);
             setCart(storedCart ? JSON.parse(storedCart) : []);
+        } else {
+             // Clean up if customer ID is invalid
+             handleCustomerLogout();
         }
     } else {
         setIsCustomerLoggedIn(false);
         setCustomer(null);
         setCart([]);
     }
-  }, []);
+  }, [handleCustomerLogout]);
 
   React.useEffect(() => {
-    fetchData();
+    checkLoggedInCustomer();
+
+    const unsubscribeArtists = listenToCollection<Artist>('artists', setArtists);
+    const unsubscribePackages = listenToCollection<MasterServicePackage>('masterServices', setAllPackages);
 
     const intervalId = setInterval(() => {
       setCurrentBgIndex((prevIndex) => (prevIndex + 1) % backgroundImages.length);
     }, 5000); 
-    
-    // No need for storage event listener anymore, as data is fetched from Firestore
-    // window.addEventListener('storage', fetchData);
 
     return () => {
         clearInterval(intervalId);
-        // window.removeEventListener('storage', fetchData);
+        unsubscribeArtists();
+        unsubscribePackages();
     };
-  }, [fetchData]);
+  }, [checkLoggedInCustomer]);
   
   const handleBookingRequest = (artist: Artist) => {
     if (!isCustomerLoggedIn) {
@@ -162,17 +163,17 @@ export default function Home() {
     setIsCustomerLoginModalOpen(true);
   };
   
-  const onSuccessfulLogin = (customer: Customer) => {
+  const onSuccessfulLogin = (loggedInCustomer: Customer) => {
     setIsCustomerLoggedIn(true);
-    setCustomer(customer);
+    setCustomer(loggedInCustomer);
     setIsCustomerLoginModalOpen(false);
     setIsCustomerRegistrationModalOpen(false);
-    const storedCart = localStorage.getItem(`cart_${customer.id}`);
+    const storedCart = localStorage.getItem(`cart_${loggedInCustomer.id}`);
     setCart(storedCart ? JSON.parse(storedCart) : []);
     setTimeout(() => {
         toast({
             title: 'Login Successful',
-            description: `Welcome back, ${customer.name}!`,
+            description: `Welcome back, ${loggedInCustomer.name}!`,
         });
     }, 0);
   }

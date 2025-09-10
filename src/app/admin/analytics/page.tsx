@@ -3,21 +3,20 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, PieChart, Map } from 'lucide-react';
 import type { Booking } from '@/types';
 import { Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Pie, Cell } from 'recharts';
 import { BarChart as BarChartComponent, PieChart as PieChartComponent } from 'recharts';
-import { getBookings } from '@/lib/services';
+import { listenToCollection } from '@/lib/services';
 
 
 export default function AnalyticsPage() {
-    const router = useRouter();
     const [bookings, setBookings] = React.useState<Booking[]>([]);
 
     React.useEffect(() => {
-        getBookings().then(setBookings);
+        const unsubscribe = listenToCollection<Booking>('bookings', setBookings);
+        return () => unsubscribe();
     }, []);
     
     // --- Chart Data Processing ---

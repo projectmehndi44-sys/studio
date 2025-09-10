@@ -5,7 +5,7 @@
 import * as React from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import type { Artist, MasterServicePackage, ArtistServiceOffering } from '@/types';
-import { masterServices as initialMasterServices } from '@/lib/packages-data';
+import { listenToCollection, updateArtist } from '@/lib/services';
 import { useToast } from '@/hooks/use-toast';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,8 +16,6 @@ import { Switch } from '@/components/ui/switch';
 import { IndianRupee, Save } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useArtistPortal } from '../layout';
-import { artists as initialArtists } from '@/lib/data';
-
 
 export default function ArtistServicesPage() {
     const { artist, setArtist } = useArtistPortal();
@@ -27,8 +25,8 @@ export default function ArtistServicesPage() {
     const form = useForm<{ offerings: ArtistServiceOffering[] }>();
 
     React.useEffect(() => {
-        const storedMasterServices = localStorage.getItem('masterServices');
-        setMasterServices(storedMasterServices ? JSON.parse(storedMasterServices) : initialMasterServices);
+        const unsubscribe = listenToCollection<MasterServicePackage>('masterServices', setMasterServices);
+        return () => unsubscribe();
     }, []);
 
     React.useEffect(() => {
@@ -55,48 +53,23 @@ export default function ArtistServicesPage() {
         control: form.control,
         name: "offerings"
     });
-
-    const getArtists = (): Artist[] => {
-        const storedArtists = localStorage.getItem('artists');
-        const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
-        const allArtistsMap = new Map<string, Artist>();
-        initialArtists.forEach(a => allArtistsMap.set(a.id, a));
-        localArtists.forEach(a => allArtistsMap.set(a.id, a));
-        return Array.from(allArtistsMap.values());
-    };
     
-    const saveArtists = (artists: Artist[]) => {
-        const artistsToStore = artists.filter(a => {
-            const initialArtist = initialArtists.find(ia => ia.id === a.id);
-            if (!initialArtist) return true;
-            // A simple way to check if the object has changed. For production, a deep-equal check would be better.
-            return JSON.stringify(initialArtist) !== JSON.stringify(a);
-        });
-        localStorage.setItem('artists', JSON.stringify(artistsToStore));
-        window.dispatchEvent(new Event('storage'));
-    };
-
-    const onSubmit = (data: { offerings: ArtistServiceOffering[] }) => {
+    const onSubmit = async (data: { offerings: ArtistServiceOffering[] }) => {
         if (!artist) return;
         
-        const allArtists = getArtists();
-        const artistIndex = allArtists.findIndex(a => a.id === artist.id);
-
-        if (artistIndex === -1) {
-            toast({ title: 'Error', description: 'Could not find your profile to update.', variant: 'destructive' });
-            return;
+        try {
+            await updateArtist(artist.id, { serviceOfferings: data.offerings });
+             if (setArtist) {
+                setArtist(prev => prev ? { ...prev, serviceOfferings: data.offerings } : null);
+            }
+            toast({
+                title: "Services Updated",
+                description: "Your service offerings and prices have been saved.",
+            });
+        } catch (error) {
+            console.error("Failed to update services:", error);
+            toast({ title: 'Error', description: 'Could not update your services.', variant: 'destructive' });
         }
-
-        const updatedArtist = { ...allArtists[artistIndex], serviceOfferings: data.offerings };
-        allArtists[artistIndex] = updatedArtist;
-
-        saveArtists(allArtists);
-        setArtist(updatedArtist);
-        
-        toast({
-            title: "Services Updated",
-            description: "Your service offerings and prices have been saved.",
-        });
     };
 
     if (!artist || fields.length === 0) {

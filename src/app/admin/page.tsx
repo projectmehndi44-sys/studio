@@ -17,7 +17,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { getArtists, getBookings } from '@/lib/services';
+import { listenToCollection } from '@/lib/services';
 import type { Artist, Booking } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
@@ -57,22 +57,23 @@ export default function AdminPage() {
         netProfit: 0
     });
 
-    const fetchAdminData = React.useCallback(async () => {
-        setApprovedArtists(await getArtists());
-        const currentBookings = await getBookings();
-        setBookings(currentBookings);
-        const pendingCount = currentBookings.filter((b: Booking) => b.status === 'Pending Approval' || b.status === 'Needs Assignment').length;
-        setPendingBookingCount(pendingCount);
-    }, []);
-
     React.useEffect(() => {
         if (!isLoading && !isAuthenticated) {
             router.push('/admin/login');
         } else if (isAuthenticated) {
-            fetchAdminData();
-            // Optional: If you need real-time updates without polling, you could set up a Firestore listener here
+            const unsubscribeArtists = listenToCollection<Artist>('artists', setApprovedArtists);
+            const unsubscribeBookings = listenToCollection<Booking>('bookings', (currentBookings) => {
+                setBookings(currentBookings);
+                const pendingCount = currentBookings.filter((b: Booking) => b.status === 'Pending Approval' || b.status === 'Needs Assignment').length;
+                setPendingBookingCount(pendingCount);
+            });
+
+            return () => {
+                unsubscribeArtists();
+                unsubscribeBookings();
+            }
         }
-    }, [isLoading, isAuthenticated, router, fetchAdminData]);
+    }, [isLoading, isAuthenticated, router]);
 
      // Effect for calculating financials
     React.useEffect(() => {

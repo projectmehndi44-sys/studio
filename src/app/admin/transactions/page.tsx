@@ -3,7 +3,6 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -15,59 +14,66 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { exportTransactionsToExcel, exportTransactionsToPdf } from '@/lib/export';
-import { getBookings } from '@/lib/services';
-
-async function getPayoutHistory(): Promise<PayoutHistory[]> {
-    if (typeof window === 'undefined') return [];
-    const data = localStorage.getItem('payoutHistory');
-    if (!data) return [];
-    return JSON.parse(data).map((p: any) => ({ ...p, paymentDate: new Date(p.paymentDate) }));
-}
-
+import { listenToCollection } from '@/lib/services';
 
 export default function TransactionsPage() {
-    const router = useRouter();
     const { toast } = useToast();
     const [transactions, setTransactions] = React.useState<Transaction[]>([]);
     const [filteredTransactions, setFilteredTransactions] = React.useState<Transaction[]>([]);
     const [dateRange, setDateRange] = React.useState<{from: Date | undefined, to: Date | undefined}>({ from: undefined, to: undefined });
 
     React.useEffect(() => {
-        const fetchTransactions = async () => {
-            const currentBookings = await getBookings();
-            const currentPayoutHistory = await getPayoutHistory();
+        const unsubBookings = listenToCollection<Booking>('bookings', (bookingsData) => {
+            updateTransactions(bookingsData, null);
+        });
+        const unsubPayouts = listenToCollection<PayoutHistory>('payoutHistory', (payoutsData) => {
+            updateTransactions(null, payoutsData);
+        });
 
-            const allTransactions: Transaction[] = [];
-
-            // 1. Revenue from completed bookings
-            currentBookings.filter(b => b.status === 'Completed').forEach(b => {
-                allTransactions.push({
-                    id: `rev-${b.id}`,
-                    date: new Date(b.date),
-                    type: 'Revenue',
-                    description: `Booking #${b.id} for ${b.service}`,
-                    amount: b.amount,
-                    relatedId: b.id,
-                });
-            });
-
-            // 2. Payouts to artists
-            currentPayoutHistory.forEach(p => {
-                allTransactions.push({
-                    id: `payout-${p.id}`,
-                    date: new Date(p.paymentDate),
-                    type: 'Payout',
-                    description: `Payout to ${p.artistName}`,
-                    amount: -p.netPayout,
-                    relatedId: p.id,
-                });
-            });
-
-            allTransactions.sort((a,b) => b.date.getTime() - a.date.getTime());
-            setTransactions(allTransactions);
-            setFilteredTransactions(allTransactions);
+        return () => {
+            unsubBookings();
+            unsubPayouts();
         };
-        fetchTransactions();
+    }, []);
+
+    const updateTransactions = React.useCallback((bookingsData: Booking[] | null, payoutsData: PayoutHistory[] | null) => {
+        setTransactions(prevTransactions => {
+            let newTransactions: Transaction[] = [...prevTransactions];
+
+            if (bookingsData) {
+                // Remove old booking transactions to prevent duplicates
+                newTransactions = newTransactions.filter(t => t.type !== 'Revenue');
+                bookingsData.filter(b => b.status === 'Completed').forEach(b => {
+                    newTransactions.push({
+                        id: `rev-${b.id}`,
+                        date: new Date(b.date),
+                        type: 'Revenue',
+                        description: `Booking #${b.id} for ${b.service}`,
+                        amount: b.amount,
+                        relatedId: b.id,
+                    });
+                });
+            }
+
+            if (payoutsData) {
+                // Remove old payout transactions
+                newTransactions = newTransactions.filter(t => t.type !== 'Payout');
+                payoutsData.forEach(p => {
+                    newTransactions.push({
+                        id: `payout-${p.id}`,
+                        date: new Date(p.paymentDate),
+                        type: 'Payout',
+                        description: `Payout to ${p.artistName}`,
+                        amount: -p.netPayout,
+                        relatedId: p.id,
+                    });
+                });
+            }
+
+            newTransactions.sort((a,b) => b.date.getTime() - a.date.getTime());
+            setFilteredTransactions(newTransactions); // Also update filtered view
+            return newTransactions;
+        });
     }, []);
 
     const handleTransactionFilter = (filterType: 'all' | 'month' | 'year' | 'custom') => {

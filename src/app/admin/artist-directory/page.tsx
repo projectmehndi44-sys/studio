@@ -9,14 +9,15 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Input } from '@/components/ui/input';
 import { MapPin, Search } from 'lucide-react';
 import type { Artist } from '@/types';
-import { getArtists } from '@/lib/services';
+import { listenToCollection } from '@/lib/services';
 
 export default function ArtistDirectoryPage() {
     const [artists, setArtists] = React.useState<Artist[]>([]);
     const [searchTerm, setSearchTerm] = React.useState('');
 
     React.useEffect(() => {
-        getArtists().then(setArtists);
+        const unsubscribe = listenToCollection<Artist>('artists', setArtists);
+        return () => unsubscribe();
     }, []);
 
     const filteredArtists = artists.filter(artist => {
@@ -24,10 +25,10 @@ export default function ArtistDirectoryPage() {
         return (
             artist.name.toLowerCase().includes(search) ||
             artist.location.toLowerCase().includes(search) ||
-            artist.state?.toLowerCase().includes(search) ||
-            artist.district?.toLowerCase().includes(search) ||
-            artist.locality?.toLowerCase().includes(search) ||
-            artist.servingAreas?.toLowerCase().includes(search)
+            (artist.state || '').toLowerCase().includes(search) ||
+            (artist.district || '').toLowerCase().includes(search) ||
+            (artist.locality || '').toLowerCase().includes(search) ||
+            (artist.servingAreas || '').toLowerCase().includes(search)
         );
     });
 

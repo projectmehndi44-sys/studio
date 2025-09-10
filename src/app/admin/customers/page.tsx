@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import type { Customer } from '@/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
-import { getCustomers } from '@/lib/services';
+import { listenToCollection } from '@/lib/services';
 
 type CustomerWithStatus = Customer & { status: 'Active' | 'Suspended'; registeredOn: string; };
 
@@ -23,13 +23,15 @@ export default function CustomerManagementPage() {
     const [customers, setCustomers] = React.useState<CustomerWithStatus[]>([]);
 
     React.useEffect(() => {
-        getCustomers().then(fetchedCustomers => {
+        const unsubscribe = listenToCollection<Customer>('customers', (fetchedCustomers) => {
             setCustomers(fetchedCustomers.map((c: Customer) => ({
                 ...c,
-                status: c.name && c.name.includes('Sunita') ? 'Suspended' : 'Active', // Mocked status
-                registeredOn: new Date(Date.now() - Math.random() * 1000 * 60 * 60 * 24 * 30).toLocaleDateString() // Mocked date
+                status: 'Active', // Mocked status
+                registeredOn: new Date().toLocaleDateString() // Mocked date, needs a real timestamp field in data
             })));
         });
+
+        return () => unsubscribe();
     }, []);
     
     const handleAction = (action: string, customerId: string) => {

@@ -23,7 +23,7 @@ import { Separator } from '@/components/ui/separator';
 import { GoogleIcon } from '../icons';
 import { signInWithGoogle, setupRecaptcha, sendOtp } from '@/lib/firebase';
 import type { Customer } from '@/types';
-import { getCustomers, getCustomerByEmail, createCustomer } from '@/lib/services';
+import { getCustomerByPhone, getCustomerByEmail, createCustomer } from '@/lib/services';
 import type { ConfirmationResult } from 'firebase/auth';
 
 const loginSchema = z.object({
@@ -68,8 +68,7 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
     }
     
     setIsSendingOtp(true);
-    const customers = await getCustomers();
-    const existingCustomer = customers.find(c => c.phone === phone);
+    const existingCustomer = await getCustomerByPhone(phone);
 
     if (!existingCustomer) {
         toast({
@@ -112,8 +111,7 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
     
     try {
       await window.confirmationResult.confirm(data.otp);
-      const customers = await getCustomers();
-      const customer = customers.find(c => c.phone === data.phone);
+      const customer = await getCustomerByPhone(data.phone);
       
       if (customer) {
         localStorage.setItem('currentCustomerId', customer.id);
@@ -149,9 +147,9 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
         if (user && user.email) {
             let customer = await getCustomerByEmail(user.email);
             
-            if (!customer) {
+            if (!customer) { // If user doesn't exist, create a new customer account
               const newCustomerData: Omit<Customer, 'id'> & {id: string} = {
-                  id: user.uid,
+                  id: user.uid, // Use Firebase UID as the document ID
                   name: user.displayName || 'Google User',
                   phone: user.phoneNumber || '',
                   email: user.email,
@@ -164,7 +162,6 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
             handleClose();
         }
     } catch (error: any) {
-        // This catches the auth/cancelled-popup-request error
         if (error.code !== 'auth/cancelled-popup-request' && error.code !== 'auth/popup-closed-by-user') {
            console.error("Google Sign-In Error:", error);
             toast({

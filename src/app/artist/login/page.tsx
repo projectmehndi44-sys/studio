@@ -13,8 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Home } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import type { Artist } from '@/types';
-import { artists as initialArtists } from '@/lib/data';
-import Image from 'next/image';
+import { listenToCollection, updateArtist } from '@/lib/services';
 
 export default function ArtistLoginPage() {
     const router = useRouter();
@@ -22,6 +21,7 @@ export default function ArtistLoginPage() {
     const [email, setEmail] = React.useState('');
     const [password, setPassword] = React.useState('');
     const [isLoading, setIsLoading] = React.useState(false);
+    const [approvedArtists, setApprovedArtists] = React.useState<Artist[]>([]);
 
     // State for the multi-step forgot password modal
     const [isForgotPasswordOpen, setIsForgotPasswordOpen] = React.useState(false);
@@ -32,25 +32,16 @@ export default function ArtistLoginPage() {
     const [confirmNewPassword, setConfirmNewPassword] = React.useState('');
     const [verifiedArtist, setVerifiedArtist] = React.useState<Artist | null>(null);
 
-    const getApprovedArtists = (): Artist[] => {
-        const storedArtists = localStorage.getItem('artists');
-        const localArtists = storedArtists ? JSON.parse(storedArtists) : [];
-        // Combine initial artists with those from local storage, ensuring no duplicates.
-        const allArtists = [...initialArtists];
-        localArtists.forEach((localArtist: Artist) => {
-            if (!allArtists.some(a => a.id === localArtist.id)) {
-                allArtists.push(localArtist);
-            }
-        });
-        return allArtists;
-    };
+    React.useEffect(() => {
+        const unsubscribe = listenToCollection<Artist>('artists', setApprovedArtists);
+        return () => unsubscribe();
+    }, []);
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
         setTimeout(() => {
-            const approvedArtists = getApprovedArtists();
             const artist = approvedArtists.find(
                 (a: Artist) => a.email === email && a.password === password
             );
@@ -86,7 +77,6 @@ export default function ArtistLoginPage() {
 
     const handleForgotPasswordEmailSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const approvedArtists = getApprovedArtists();
         const artist = approvedArtists.find(a => a.email === forgotPasswordEmail);
 
         if (artist) {
@@ -119,8 +109,10 @@ export default function ArtistLoginPage() {
         }
     };
     
-    const handlePasswordResetSubmit = (e: React.FormEvent) => {
+    const handlePasswordResetSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!verifiedArtist) return;
+
         if (newPassword !== confirmNewPassword) {
             toast({ title: 'Passwords do not match.', variant: 'destructive' });
             return;
@@ -130,21 +122,15 @@ export default function ArtistLoginPage() {
             return;
         }
 
-        const approvedArtists: Artist[] = getApprovedArtists();
-        const artistIndex = approvedArtists.findIndex(a => a.id === verifiedArtist!.id);
-        
-        if (artistIndex > -1) {
-            approvedArtists[artistIndex].password = newPassword;
-            // Only update localStorage, as initialArtists is a constant
-            const localArtists = JSON.parse(localStorage.getItem('artists') || '[]').map((a: Artist) => a.id === verifiedArtist!.id ? {...a, password: newPassword} : a);
-            localStorage.setItem('artists', JSON.stringify(localArtists));
-            
+        try {
+            await updateArtist(verifiedArtist.id, { password: newPassword });
             toast({
                 title: 'Password Reset Successful',
                 description: 'You can now log in with your new password.',
             });
             setIsForgotPasswordOpen(false);
-        } else {
+        } catch (error) {
+             console.error("Password Reset Error:", error);
              toast({ title: 'An error occurred. Please try again.', variant: 'destructive' });
         }
     };

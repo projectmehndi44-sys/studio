@@ -8,9 +8,8 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import type { Artist } from '@/types';
-import { artists as initialArtists } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
-
+import { updateArtist } from '@/lib/services';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -97,34 +96,14 @@ export default function ArtistProfilePage() {
     const watchServices = form.watch('services');
     const watchReferralDiscount = form.watch('referralDiscount');
 
-    const getArtists = (): Artist[] => {
-         const storedArtists = localStorage.getItem('artists');
-         const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
-         const allArtistsMap = new Map<string, Artist>();
-         initialArtists.forEach(a => allArtistsMap.set(a.id, a));
-         localArtists.forEach(a => allArtistsMap.set(a.id, a));
-         return Array.from(allArtistsMap.values());
-    }
-    
-    const saveArtists = (artists: Artist[]) => {
-        const artistsToStore = artists.filter(a => {
-            const initialArtist = initialArtists.find(ia => ia.id === a.id);
-            if (!initialArtist) return true;
-            return JSON.stringify(initialArtist) !== JSON.stringify(a);
-        });
-
-        localStorage.setItem('artists', JSON.stringify(artistsToStore));
-        window.dispatchEvent(new Event('storage'));
-    };
-
     React.useEffect(() => {
         if (artist) {
             form.reset({
                 name: artist.name,
                 location: artist.location,
                 charges: artist.charges,
-                services: artist.services,
-                styleTags: artist.styleTags.map(tag => ({ value: tag })),
+                services: artist.services || [],
+                styleTags: (artist.styleTags || []).map(tag => ({ value: tag })),
                 state: artist.state,
                 district: artist.district,
                 locality: artist.locality,
@@ -137,19 +116,10 @@ export default function ArtistProfilePage() {
         }
     }, [artist, router, form]);
 
-    const onSubmit = (data: ProfileFormValues) => {
+    const onSubmit = async (data: ProfileFormValues) => {
         if (!artist) return;
         
-        const allArtists = getArtists();
-        const artistIndex = allArtists.findIndex(a => a.id === artist.id);
-
-        if (artistIndex === -1) {
-            toast({ title: 'Error', description: 'Could not find your profile to update.', variant: 'destructive' });
-            return;
-        }
-
-        const updatedArtist: Artist = {
-            ...allArtists[artistIndex],
+        const dataToUpdate: Partial<Artist> = {
             name: data.name,
             location: data.location,
             charges: data.charges,
@@ -162,37 +132,36 @@ export default function ArtistProfilePage() {
             referralCode: data.referralCode,
             referralDiscount: data.referralDiscount,
         };
-        
+
         if (data.password) {
-            updatedArtist.password = data.password;
+            dataToUpdate.password = data.password;
         }
         
-        allArtists[artistIndex] = updatedArtist;
-        saveArtists(allArtists);
-        setArtist(updatedArtist);
-        
-        form.reset({ ...data, password: '', confirmPassword: '' });
-        
-        toast({
-            title: "Profile Updated",
-            description: "Your public profile has been successfully updated.",
-        });
+        try {
+            await updateArtist(artist.id, dataToUpdate);
+            if (setArtist) {
+                setArtist(prev => prev ? { ...prev, ...dataToUpdate } as Artist : null);
+            }
+            form.reset({ ...data, password: '', confirmPassword: '' });
+            toast({
+                title: "Profile Updated",
+                description: "Your public profile has been successfully updated.",
+            });
+        } catch (error) {
+            console.error("Failed to update profile:", error);
+            toast({ title: 'Error', description: 'Could not update profile.', variant: 'destructive' });
+        }
     };
 
-    const handleProfilePicUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleProfilePicUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file && artist) {
-            const newProfilePicUrl = URL.createObjectURL(file);
-            const allArtists = getArtists();
-            const artistIndex = allArtists.findIndex(a => a.id === artist.id);
-            if (artistIndex === -1) return;
-
-            const updatedArtist = { ...allArtists[artistIndex], profilePicture: newProfilePicUrl };
-            allArtists[artistIndex] = updatedArtist;
-
-            saveArtists(allArtists);
+            const newProfilePicUrl = URL.createObjectURL(file); // This is a temporary local URL
+            // In a real app, you would upload `file` to Firebase Storage and get a permanent URL.
+            // For now, we'll just show the local preview and simulate the update.
+            const updatedArtist = { ...artist, profilePicture: newProfilePicUrl };
+            await updateArtist(artist.id, { profilePicture: newProfilePicUrl });
             setArtist(updatedArtist);
-
             toast({ title: "Profile picture updated!" });
         }
     };
@@ -213,40 +182,23 @@ export default function ArtistProfilePage() {
         }
     };
 
-    const handleImageDelete = (imageSrc: string) => {
-        if (!artist) return;
+    const handleImageDelete = async (imageSrc: string) => {
+        if (!artist || !artist.workImages) return;
     
         const updatedWorkImages = artist.workImages.filter(src => src !== imageSrc);
-        
-        const allArtists = getArtists();
-        const artistIndex = allArtists.findIndex(a => a.id === artist.id);
-        if (artistIndex === -1) return;
-
-        const updatedArtist = { ...allArtists[artistIndex], workImages: updatedWorkImages };
-        allArtists[artistIndex] = updatedArtist;
-
-        saveArtists(allArtists);
-        setArtist(updatedArtist);
-        
+        await updateArtist(artist.id, { workImages: updatedWorkImages });
+        setArtist({ ...artist, workImages: updatedWorkImages });
         toast({ title: "Image deleted", variant: "destructive" });
     };
 
-    const handleGalleryUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleGalleryUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (files && files.length > 0 && artist) {
+            // Again, this is a simulation. You'd upload these to Firebase Storage.
             const newImageUrls = Array.from(files).map(file => URL.createObjectURL(file));
-
-            const allArtists = getArtists();
-            const artistIndex = allArtists.findIndex(a => a.id === artist.id);
-            if (artistIndex === -1) return;
-            
-            const updatedWorkImages = [...artist.workImages, ...newImageUrls];
-            const updatedArtist = { ...allArtists[artistIndex], workImages: updatedWorkImages };
-            allArtists[artistIndex] = updatedArtist;
-            
-            saveArtists(allArtists);
-            setArtist(updatedArtist);
-
+            const updatedWorkImages = [...(artist.workImages || []), ...newImageUrls];
+            await updateArtist(artist.id, { workImages: updatedWorkImages });
+            setArtist({ ...artist, workImages: updatedWorkImages });
             toast({ title: `${files.length} image(s) added to your gallery.` });
         }
     };
@@ -340,7 +292,7 @@ export default function ArtistProfilePage() {
                                                         <FormLabel>Base Price for Mehndi</FormLabel>
                                                         <div className="relative">
                                                             <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                                            <FormControl><Input type="number" placeholder="2500" {...field} className="pl-8" /></FormControl>
+                                                            <FormControl><Input type="number" placeholder="2500" {...field} /></FormControl>
                                                         </div>
                                                         <FormMessage />
                                                     </FormItem>
@@ -352,7 +304,7 @@ export default function ArtistProfilePage() {
                                                         <FormLabel>Base Price for Makeup</FormLabel>
                                                         <div className="relative">
                                                             <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                                            <FormControl><Input type="number" placeholder="5000" {...field} className="pl-8" /></FormControl>
+                                                            <FormControl><Input type="number" placeholder="5000" {...field} /></FormControl>
                                                         </div>
                                                         <FormMessage />
                                                     </FormItem>
@@ -364,7 +316,7 @@ export default function ArtistProfilePage() {
                                                         <FormLabel>Base Price for Photography</FormLabel>
                                                         <div className="relative">
                                                             <IndianRupee className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                                            <FormControl><Input type="number" placeholder="10000" {...field} className="pl-8" /></FormControl>
+                                                            <FormControl><Input type="number" placeholder="10000" {...field} /></FormControl>
                                                         </div>
                                                         <FormMessage />
                                                     </FormItem>
@@ -493,7 +445,7 @@ export default function ArtistProfilePage() {
                                         <div className="space-y-2">
                                             <Label>Work Gallery</Label>
                                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                            {artist.workImages.map((src, index) => (
+                                            {(artist.workImages || []).map((src, index) => (
                                                 <div key={index} className="relative group">
                                                     <NextImage src={src} alt={`Work ${index + 1}`} width={200} height={150} className="rounded-md object-cover w-full aspect-[4/3]"/>
                                                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
