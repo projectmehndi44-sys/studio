@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAdminAuth } from '@/hooks/use-admin-auth';
 import { Separator } from '@/components/ui/separator';
 import { doc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getDb } from '@/lib/firebase';
 import { listenToCollection } from '@/lib/services';
 
 const categorySchema = z.object({
@@ -77,6 +77,7 @@ export default function PackageManagementPage() {
     
     const savePackages = async (updatedPackages: MasterServicePackage[]) => {
         setMasterServices(updatedPackages);
+        const db = await getDb();
         // Also save to Firestore
         await setDoc(doc(db, "config", "masterServices"), { packages: updatedPackages });
         window.dispatchEvent(new Event('storage'));
