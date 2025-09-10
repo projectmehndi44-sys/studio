@@ -26,8 +26,8 @@ export const PERMISSION_MODULES: { key: keyof Permissions, label: string }[] = [
 ];
 
 
-// In a real application, this data would be stored securely in a database.
-// Passwords should always be hashed.
+// This data is used to seed the Firestore database for team members if it's empty.
+// The username and password here are the primary superadmin credentials.
 export const teamMembers: TeamMember[] = [
     {
         id: 'user_001',
