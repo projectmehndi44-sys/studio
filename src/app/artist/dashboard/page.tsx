@@ -25,7 +25,7 @@ export default function ArtistDashboardPage() {
     const totalRevenue = completedBookings.reduce((sum, b) => sum + b.amount, 0);
     const totalBookings = artistBookings.length;
     const averageRating = artist.rating;
-    const upcomingBookingsCount = artistBookings.filter(b => b.status === 'Confirmed' && b.date.toDate() > new Date()).length;
+    const upcomingBookingsCount = artistBookings.filter(b => b.status === 'Confirmed' && b.eventDate.toDate() > new Date()).length;
 
     // Recent activity data
     const recentBookings = [...artistBookings].slice(0, 5);

@@ -51,31 +51,22 @@ async function setConfigDocument(docId: string, data: any): Promise<void> {
 // --- Listener Functions for Real-Time Data ---
 
 export const listenToCollection = <T>(collectionName: string, callback: (data: T[]) => void): Unsubscribe => {
-    // Special cases for data stored in single docs within 'config'
-    const configCollections = ['masterServices', 'teamMembers', 'promotions'];
-    if (configCollections.includes(collectionName)) {
-        const docId = collectionName;
-        const docRef = doc(db, 'config', docId);
-        const unsubscribe = onSnapshot(docRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                // Data is nested under a key, e.g., { packages: [] } or { members: [] }
-                const key = collectionName === 'masterServices' ? 'packages' : (collectionName === 'teamMembers' ? 'members' : 'promos');
-                callback(data[key] || []);
-            } else {
-                callback([]);
-            }
-        }, (error) => {
-            console.error(`Error listening to ${collectionName}: `, error);
-        });
-        return unsubscribe;
-    }
-
-
     const q = query(collection(db, collectionName));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const data: T[] = querySnapshot.docs.map(doc => {
             const docData = doc.data();
+            // Firestore timestamps need to be converted to JS Dates for client-side use
+            // This is a simplified check; a more robust solution would iterate over all fields
+            // For now, we specifically handle the 'date' field in bookings
+            if (docData.date && typeof docData.date.toDate === 'function') {
+                docData.date = docData.date.toDate();
+            }
+             if (docData.eventDate && typeof docData.eventDate.toDate === 'function') {
+                docData.eventDate = docData.eventDate.toDate();
+            }
+            if (docData.serviceDates && Array.isArray(docData.serviceDates)) {
+                docData.serviceDates = docData.serviceDates.map((d: any) => d.toDate ? d.toDate() : d);
+            }
             return { id: doc.id, ...docData } as T;
         });
         callback(data);
@@ -95,6 +86,7 @@ export const createArtist = async (id: string, data: Omit<Artist, 'id'>): Promis
     // Use email as the document ID for artists created via admin onboarding
     const artistRef = doc(db, "artists", id);
     await setDoc(artistRef, data);
+    window.dispatchEvent(new Event('storage')); // Trigger UI updates
     return id;
 };
 export const updateArtist = async (id: string, data: Partial<Artist>): Promise<void> => {
@@ -141,7 +133,8 @@ export const getCustomerByEmail = async (email: string): Promise<Customer | null
 export const createCustomer = async (data: Omit<Customer, 'id'> & {id?: string}): Promise<string> => {
     const customerId = data.id || data.phone; // Use UID from Google or phone number
     const customerRef = doc(db, "customers", customerId);
-    await setDoc(customerRef, { ...data }, { merge: true });
+    const { id, ...dataToSave } = data;
+    await setDoc(customerRef, dataToSave, { merge: true });
     return customerId;
 };
 
@@ -216,7 +209,8 @@ export const getCustomers = async (): Promise<Customer[]> => getCollection<Custo
 export const getMasterServices = async (): Promise<MasterServicePackage[]> => {
     const docSnap = await getDoc(doc(db, "config", "masterServices"));
     if (docSnap.exists()) {
-        return docSnap.data().packages || [];
+        const data = docSnap.data();
+        return data.packages || [];
     }
     return [];
 };

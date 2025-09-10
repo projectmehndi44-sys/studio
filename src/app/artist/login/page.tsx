@@ -35,11 +35,10 @@ export default function ArtistLoginPage() {
         e.preventDefault();
         setIsLoading(true);
         
-        const approvedArtists = await getArtists();
-        
-        setTimeout(() => {
+        try {
+            const approvedArtists = await getArtists();
             const artist = approvedArtists.find(
-                (a: Artist) => a.email === email && a.password === password
+                (a: Artist) => a.email === email && a.password === password && a.status !== 'suspended'
             );
 
             if (artist) {
@@ -53,12 +52,16 @@ export default function ArtistLoginPage() {
             } else {
                  toast({
                     title: 'Login Failed',
-                    description: 'Invalid credentials or your account is not yet approved. Please try again.',
+                    description: 'Invalid credentials, your account is not yet approved, or your account has been suspended.',
                     variant: 'destructive',
                 });
             }
+        } catch (error) {
+            console.error("Login error:", error);
+            toast({ title: 'An error occurred during login.', variant: 'destructive'});
+        } finally {
             setIsLoading(false);
-        }, 1000);
+        }
     };
     
     // Reset modal state when it's closed

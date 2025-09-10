@@ -105,7 +105,7 @@ export default function ArtistDetailPage() {
     
     const platformFee = totalRevenue * platformFeePercentage;
     const netPayout = totalRevenue - platformFee;
-    const bookedDates = bookings.flatMap(b => b.serviceDates || []);
+    const bookedDates = bookings.flatMap(b => b.serviceDates?.map(d => d.toDate()) || []);
 
     return (
         <>
@@ -220,7 +220,7 @@ export default function ArtistDetailPage() {
                                     {bookings.slice(0, 5).map(booking => (
                                         <TableRow key={booking.id}>
                                             <TableCell>{booking.customerName}</TableCell>
-                                            <TableCell>{new Date(booking.date).toLocaleDateString()}</TableCell>
+                                            <TableCell>{booking.date.toDate().toLocaleDateString()}</TableCell>
                                             <TableCell>₹{booking.amount}</TableCell>
                                             <TableCell>
                                                 <Badge variant={booking.status === 'Completed' ? 'default' : 'secondary'}>

@@ -56,28 +56,34 @@ export default function ArtistNotificationsPage() {
     const [allBookings, setAllBookings] = React.useState<Booking[]>([]);
 
     React.useEffect(() => {
-        getBookings().then(setAllBookings);
+        getBookings().then((bookings) => {
+            setAllBookings(bookings.map(b => ({
+                ...b,
+                date: b.date.toDate ? b.date.toDate() : new Date(b.date),
+                eventDate: b.eventDate.toDate ? b.eventDate.toDate() : new Date(b.eventDate),
+                serviceDates: b.serviceDates.map(d => d.toDate ? d.toDate() : new Date(d)),
+            } as any)))
+        });
     }, []);
     
     if (!artist) return null;
 
     const updateNotificationsInStorage = (updated: Notification[]) => {
         // This is a mock function. In a real app, you'd update this in Firestore.
-        const allNotifications: Notification[] = JSON.parse(localStorage.getItem('notifications') || '[]');
-        const otherArtistsNotifications = allNotifications.filter(n => n.artistId !== artist.id);
-        localStorage.setItem('notifications', JSON.stringify([...updated, ...otherArtistsNotifications]));
-        window.dispatchEvent(new Event('storage'));
+        // The actual update should happen via a service function that updates the doc.
     }
     
     const markOneAsRead = (id: string) => {
         const updated = notifications.map(n => n.id === id ? { ...n, isRead: true } : n);
         setNotifications(updated); // Update local state immediately
+        // In a real app, call a service function like `updateNotification(id, { isRead: true })`
         updateNotificationsInStorage(updated);
     }
 
     const markAllAsRead = () => {
         const updated = notifications.map(n => ({...n, isRead: true}));
         setNotifications(updated); // Update local state immediately
+        // In a real app, call a service function like `markAllNotificationsAsRead(artist.id)`
         updateNotificationsInStorage(updated);
     };
 

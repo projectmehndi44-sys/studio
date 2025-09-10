@@ -94,7 +94,7 @@ export default function ArtistPayoutsPage() {
                                                 {payouts.map(booking => (
                                                     <TableRow key={booking.id}>
                                                         <TableCell>{booking.customerName}</TableCell>
-                                                        <TableCell>{new Date(booking.date).toLocaleDateString()}</TableCell>
+                                                        <TableCell>{booking.date.toDate().toLocaleDateString()}</TableCell>
                                                         <TableCell>₹{booking.amount.toLocaleString()}</TableCell>
                                                         <TableCell><Badge variant={booking.paymentMethod === 'online' ? 'default' : 'secondary'}>{booking.paymentMethod === 'online' ? 'Paid Online' : 'Pay at Venue'}</Badge></TableCell>
                                                     </TableRow>
