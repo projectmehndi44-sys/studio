@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { useToast } from './use-toast';
 
 const useInactivityTimeout = (logoutAction: () => void, timeout = 300000) => { // Default to 5 minutes
-    const router = useRouter();
     const { toast } = useToast();
     const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
@@ -14,7 +13,6 @@ const useInactivityTimeout = (logoutAction: () => void, timeout = 300000) => { /
         if (timeoutRef.current) {
             clearTimeout(timeoutRef.current);
         }
-        if (typeof window === 'undefined') return; // Don't run on server
         timeoutRef.current = setTimeout(() => {
             toast({
                 title: "Session Expired",
@@ -26,7 +24,10 @@ const useInactivityTimeout = (logoutAction: () => void, timeout = 300000) => { /
     }, [timeout, logoutAction, toast]);
 
     React.useEffect(() => {
-        if (typeof window === 'undefined') return; // Don't run on server
+        // Do not run this hook on the server
+        if (typeof window === 'undefined') {
+            return;
+        }
 
         const events = ['mousemove', 'keydown', 'click', 'scroll'];
         

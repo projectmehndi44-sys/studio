@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -37,7 +36,6 @@ const profileSchema = z.object({
   styleTags: z.array(z.object({ value: z.string().min(1, "Tag cannot be empty.") })),
   password: z.string().optional().or(z.literal('')),
   confirmPassword: z.string().optional(),
-  // Add location fields to schema
   state: z.string().optional(),
   district: z.string().optional(),
   locality: z.string().optional(),
@@ -48,14 +46,31 @@ const profileSchema = z.object({
   message: "Passwords don't match",
   path: ["confirmPassword"],
 }).refine(data => {
-    if (data.services.includes('mehndi') && (data.charges.mehndi === undefined || data.charges.mehndi <= 0)) return false;
-    if (data.services.includes('makeup') && (data.charges.makeup === undefined || data.charges.makeup <= 0)) return false;
-    if (data.services.includes('photography') && (data.charges.photography === undefined || data.charges.photography <= 0)) return false;
+    if (data.services.includes('mehndi')) {
+        return data.charges.mehndi !== undefined && data.charges.mehndi > 0;
+    }
     return true;
 }, {
-    message: "A base price is required for each selected service.",
-    path: ["charges"],
+    message: "A base price is required for the Mehndi service.",
+    path: ["charges.mehndi"],
+}).refine(data => {
+    if (data.services.includes('makeup')) {
+        return data.charges.makeup !== undefined && data.charges.makeup > 0;
+    }
+    return true;
+}, {
+    message: "A base price is required for the Makeup service.",
+    path: ["charges.makeup"],
+}).refine(data => {
+    if (data.services.includes('photography')) {
+        return data.charges.photography !== undefined && data.charges.photography > 0;
+    }
+    return true;
+}, {
+    message: "A base price is required for the Photography service.",
+    path: ["charges.photography"],
 });
+
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
@@ -472,5 +487,3 @@ export default function ArtistProfilePage() {
         </div>
     );
 }
-
-    

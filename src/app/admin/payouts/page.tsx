@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -29,11 +28,30 @@ export default function PayoutManagementPage() {
     const [bookings, setBookings] = React.useState<Booking[]>([]);
     const [payouts, setPayouts] = React.useState<Payout[]>([]);
     const [payoutHistory, setPayoutHistory] = React.useState<PayoutHistory[]>([]);
+    const [platformFeePercentage, setPlatformFeePercentage] = React.useState(0.1);
 
 
-    const calculatePayouts = React.useCallback(async () => {
-        let { platformFeePercentage } = await getFinancialSettings();
-        platformFeePercentage = platformFeePercentage / 100;
+    React.useEffect(() => {
+        getFinancialSettings().then(settings => {
+            setPlatformFeePercentage(settings.platformFeePercentage / 100);
+        });
+
+        const unsubscribeBookings = listenToCollection<Booking>('bookings', setBookings);
+        const unsubscribeArtists = listenToCollection<Artist>('artists', setArtists);
+        const unsubscribeHistory = listenToCollection<PayoutHistory>('payoutHistory', setPayoutHistory);
+
+        return () => {
+            unsubscribeBookings();
+            unsubscribeArtists();
+            unsubscribeHistory();
+        };
+    }, []);
+
+    const calculatePayouts = React.useCallback(() => {
+        if (artists.length === 0 || bookings.length === 0) {
+            setPayouts([]);
+            return;
+        };
 
         const payoutMap: Record<string, Payout> = {};
 
@@ -88,25 +106,11 @@ export default function PayoutManagementPage() {
 
         setPayouts(Object.values(payoutMap));
 
-    }, [bookings, artists]);
+    }, [bookings, artists, platformFeePercentage]);
 
     React.useEffect(() => {
-        const unsubscribeBookings = listenToCollection<Booking>('bookings', setBookings);
-        const unsubscribeArtists = listenToCollection<Artist>('artists', setArtists);
-        const unsubscribeHistory = listenToCollection<PayoutHistory>('payoutHistory', setPayoutHistory);
-
-        return () => {
-            unsubscribeBookings();
-            unsubscribeArtists();
-            unsubscribeHistory();
-        };
-    }, []);
-
-    React.useEffect(() => {
-        if (artists.length > 0 && bookings.length > 0) {
-            calculatePayouts();
-        }
-    }, [bookings, artists, calculatePayouts]);
+        calculatePayouts();
+    }, [calculatePayouts]);
     
     const handleMarkAsPaid = async (payout: Payout) => {
         const newHistoryRecord: Omit<PayoutHistory, 'id'> = {

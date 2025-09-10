@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -248,8 +247,8 @@ export default function ArtistDetailPage() {
                             <CardDescription>{(artist.reviews || []).length} reviews received</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {(artist.reviews || []).map(review => (
-                                <div key={review.id} className="border-l-4 border-accent pl-4">
+                            {(artist.reviews || []).map((review, index) => (
+                                <div key={index} className="border-l-4 border-accent pl-4">
                                     <div className="flex items-center justify-between">
                                         <p className="font-semibold">{review.customerName}</p>
                                         <div className="flex items-center gap-1 text-amber-500">
