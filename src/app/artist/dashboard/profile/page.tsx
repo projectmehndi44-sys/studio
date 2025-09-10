@@ -47,7 +47,7 @@ const profileSchema = z.object({
   path: ["confirmPassword"],
 }).refine(data => {
     if (data.services.includes('mehndi')) {
-        return data.charges.mehndi !== undefined && data.charges.mehndi > 0;
+        return data.charges && data.charges.mehndi !== undefined && data.charges.mehndi > 0;
     }
     return true;
 }, {
@@ -55,7 +55,7 @@ const profileSchema = z.object({
     path: ["charges.mehndi"],
 }).refine(data => {
     if (data.services.includes('makeup')) {
-        return data.charges.makeup !== undefined && data.charges.makeup > 0;
+        return data.charges && data.charges.makeup !== undefined && data.charges.makeup > 0;
     }
     return true;
 }, {
@@ -63,7 +63,7 @@ const profileSchema = z.object({
     path: ["charges.makeup"],
 }).refine(data => {
     if (data.services.includes('photography')) {
-        return data.charges.photography !== undefined && data.charges.photography > 0;
+        return data.charges && data.charges.photography !== undefined && data.charges.photography > 0;
     }
     return true;
 }, {

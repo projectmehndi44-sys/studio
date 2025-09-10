@@ -9,7 +9,13 @@ import { teamMembers as initialTeamMembers } from './team-data';
 async function getDocument<T>(collectionName: string, id: string): Promise<T | null> {
     const docRef = doc(db, collectionName, id);
     const docSnap = await getDoc(docRef);
-    return docSnap.exists() ? ({ id: docSnap.id, ...docSnap.data() } as unknown as T) : null;
+    if (!docSnap.exists()) return null;
+    const data = docSnap.data();
+    // Ensure charges object exists for artists
+    if (collectionName === 'artists' && !data.charges) {
+        data.charges = {};
+    }
+    return { id: docSnap.id, ...data } as T;
 }
 
 // Generic function to get a config document
@@ -54,20 +60,7 @@ export const listenToCollection = <T>(collectionName: string, callback: (data: T
     const q = query(collection(db, collectionName));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
         const data: T[] = querySnapshot.docs.map(doc => {
-            const docData = doc.data();
-            // Firestore timestamps need to be converted to JS Dates for client-side use
-            // This is a simplified check; a more robust solution would iterate over all fields
-            // For now, we specifically handle the 'date' field in bookings
-            if (docData.date && typeof docData.date.toDate === 'function') {
-                docData.date = docData.date.toDate();
-            }
-             if (docData.eventDate && typeof docData.eventDate.toDate === 'function') {
-                docData.eventDate = docData.eventDate.toDate();
-            }
-            if (docData.serviceDates && Array.isArray(docData.serviceDates)) {
-                docData.serviceDates = docData.serviceDates.map((d: any) => d.toDate ? d.toDate() : d);
-            }
-            return { id: doc.id, ...docData } as T;
+            return { id: doc.id, ...doc.data() } as T;
         });
         callback(data);
     }, (error) => {
