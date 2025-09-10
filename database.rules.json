@@ -3,24 +3,14 @@
     "databases": {
       "{database}": {
         "documents": {
-          
-          // PUBLIC READ-ONLY: Allow ANYONE to read master services, locations, and the team list.
-          // This is essential for the UI and the login page to function before a user is authenticated.
-          // Write access is blocked to prevent public modification.
-          "match /config/{docId}": {
-             "allow read": "if true;",
-             "allow write": "if request.auth != null;"
-          },
-
-          // PUBLIC ARTIST LISTING: Allow ANYONE to read the list of artists for the homepage.
-          // Write access is blocked to prevent public modification.
           "match /artists/{artistId}": {
             "allow read": "if true;",
             "allow write": "if request.auth != null;"
           },
-
-          // AUTHENTICATED USERS: Allow any user who is successfully logged in 
-          // to perform actions on the rest of the database.
+          "match /config/{docId}": {
+            "allow read": "if true;",
+            "allow write": "if request.auth != null;"
+          },
           "match /{document=**}": {
             "allow read, write": "if request.auth != null;"
           }
