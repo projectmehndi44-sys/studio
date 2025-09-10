@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Sparkles, Wand2, Upload } from 'lucide-react';
 import Image from 'next/image';
 import { MakeupIcon, MehndiIcon } from '../icons';
+import { Input } from '../ui/input';
 
 const styleMatchSchema = z.object({
   eventDescription: z.string().min(10, { message: "Please describe your event in a bit more detail." }),
@@ -66,7 +67,11 @@ export function StyleMatch() {
         eventDescription: data.eventDescription,
       });
 
-      setRecommendations(result);
+      if (result) {
+        setRecommendations(result);
+      } else {
+        throw new Error("AI could not generate a response.");
+      }
 
     } catch (error) {
       console.error(error);

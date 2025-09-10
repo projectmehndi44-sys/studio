@@ -30,7 +30,13 @@ export async function fetchRecommendations(
 
 export async function fetchStyleMatch(
   input: StyleMatchInput
-): Promise<StyleMatchOutput> {
+): Promise<StyleMatchOutput | null> {
+  try {
     const recommendations = await getStyleMatch(input);
     return recommendations;
+  } catch (error) {
+    console.error('Error fetching style match:', error);
+    // In a real app, you would have more robust error handling
+    return null;
+  }
 }
