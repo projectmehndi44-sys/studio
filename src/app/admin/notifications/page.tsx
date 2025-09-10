@@ -3,7 +3,6 @@
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,14 +13,9 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Bell, Send, Upload, Image as ImageIcon, Users, User } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { artists } from '@/lib/data';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
-
-const customers = [
-    { id: 'cust_101', name: 'Priya Patel', phone: '9123456780' },
-    { id: 'cust_102', name: 'Amit Singh', phone: '9098765432' },
-    { id: 'cust_103', name: 'Sunita Rao', phone: '9988776655' }
-];
+import type { Artist, Customer } from '@/types';
+import { listenToCollection } from '@/lib/services';
 
 export default function NotificationPage() {
     const router = useRouter();
@@ -30,6 +24,19 @@ export default function NotificationPage() {
     const [isLoading, setIsLoading] = React.useState(false);
     const [imagePreview, setImagePreview] = React.useState<string | null>(null);
     const [selectedUsers, setSelectedUsers] = React.useState<string[]>([]);
+    
+    const [artists, setArtists] = React.useState<Artist[]>([]);
+    const [customers, setCustomers] = React.useState<Customer[]>([]);
+
+    React.useEffect(() => {
+        const unsubscribeArtists = listenToCollection<Artist>('artists', setArtists);
+        const unsubscribeCustomers = listenToCollection<Customer>('customers', setCustomers);
+
+        return () => {
+            unsubscribeArtists();
+            unsubscribeCustomers();
+        }
+    }, []);
     
     const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -9,9 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Save } from 'lucide-react';
-import { artists as initialArtists } from '@/lib/data';
 import { formatISO, isSameDay, parseISO } from 'date-fns';
 import { useArtistPortal } from '../layout';
+import { updateArtist } from '@/lib/services';
 
 
 export default function ArtistAvailabilityPage() {
@@ -30,51 +29,31 @@ export default function ArtistAvailabilityPage() {
     const bookedDates = React.useMemo(() => {
         return artistBookings
             .filter(b => b.status === 'Confirmed' || b.status === 'Completed')
-            .map(b => new Date(b.date));
+            .flatMap(b => b.serviceDates.map(d => d.toDate()));
     }, [artistBookings]);
-    
-    const getArtists = (): Artist[] => {
-         const storedArtists = localStorage.getItem('artists');
-         const localArtists: Artist[] = storedArtists ? JSON.parse(storedArtists) : [];
-         const allArtistsMap = new Map<string, Artist>();
-         initialArtists.forEach(a => allArtistsMap.set(a.id, a));
-         localArtists.forEach(a => allArtistsMap.set(a.id, a));
-         return Array.from(allArtistsMap.values());
-    }
-    
-    const saveArtists = (artists: Artist[]) => {
-        const artistsToStore = artists.filter(a => {
-            const initial = initialArtists.find(ia => ia.id === a.id);
-            if (!initial) return true;
-            return JSON.stringify(initial) !== JSON.stringify(a);
-        });
-        localStorage.setItem('artists', JSON.stringify(artistsToStore));
-        window.dispatchEvent(new Event('storage'));
-    };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (!artist) return;
         
-        const allArtists = getArtists();
-        const artistIndex = allArtists.findIndex(a => a.id === artist.id);
-        
-        if (artistIndex === -1) {
-            toast({ title: "Error", description: "Could not find your profile to update.", variant: "destructive" });
-            return;
+        try {
+             // Convert dates to timezone-agnostic format 'yyyy-MM-dd' for reliable storage
+            const datesToSave = unavailableDates.map(d => formatISO(d, { representation: 'date' }));
+            
+            await updateArtist(artist.id, { unavailableDates: datesToSave });
+
+            if (setArtist) {
+                setArtist(prev => prev ? { ...prev, unavailableDates: datesToSave } : null);
+            }
+
+            toast({
+                title: "Availability Saved",
+                description: "Your calendar has been updated successfully.",
+            });
+
+        } catch (error) {
+             console.error("Failed to save availability:", error);
+             toast({ title: "Error", description: "Could not save your availability.", variant: "destructive" });
         }
-
-        // Convert dates to timezone-agnostic format 'yyyy-MM-dd' for reliable storage
-        const datesToSave = unavailableDates.map(d => formatISO(d, { representation: 'date' }));
-        const updatedArtist = { ...allArtists[artistIndex], unavailableDates: datesToSave };
-        
-        allArtists[artistIndex] = updatedArtist;
-        saveArtists(allArtists);
-        setArtist(updatedArtist);
-
-        toast({
-            title: "Availability Saved",
-            description: "Your calendar has been updated successfully.",
-        });
     };
     
     const handleDayClick = (day: Date, modifiers: { booked?: boolean }) => {
