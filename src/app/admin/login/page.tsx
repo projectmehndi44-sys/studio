@@ -49,9 +49,11 @@ export default function AdminLoginPage() {
             let authEmail: string = '';
             
             if (userType === 'admin') {
+                // Find the Super Admin to get their username for localStorage
                 member = teamMembers.find(m => m.role === 'Super Admin');
                 if (member) {
-                    authEmail = member.username === 'admin' ? 'admin@mehndify.com' : `${member.username}@mehndify.com`;
+                    // The Super Admin's auth email is hardcoded for security
+                    authEmail = 'admin@mehndify.com';
                 }
             } else { // team-member
                 member = teamMembers.find(m => m.username === username);
@@ -78,13 +80,16 @@ export default function AdminLoginPage() {
                     title: 'Login Successful',
                     description: `Welcome, ${member.name}! Redirecting...`,
                 });
+                // THIS IS THE CRITICAL STEP: Store the role and username for the auth hook to use.
                 localStorage.setItem('isAdminAuthenticated', 'true');
                 localStorage.setItem('adminRole', member.role);
                 localStorage.setItem('adminUsername', member.username);
                 localStorage.setItem('adminUserId', member.id);
-                // Use a full page reload to ensure all auth contexts are reset correctly.
+                
+                // Use a full page reload to ensure all auth contexts and states are reset correctly.
                 window.location.href = '/admin';
             } else {
+                 // This case should not be reached if signInAsAdmin throws on failure.
                  toast({
                     title: 'Authentication Failed',
                     description: 'Invalid credentials. Please try again.',

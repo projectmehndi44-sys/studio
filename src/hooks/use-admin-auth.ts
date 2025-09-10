@@ -4,7 +4,7 @@
 import * as React from 'react';
 import type { TeamMember, Permissions } from '@/types';
 import { getTeamMembers } from '@/lib/services';
-import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
 
 interface AuthState {
     isLoading: boolean;
@@ -38,23 +38,19 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
                             localStorage.setItem('isAdminAuthenticated', 'true');
                             setAuthState({ isLoading: false, isAuthenticated: true, user: currentUser, firebaseUser });
                         } else {
-                            // If no matching team member, clear local storage and set unauthenticated state
-                            localStorage.removeItem('isAdminAuthenticated');
-                            localStorage.removeItem('adminRole');
-                            localStorage.removeItem('adminUsername');
-                            localStorage.removeItem('adminUserId');
-                            setAuthState({ isLoading: false, isAuthenticated: false, user: null, firebaseUser: null });
+                            // If user is in Firebase Auth but not in our team list, something is wrong. Log them out.
+                            await signOut(auth);
                         }
                     } catch (error) {
                         console.error("Failed to load team members for auth check", error);
-                        setAuthState({ isLoading: false, isAuthenticated: false, user: null, firebaseUser: null });
+                        await signOut(auth); // Logout on error
                     }
                  } else {
-                    // Logged into Firebase, but not through our admin flow
-                     setAuthState({ isLoading: false, isAuthenticated: false, user: null, firebaseUser: null });
+                    // Logged into Firebase, but no session data in localStorage. Clean up.
+                     await signOut(auth);
                  }
             } else {
-                // Not logged into Firebase
+                // Not logged into Firebase, ensure all local session data is cleared.
                 localStorage.removeItem('isAdminAuthenticated');
                 localStorage.removeItem('adminRole');
                 localStorage.removeItem('adminUsername');

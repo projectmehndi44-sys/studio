@@ -1,7 +1,7 @@
 
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, User, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, User, RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult, signInWithEmailAndPassword, UserCredential } from 'firebase/auth';
 import { getFirestore, enableIndexedDbPersistence, Firestore } from 'firebase/firestore';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 
@@ -80,9 +80,8 @@ const signInWithGoogle = (): Promise<User> => {
   });
 };
 
-const signInAsAdmin = async (email: string, password: string): Promise<User> => {
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    return userCredential.user;
+const signInAsAdmin = async (email: string, password: string): Promise<UserCredential> => {
+    return signInWithEmailAndPassword(auth, email, password);
 };
 
 const setupRecaptcha = (containerId: string) => {
