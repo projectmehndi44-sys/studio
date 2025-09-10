@@ -1,53 +1,47 @@
 
 'use client';
 
-import { db } from '@/lib/firebase';
-import { collection, doc, getDoc, getDocs, setDoc, addDoc, writeBatch, query, where, deleteDoc } from 'firebase/firestore';
 import type { Artist, Booking, Customer, MasterServicePackage, Notification, PayoutHistory, Promotion, TeamMember } from '@/types';
 import { artists as initialArtists, allBookings as initialBookings, initialCustomers } from './data';
 import { masterServices as initialMasterServices } from './packages-data';
 import { teamMembers as initialTeamMembers } from './team-data';
 import { AVAILABLE_LOCATIONS } from './available-locations';
 
-
-// A helper to check if a collection is empty and seed it if needed.
-// This should be used cautiously to avoid re-seeding data.
-async function seedCollection<T extends {id: string}>(collectionName: string, initialData: T[]) {
-    const querySnapshot = await getDocs(collection(db, collectionName));
-    if (querySnapshot.empty) {
-        console.log(`Seeding ${collectionName}...`);
-        const batch = writeBatch(db);
-        initialData.forEach(item => {
-            const docRef = doc(db, collectionName, item.id);
-            batch.set(docRef, item);
-        });
-        await batch.commit();
+// Helper function to get data from localStorage or return initial data
+function getFromStorage<T>(key: string, initialData: T[]): T[] {
+    if (typeof window === 'undefined') {
         return initialData;
     }
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
-}
-
-
-// Generic fetch function
-async function getCollection<T>(collectionName: string): Promise<T[]> {
-    try {
-        const querySnapshot = await getDocs(collection(db, collectionName));
-        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
-    } catch (error) {
-        console.error(`Error getting collection ${collectionName}:`, error);
-        return [];
+    const storedData = localStorage.getItem(key);
+    if (storedData) {
+        try {
+            return JSON.parse(storedData);
+        } catch (e) {
+            console.error(`Failed to parse ${key} from localStorage`, e);
+            return initialData; // fallback to initial data on parsing error
+        }
     }
+    return initialData;
 }
 
-// Generic set function
-async function setDocument<T>(collectionName: string, id: string, data: T): Promise<void> {
-    await setDoc(doc(db, collectionName, id), data);
-}
+// Helper to combine initial data with localStorage data, prioritizing localStorage
+function getCombinedData<T extends { id: string }>(storageKey: string, initialData: T[]): T[] {
+    const storedItems = getFromStorage<T>(storageKey, []);
+    const initialItems = initialData;
 
-// Generic add function
-async function addDocument<T>(collectionName: string, data: T): Promise<string> {
-    const docRef = await addDoc(collection(db, collectionName), data);
-    return docRef.id;
+    const allItemsMap = new Map<string, T>();
+    
+    // First, add all initial items to the map
+    initialItems.forEach(item => {
+        allItemsMap.set(item.id, item);
+    });
+
+    // Then, overwrite with any stored items (which might be updated versions or new items)
+    storedItems.forEach(item => {
+        allItemsMap.set(item.id, item);
+    });
+
+    return Array.from(allItemsMap.values());
 }
 
 
@@ -55,62 +49,99 @@ async function addDocument<T>(collectionName: string, data: T): Promise<string> 
 
 // Artists
 export const getArtists = async (): Promise<Artist[]> => {
-    // This seeds the data if the collection is empty.
-    return seedCollection<Artist>('artists', initialArtists);
-}
+    return Promise.resolve(getCombinedData<Artist>('artists', initialArtists));
+};
+
 export const getArtist = async (id: string): Promise<Artist | null> => {
-    const docRef = doc(db, 'artists', id);
-    const docSnap = await getDoc(docRef);
-    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Artist : null;
-}
-export const updateArtist = async (id: string, data: Partial<Artist>): Promise<void> => setDocument('artists', id, data);
+    const artists = await getArtists();
+    return Promise.resolve(artists.find(a => a.id === id) || null);
+};
+
+export const updateArtist = async (id: string, data: Partial<Artist>): Promise<void> => {
+    let artists = await getArtists();
+    const artistIndex = artists.findIndex(a => a.id === id);
+    if (artistIndex !== -1) {
+        artists[artistIndex] = { ...artists[artistIndex], ...data };
+        localStorage.setItem('artists', JSON.stringify(artists));
+    }
+    return Promise.resolve();
+};
 
 // Bookings
-export const getBookings = async (): Promise<Booking[]> => getCollection<Booking>('bookings');
-export const createBooking = async (data: Booking): Promise<string> => addDocument('bookings', data);
-export const updateBooking = async (id: string, data: Partial<Booking>): Promise<void> => setDocument('bookings', id, data);
+export const getBookings = async (): Promise<Booking[]> => {
+    return Promise.resolve(getCombinedData<Booking>('bookings', initialBookings));
+};
+export const createBooking = async (data: Booking): Promise<string> => {
+    const bookings = await getBookings();
+    const newBookings = [data, ...bookings];
+    localStorage.setItem('bookings', JSON.stringify(newBookings));
+    return Promise.resolve(data.id);
+};
+export const updateBooking = async (id: string, data: Partial<Booking>): Promise<void> => {
+    let bookings = await getBookings();
+    const bookingIndex = bookings.findIndex(b => b.id === id);
+    if (bookingIndex !== -1) {
+        bookings[bookingIndex] = { ...bookings[bookingIndex], ...data };
+        localStorage.setItem('bookings', JSON.stringify(bookings));
+    }
+     return Promise.resolve();
+};
 
 // Customers
-export const getCustomers = async (): Promise<Customer[]> => seedCollection('customers', initialCustomers);
+export const getCustomers = async (): Promise<Customer[]> => {
+    return Promise.resolve(getCombinedData<Customer>('customers', initialCustomers));
+};
 
 export const getCustomer = async (id: string): Promise<Customer | null> => {
-     const docRef = doc(db, 'customers', id);
-    const docSnap = await getDoc(docRef);
-    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Customer : null;
+    const customers = await getCustomers();
+    return Promise.resolve(customers.find(c => c.id === id) || null);
 };
+
 export const getCustomerByEmail = async (email: string): Promise<Customer | null> => {
-    const q = query(collection(db, "customers"), where("email", "==", email));
-    const querySnapshot = await getDocs(q);
-    if (querySnapshot.empty) return null;
-    const docData = querySnapshot.docs[0];
-    return { id: docData.id, ...docData.data() } as Customer;
-}
+    const customers = await getCustomers();
+    return Promise.resolve(customers.find(c => c.email === email) || null);
+};
+
 export const createCustomer = async (data: Customer): Promise<string> => {
-    // Since we use email as ID from Google Auth sometimes, we handle that here.
-    if(data.id) {
-        await setDoc(doc(db, "customers", data.id), data);
-        return data.id;
+    const customers = await getCustomers();
+    // Use phone as ID for manually created customers, otherwise use provided ID (e.g., from Google Auth)
+    const newId = data.id || data.phone; 
+    const newCustomer = { ...data, id: newId };
+    const existingIndex = customers.findIndex(c => c.id === newId);
+    
+    if (existingIndex > -1) {
+        customers[existingIndex] = newCustomer; // Update if exists
+    } else {
+        customers.push(newCustomer);
     }
-    const docRef = await addDoc(collection(db, "customers"), data);
-    return docRef.id;
-}
+    localStorage.setItem('customers', JSON.stringify(customers));
+    return Promise.resolve(newId);
+};
 
 
-// General purpose settings/config
+// General purpose settings/config from localStorage
 export const getConfig = async <T>(configId: string, defaultValue: T): Promise<T> => {
-    const docRef = doc(db, 'config', configId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        return docSnap.data().value as T;
+    if (typeof window === 'undefined') {
+        return Promise.resolve(defaultValue);
     }
-    // If it doesn't exist, set the default value and return it
-    await setDoc(docRef, { value: defaultValue });
-    return defaultValue;
+    const storedValue = localStorage.getItem(configId);
+    if (storedValue) {
+        try {
+            return Promise.resolve(JSON.parse(storedValue));
+        } catch (e) {
+            return Promise.resolve(defaultValue);
+        }
+    }
+    return Promise.resolve(defaultValue);
 }
 
 export const saveConfig = async <T>(configId: string, value: T): Promise<void> => {
-    await setDoc(doc(db, 'config', configId), { value });
+    if (typeof window !== 'undefined') {
+        localStorage.setItem(configId, JSON.stringify(value));
+    }
+    return Promise.resolve();
 }
+
 
 // Master Services
 export const getMasterServices = async (): Promise<MasterServicePackage[]> => getConfig('masterServices', initialMasterServices);
@@ -145,19 +176,24 @@ export const saveFinancialSettings = async (settings: any): Promise<void> => sav
 
 
 // Payouts
-export const getPayoutHistory = async (): Promise<PayoutHistory[]> => getCollection<PayoutHistory>('payoutHistory');
-export const createPayoutHistory = async (data: PayoutHistory): Promise<string> => addDocument('payoutHistory', data);
+export const getPayoutHistory = async (): Promise<PayoutHistory[]> => getConfig('payoutHistory', []);
+export const createPayoutHistory = async (data: PayoutHistory): Promise<string> => {
+    const history = await getPayoutHistory();
+    const newHistory = [data, ...history];
+    await saveConfig('payoutHistory', newHistory);
+    return Promise.resolve(data.id);
+};
 
 
 // Notifications
-export const getNotifications = async (): Promise<Notification[]> => getCollection<Notification>('notifications');
-export const createNotification = async (data: Notification): Promise<string> => addDocument('notifications', data);
-export const updateNotification = async (id: string, data: Partial<Notification>): Promise<void> => setDocument('notifications', id, data);
+export const getNotifications = async (): Promise<Notification[]> => getConfig('notifications', []);
+export const saveNotifications = async (notifications: Notification[]): Promise<void> => saveConfig('notifications', notifications);
 
 
 // Pending Artists
-export const getPendingArtists = async (): Promise<any[]> => getCollection('pendingArtists');
-export const createPendingArtist = async (data: any): Promise<string> => addDocument('pendingArtists', data);
-export const deletePendingArtist = async (id: string): Promise<void> => {
-    await deleteDoc(doc(db, "pendingArtists", id));
-}
+export const getPendingArtists = async (): Promise<any[]> => getConfig('pendingArtists', []);
+export const savePendingArtists = async (artists: any[]): Promise<void> => saveConfig('pendingArtists', artists);
+
+// This is a minimal implementation to show the logic.
+// In a real app, you might want more robust error handling or data validation.
+
