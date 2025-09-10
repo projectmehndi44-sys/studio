@@ -14,8 +14,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { signInWithEmailAndPassword, sendPasswordResetEmail, getAuth, onAuthStateChanged } from 'firebase/auth';
 import { app, createUser } from '@/lib/firebase';
 import { getTeamMembers, updateTeamMemberId } from '@/lib/services';
-import { teamMembers as initialTeamMembers } from '@/lib/team-data';
-
 
 export default function ArtistLoginPage() {
     const router = useRouter();
@@ -31,22 +29,19 @@ export default function ArtistLoginPage() {
     // One-time setup to ensure the admin user exists in Firebase Auth
     React.useEffect(() => {
         const setupAdminUser = async () => {
-            const superAdminSeed = initialTeamMembers.find(m => m.role === 'Super Admin');
-            // NOTE: The password is now hardcoded here for setup.
+            // NOTE: This password MUST match the one used for manual login attempts.
             const initialPassword = "password"; 
             
-            if (superAdminSeed) {
-                try {
-                    await createUser('admin@mehndify.com', initialPassword);
-                    console.log("Super Admin user created/verified successfully in Firebase Authentication.");
-                } catch (error: any) {
-                    if (error.code === 'auth/email-already-in-use') {
-                        // This is expected and fine. The user exists.
-                        console.log("Super Admin user already exists. Setup is correct.");
-                    } else {
-                        // For any other errors, log them to diagnose potential issues.
-                        console.error("Error during admin user setup:", error);
-                    }
+            try {
+                await createUser('admin@mehndify.com', initialPassword);
+                console.log("Super Admin user created/verified successfully in Firebase Authentication.");
+            } catch (error: any) {
+                if (error.code === 'auth/email-already-in-use') {
+                    // This is expected and fine. The user exists.
+                    console.log("Super Admin user already exists. Setup is correct.");
+                } else {
+                    // For any other errors, log them to diagnose potential issues.
+                    console.error("Error during admin user setup:", error);
                 }
             }
         };
