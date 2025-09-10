@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -59,6 +58,8 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
         return;
     }
     
+    // Always fetch the latest customer list before checking
+    setIsSendingOtp(true);
     const customers = await getCustomers();
     const existingCustomer = customers.find(c => c.phone === phone);
 
@@ -68,10 +69,11 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
             description: 'This phone number is not registered. Please sign up first.',
             variant: 'destructive',
         });
+        setIsSendingOtp(false);
         return;
     }
 
-    setIsSendingOtp(true);
+    // Mock OTP sending
     setTimeout(() => {
         setIsOtpSent(true);
         setIsSendingOtp(false);
