@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -44,7 +43,6 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
   const [isOtpSent, setIsOtpSent] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSendingOtp, setIsSendingOtp] = React.useState(false);
-  const recaptchaContainerRef = React.useRef<HTMLDivElement>(null);
   const recaptchaVerifierRef = React.useRef<RecaptchaVerifier | null>(null);
 
   const form = useForm<LoginFormValues>({
@@ -54,14 +52,6 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
       otp: '',
     },
   });
-
-  React.useEffect(() => {
-    if (isOpen && recaptchaContainerRef.current) {
-        if (!recaptchaVerifierRef.current) {
-            recaptchaVerifierRef.current = setupRecaptcha('recaptcha-container-login');
-        }
-    }
-  }, [isOpen]);
 
   const handleSendOtp = async () => {
     const phone = form.getValues('phone');
@@ -85,7 +75,7 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
 
     try {
       if (!recaptchaVerifierRef.current) {
-          throw new Error("reCAPTCHA verifier not initialized.");
+        recaptchaVerifierRef.current = setupRecaptcha('recaptcha-container-login');
       }
       const confirmationResult = await sendOtp(phone, recaptchaVerifierRef.current);
       window.confirmationResult = confirmationResult;
@@ -188,7 +178,7 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
             Enter your phone number to receive a login OTP.
           </DialogDescription>
         </DialogHeader>
-        <div id="recaptcha-container-login" ref={recaptchaContainerRef}/>
+        <div id="recaptcha-container-login"/>
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField control={form.control} name="phone" render={({ field }) => (
@@ -237,3 +227,5 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
     </Dialog>
   );
 }
+
+    

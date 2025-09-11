@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -47,9 +46,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSendingOtp, setIsSendingOtp] = React.useState(false);
   const [isOtpSent, setIsOtpSent] = React.useState(false);
-  const recaptchaContainerRef = React.useRef<HTMLDivElement>(null);
   const recaptchaVerifierRef = React.useRef<RecaptchaVerifier | null>(null);
-
 
   const form = useForm<RegistrationFormValues>({
     resolver: zodResolver(registrationSchema),
@@ -61,13 +58,6 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
     },
   });
 
-  React.useEffect(() => {
-    if (isOpen && recaptchaContainerRef.current) {
-        if (!recaptchaVerifierRef.current) {
-            recaptchaVerifierRef.current = setupRecaptcha('recaptcha-container-register');
-        }
-    }
-  }, [isOpen]);
 
   const handlePhoneVerify = async () => {
     const phone = form.getValues('phone');
@@ -84,7 +74,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
     setIsSendingOtp(true);
     try {
       if (!recaptchaVerifierRef.current) {
-          throw new Error("reCAPTCHA verifier not initialized.");
+          recaptchaVerifierRef.current = setupRecaptcha('recaptcha-container-register');
       }
       const confirmationResult = await sendOtp(phone, recaptchaVerifierRef.current);
       window.confirmationResult = confirmationResult;
@@ -207,7 +197,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
             Join MehendiFy to start booking amazing artists.
           </DialogDescription>
         </DialogHeader>
-         <div id="recaptcha-container-register" ref={recaptchaContainerRef} />
+         <div id="recaptcha-container-register"/>
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                  <FormField control={form.control} name="fullName" render={({ field }) => (
@@ -262,3 +252,5 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
     </Dialog>
   );
 }
+
+    
