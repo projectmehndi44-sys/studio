@@ -216,16 +216,6 @@ export default function ArtistManagementPage() {
 
         const oneTimeCode = Math.floor(100000 + Math.random() * 900000).toString();
         try {
-            // This is the ideal flow using Firebase's own password reset mechanism
-            await sendPasswordResetEmail(auth, artist.email);
-            toast({
-                title: 'Password Reset Email Sent',
-                description: `An email has been sent to ${artist.name} at ${artist.email} to reset their password.`,
-                duration: 9000,
-            });
-        } catch (error) {
-             // Fallback to our custom code mechanism if email fails
-            console.error("Firebase password reset email failed, falling back to custom code:", error);
             await updateArtist(artist.id, { firstTimeLoginCode: oneTimeCode, firstTimeLoginCodeUsed: false });
             toast({
                 title: 'New Reset Code Generated',
@@ -233,6 +223,9 @@ export default function ArtistManagementPage() {
                 duration: 9000,
             });
             displayOneTimeCode(artist.name, oneTimeCode);
+        } catch (error) {
+            console.error("Failed to generate reset code:", error);
+            toast({ title: 'Error', description: 'Could not generate a new code.', variant: 'destructive'});
         }
     };
 

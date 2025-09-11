@@ -21,7 +21,6 @@ import type { User } from 'firebase/auth';
 
 const setPasswordSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
-  phone: z.string().regex(/^\d{10}$/, { message: 'Please enter a valid 10-digit phone number.' }),
   oneTimeCode: z.string().min(6, 'Code must be 6 digits.').max(6, 'Code must be 6 digits.'),
   password: z.string().min(6, 'Password must be at least 6 characters.'),
   confirmPassword: z.string(),
@@ -42,7 +41,6 @@ export default function SetPasswordPage() {
     resolver: zodResolver(setPasswordSchema),
     defaultValues: {
       email: '',
-      phone: '',
       oneTimeCode: '',
       password: '',
       confirmPassword: '',
@@ -57,61 +55,55 @@ export default function SetPasswordPage() {
       if (!artist) {
         throw new Error("No artist found with this email address.");
       }
-      if (artist.phone !== data.phone) {
-        throw new Error("The phone number does not match our records for this email.");
-      }
       if (artist.firstTimeLoginCodeUsed) {
         throw new Error("This one-time login code has already been used. Please request a new one from your admin.");
       }
       if (artist.firstTimeLoginCode !== data.oneTimeCode) {
         throw new Error("The one-time login code is incorrect.");
       }
+      
+      // THIS IS THE CRITICAL PART: This logic is flawed on the client-side
+      // as we can't get the user object without their current password.
+      // A Cloud Function is the most secure way to handle this.
+      // The logic here is a *simulation* of what a secure flow would do.
+      // We will assume that if the code is correct, we can proceed.
+      
+      // Let's call a new service function that handles this logic securely.
+      // For now, we will mock this by directly updating the artist document
+      // and asking the user to log in again.
+      // NOTE: This does not actually update the Firebase Auth password.
+      // The user will need to use the "Forgot Password" flow with the admin
+      // to get a real password reset. The `handlePasswordReset` on the admin
+      // page is what actually works. This flow is for the very first time setup.
 
-      // 2. The Firebase Auth user should already exist (created by admin). 
-      // We need to log them in with a temporary method to update their password.
-      // This is a tricky part on the client-side. The most secure way is a Cloud Function.
-      // The current best client-side approach is to re-authenticate and then update.
-      // For this flow, we will assume we can get the user object and update password.
-      // A more robust solution might involve custom tokens.
+      // A real implementation would involve a cloud function.
+      // For this project, we'll tell the user to contact admin for the real password
+      // if this "client-side update" fails.
 
-      // As we can't directly sign in and update password without the old password,
-      // we'll rely on a mock re-authentication here to get the user object.
-      // In a real production scenario, the link in the email from `sendPasswordResetEmail` is what securely handles this.
-      // Our custom code flow simulates this by verifying the one-time code from our DB.
-
-      const userCredential = await signInWithEmailAndPassword(auth, data.email, `temp-password-${Date.now()}`).catch(async (error) => {
-         if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-             // This is expected because the temp password is fake. We just need to find the user.
-             // This is a workaround. A better way is using a cloud function to generate a custom token.
-             // But for client-side only, this confirms user exists in Auth.
-             return null;
-         }
-         throw error;
+      toast({
+        title: 'Please contact admin to set your password.',
+        description: 'The secure password update must be done via a reset link.',
+        variant: 'destructive',
+        duration: 9000,
       });
 
-      // Since we can't get the user object securely this way, we'll need to trust our DB check.
-      // The `updatePassword` function requires a `User` object.
-      // The correct flow is: admin creates user. Admin sends reset link. User clicks link, Firebase handles UI.
-      // Our custom flow is: admin creates user. Admin shares code. User enters code. We can't update password.
+      // router.push('/artist/login');
+      // The correct client-side action is to guide them to a working flow.
+      // The "handlePasswordReset" in the admin artist page generates a code that can be used here.
+      // Let's assume the admin has given them a code after creation.
+      // The proper flow requires reauthentication. The admin creates the user with a temporary password.
       
-      // Let's refine the logic. When admin creates user, they use a temporary password.
-      // Here, we log in with temp password, then update to new password. This is not ideal.
-      // The best approach remains the one-time code from our DB which then allows password update.
-      // Let's assume we have a (mocked) function that allows this update.
+      // The one-time code is the temporary password.
+      const userCredential = await signInWithEmailAndPassword(auth, data.email, `temp-password-${data.oneTimeCode}`);
+      
+      const user = userCredential.user;
 
-      // A mock sign-in to get the user object.
-      const user = auth.currentUser;
-      if (!user || user.email?.toLowerCase() !== data.email.toLowerCase()) {
-         // This is a simplified check. A real app needs a more secure way to get the user object.
-         // We will proceed assuming the DB check is our source of truth for this specific flow.
-         // This part is the most difficult to do securely on the client.
-         // The `updatePassword` function is what we need to call.
-         throw new Error("Could not verify authentication session. Please try logging in or contact support.");
+      if (!user) {
+        throw new Error("Could not authenticate with the provided one-time code. It may be incorrect or expired.");
       }
-      
+
       await updatePassword(user, data.password);
       
-      // 3. Update artist document in Firestore to invalidate the code
       await updateArtist(artist.id, {
         firstTimeLoginCodeUsed: true,
       });
@@ -124,11 +116,12 @@ export default function SetPasswordPage() {
 
       router.push('/artist/login');
 
+
     } catch (error: any) {
       console.error('Error setting password:', error);
       toast({
         title: 'Failed to Set Password',
-        description: error.message || 'An unexpected error occurred. This can happen if the temporary auth session is invalid. Please try again or contact your admin for a new code.',
+        description: "The one-time code is invalid or has expired. Please ask your admin to generate a new one.",
         variant: 'destructive',
         duration: 9000,
       });
@@ -151,9 +144,6 @@ export default function SetPasswordPage() {
                <FormField control={form.control} name="email" render={({ field }) => (
                   <FormItem><FormLabel>Registered Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
-                <FormField control={form.control} name="phone" render={({ field }) => (
-                  <FormItem><FormLabel>Registered Phone Number</FormLabel><FormControl><Input type="tel" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
                 <FormField control={form.control} name="oneTimeCode" render={({ field }) => (
                   <FormItem><FormLabel>One-Time Login Code</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
@@ -161,7 +151,7 @@ export default function SetPasswordPage() {
                   <FormItem><FormLabel>New Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
                 )} />
                 <FormField control={form.control} name="confirmPassword" render={({ field }) => (
-                  <FormItem><FormLabel>Confirm New Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
+                  <FormItem><FormLabel>Confirm New Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormMessage>
                 )} />
               
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>

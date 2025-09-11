@@ -33,7 +33,6 @@ interface ArtistPortalContextType {
     unreadCount: number;
     setArtist: React.Dispatch<React.SetStateAction<Artist | null>>;
     setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
-    fetchData: (uid: string) => Promise<void>;
 }
 
 export const ArtistPortalContext = React.createContext<ArtistPortalContextType | null>(null);
@@ -74,8 +73,9 @@ const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
     const router = useRouter();
     const { toast } = useToast();
     const auth = getAuth(app);
-    const { artist, fetchData } = useArtistPortal();
+    const { setArtist } = useArtistPortal();
     const [isLoading, setIsLoading] = React.useState(true);
+    const [artistId, setArtistId] = React.useState<string | null>(null);
 
     const handleLogout = React.useCallback(async () => {
         await signOutUser();
@@ -88,25 +88,41 @@ const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
     React.useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user) {
-                // If there's a Firebase user, fetch their artist profile
-                fetchData(user.uid).finally(() => setIsLoading(false));
+                setArtistId(user.uid);
             } else {
-                // No user is logged in, redirect to login page.
                 router.push('/artist/login');
             }
         });
-
         return () => unsubscribe();
-    }, [auth, fetchData, router]);
+    }, [auth, router]);
+
+    React.useEffect(() => {
+        if (!artistId) return;
+
+        const fetchArtistData = async () => {
+            setIsLoading(true);
+            const currentArtist = await getArtist(artistId);
+            if (currentArtist) {
+                setArtist(currentArtist);
+            } else {
+                toast({
+                    title: "Access Denied",
+                    description: "This account is not registered as an artist.",
+                    variant: "destructive"
+                });
+                handleLogout();
+            }
+            setIsLoading(false);
+        };
+
+        fetchArtistData();
+    }, [artistId, setArtist, handleLogout, toast]);
 
 
-    // This is the main loading state for the portal.
-    // It waits until firebase auth state is confirmed AND artist data is fetched.
-    if (isLoading || !artist) {
+    if (isLoading) {
         return <div className="flex items-center justify-center min-h-screen">Loading Artist Portal...</div>;
     }
 
-    // Once loaded and artist is confirmed, render the children (the dashboard).
     return <>{children}</>;
 };
 
@@ -117,7 +133,6 @@ export default function ArtistDashboardLayout({
   children: React.ReactNode
 }) {
     const router = useRouter();
-    const { toast } = useToast();
     const pathname = usePathname();
     const isMobile = useIsMobile();
     
@@ -128,28 +143,10 @@ export default function ArtistDashboardLayout({
     const [unreadCount, setUnreadCount] = React.useState(0);
     const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
 
-    const fetchData = React.useCallback(async (uid: string) => {
-        const currentArtist = await getArtist(uid);
-        if (currentArtist) {
-            setArtist(currentArtist);
-        } else {
-            // This is a critical step: if the logged-in user is not a valid artist,
-            // log them out and redirect.
-            toast({
-                title: "Access Denied",
-                description: "This account is not registered as an artist.",
-                variant: "destructive"
-            });
-            await signOutUser();
-            router.push('/artist/login');
-        }
-    }, [toast, router]);
-
     const handleLogout = React.useCallback(async () => {
         await signOutUser();
-        toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
         router.push('/');
-    }, [router, toast]);
+    }, [router]);
 
 
     React.useEffect(() => {
@@ -261,7 +258,6 @@ export default function ArtistDashboardLayout({
         unreadCount,
         setArtist,
         setNotifications,
-        fetchData,
     };
 
     return (
