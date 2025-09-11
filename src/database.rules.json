@@ -8,30 +8,32 @@ service cloud.firestore {
     //  HELPER FUNCTIONS - These make the rules easier to read and manage
     // =====================================================================
 
+    // Safely checks if the user is a Super Admin.
     function isSuperAdmin() {
       return request.auth != null 
         && request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data
         && get(/databases/$(database)/documents/config/teamMembers).data[request.auth.uid].role == 'Super Admin';
     }
 
+    // Safely checks if the user is a Team Member.
     function isTeamMember() {
       return request.auth != null 
         && request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data
         && get(/databases/$(database)/documents/config/teamMembers).data[request.auth.uid].role == 'team-member';
     }
 
+    // The main permission checking function. It now uses correct syntax without 'let' or 'if'.
     function hasPermission(module, level) {
-      let permission = get(/databases/$(database)/documents/config/teamMembers).data[request.auth.uid].permissions[module];
-      if (level == 'view') {
-        return permission in ['view', 'edit'];
-      }
-      return permission == level;
+      // Use a ternary operator to correctly handle view/edit logic
+      return (level == 'view')
+        ? (get(/databases/$(database)/documents/config/teamMembers).data[request.auth.uid].permissions[module] in ['view', 'edit'])
+        : (get(/databases/$(database)/documents/config/teamMembers).data[request.auth.uid].permissions[module] == level);
     }
     
     // --- Public & Customer Rules (Evaluated for non-admins) ---
     match /artists/{artistId} {
       allow get, list: if true;
-      allow update: if request.auth.uid == artistId;
+      allow update: if request.auth != null && request.auth.uid == artistId;
     }
     match /masterServices/{docId} {
       allow get, list: if true;
@@ -41,7 +43,7 @@ service cloud.firestore {
     }
     match /customers/{customerId} {
       allow create: if true;
-      allow get, update: if request.auth.uid == customerId;
+      allow get, update: if request.auth != null && request.auth.uid == customerId;
     }
     match /pendingArtists/{docId} {
       allow create: if true;
