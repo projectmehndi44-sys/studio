@@ -6,15 +6,13 @@ service cloud.firestore {
     
     // Function to check if the user is a Super Admin or a team member
     function isAdmin() {
-      return request.auth != null && get(/databases/$(database)/documents/config/teamMembers).data[request.auth.uid].role in ['Super Admin', 'team-member'];
+      return request.auth != null && get(/databases/$(database)/documents/config/teamMembers).data.members[request.auth.uid].role in ['Super Admin', 'team-member'];
     }
 
-    // Rules for all collections
+    // Admins have god-mode access to everything except for team members list which is publicly readable
     match /{path=**} {
-      // Admins have god-mode access to everything.
-      // This rule is checked first. If a user is an admin, they are granted access
-      // and no further rules for this path are evaluated.
-      allow read, write: if isAdmin();
+      allow write: if isAdmin();
+      allow read: if isAdmin();
     }
 
     // --- Public Access Rules ---
@@ -32,6 +30,10 @@ service cloud.firestore {
     }
     match /config/availableLocations {
       allow get: if true;
+    }
+    // The team member list needs to be public for the login page to check if the super admin exists.
+    match /config/teamMembers {
+        allow get: if true;
     }
 
     // --- Authenticated User Rules ---
