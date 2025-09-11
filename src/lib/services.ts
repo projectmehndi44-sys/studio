@@ -52,20 +52,20 @@ async function setConfigDocument(docId: string, data: any): Promise<void> {
 export const listenToCollection = <T>(collectionName: string, callback: (data: T[]) => void): Unsubscribe => {
     let unsub: Unsubscribe = () => {};
     getDb().then(db => {
-        // Special handling for config collections
-        if (['masterServices', 'teamMembers', 'promotions', 'availableLocations'].includes(collectionName)) {
+        // Special handling for config collections that are single documents
+        if (['teamMembers', 'promotions', 'availableLocations'].includes(collectionName)) {
              unsub = onSnapshot(doc(db, "config", collectionName), (docSnap) => {
                  if (docSnap.exists()) {
                     const data = docSnap.data();
                     let result: T[] = [];
-                    if (collectionName === 'masterServices' && data.packages) result = data.packages;
-                    else if (collectionName === 'teamMembers' && data.members) result = data.members;
+                    if (collectionName === 'teamMembers' && data.members) result = data.members;
                     else if (collectionName === 'promotions' && data.promos) result = data.promos;
                     else if (collectionName === 'availableLocations' && data.locations) result = data.locations as any; // This is an object, not array
                     callback(result);
                  }
              });
         } else {
+             // Standard listener for top-level collections
              const q = query(collection(db, collectionName));
             unsub = onSnapshot(q, (querySnapshot) => {
                 const data: T[] = querySnapshot.docs.map(doc => {
@@ -287,7 +287,6 @@ export const getBookings = async (): Promise<Booking[]> => getCollection<Booking
 export const getCustomers = async (): Promise<Customer[]> => getCollection<Customer>('customers');
 
 export const getMasterServices = async (): Promise<MasterServicePackage[]> => {
-    const data = await getConfigDocument<MasterServicePackage[]>('masterServices') || [];
+    const data = await getCollection<MasterServicePackage>('masterServices');
     return data;
 };
-
