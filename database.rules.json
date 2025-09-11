@@ -8,6 +8,12 @@
           "allow get, list": "if true;",
           "allow write": "if request.auth != null;"
         },
+
+        // Allow public read for customer list to check for existing users
+        "match /customers/{customerId}": {
+          "allow get, list": "if true;",
+          "allow write": "if request.auth != null && request.auth.uid == customerId;"
+        },
         
         // Allow public read for configuration (like service packages)
         "match /config/{docId=**}": {
@@ -15,7 +21,7 @@
            "allow write": "if request.auth != null;"
         },
 
-        // Allow any authenticated user to create bookings, see their own customer profile, etc.
+        // Allow any authenticated user to create bookings, etc.
         // More specific rules can be added later if needed.
         "match /{document=**}": {
           "allow read, write": "if request.auth != null;"
