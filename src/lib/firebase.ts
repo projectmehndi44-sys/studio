@@ -72,20 +72,21 @@ const signInWithGoogle = (): Promise<User> => {
   return signInWithPopup(auth, googleProvider).then(result => result.user);
 };
 
-const setupRecaptcha = (containerId: string) => {
-    if (typeof window !== 'undefined') {
-        if (window.recaptchaVerifier) {
-            window.recaptchaVerifier.clear();
-        }
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
-            'size': 'invisible',
-            'callback': (response: any) => {},
-        });
+const setupRecaptcha = (containerId: string): RecaptchaVerifier => {
+    if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
     }
+    const verifier = new RecaptchaVerifier(auth, containerId, {
+        'size': 'invisible',
+        'callback': (response: any) => {
+            // reCAPTCHA solved, allow signInWithPhoneNumber.
+        },
+    });
+    return verifier;
 }
 
-const sendOtp = (phoneNumber: string): Promise<ConfirmationResult> => {
-    const appVerifier = window.recaptchaVerifier;
+
+const sendOtp = (phoneNumber: string, appVerifier: RecaptchaVerifier): Promise<ConfirmationResult> => {
     const fullPhoneNumber = `+91${phoneNumber}`; // Assuming Indian phone numbers
     return signInWithPhoneNumber(auth, fullPhoneNumber, appVerifier);
 }

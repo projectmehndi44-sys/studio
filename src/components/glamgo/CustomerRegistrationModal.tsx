@@ -24,7 +24,7 @@ import { GoogleIcon } from '../icons';
 import { signInWithGoogle, setupRecaptcha, sendOtp } from '@/lib/firebase';
 import type { Customer } from '@/types';
 import { getCustomerByPhone, createCustomer, getCustomerByEmail } from '@/lib/services';
-import type { ConfirmationResult } from 'firebase/auth';
+import type { ConfirmationResult, RecaptchaVerifier } from 'firebase/auth';
 
 
 const registrationSchema = z.object({
@@ -48,6 +48,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
   const [isSendingOtp, setIsSendingOtp] = React.useState(false);
   const [isOtpSent, setIsOtpSent] = React.useState(false);
   const recaptchaContainerRef = React.useRef<HTMLDivElement>(null);
+  const recaptchaVerifierRef = React.useRef<RecaptchaVerifier | null>(null);
 
 
   const form = useForm<RegistrationFormValues>({
@@ -62,8 +63,9 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
 
   React.useEffect(() => {
     if (isOpen && recaptchaContainerRef.current) {
-        // Setup reCAPTCHA verifier when modal opens
-        setupRecaptcha('recaptcha-container-register');
+        if (!recaptchaVerifierRef.current) {
+            recaptchaVerifierRef.current = setupRecaptcha('recaptcha-container-register');
+        }
     }
   }, [isOpen]);
 
@@ -81,7 +83,10 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
 
     setIsSendingOtp(true);
     try {
-      const confirmationResult = await sendOtp(phone);
+      if (!recaptchaVerifierRef.current) {
+          throw new Error("reCAPTCHA verifier not initialized.");
+      }
+      const confirmationResult = await sendOtp(phone, recaptchaVerifierRef.current);
       window.confirmationResult = confirmationResult;
       setIsOtpSent(true);
       toast({
