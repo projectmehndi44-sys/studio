@@ -1,0 +1,50 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    function isAdmin() {
+      return request.auth != null && get(/databases/$(database)/documents/config/teamMembers).data[request.auth.uid].role in ['Super Admin', 'team-member'];
+    }
+
+    // Publicly readable data
+    match /masterServices/{docId} {
+      allow get, list: if true;
+    }
+    match /config/masterServices {
+      allow get: if true;
+    }
+    match /config/availableLocations {
+      allow get: if true;
+    }
+    match /artists/{artistId} {
+        allow get, list: if true;
+    }
+
+    // User-specific writes
+    match /artists/{artistId} {
+      allow write: if isAdmin() || request.auth.uid == artistId;
+    }
+    match /customers/{customerId} {
+      allow create: if true; // Anyone can create a customer profile
+      allow get, list, update: if request.auth.uid == customerId || isAdmin();
+    }
+    match /pendingArtists/{docId} {
+        allow create: if true;
+    }
+    
+    // Authenticated user writes
+    match /bookings/{bookingId} {
+        allow read, write: if request.auth != null || isAdmin();
+    }
+    match /notifications/{notificationId} {
+        allow read, write: if request.auth != null || isAdmin();
+    }
+
+    // Admin-only writes
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
