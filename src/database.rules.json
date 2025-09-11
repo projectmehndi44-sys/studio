@@ -10,21 +10,21 @@ service cloud.firestore {
 
     function isSuperAdmin() {
       return request.auth != null 
-        && request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data
-        && get(/databases/$(database)/documents/config/teamMembers).data[request.auth.uid].role == 'Super Admin';
+        && request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data.members
+        && get(/databases/$(database)/documents/config/teamMembers).data.members[request.auth.uid].role == 'Super Admin';
     }
 
     function isTeamMember() {
       return request.auth != null 
-        && request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data
-        && get(/databases/$(database)/documents/config/teamMembers).data[request.auth.uid].role == 'team-member';
+        && request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data.members;
     }
 
     function hasPermission(module, level) {
+      let userPermissions = get(/databases/$(database)/documents/config/teamMembers).data.members[request.auth.uid].permissions;
       // Use a ternary operator to correctly handle view/edit logic
       return (level == 'view')
-        ? (get(/databases/$(database)/documents/config/teamMembers).data[request.auth.uid].permissions[module] in ['view', 'edit'])
-        : (get(/databases/$(database)/documents/config/teamMembers).data[request.auth.uid].permissions[module] == level);
+        ? (userPermissions[module] in ['view', 'edit'])
+        : (userPermissions[module] == level);
     }
 
 
@@ -44,6 +44,13 @@ service cloud.firestore {
     }
     match /config/availableLocations {
       allow get: if true;
+    }
+
+    // This is the critical fix: Allow any authenticated user to read the team members list
+    // This is required for the application to check if a user is an admin or not upon login.
+    match /config/teamMembers {
+      allow get: if request.auth != null;
+      allow write: if isSuperAdmin(); // Only super admin can change team members
     }
 
     // Allow anyone to create an account or application
@@ -88,6 +95,7 @@ service cloud.firestore {
       allow read, write: if isSuperAdmin();
     }
     match /config/{docId} {
+        // This rule is a fallback. More specific rules like teamMembers above take precedence.
       allow read: if isTeamMember() && hasPermission('settings', 'view');
       allow write: if isTeamMember() && hasPermission('settings', 'edit');
       allow read, write: if isSuperAdmin();
