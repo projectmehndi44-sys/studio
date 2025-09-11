@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
 import { signOutUser } from '@/lib/firebase';
-import { onAuthStateChanged, getAuth } from 'firebase/auth';
+import { onAuthStateChanged, getAuth, User as FirebaseUser } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { collection, query, where, getFirestore } from 'firebase/firestore';
 
@@ -70,6 +70,42 @@ const BottomNavLink = ({ href, pathname, icon: Icon, label, children }: { href: 
     </Link>
 )
 
+const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
+    const router = useRouter();
+    const pathname = usePathname();
+    const { toast } = useToast();
+    const auth = getAuth(app);
+    const { artist, setArtist, fetchData } = useArtistPortal();
+    const [isLoading, setIsLoading] = React.useState(true);
+
+    const handleLogout = React.useCallback(async () => {
+        await signOutUser();
+        toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+        router.push('/');
+    }, [router, toast]);
+
+    useInactivityTimeout(handleLogout);
+
+    React.useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) {
+                fetchData(user.uid).finally(() => setIsLoading(false));
+            } else {
+                router.push('/artist/login');
+                setIsLoading(false);
+            }
+        });
+
+        return () => unsubscribe();
+    }, [auth, fetchData, router]);
+
+    if (isLoading || !artist) {
+        return <div className="flex items-center justify-center min-h-screen">Loading Artist Portal...</div>;
+    }
+
+    return <>{children}</>;
+};
+
 
 export default function ArtistDashboardLayout({
   children,
@@ -88,20 +124,9 @@ export default function ArtistDashboardLayout({
     const [notifications, setNotifications] = React.useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = React.useState(0);
     const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
-    const [isLoading, setIsLoading] = React.useState(true);
-
-    const handleLogout = React.useCallback(async () => {
-        await signOutUser();
-        toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
-        router.push('/');
-    }, [router, toast]);
-
-    useInactivityTimeout(handleLogout);
 
     const fetchData = React.useCallback(async (uid: string) => {
-        setIsLoading(true);
         const currentArtist = await getArtist(uid);
-        
         if (currentArtist) {
             setArtist(currentArtist);
         } else {
@@ -110,24 +135,17 @@ export default function ArtistDashboardLayout({
                 description: "Could not find your artist profile.",
                 variant: "destructive"
             });
-            handleLogout();
+            await signOutUser();
+            router.push('/artist/login');
         }
-        setIsLoading(false);
-    }, [toast, handleLogout]);
+    }, [toast, router]);
 
-    React.useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                // User is signed in. Fetch their artist profile.
-                fetchData(user.uid);
-            } else {
-                // User is signed out.
-                router.push('/artist/login');
-            }
-        });
+    const handleLogout = React.useCallback(async () => {
+        await signOutUser();
+        toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+        router.push('/');
+    }, [router, toast]);
 
-        return () => unsubscribe();
-    }, [auth, fetchData, router]);
 
     React.useEffect(() => {
         if (!artist?.id) return;
@@ -137,7 +155,7 @@ export default function ArtistDashboardLayout({
         // Fetch only bookings relevant to this artist
         const bookingsQuery = query(collection(db, 'bookings'), where('artistIds', 'array-contains', artist.id));
         const unsubscribeBookings = listenToCollection<Booking>('bookings', (artistSpecificBookings) => {
-            const sortedBookings = artistSpecificBookings.sort((a,b) => b.date.getTime() - a.date.getTime());
+            const sortedBookings = artistSpecificBookings.sort((a,b) => b.date.toMillis() - a.date.toMillis());
             setArtistBookings(sortedBookings);
         }, bookingsQuery);
 
@@ -157,10 +175,6 @@ export default function ArtistDashboardLayout({
 
     }, [artist?.id]);
 
-
-    if (isLoading || !artist) {
-        return <div className="flex items-center justify-center min-h-screen">Loading Artist Portal...</div>;
-    }
 
     const mainNavLinks = [
         { href: '/artist/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -242,55 +256,57 @@ export default function ArtistDashboardLayout({
         unreadCount,
         setArtist,
         setNotifications,
-        fetchData: () => fetchData(artist.id),
+        fetchData: artist ? () => fetchData(artist.id) : async () => {},
     };
 
     return (
         <ArtistPortalContext.Provider value={contextValue}>
-            <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-                <aside className="hidden border-r bg-background md:flex flex-col">
-                   <NavContent />
-                </aside>
-                 <div className="flex flex-col">
-                     <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
-                         <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-                            <SheetTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="shrink-0 md:hidden"
-                                >
-                                    <PanelLeft className="h-5 w-5" />
-                                    <span className="sr-only">Toggle navigation menu</span>
-                                </Button>
-                            </SheetTrigger>
-                            <SheetContent side="left" className="flex flex-col p-0">
-                                <NavContent />
-                            </SheetContent>
-                        </Sheet>
+            <AuthWrapper>
+                <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+                    <aside className="hidden border-r bg-background md:flex flex-col">
+                       <NavContent />
+                    </aside>
+                     <div className="flex flex-col">
+                         <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
+                             <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+                                <SheetTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="shrink-0 md:hidden"
+                                    >
+                                        <PanelLeft className="h-5 w-5" />
+                                        <span className="sr-only">Toggle navigation menu</span>
+                                    </Button>
+                                </SheetTrigger>
+                                <SheetContent side="left" className="flex flex-col p-0">
+                                    <NavContent />
+                                </SheetContent>
+                            </Sheet>
 
-                        <div className='flex-1'>
-                            <h1 className='font-semibold text-lg'>{getPageTitle()}</h1>
-                        </div>
-                         <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="relative hidden md:inline-flex" onClick={() => router.push('/artist/dashboard/notifications')}>
-                                    <Bell className="h-5 w-5"/>
-                                     {unreadCount > 0 && (
-                                        <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-xs flex items-center justify-center text-white border-2 border-background">
-                                            {unreadCount > 9 ? '9+' : unreadCount}
-                                        </span>
-                                    )}
-                                </Button>
-                            </DropdownMenuTrigger>
-                        </DropdownMenu>
-                    </header>
-                    <main className="flex-1 p-4 lg:p-6 bg-muted/20 pb-20 md:pb-6">
-                        {children}
-                    </main>
+                            <div className='flex-1'>
+                                <h1 className='font-semibold text-lg'>{getPageTitle()}</h1>
+                            </div>
+                             <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="relative hidden md:inline-flex" onClick={() => router.push('/artist/dashboard/notifications')}>
+                                        <Bell className="h-5 w-5"/>
+                                         {unreadCount > 0 && (
+                                            <span className="absolute top-0 right-0 h-4 w-4 rounded-full bg-red-500 text-xs flex items-center justify-center text-white border-2 border-background">
+                                                {unreadCount > 9 ? '9+' : unreadCount}
+                                            </span>
+                                        )}
+                                    </Button>
+                                </DropdownMenuTrigger>
+                            </DropdownMenu>
+                        </header>
+                        <main className="flex-1 p-4 lg:p-6 bg-muted/20 pb-20 md:pb-6">
+                            {children}
+                        </main>
+                    </div>
+                    {isMobile && <BottomNav />}
                 </div>
-                {isMobile && <BottomNav />}
-            </div>
+            </AuthWrapper>
         </ArtistPortalContext.Provider>
     );
 }
