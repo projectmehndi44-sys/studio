@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -14,14 +13,14 @@ const playfairDisplay = Playfair_Display({
 const roboto = Roboto({
   subsets: ['latin'],
   display: 'swap',
-  weight: ['400', '700'],
+  weight: ['400', '500', '700'],
   variable: '--font-roboto',
 });
 
 const dancingScript = Dancing_Script({
   subsets: ['latin'],
   display: 'swap',
-  weight: ['400'],
+  weight: ['400', '700'],
   variable: '--font-dancing-script',
 });
 
@@ -38,7 +37,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn('font-body antialiased min-h-screen', playfairDisplay.variable, roboto.variable, dancingScript.variable)}>
+      <body className={cn('min-h-screen bg-background font-body antialiased', playfairDisplay.variable, roboto.variable, dancingScript.variable)}>
         {children}
         <Toaster />
       </body>

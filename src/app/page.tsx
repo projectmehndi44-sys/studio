@@ -27,7 +27,6 @@ import { Packages } from '@/components/glamgo/Packages';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
-import { RecommendationsTab } from '@/components/glamgo/RecommendationsTab';
 import { ServiceSelectionModal } from '@/components/glamgo/ServiceSelectionModal';
 import { MehndiIcon, MakeupIcon, PhotographyIcon } from '@/components/icons';
 import { PwaInstallBanner } from '@/components/glamgo/PwaInstallBanner';
@@ -128,16 +127,6 @@ export default function Home() {
     };
   }, [checkLoggedInCustomer]);
   
-  const handleBookingRequest = (artist: Artist) => {
-    if (!isCustomerLoggedIn) {
-        setIsCustomerLoginModalOpen(true);
-        toast({ title: 'Please Login', description: 'You need to be logged in to book an artist.' });
-        return;
-    }
-    console.log("Direct artist booking from card is deprecated. Please use service selection.");
-    toast({ title: "Please select a service first.", description: "Browse our services to start a booking."});
-  };
-  
   const handleAddToCart = (item: CartItem) => {
     if (!isCustomerLoggedIn || !customer) {
         setIsCustomerLoginModalOpen(true);
@@ -151,7 +140,7 @@ export default function Home() {
   };
 
   const handleArtistRegister = () => {
-    router.push('/artist/register');
+    router.push('/artist');
   };
 
   const handleCustomerRegister = () => {
@@ -189,7 +178,7 @@ export default function Home() {
 
 
   return (
-    <div className="flex min-h-screen w-full flex-col relative">
+    <div className="flex min-h-screen w-full flex-col relative bg-background">
       <div className="fixed inset-0 -z-10 h-full w-full">
           {backgroundImages.map((src, index) => (
               <Image
@@ -244,11 +233,6 @@ export default function Home() {
                     <Palette className="mr-2 h-4 w-4"/>
                     Are you an artist? Join us!
                  </Button>
-                 <Link href="/artist/login" className="w-full max-w-xs">
-                    <Button className="w-full">
-                        <Palette className="mr-2 h-4 w-4" /> Artist Login
-                    </Button>
-                 </Link>
             </div>
           </div>
         )}

@@ -9,7 +9,8 @@ import {
   ShieldCheck,
   LogOut,
   LayoutGrid,
-  ShoppingBag
+  ShoppingBag,
+  Palette
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -89,11 +90,18 @@ export function Header({
             </DropdownMenu>
           </>
         ) : (
-           <Link href="/admin/login">
-            <Button variant="outline">
-                <ShieldCheck className="mr-2 h-4 w-4" /> Admin Portal
-            </Button>
-           </Link>
+           <div className="flex items-center gap-2">
+              <Button variant="ghost" asChild>
+                <Link href="/artist">
+                  <Palette className="mr-2 h-4 w-4"/> For Artists
+                </Link>
+              </Button>
+              <Link href="/admin/login">
+                <Button variant="outline">
+                    <ShieldCheck className="mr-2 h-4 w-4" /> Admin
+                </Button>
+              </Link>
+           </div>
         )}
       </div>
     </header>

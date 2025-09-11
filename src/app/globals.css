@@ -2,10 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
-}
-
 @layer base {
   :root {
     --background: 39 10% 98%;
@@ -14,34 +10,27 @@ body {
     --card-foreground: 20 14% 4%;
     --popover: 39 10% 100%;
     --popover-foreground: 20 14% 4%;
-    --primary: 25 75% 42%;
+    --primary: 25 80% 40%;
     --primary-foreground: 35 10% 98%;
     --secondary: 39 10% 95%;
     --secondary-foreground: 25 75% 25%;
     --muted: 39 5% 94%;
     --muted-foreground: 24 5% 40%;
-    --accent: 35 80% 50%;
+    --accent: 35 80% 55%;
     --accent-foreground: 24 10% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     --border: 39 10% 88%;
     --input: 39 10% 88%;
     --ring: 25 75% 35%;
-    --chart-1: 170 60% 40%;
-    --chart-2: 350 90% 70%;
-    --chart-3: 35 80% 60%;
-    --chart-4: 170 40% 50%;
-    --chart-5: 350 80% 80%;
     --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Custom theme colors */
+    --brand-rich-henna: 25 75% 32%; /* #8B4513 */
+    --brand-soft-sand: 40 55% 95%; /* #F5F5DC */
+    --brand-golden-bronze: 30 59% 51%; /* #CD7F32 */
   }
+
   .dark {
     --background: 20 14% 4%;
     --foreground: 39 10% 98%;
@@ -62,19 +51,6 @@ body {
     --border: 20 10% 20%;
     --input: 20 10% 20%;
     --ring: 25 75% 35%;
-    --chart-1: 170 60% 40%;
-    --chart-2: 350 90% 70%;
-    --chart-3: 35 80% 60%;
-    --chart-4: 170 40% 50%;
-    --chart-5: 350 80% 80%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -84,5 +60,12 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-roboto);
+  }
+  h1, h2, h3, h4, h5, h6, .font-headline {
+    font-family: var(--font-playfair-display);
+  }
+  .font-dancing-script {
+    font-family: var(--font-dancing-script);
   }
 }
