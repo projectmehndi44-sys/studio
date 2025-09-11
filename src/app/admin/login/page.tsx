@@ -15,7 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Home, AlertTriangle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { getAuth, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { getTeamMembers, saveTeamMembers } from '@/lib/services';
 import { teamMembers as initialTeamMembers } from '@/lib/team-data';
@@ -66,13 +66,13 @@ export default function AdminLoginPage() {
                 description: `Welcome! Redirecting...`,
             });
             
-            localStorage.setItem('adminAuthenticated', 'true');
-            router.push('/admin');
+            // The redirection is now handled by the useAdminAuth hook
+            // to ensure the user is a valid team member.
 
         } catch (error: any) {
             console.error("Admin Login Error:", error);
             let description = 'An error occurred during login. Please try again.';
-            if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+            if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
                 description = 'Invalid credentials. Please check your username and password.';
             }
             toast({
@@ -149,24 +149,6 @@ export default function AdminLoginPage() {
         }
     };
 
-
-    // Redirect if already logged in
-    React.useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                // Check if this user is a valid team member before redirecting
-                const teamMembers = await getTeamMembers();
-                const memberProfile = teamMembers.find(m => m.id === user.uid);
-                if (memberProfile) {
-                    // Only redirect if they are a valid admin
-                    router.push('/admin');
-                }
-                // If they are not a memberProfile, do nothing and let them stay on the login page.
-                // The main layout's auth guard will handle logging them out if they try to access protected routes.
-            }
-        });
-        return () => unsubscribe();
-    }, [auth, router]);
 
     return (
         <>

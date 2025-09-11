@@ -6,7 +6,7 @@ import type { TeamMember, Permissions } from '@/types';
 import { getTeamMembers } from '@/lib/services';
 import { onAuthStateChanged, getAuth } from 'firebase/auth';
 import { app } from '@/lib/firebase';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface AuthState {
     isLoading: boolean;
@@ -19,6 +19,7 @@ const authContext = React.createContext<AuthState & { hasPermission: (module: ke
 
 export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
+    const pathname = usePathname();
     const [authState, setAuthState] = React.useState<AuthState>({
         isLoading: true,
         isAuthenticated: false,
@@ -39,6 +40,9 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
                         // Successfully found the user's profile. They are a valid admin/team member.
                         localStorage.setItem('adminAuthenticated', 'true');
                         setAuthState({ isLoading: false, isAuthenticated: true, user: memberProfile });
+                        if (pathname === '/admin/login') {
+                            router.push('/admin');
+                        }
                     } else {
                         // This person is logged into Firebase, but is NOT in our team list.
                         // This could be a customer or artist. Log them out of the admin context.
@@ -50,17 +54,23 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
                 } catch (error) {
                     console.error("Failed to fetch team members for auth check", error);
                     setAuthState({ isLoading: false, isAuthenticated: false, user: null });
+                     if (pathname !== '/admin/login') {
+                        router.push('/admin/login');
+                    }
                 }
             } else {
                 // No user is signed in.
                 localStorage.removeItem('adminAuthenticated');
                 setAuthState({ isLoading: false, isAuthenticated: false, user: null });
+                 if (pathname !== '/admin/login') {
+                    router.push('/admin/login');
+                }
             }
         });
 
         // Cleanup subscription on unmount
         return () => unsubscribe();
-    }, [router]);
+    }, [router, pathname]);
 
     const hasPermission = React.useCallback((module: keyof Permissions, level: 'view' | 'edit'): boolean => {
         const { user } = authState;
