@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -26,10 +27,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '../ui/separator';
 import { getAvailableLocations, createPendingArtist } from '@/lib/services';
 
-
-const passwordSchema = z.string()
-  .min(6, { message: 'Password must be at least 6 characters long.' });
-
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
@@ -43,8 +40,6 @@ const registrationSchema = z.object({
   servingAreas: z.string().min(1, { message: 'Please list at least one serving area.' }),
   phone: z.string().regex(/^\d{10}$/, { message: 'Please enter a valid 10-digit phone number.' }),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
-  password: passwordSchema,
-  confirmPassword: z.string(),
   workImages: z.any()
     .refine((files) => files?.length >= 1, "At least one work image is required.")
     .refine((files) => Array.from(files).every((file: any) => file.size <= MAX_FILE_SIZE), `Max file size is 5MB per image.`)
@@ -53,9 +48,6 @@ const registrationSchema = z.object({
       ".jpg, .jpeg, .png and .webp files are accepted."
     ),
   agreed: z.boolean().refine((val) => val === true, { message: 'You must agree to the terms and conditions.' }),
-}).refine(data => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
 });
 
 
@@ -84,8 +76,6 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
       servingAreas: '',
       phone: '',
       email: '',
-      password: '',
-      confirmPassword: '',
       workImages: undefined,
       agreed: false,
     },
@@ -178,7 +168,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                         )} />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FormField control={form.control} name="email" render={({ field }) => (
-                                <FormItem><FormLabel>Email Address</FormLabel><FormControl><Input type="email" placeholder="your.email@example.com" {...field} /></FormControl><FormMessage /></FormItem>
+                                <FormItem><FormLabel>Email Address (This will be your username)</FormLabel><FormControl><Input type="email" placeholder="your.email@example.com" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
                            <FormField control={form.control} name="phone" render={({ field }) => (
                                 <FormItem>
@@ -246,26 +236,11 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                         )} />
                     </div>
 
-                    <Separator />
-                    
-                    {/* Account Security */}
-                     <div className="space-y-4">
-                        <h3 className="font-semibold text-lg text-primary">Step 3: Account Security</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FormField control={form.control} name="password" render={({ field }) => (
-                                <FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                            <FormField control={form.control} name="confirmPassword" render={({ field }) => (
-                                <FormItem><FormLabel>Confirm Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
-                            )} />
-                        </div>
-                    </div>
-                    
                     <Separator/>
 
                     {/* Portfolio */}
                      <div className="space-y-4">
-                         <h3 className="font-semibold text-lg text-primary">Step 4: Portfolio & Agreement</h3>
+                         <h3 className="font-semibold text-lg text-primary">Step 3: Portfolio & Agreement</h3>
                          <FormField
                             control={form.control}
                             name="workImages"
@@ -326,3 +301,5 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
     </Dialog>
   );
 }
+
+    

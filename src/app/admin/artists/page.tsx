@@ -89,12 +89,16 @@ export default function ArtistManagementPage() {
             if (signInMethods.length > 0) {
                  toast({
                     title: "User Already Exists",
-                    description: `This user already has a login. Approving their profile. Please onboard manually if issues persist.`,
+                    description: `This user already has a login. Please onboard them manually from the 'Onboard Artist' tab to link their account.`,
                     variant: "destructive"
                 });
+                return;
             }
+            
+            // Generate a secure, temporary password
+            const tempPassword = Math.random().toString(36).slice(-8);
 
-            const userCredential = await createUserWithEmailAndPassword(auth, artistToApprove.email, artistToApprove.password);
+            const userCredential = await createUserWithEmailAndPassword(auth, artistToApprove.email, tempPassword);
             const authUser = userCredential.user;
 
             const newArtist: Omit<Artist, 'id'> = {
@@ -113,14 +117,29 @@ export default function ArtistManagementPage() {
                 rating: 0,
                 styleTags: ['new', 'verified'],
                 status: 'active',
+                state: artistToApprove.state,
+                district: artistToApprove.district,
+                locality: artistToApprove.locality,
+                servingAreas: artistToApprove.servingAreas,
             };
             
             await createArtist(authUser.uid, newArtist);
             await deletePendingArtist(artistToApprove.originalId);
+
+             const welcomeMessage = `Welcome to MehendiFy! Your account has been approved. You can now log in to your artist portal. \nYour temporary password is: ${tempPassword}\nPlease change it after your first login.`;
+            const notification: Omit<Notification, 'id'> = {
+                artistId: authUser.uid,
+                title: 'Your Artist Account is Approved!',
+                message: welcomeMessage,
+                type: 'announcement',
+                isRead: false,
+                timestamp: new Date().toISOString(),
+            };
+            await createNotification(notification);
             
             toast({
                 title: "Artist Approved",
-                description: `A notification has been sent to ${newArtist.name}.`,
+                description: `A notification with a temporary password has been sent to ${newArtist.name}.`,
             });
         } catch (error: any) {
             console.error("Approval Error: ", error);
@@ -142,7 +161,7 @@ export default function ArtistManagementPage() {
         
         toast({
             title: "Artist Rejected",
-            description: `A notification has been sent to ${artistToReject.name}.`,
+            description: `${artistToReject.name}'s application has been rejected.`,
             variant: "destructive"
         });
     };
@@ -503,6 +522,8 @@ export default function ArtistManagementPage() {
         </>
     );
 }
+
+    
 
     
 
