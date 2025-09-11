@@ -116,12 +116,6 @@ export default function ArtistLoginPage() {
                            Register here
                         </Link>
                         </div>
-                        <div>
-                         First time logging in?{' '}
-                         <Link href="/artist/set-password" className="underline">
-                            Set your password
-                         </Link>
-                        </div>
                     </div>
                  <div className="mt-2 text-center text-sm">
                     <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors">
