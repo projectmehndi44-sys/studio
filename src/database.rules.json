@@ -8,32 +8,36 @@ service cloud.firestore {
     //  HELPER FUNCTIONS - These make the rules easier to read and manage
     // =====================================================================
 
-    // Safely checks if the user is a Super Admin.
     function isSuperAdmin() {
       return request.auth != null 
         && request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data
         && get(/databases/$(database)/documents/config/teamMembers).data[request.auth.uid].role == 'Super Admin';
     }
 
-    // Safely checks if the user is a Team Member.
     function isTeamMember() {
       return request.auth != null 
         && request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data
         && get(/databases/$(database)/documents/config/teamMembers).data[request.auth.uid].role == 'team-member';
     }
 
-    // The main permission checking function. It now uses correct syntax without 'let' or 'if'.
     function hasPermission(module, level) {
       // Use a ternary operator to correctly handle view/edit logic
       return (level == 'view')
         ? (get(/databases/$(database)/documents/config/teamMembers).data[request.auth.uid].permissions[module] in ['view', 'edit'])
         : (get(/databases/$(database)/documents/config/teamMembers).data[request.auth.uid].permissions[module] == level);
     }
+
+
+    // =====================================================================
+    //  SECURITY RULES
+    // =====================================================================
     
     // --- Public & Customer Rules (Evaluated for non-admins) ---
+    
+    // Allow ANYONE (public) to read artist and service data. This is crucial for the homepage.
     match /artists/{artistId} {
       allow get, list: if true;
-      allow update: if request.auth != null && request.auth.uid == artistId;
+      allow update: if request.auth != null && request.auth.uid == artistId; // An artist can only update their own profile
     }
     match /masterServices/{docId} {
       allow get, list: if true;
@@ -41,13 +45,17 @@ service cloud.firestore {
     match /config/availableLocations {
       allow get: if true;
     }
+
+    // Allow anyone to create an account or application
     match /customers/{customerId} {
       allow create: if true;
-      allow get, update: if request.auth != null && request.auth.uid == customerId;
+      allow get, update: if request.auth != null && request.auth.uid == customerId; // A customer can only manage their own data
     }
     match /pendingArtists/{docId} {
       allow create: if true;
     }
+
+    // A logged-in user can manage their bookings and notifications
     match /bookings/{bookingId} {
       allow read, write: if request.auth != null;
     }
@@ -56,8 +64,8 @@ service cloud.firestore {
     }
 
 
-    // --- Admin & Team Member Rules (Evaluated for admins) ---
-    // These rules are evaluated alongside public rules. Access is granted if EITHER condition is met.
+    // --- Admin & Team Member Rules (Evaluated in addition to public rules) ---
+    // These grant EXTRA permissions to admins, without overriding public access.
     
     match /bookings/{docId} {
       allow read: if isTeamMember() && hasPermission('bookings', 'view');
