@@ -4,91 +4,60 @@
     "service cloud.firestore": {
       "match": "/databases/{database}/documents",
 
-      "function": "isSuperAdmin()",
-      "function": "isTeamMember()",
-      "function": "hasPermission(module, level)",
-      "function": "isOwner(resourceId)",
+      "function isSuperAdmin()": "return request.auth != null && get(/databases/$(database)/documents/config/teamMembers).data.members.get(request.auth.uid, {}).role == 'Super Admin';",
+      "function isTeamMember()": "return request.auth != null && request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data.members;",
+      "function hasPermission(module, level)": "let userPermissions = get(/databases/$(database)/documents/config/teamMembers).data.members[request.auth.uid].permissions; return (level == 'view') ? (userPermissions[module] in ['view', 'edit']) : (userPermissions[module] == level);",
+      "function isOwner(resourceId)": "return request.auth != null && request.auth.uid == resourceId;",
 
-      "// All other documents are locked down by default": {
-        "match": "/{document=**}",
-        "allow": {
-          "read, write": "if false;"
-        }
+      "match": "/artists/{artistId}" {
+        "allow get, list": true;
+        "allow update": "if isOwner(artistId) || (isTeamMember() && hasPermission('artists', 'edit')) || isSuperAdmin();"
       },
 
-      "artists": {
-        "match": "/{artistId}",
-        "allow": {
-          "get, list": "if true;",
-          "update": "if isOwner(artistId) || hasPermission('artists', 'edit') || isSuperAdmin();"
-        }
+      "match": "/masterServices/{docId}" {
+         "allow get, list": true;
+         "allow write": "if (isTeamMember() && hasPermission('packages', 'edit')) || isSuperAdmin();"
+      },
+      
+      "match": "/config/availableLocations" {
+        "allow get": true;
+        "allow write": "if (isTeamMember() && hasPermission('settings', 'edit')) || isSuperAdmin();"
+      },
+      
+      "match": "/config/teamMembers" {
+        "allow get": "if request.auth != null;",
+        "allow write": "if isSuperAdmin();"
       },
 
-      "masterServices": {
-        "match": "/{docId}",
-        "allow": {
-          "get, list": "if true;",
-          "write": "if hasPermission('packages', 'edit') || isSuperAdmin();"
-        }
+      "match": "/config/{docId}" {
+          "allow read": "if (isTeamMember() && hasPermission('settings', 'view')) || isSuperAdmin();",
+          "allow write": "if (isTeamMember() && hasPermission('settings', 'edit')) || isSuperAdmin();"
       },
 
-      "config": {
-        "match": "/availableLocations",
-        "allow": {
-          "get": "if true;",
-          "write": "if hasPermission('settings', 'edit') || isSuperAdmin();"
-        }
-      },
-      "config": {
-        "match": "/teamMembers",
-        "allow": {
-          "get": "if request.auth != null;",
-          "write": "if isSuperAdmin();"
-        }
-      },
-      "config": {
-        "match": "/{docId}",
-        "allow": {
-          "read": "if hasPermission('settings', 'view') || isSuperAdmin();",
-          "write": "if hasPermission('settings', 'edit') || isSuperAdmin();"
-        }
+      "match": "/customers/{customerId}" {
+        "allow create": true;
+        "allow get, update": "if isOwner(customerId) || (isTeamMember() && hasPermission('customers', 'view')) || isSuperAdmin();"
       },
 
-      "customers": {
-        "match": "/{customerId}",
-        "allow": {
-          "create": "if true;",
-          "get, update": "if isOwner(customerId) || hasPermission('customers', 'view') || isSuperAdmin();"
-        }
+      "match": "/pendingArtists/{docId}" {
+        "allow create": true;
+        "allow read, write": "if (isTeamMember() && hasPermission('artists', 'edit')) || isSuperAdmin();"
       },
 
-      "pendingArtists": {
-        "match": "/{docId}",
-        "allow": {
-          "create": "if true;",
-          "read, write": "if hasPermission('artists', 'edit') || isSuperAdmin();"
-        }
+      "match": "/bookings/{bookingId}" {
+        "allow read, write": "if request.auth != null;"
       },
 
-      "bookings": {
-        "match": "/{bookingId}",
-        "allow": {
-          "read, write": "if request.auth != null;"
-        }
+      "match": "/notifications/{notificationId}" {
+        "allow read, write": "if request.auth != null;"
       },
-
-      "notifications": {
-        "match": "/{notificationId}",
-        "allow": {
-          "read, write": "if request.auth != null;"
-        }
+      
+      "match": "/payoutHistory/{docId}" {
+         "allow read, write": "if (isTeamMember() && hasPermission('payouts', 'edit')) || isSuperAdmin();"
       },
-
-      "functions": {
-        "isSuperAdmin": "return request.auth != null && get(/databases/$(database)/documents/config/teamMembers).data.members.get(request.auth.uid, {}).role == 'Super Admin';",
-        "isTeamMember": "return request.auth != null && request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data.members;",
-        "hasPermission": "let userPermissions = get(/databases/$(database)/documents/config/teamMembers).data.members[request.auth.uid].permissions; return (level == 'view') ? (userPermissions[module] in ['view', 'edit']) : (userPermissions[module] == level);",
-        "isOwner": "return request.auth != null && request.auth.uid == resourceId;"
+      
+      "match": "/{document=**}" {
+        "allow read, write": false;
       }
     }
   }
