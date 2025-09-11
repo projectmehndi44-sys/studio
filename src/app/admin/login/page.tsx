@@ -152,9 +152,17 @@ export default function AdminLoginPage() {
 
     // Redirect if already logged in
     React.useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user && localStorage.getItem('adminAuthenticated') === 'true') {
-                 router.push('/admin');
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // Check if this user is a valid team member before redirecting
+                const teamMembers = await getTeamMembers();
+                const memberProfile = teamMembers.find(m => m.id === user.uid);
+                if (memberProfile) {
+                    // Only redirect if they are a valid admin
+                    router.push('/admin');
+                }
+                // If they are not a memberProfile, do nothing and let them stay on the login page.
+                // The main layout's auth guard will handle logging them out if they try to access protected routes.
             }
         });
         return () => unsubscribe();
