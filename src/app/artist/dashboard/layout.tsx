@@ -33,6 +33,7 @@ interface ArtistPortalContextType {
     unreadCount: number;
     setArtist: React.Dispatch<React.SetStateAction<Artist | null>>;
     setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
+    fetchData: () => void;
 }
 
 export const ArtistPortalContext = React.createContext<ArtistPortalContextType | null>(null);
@@ -73,7 +74,7 @@ const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
     const router = useRouter();
     const { toast } = useToast();
     const auth = getAuth(app);
-    const { setArtist } = useArtistPortal();
+    const { setArtist, fetchData } = useArtistPortal();
     const [isLoading, setIsLoading] = React.useState(true);
     const [artistId, setArtistId] = React.useState<string | null>(null);
 
@@ -147,6 +148,14 @@ export default function ArtistDashboardLayout({
         await signOutUser();
         router.push('/');
     }, [router]);
+    
+    const fetchData = React.useCallback(async () => {
+        if (!artist?.id) return;
+        const currentArtist = await getArtist(artist.id);
+        if (currentArtist) {
+            setArtist(currentArtist);
+        }
+    }, [artist?.id]);
 
 
     React.useEffect(() => {
@@ -258,6 +267,7 @@ export default function ArtistDashboardLayout({
         unreadCount,
         setArtist,
         setNotifications,
+        fetchData,
     };
 
     return (

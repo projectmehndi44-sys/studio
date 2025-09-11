@@ -68,15 +68,16 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
     if (!booking) return new Set();
     
     const unavailableIds = new Set<string>();
-    const bookingDates = booking.serviceDates.map(d => new Date(d));
+    const bookingDates = booking.serviceDates.map(d => d.toDate());
 
     // Add artists who are already booked on any of the same days
     allBookings
         .filter(b => 
             b.id !== booking.id &&
             (b.status === 'Confirmed' || b.status === 'Completed') &&
+            b.artistIds.length > 0 &&
             b.serviceDates.some(bookedDate => 
-                bookingDates.some(bookingDate => isSameDay(new Date(bookedDate), bookingDate)))
+                bookingDates.some(bookingDate => isSameDay(bookedDate.toDate(), bookingDate)))
         )
         .forEach(b => b.artistIds.forEach(id => id && unavailableIds.add(id)));
 
@@ -149,7 +150,7 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
             <div className='text-sm'>
               <p><span className='font-semibold'>Customer:</span> {booking.customerName}</p>
               <p><span className='font-semibold'>Service:</span> {booking.service}</p>
-              <p><span className='font-semibold'>Date:</span> {booking.date.toLocaleDateString()}</p>
+              <p><span className='font-semibold'>Date:</span> {booking.date.toDate().toLocaleDateString()}</p>
             </div>
           </div>
           <DialogFooter>
