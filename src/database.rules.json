@@ -4,20 +4,39 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // =====================================================================
+    //  HELPER FUNCTIONS
+    // =====================================================================
     function isAdmin() {
-      // Safely checks if a user's UID exists in the team members map before checking their role.
-      // This prevents permission errors for non-admin users.
+      // Safely checks if the user's UID exists in the team members map.
+      // This is the correct way to check for a role without causing errors for non-admins.
       return request.auth != null && (request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data);
     }
 
-    // Admins get full access to everything. This rule is evaluated first.
+    function isOwner(resourceId) {
+      // Checks if the logged-in user's UID matches the document ID.
+      return request.auth != null && request.auth.uid == resourceId;
+    }
+    
+    function isAuthenticated() {
+        return request.auth != null;
+    }
+
+    // =====================================================================
+    //  ADMIN "GOD-MODE" RULE
+    // =====================================================================
+    // If a user is an admin, they can do anything. This rule is checked first.
     match /{path=**} {
       allow read, write: if isAdmin();
     }
     
-    // --- Rules for NON-ADMINS ---
+    // =====================================================================
+    //  RULES FOR NON-ADMINS
+    // =====================================================================
 
-    // Anyone can see artists and service details.
+    // --- Publicly Readable Data ---
+    // Anyone (including unauthenticated visitors) can read this data.
+    // This is essential for the homepage and browsing artists/services.
     match /artists/{artistId} {
       allow get, list: if true;
     }
@@ -28,15 +47,19 @@ service cloud.firestore {
       allow get: if true;
     }
 
-    // Any authenticated user can manage their own data.
+    // --- User-Specific Write Rules ---
+    // An artist can only update their own profile.
     match /artists/{artistId} {
-      allow update: if request.auth.uid == artistId;
+      allow update: if isOwner(artistId);
     }
+
+    // A customer can only get or update their own profile.
     match /customers/{customerId} {
-      allow get, update: if request.auth.uid == customerId;
+      allow get, update: if isOwner(customerId);
     }
-    
-    // Anyone can create an account or application.
+
+    // --- Open Create Rules ---
+    // Anyone can create a customer account or apply to be an artist.
     match /customers/{customerId} {
       allow create: if true;
     }
@@ -44,12 +67,14 @@ service cloud.firestore {
       allow create: if true;
     }
 
-    // Any authenticated user can manage bookings and notifications.
+    // --- General Authenticated Access ---
+    // Any logged-in user (customer or artist) can create/read/write their
+    // own bookings and notifications.
     match /bookings/{bookingId} {
-        allow read, write: if request.auth != null;
+      allow read, write: if isAuthenticated();
     }
     match /notifications/{notificationId} {
-        allow read, write: if request.auth != null;
+      allow read, write: if isAuthenticated();
     }
   }
 }
