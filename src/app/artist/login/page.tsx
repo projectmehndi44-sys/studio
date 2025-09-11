@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -37,7 +38,7 @@ export default function ArtistLoginPage() {
         } catch (error: any) {
             console.error("Login error:", error);
             let description = 'An error occurred during login. Please try again.';
-            if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
+            if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
                 description = 'Invalid credentials. Please check your email and password.';
             } else if (error.code === 'auth/user-disabled') {
                 description = 'Your account has been suspended by an administrator.';
@@ -108,11 +109,19 @@ export default function ArtistLoginPage() {
                         {isLoading ? 'Logging in...' : 'Login'}
                     </Button>
                 </form>
-                 <div className="mt-4 text-center text-sm">
+                 <div className="mt-4 text-center text-sm space-y-2">
+                        <div>
                         Don't have an account?{' '}
                         <Link href="/#artist-register" className="underline">
                            Register here
                         </Link>
+                        </div>
+                        <div>
+                         First time logging in?{' '}
+                         <Link href="/artist/set-password" className="underline">
+                            Set your password
+                         </Link>
+                        </div>
                     </div>
                  <div className="mt-2 text-center text-sm">
                     <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors">
