@@ -54,6 +54,7 @@ export type Artist = {
   referralCode?: string;
   referralDiscount?: number; // Percentage, e.g., 10 for 10%
   status?: 'active' | 'suspended';
+  password?: string;
 };
 
 export type Customer = {

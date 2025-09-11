@@ -24,6 +24,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { createUser } from '@/lib/firebase';
 
 type PendingArtist = Omit<Artist, 'id'> & {
   id: string; // email is used as ID here
@@ -80,32 +81,41 @@ export default function ArtistManagementPage() {
         const artistToApprove = pendingArtists.find(p => p.id === artistId);
         if (!artistToApprove) return;
         
-        const newArtist: Omit<Artist, 'id'> = {
-            name: artistToApprove.fullName,
-            email: artistToApprove.email,
-            phone: artistToApprove.phone,
-            password: artistToApprove.password,
-            profilePicture: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 100)}`,
-            workImages: [
-                `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
-                `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
-            ],
-            services: ['mehndi', 'makeup'],
-            location: artistToApprove.location,
-            charge: 2000,
-            charges: { mehndi: 2000, makeup: 3000 },
-            rating: 0,
-            styleTags: ['new', 'verified'],
-            status: 'active',
-        };
-        
-        await createArtist(newArtist.email, newArtist);
-        await deletePendingArtist(artistToApprove.originalId);
-        
-        toast({
-            title: "Artist Approved",
-            description: `A notification has been sent to ${newArtist.name}.`,
-        });
+        try {
+            const authUser = await createUser(artistToApprove.email, artistToApprove.password);
+
+            const newArtist: Omit<Artist, 'id'> = {
+                name: artistToApprove.fullName,
+                email: artistToApprove.email,
+                phone: artistToApprove.phone,
+                profilePicture: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 100)}`,
+                workImages: [
+                    `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
+                    `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
+                ],
+                services: ['mehndi', 'makeup'],
+                location: artistToApprove.location,
+                charge: 2000,
+                charges: { mehndi: 2000, makeup: 3000 },
+                rating: 0,
+                styleTags: ['new', 'verified'],
+                status: 'active',
+            };
+            
+            await createArtist(authUser.uid, newArtist);
+            await deletePendingArtist(artistToApprove.originalId);
+            
+            toast({
+                title: "Artist Approved",
+                description: `A notification has been sent to ${newArtist.name}.`,
+            });
+        } catch (error: any) {
+            toast({
+                title: "Approval Failed",
+                description: error.message,
+                variant: 'destructive',
+            });
+        }
     };
 
      const handleReject = async (artistId: string) => {
@@ -199,45 +209,57 @@ export default function ArtistManagementPage() {
             return;
         }
 
-        const newArtistData: Omit<Artist, 'id'> = {
-            name: data.name,
-            email: data.email,
-            phone: data.phone,
-            password: data.password,
-            profilePicture: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 100)}`,
-            workImages: [
-                `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
-                `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
-            ],
-            services: ['mehndi', 'makeup'],
-            location: data.location,
-            charge: data.charge,
-            charges: { mehndi: data.charge, makeup: data.charge },
-            rating: 0,
-            styleTags: ['new', 'verified'],
-            status: 'active',
-        };
-        
-        await createArtist(data.email, newArtistData);
+        try {
+            // 1. Create the user in Firebase Auth
+            const authUser = await createUser(data.email, data.password);
+            
+            // 2. Prepare the artist data for Firestore
+            const newArtistData: Omit<Artist, 'id'> = {
+                name: data.name,
+                email: data.email,
+                phone: data.phone,
+                profilePicture: `https://picsum.photos/200/200?random=${Math.floor(Math.random() * 100)}`,
+                workImages: [
+                    `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
+                    `https://picsum.photos/600/400?random=${Math.floor(Math.random() * 1000)}`,
+                ],
+                services: ['mehndi', 'makeup'],
+                location: data.location,
+                charge: data.charge,
+                charges: { mehndi: data.charge, makeup: data.charge },
+                rating: 0,
+                styleTags: ['new', 'verified'],
+                status: 'active',
+            };
+            
+            // 3. Save the artist data to Firestore using the UID from Auth
+            await createArtist(authUser.uid, newArtistData);
 
-        // Send a welcome notification to the artist
-        const welcomeMessage = `Welcome to the platform! Your account is active. \nUsername: ${data.email}\nPassword: ${data.password}\nLogin at: ${window.location.origin}/artist/login`;
-        const notification: Omit<Notification, 'id'> = {
-            artistId: data.email,
-            title: 'Welcome to MehendiFy!',
-            message: welcomeMessage,
-            type: 'announcement',
-            isRead: false,
-            timestamp: new Date().toISOString(),
-        };
+            // 4. Send a welcome notification to the artist
+            const welcomeMessage = `Welcome to the platform! Your account is active. \nUsername: ${data.email}\nPassword: ${data.password}\nLogin at: ${window.location.origin}/artist/login`;
+            const notification: Omit<Notification, 'id'> = {
+                artistId: authUser.uid,
+                title: 'Welcome to MehendiFy!',
+                message: welcomeMessage,
+                type: 'announcement',
+                isRead: false,
+                timestamp: new Date().toISOString(),
+            };
+            await createNotification(notification);
 
-        await createNotification(notification);
+            toast({
+                title: "Artist Onboarded Successfully",
+                description: `${data.name} has been added to the platform and can now log in.`,
+            });
+            form.reset();
 
-        toast({
-            title: "Artist Onboarded Successfully",
-            description: `${data.name} has been added to the platform and a welcome notification has been sent.`,
-        });
-        form.reset();
+        } catch (error: any) {
+            toast({
+                title: "Onboarding Failed",
+                description: error.message || "An unexpected error occurred.",
+                variant: "destructive",
+            });
+        }
     };
 
     return (
@@ -466,5 +488,3 @@ export default function ArtistManagementPage() {
         </>
     );
 }
-
-    
