@@ -98,25 +98,27 @@ export default function ArtistManagementPage() {
             // Check if a Firebase Auth user already exists.
             const signInMethods = await fetchSignInMethodsForEmail(auth, artistToApprove.email);
 
-            let authUid: string;
-
-            if (signInMethods.length === 0) {
-                 // Create a disabled user account that can't be logged into until they set a password
-                const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
-                const userCredential = await createUserWithEmailAndPassword(auth, artistToApprove.email, tempPassword);
-                authUid = userCredential.user.uid;
-            } else {
+            if (signInMethods.length > 0) {
                  toast({
                     title: "Account Exists",
-                    description: `${artistToApprove.email} already has a login account. We will link it to their new artist profile.`,
+                    description: `${artistToApprove.email} already has a login account. We will link it to their new artist profile. A password reset email has been sent.`,
                 });
-                // This part is tricky without a backend to get the UID from email.
-                // For client-side, we'll have to rely on the manual onboarding for existing users.
-                // A better approach would be a Cloud Function `getUserByEmail`.
-                // For now, we'll let the password reset email handle it.
-                const teamMembers = await getTeamMembers(); // A bit of a hack to find existing users.
-                const existingUser = teamMembers.find(u => u.username === artistToApprove.email);
-                authUid = existingUser?.id || `existing_${Date.now()}`;
+            }
+
+            // Create user if they don't exist. If they do, this step will be skipped on the backend/by firebase rules,
+            // but we proceed to send password reset for security.
+            if(signInMethods.length === 0) {
+                // This is a placeholder for user creation; password doesn't matter as they will reset it.
+                await createUserWithEmailAndPassword(auth, artistToApprove.email, `temporary_password_${Date.now()}`);
+            }
+
+            const teamMembers = await getTeamMembers();
+            const existingUser = teamMembers.find(u => u.username === artistToApprove.email);
+            // This is a bit of a hack, in a real production app a Cloud Function `getUserByEmail` would be better.
+            const authUid = existingUser?.id || (await getAuth().getUserByEmail(artistToApprove.email)).uid;
+            
+            if(!authUid) {
+                throw new Error("Could not retrieve UID for the user.");
             }
 
             const newArtist: Omit<Artist, 'id'> = {
@@ -147,7 +149,7 @@ export default function ArtistManagementPage() {
             // Send password reset/creation email
             await sendPasswordResetEmail(auth, artistToApprove.email);
             
-            const welcomeMessage = `Welcome to MehendiFy! Your account has been approved. Please check your email and click the link to create your password and log in to your artist portal.`;
+            const welcomeMessage = `Welcome to GlamGo! Your account has been approved. Please check your email and click the link to create your password and log in to your artist portal.`;
             const notification: Omit<Notification, 'id'> = {
                 artistId: authUid,
                 title: 'Your Artist Account is Approved!',
@@ -277,8 +279,7 @@ export default function ArtistManagementPage() {
                 const existingUser = teamMembers.find(u => u.username === data.email);
                 authUid = existingUser?.id || `existing_${Date.now()}`;
             } else {
-                const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
-                const userCredential = await createUserWithEmailAndPassword(auth, data.email, tempPassword);
+                const userCredential = await createUserWithEmailAndPassword(auth, data.email, `temporary_password_${Date.now()}`);
                 authUid = userCredential.user.uid;
             }
             
@@ -307,7 +308,7 @@ export default function ArtistManagementPage() {
             const welcomeMessage = `Welcome to the platform! Your artist account is active. Please check your email for a link to create your password and access the artist portal.`;
             const notification: Omit<Notification, 'id'> = {
                 artistId: authUid,
-                title: 'Welcome to MehendiFy!',
+                title: 'Welcome to GlamGo!',
                 message: welcomeMessage,
                 type: 'announcement',
                 isRead: false,

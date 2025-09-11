@@ -21,14 +21,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { useAdminAuth } from '@/hooks/use-admin-auth';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { getTeamMembers, saveTeamMembers } from '@/lib/services';
-import { createUser } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
+import { app } from '@/lib/firebase';
 
 
 const memberSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, 'Name is required'),
   username: z.string().email('Username must be a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
   role: z.literal('team-member'),
   permissions: z.object({
     dashboard: z.enum(['edit', 'view', 'hidden']),
@@ -52,13 +53,13 @@ export default function TeamManagementPage() {
     const { user } = useAdminAuth();
     const [teamMembers, setTeamMembers] = React.useState<TeamMember[]>([]);
     const [editingMember, setEditingMember] = React.useState<TeamMember | null>(null);
+    const auth = getAuth(app);
 
     const form = useForm<MemberFormValues>({
         resolver: zodResolver(memberSchema),
         defaultValues: { 
             name: '', 
             username: '', 
-            password: '', 
             role: 'team-member',
             permissions: {
                 dashboard: 'view',
@@ -96,7 +97,10 @@ export default function TeamManagementPage() {
             toast({ title: 'Team Member Updated', description: `${data.name}'s permissions have been updated.` });
         } else {
             try {
-                const authUser = await createUser(data.username, data.password);
+                // Create a user with a temporary password, they will reset it via email link.
+                const userCredential = await createUserWithEmailAndPassword(auth, data.username, `temp_password_${Date.now()}`);
+                const authUser = userCredential.user;
+                
                 const newMember: TeamMember = {
                     id: authUser.uid,
                     name: data.name,
@@ -105,7 +109,11 @@ export default function TeamManagementPage() {
                     permissions: data.permissions
                 };
                 updatedMembers = [...currentMembers, newMember];
-                toast({ title: 'Team Member Added', description: `${data.name} has been added to the team.` });
+                
+                // Send password creation email
+                await sendPasswordResetEmail(auth, data.username);
+                
+                toast({ title: 'Team Member Added', description: `${data.name} has been sent an email to create their password.` });
             } catch (error: any) {
                  toast({ title: 'Creation Failed', description: error.message, variant: 'destructive'});
                  return;
@@ -114,7 +122,7 @@ export default function TeamManagementPage() {
         
         await saveTeamMembers(updatedMembers);
         setTeamMembers(updatedMembers);
-        form.reset({ name: '', username: '', password: '', role: 'team-member', permissions: form.getValues('permissions')});
+        form.reset({ name: '', username: '', role: 'team-member', permissions: form.getValues('permissions')});
         setEditingMember(null);
     };
 
@@ -148,7 +156,6 @@ export default function TeamManagementPage() {
             id: member.id,
             name: member.name,
             username: member.username,
-            password: '●●●●●●●●', // Placeholder, not real password
             role: 'team-member',
             permissions: member.permissions
         });
@@ -190,9 +197,6 @@ export default function TeamManagementPage() {
                                         )} />
                                         <FormField control={form.control} name="username" render={({ field }) => (
                                             <FormItem><FormLabel>Login Email</FormLabel><FormControl><Input type="email" placeholder="e.g., jane@example.com" {...field} disabled={!!editingMember} /></FormControl><FormMessage /></FormItem>
-                                        )} />
-                                        <FormField control={form.control} name="password" render={({ field }) => (
-                                            <FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" {...field} disabled={!!editingMember} /></FormControl>{editingMember && <FormDescription>Password cannot be changed. Reset if needed.</FormDescription>}<FormMessage /></FormItem>
                                         )} />
                                     </div>
                                     

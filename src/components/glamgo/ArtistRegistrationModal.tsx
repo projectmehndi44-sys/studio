@@ -18,7 +18,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { Terminal, Upload } from 'lucide-react';
@@ -128,7 +127,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
         <DialogHeader>
           <DialogTitle className="text-primary font-bold text-2xl">Register as an Artist</DialogTitle>
           <DialogDescription>
-            Join our community of talented artists. Fill out the form below to get started.
+            Join our community of talented artists. Fill out the form below to get started. Your account will be created upon admin approval.
           </DialogDescription>
         </DialogHeader>
         {isSubmitted ? (
@@ -138,8 +137,8 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                     <AlertTitle>Registration Submitted!</AlertTitle>
                     <AlertDescription className="space-y-2">
                       <p>Thank you for registering! Your profile is now under review.</p>
-                      <p className="font-semibold">Profile creation is subject to data verification and admin approval and may take up to 24 hours. Please wait.</p>
-                      <p>For more details, contact our admin at <a href="mailto:admin@mehendify.com" className="underline">admin@mehendify.com</a>.</p>
+                      <p className="font-semibold">You will receive an email to create your password once your application is approved. This may take up to 24 hours.</p>
+                      <p>For more details, contact our admin at <a href="mailto:admin@glamgo.com" className="underline">admin@glamgo.com</a>.</p>
                     </AlertDescription>
                 </Alert>
                  <Button onClick={handleClose} className="w-full">
@@ -301,5 +300,3 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
     </Dialog>
   );
 }
-
-    

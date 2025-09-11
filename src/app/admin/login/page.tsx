@@ -19,7 +19,7 @@ import { getAuth, onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAnd
 import { app } from '@/lib/firebase';
 import { getTeamMembers, saveTeamMembers } from '@/lib/services';
 import { teamMembers as initialTeamMembers } from '@/lib/team-data';
-import { createUser } from '@/lib/firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import type { TeamMember } from '@/types';
 import { Alert, AlertTitle } from '@/components/ui/alert';
 
@@ -107,8 +107,9 @@ export default function AdminLoginPage() {
     const handleCreateSuperAdmin = async () => {
         const initialAdmin = initialTeamMembers[0];
         try {
-            // 1. Create the user in Firebase Auth
-            const authUser = await createUser(initialAdmin.username, 'password123');
+            // 1. Create the user in Firebase Auth with a temporary password
+            const userCredential = await createUserWithEmailAndPassword(auth, initialAdmin.username, `temp-password-${Date.now()}`);
+            const authUser = userCredential.user;
             
             // 2. Add the user to the Firestore database
             const newAdminMember: TeamMember = {
@@ -123,11 +124,14 @@ export default function AdminLoginPage() {
             const updatedMembers = [...currentMembers, newAdminMember];
             await saveTeamMembers(updatedMembers);
             
+            // 3. Send password creation email
+            await sendPasswordResetEmail(auth, initialAdmin.username);
+
             setSuperAdminExists(true); // Update state to hide the setup button
             
             toast({
-                title: "Super Admin Created Successfully!",
-                description: `User ${newAdminMember.username} created with password 'password123'. You can now log in.`,
+                title: "Super Admin Account Created!",
+                description: `User ${newAdminMember.username} created. A password creation email has been sent to them.`,
                 duration: 9000,
             });
 
@@ -235,7 +239,7 @@ export default function AdminLoginPage() {
                             <CardContent>
                                 <Alert>
                                     <AlertTitle className="text-xs">
-                                        Clicking this button will create the user <strong>{initialTeamMembers[0].username}</strong> with a temporary password of <strong>password123</strong>.
+                                        Clicking this will create the user <strong>{initialTeamMembers[0].username}</strong> and send them an email to create a secure password.
                                     </AlertTitle>
                                 </Alert>
                             </CardContent>
