@@ -33,7 +33,7 @@ interface ArtistPortalContextType {
     unreadCount: number;
     setArtist: React.Dispatch<React.SetStateAction<Artist | null>>;
     setNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
-    fetchData: () => Promise<void>;
+    fetchData: (uid: string) => Promise<void>;
 }
 
 export const ArtistPortalContext = React.createContext<ArtistPortalContextType | null>(null);
@@ -72,10 +72,9 @@ const BottomNavLink = ({ href, pathname, icon: Icon, label, children }: { href: 
 
 const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
     const router = useRouter();
-    const pathname = usePathname();
     const { toast } = useToast();
     const auth = getAuth(app);
-    const { artist, setArtist, fetchData } = useArtistPortal();
+    const { artist, fetchData } = useArtistPortal();
     const [isLoading, setIsLoading] = React.useState(true);
 
     const handleLogout = React.useCallback(async () => {
@@ -89,20 +88,25 @@ const AuthWrapper = ({ children }: { children: React.ReactNode }) => {
     React.useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user) {
+                // If there's a Firebase user, fetch their artist profile
                 fetchData(user.uid).finally(() => setIsLoading(false));
             } else {
+                // No user is logged in, redirect to login page.
                 router.push('/artist/login');
-                setIsLoading(false);
             }
         });
 
         return () => unsubscribe();
     }, [auth, fetchData, router]);
 
+
+    // This is the main loading state for the portal.
+    // It waits until firebase auth state is confirmed AND artist data is fetched.
     if (isLoading || !artist) {
         return <div className="flex items-center justify-center min-h-screen">Loading Artist Portal...</div>;
     }
 
+    // Once loaded and artist is confirmed, render the children (the dashboard).
     return <>{children}</>;
 };
 
@@ -116,7 +120,6 @@ export default function ArtistDashboardLayout({
     const { toast } = useToast();
     const pathname = usePathname();
     const isMobile = useIsMobile();
-    const auth = getAuth(app);
     
     // Centralized state for the portal
     const [artist, setArtist] = React.useState<Artist | null>(null);
@@ -130,9 +133,11 @@ export default function ArtistDashboardLayout({
         if (currentArtist) {
             setArtist(currentArtist);
         } else {
+            // This is a critical step: if the logged-in user is not a valid artist,
+            // log them out and redirect.
             toast({
-                title: "Login Error",
-                description: "Could not find your artist profile.",
+                title: "Access Denied",
+                description: "This account is not registered as an artist.",
                 variant: "destructive"
             });
             await signOutUser();
@@ -256,7 +261,7 @@ export default function ArtistDashboardLayout({
         unreadCount,
         setArtist,
         setNotifications,
-        fetchData: artist ? () => fetchData(artist.id) : async () => {},
+        fetchData,
     };
 
     return (
