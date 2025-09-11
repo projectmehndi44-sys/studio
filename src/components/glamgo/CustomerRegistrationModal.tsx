@@ -119,7 +119,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
 
       toast({
         title: "Registration Successful!",
-        description: `Welcome to MehendiFy, ${data.fullName}!`,
+        description: `Welcome to GlamGo, ${data.fullName}!`,
       });
       localStorage.setItem('currentCustomerId', newCustomer.id);
       onSuccessfulRegister(newCustomer);
@@ -169,7 +169,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
               customer = newCustomerData;
               toast({
                   title: "Registration Successful!",
-                  description: `Welcome to MehendiFy, ${customer.name}!`,
+                  description: `Welcome to GlamGo, ${customer.name}!`,
               });
             }
             localStorage.setItem('currentCustomerId', customer.id);
@@ -194,7 +194,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
         <DialogHeader>
           <DialogTitle className="text-primary font-bold text-2xl">Create Customer Account</DialogTitle>
           <DialogDescription>
-            Join MehendiFy to start booking amazing artists.
+            Join GlamGo to start booking amazing artists.
           </DialogDescription>
         </DialogHeader>
          <div id="recaptcha-container-register"/>

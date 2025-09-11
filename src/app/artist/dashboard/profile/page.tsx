@@ -375,7 +375,7 @@ export default function ArtistProfilePage() {
                                         <Alert>
                                             <AlertTitle>How It Works</AlertTitle>
                                             <AlertDescription>
-                                                When a customer uses your code, we help cover the discount cost. MehendiFy will absorb a discount cost of up to 5% of the total booking value. Any discount you offer above 5% will be deducted from your final payout. For a balanced approach, we recommend setting a 10% discount.
+                                                When a customer uses your code, we help cover the discount cost. GlamGo will absorb a discount cost of up to 5% of the total booking value. Any discount you offer above 5% will be deducted from your final payout. For a balanced approach, we recommend setting a 10% discount.
                                             </AlertDescription>
                                         </Alert>
                                     </CardContent>

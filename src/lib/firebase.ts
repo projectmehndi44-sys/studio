@@ -6,12 +6,12 @@ import { getFirestore, enableIndexedDbPersistence, Firestore } from 'firebase/fi
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 
 const firebaseConfig = {
-  "projectId": "mehndify",
+  "projectId": "glamgo-b3369",
   "appId": "1:837518627913:web:2935b777173393da1d1b98",
-  "storageBucket": "mehndify.firebasestorage.app",
+  "storageBucket": "glamgo-b3369.appspot.com",
   "apiKey": "AIzaSyCERepylTUMG_oujzlwIa6kwBPZxDV-O4I",
-  "authDomain": "mehndify.firebaseapp.com",
-  "measurementId": "",
+  "authDomain": "glamgo-b3369.firebaseapp.com",
+  "measurementId": "G-5G3W9KTE51",
   "messagingSenderId": "837518627913"
 };
 

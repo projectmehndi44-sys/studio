@@ -1,9 +1,9 @@
 
-# Prompt for Firebase Studio: Create a Native Android App for MehendiFy
+# Prompt for Firebase Studio: Create a Native Android App for GlamGo
 
 ## I. Core App Concept & Objective
 
-Create a native Android application for "MehendiFy," a platform for discovering and booking mehndi and makeup artists. The app must replicate the full functionality of the existing MehendiFy web application, providing three distinct user experiences (Customer, Artist, and Admin) and utilizing Firebase for its backend services (Authentication, Firestore Database).
+Create a native Android application for "GlamGo," a platform for discovering and booking mehndi and makeup artists. The app must replicate the full functionality of the existing GlamGo web application, providing three distinct user experiences (Customer, Artist, and Admin) and utilizing Firebase for its backend services (Authentication, Firestore Database).
 
 The primary technologies to be used are:
 *   **Language:** Kotlin
@@ -18,7 +18,7 @@ The primary technologies to be used are:
 
 ## II. App-wide Style & Branding Guidelines
 
-The entire app must adhere to the MehendiFy brand identity.
+The entire app must adhere to the GlamGo brand identity.
 
 *   **Primary Color (Rich Henna):** `#8B4513`
 *   **Background Color (Soft Sand):** `#F5F5DC`
@@ -93,7 +93,7 @@ This is the primary user-facing part of the app.
 
 ### 2. Home Screen
 *   The main entry point after login. It should use a `Scaffold` with a `TopAppBar` and `BottomNavigationView`.
-*   **TopAppBar:** Display the "MehendiFy" brand name and a user profile icon that opens an account management screen.
+*   **TopAppBar:** Display the "GlamGo" brand name and a user profile icon that opens an account management screen.
 *   **Main Content:** A `TabRow` to switch between services: "Mehndi," "Makeup," and "Photography."
 *   **Service Tabs:** Each tab will display a list of `MasterServicePackage` cards relevant to that service. These cards, upon being tapped, will open a Service Selection modal/dialog.
 *   **"Our Works" Carousel:** A horizontally scrolling carousel displaying high-quality gallery images.

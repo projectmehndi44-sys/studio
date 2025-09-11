@@ -78,7 +78,7 @@ export default function ArtistDashboardPage() {
             <Card>
                 <CardHeader>
                     <CardTitle className="text-2xl md:text-3xl">Welcome back, {artist.name}!</CardTitle>
-                    <CardDescription>Here's a quick overview of your performance on MehendiFy.</CardDescription>
+                    <CardDescription>Here's a quick overview of your performance on GlamGo.</CardDescription>
                 </CardHeader>
             </Card>
 
