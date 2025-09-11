@@ -1,4 +1,5 @@
 
+
 import { getDb } from './firebase';
 import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, query, where, deleteDoc, Timestamp, onSnapshot, Unsubscribe, runTransaction } from 'firebase/firestore';
 import type { Artist, Booking, Customer, MasterServicePackage, PayoutHistory, TeamMember, Notification, Promotion } from '@/types';
@@ -101,6 +102,17 @@ export const getArtist = async (id: string): Promise<Artist | null> => {
     }
     return artist;
 };
+export const getArtistByEmail = async (email: string): Promise<Artist | null> => {
+    const db = await getDb();
+    const q = query(collection(db, 'artists'), where('email', '==', email));
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return null;
+    }
+    const doc = querySnapshot.docs[0];
+    return { id: doc.id, ...doc.data() } as Artist;
+};
+
 export const createArtist = async (id: string, data: Omit<Artist, 'id'>): Promise<string> => {
     const db = await getDb();
     const artistRef = doc(db, "artists", id);
@@ -278,3 +290,4 @@ export const getMasterServices = async (): Promise<MasterServicePackage[]> => {
     const data = await getConfigDocument<MasterServicePackage[]>('masterServices') || [];
     return data;
 };
+

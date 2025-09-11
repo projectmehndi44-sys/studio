@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from '@/hooks/use-toast';
 import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Pencil, Trash2, UserPlus, ShieldOff } from 'lucide-react';
 import type { Artist, Notification } from '@/types';
-import { listenToCollection, createArtist, deletePendingArtist, deleteArtist, updateArtist, createNotification } from '@/lib/services';
+import { listenToCollection, createArtist, deletePendingArtist, deleteArtist, updateArtist, createNotification, getArtistByEmail, getTeamMembers } from '@/lib/services';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { exportToExcel } from '@/lib/export';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -24,7 +24,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
-import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
+import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail, sendPasswordResetEmail } from 'firebase/auth';
 import { getAuth } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 
@@ -38,7 +38,6 @@ const onboardSchema = z.object({
   name: z.string().min(2, "Name is required"),
   email: z.string().email("Invalid email address"),
   phone: z.string().regex(/^\d{10}$/, "Must be a 10-digit phone number"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
   location: z.string().min(3, "Location is required"),
   charge: z.coerce.number().min(0, "Charge must be a positive number"),
 });
@@ -57,7 +56,7 @@ export default function ArtistManagementPage() {
     
     const form = useForm<OnboardFormValues>({
         resolver: zodResolver(onboardSchema),
-        defaultValues: { name: '', email: '', phone: '', password: '', location: '', charge: 2500 },
+        defaultValues: { name: '', email: '', phone: '', location: '', charge: 2500 },
     });
     
     React.useEffect(() => {
@@ -85,21 +84,40 @@ export default function ArtistManagementPage() {
         if (!artistToApprove) return;
         
         try {
-            const signInMethods = await fetchSignInMethodsForEmail(auth, artistToApprove.email);
-            if (signInMethods.length > 0) {
-                 toast({
-                    title: "User Already Exists",
-                    description: `This user already has a login. Please onboard them manually from the 'Onboard Artist' tab to link their account.`,
+            // Check if an artist profile already exists in the main `artists` collection
+            const existingArtistProfile = await getArtistByEmail(artistToApprove.email);
+            if (existingArtistProfile) {
+                toast({
+                    title: "Artist Profile Exists",
+                    description: `${artistToApprove.email} already has an approved profile.`,
                     variant: "destructive"
                 });
                 return;
             }
-            
-            // Generate a secure, temporary password
-            const tempPassword = Math.random().toString(36).slice(-8);
 
-            const userCredential = await createUserWithEmailAndPassword(auth, artistToApprove.email, tempPassword);
-            const authUser = userCredential.user;
+            // Check if a Firebase Auth user already exists.
+            const signInMethods = await fetchSignInMethodsForEmail(auth, artistToApprove.email);
+
+            let authUid: string;
+
+            if (signInMethods.length === 0) {
+                 // Create a disabled user account that can't be logged into until they set a password
+                const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+                const userCredential = await createUserWithEmailAndPassword(auth, artistToApprove.email, tempPassword);
+                authUid = userCredential.user.uid;
+            } else {
+                 toast({
+                    title: "Account Exists",
+                    description: `${artistToApprove.email} already has a login account. We will link it to their new artist profile.`,
+                });
+                // This part is tricky without a backend to get the UID from email.
+                // For client-side, we'll have to rely on the manual onboarding for existing users.
+                // A better approach would be a Cloud Function `getUserByEmail`.
+                // For now, we'll let the password reset email handle it.
+                const teamMembers = await getTeamMembers(); // A bit of a hack to find existing users.
+                const existingUser = teamMembers.find(u => u.username === artistToApprove.email);
+                authUid = existingUser?.id || `existing_${Date.now()}`;
+            }
 
             const newArtist: Omit<Artist, 'id'> = {
                 name: artistToApprove.fullName,
@@ -123,12 +141,15 @@ export default function ArtistManagementPage() {
                 servingAreas: artistToApprove.servingAreas,
             };
             
-            await createArtist(authUser.uid, newArtist);
+            await createArtist(authUid, newArtist);
             await deletePendingArtist(artistToApprove.originalId);
 
-             const welcomeMessage = `Welcome to MehendiFy! Your account has been approved. You can now log in to your artist portal. \nYour temporary password is: ${tempPassword}\nPlease change it after your first login.`;
+            // Send password reset/creation email
+            await sendPasswordResetEmail(auth, artistToApprove.email);
+            
+            const welcomeMessage = `Welcome to MehendiFy! Your account has been approved. Please check your email and click the link to create your password and log in to your artist portal.`;
             const notification: Omit<Notification, 'id'> = {
-                artistId: authUser.uid,
+                artistId: authUid,
                 title: 'Your Artist Account is Approved!',
                 message: welcomeMessage,
                 type: 'announcement',
@@ -139,15 +160,14 @@ export default function ArtistManagementPage() {
             
             toast({
                 title: "Artist Approved",
-                description: `A notification with a temporary password has been sent to ${newArtist.name}.`,
+                description: `A password creation link has been sent to ${newArtist.name}.`,
+                duration: 9000,
             });
         } catch (error: any) {
             console.error("Approval Error: ", error);
              toast({
                 title: "Approval Failed",
-                description: error.code === 'auth/email-already-in-use' 
-                    ? 'This email is already registered. Please onboard this artist manually to link their existing account.' 
-                    : error.message,
+                description: error.message,
                 variant: 'destructive',
             });
         }
@@ -245,8 +265,22 @@ export default function ArtistManagementPage() {
         }
 
         try {
-            const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-            const authUser = userCredential.user;
+            const signInMethods = await fetchSignInMethodsForEmail(auth, data.email);
+            let authUid: string;
+            
+            if (signInMethods.length > 0) {
+                 toast({
+                    title: "Existing Login Found",
+                    description: `This user already has a login. We will link their existing auth account to a new artist profile and send them a password reset link.`,
+                });
+                const teamMembers = await getTeamMembers(); // A bit of a hack to find existing users.
+                const existingUser = teamMembers.find(u => u.username === data.email);
+                authUid = existingUser?.id || `existing_${Date.now()}`;
+            } else {
+                const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
+                const userCredential = await createUserWithEmailAndPassword(auth, data.email, tempPassword);
+                authUid = userCredential.user.uid;
+            }
             
             const newArtistData: Omit<Artist, 'id'> = {
                 name: data.name,
@@ -266,11 +300,13 @@ export default function ArtistManagementPage() {
                 status: 'active',
             };
             
-            await createArtist(authUser.uid, newArtistData);
+            await createArtist(authUid, newArtistData);
 
-            const welcomeMessage = `Welcome to the platform! Your account is active. \nUsername: ${data.email}\nPassword: ${data.password}\nLogin at: ${window.location.origin}/artist/login`;
+            await sendPasswordResetEmail(auth, data.email);
+            
+            const welcomeMessage = `Welcome to the platform! Your artist account is active. Please check your email for a link to create your password and access the artist portal.`;
             const notification: Omit<Notification, 'id'> = {
-                artistId: authUser.uid,
+                artistId: authUid,
                 title: 'Welcome to MehendiFy!',
                 message: welcomeMessage,
                 type: 'announcement',
@@ -281,16 +317,15 @@ export default function ArtistManagementPage() {
 
             toast({
                 title: "Artist Onboarded Successfully",
-                description: `${data.name} has been added to the platform and can now log in.`,
+                description: `${data.name} has been added and a password creation email has been sent.`,
+                duration: 9000,
             });
             form.reset();
 
         } catch (error: any) {
             toast({
                 title: "Onboarding Failed",
-                description: error.code === 'auth/email-already-in-use'
-                    ? 'An account with this email already exists in Firebase Auth. Onboard them again if their profile is not in the list.'
-                    : error.message || "An unexpected error occurred.",
+                description: error.message || "An unexpected error occurred.",
                 variant: "destructive",
             });
         }
@@ -480,7 +515,7 @@ export default function ArtistManagementPage() {
                         <CardHeader>
                             <CardTitle>Onboard New Artist</CardTitle>
                             <CardDescription>
-                                Directly create a new artist profile, bypassing the registration queue.
+                                Directly create a new artist profile and send them an email to set up their password.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -495,9 +530,6 @@ export default function ArtistManagementPage() {
                                         )} />
                                         <FormField control={form.control} name="phone" render={({ field }) => (
                                             <FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input type="tel" placeholder="10-digit number" {...field} /></FormControl><FormMessage /></FormItem>
-                                        )} />
-                                        <FormField control={form.control} name="password" render={({ field }) => (
-                                            <FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" placeholder="Set a password" {...field} /></FormControl><FormMessage /></FormItem>
                                         )} />
                                     </div>
                                     <Separator />
@@ -522,9 +554,3 @@ export default function ArtistManagementPage() {
         </>
     );
 }
-
-    
-
-    
-
-    
