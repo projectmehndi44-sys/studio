@@ -151,7 +151,7 @@ export default function Home() {
   };
 
   const handleArtistRegister = () => {
-    setIsArtistRegistrationModalOpen(true);
+    router.push('/artist/register');
   };
 
   const handleCustomerRegister = () => {
@@ -242,7 +242,7 @@ export default function Home() {
             <div className="space-y-4 flex flex-col items-center w-full px-4">
                  <Button variant="outline" onClick={handleArtistRegister} className="w-full max-w-xs">
                     <Palette className="mr-2 h-4 w-4"/>
-                    Are you an artist? Register here
+                    Are you an artist? Join us!
                  </Button>
                  <Link href="/artist/login" className="w-full max-w-xs">
                     <Button className="w-full">
