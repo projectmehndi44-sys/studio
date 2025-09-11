@@ -131,7 +131,7 @@ export const updateArtist = async (id: string, data: Partial<Artist>): Promise<v
 export const deleteArtist = async (id: string): Promise<void> => {
     const db = await getDb();
     // This should ideally be a cloud function for security to delete the auth user as well.
-    // For client-side, we can only delete the Firestore doc.
+    // For now, we will just delete the Firestore document.
     const artistRef = doc(db, "artists", id);
     await deleteDoc(artistRef);
 }
@@ -194,13 +194,13 @@ export const saveAvailableLocations = async (locations: Record<string, string[]>
 
 export const getCompanyProfile = async () => {
     return await getConfigDocument<any>('companyProfile') || {
-        companyName: 'MehendiFy Platform',
+        companyName: 'GlamGo',
+        ownerName: 'Abhishek Jaiswal',
         address: '123 Glamour Lane, Mumbai, MH, 400001',
         phone: '+91 98765 43210',
-        email: 'contact@mehendify.com',
-        gstin: '',
-        website: 'https://www.mehendify.com',
-        ownerName: 'Your Name'
+        email: 'contact@glamgo.com',
+        gstin: '27ABCDE1234F1Z5',
+        website: 'https://www.glamgo.com',
     };
 };
 export const saveCompanyProfile = (data: any) => setConfigDocument('companyProfile', data);

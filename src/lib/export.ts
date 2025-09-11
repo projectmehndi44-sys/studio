@@ -12,6 +12,36 @@ type ArtistExportData = {
     reviews: Review[];
 };
 
+
+const brandColors = {
+    primary: '#8B4513', // Rich Henna
+    accent: '#CD7F32',  // Golden Bronze
+    text: '#333333',
+    muted: '#777777',
+    background: '#FFFFFF'
+};
+
+const addHeader = (doc: jsPDF, title: string) => {
+    doc.setFillColor(brandColors.primary);
+    doc.rect(0, 0, doc.internal.pageSize.getWidth(), 30, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(brandColors.background);
+    doc.setFontSize(22);
+    doc.text('GlamGo', 14, 18);
+    doc.setFontSize(16);
+    doc.text(title, doc.internal.pageSize.getWidth() - 14, 18, { align: 'right' });
+};
+
+const addFooter = (doc: jsPDF) => {
+    const pageCount = doc.getNumberOfPages();
+    doc.setFontSize(10);
+    doc.setTextColor(brandColors.muted);
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.getWidth() / 2, doc.internal.pageSize.getHeight() - 10, { align: 'center' });
+    }
+};
+
 /**
  * Generates a PDF report for a single artist.
  * @param data - The artist's data including bookings and reviews.
@@ -20,26 +50,26 @@ export const exportToPdf = async (data: ArtistExportData) => {
     const { artist, bookings, reviews } = data;
     const doc = new jsPDF();
 
+    addHeader(doc, `Artist Report`);
+
     // Title
-    doc.setFontSize(22);
-    doc.text(`Artist Report: ${artist.name}`, 14, 20);
+    doc.setFontSize(20);
+    doc.setTextColor(brandColors.text);
+    doc.text(artist.name, 14, 45);
 
     // Profile Details
-    doc.setFontSize(16);
-    doc.text('Profile Details', 14, 35);
+    doc.setFontSize(12);
     autoTable(doc, {
-        startY: 40,
+        startY: 55,
         body: [
-            ['ID', artist.id],
-            ['Name', artist.name],
-            ['Email', artist.email || 'N/A'],
-            ['Location', artist.location],
-            ['Services', artist.services.join(', ')],
-            ['Mehndi Base Charge', `₹${artist.charges?.mehndi?.toLocaleString() || 'N/A'}`],
-            ['Makeup Base Charge', `₹${artist.charges?.makeup?.toLocaleString() || 'N/A'}`],
-            ['Rating', `${artist.rating} / 5`],
+            [{content: 'Artist ID:', styles: {fontStyle: 'bold'}}, artist.id],
+            [{content: 'Email:', styles: {fontStyle: 'bold'}}, artist.email || 'N/A'],
+            [{content: 'Location:', styles: {fontStyle: 'bold'}}, artist.location],
+            [{content: 'Services:', styles: {fontStyle: 'bold'}}, artist.services.join(', ')],
+            [{content: 'Rating:', styles: {fontStyle: 'bold'}}, `${artist.rating} / 5`],
         ],
-        theme: 'striped',
+        theme: 'plain',
+        styles: { cellPadding: 2 }
     });
 
     const finalYAfterProfile = (doc as any).lastAutoTable.finalY;
@@ -50,6 +80,7 @@ export const exportToPdf = async (data: ArtistExportData) => {
     const netPayout = totalRevenue - platformFee;
 
     doc.setFontSize(16);
+    doc.setTextColor(brandColors.primary);
     doc.text('Financial Summary', 14, finalYAfterProfile + 15);
     autoTable(doc, {
         startY: finalYAfterProfile + 20,
@@ -59,32 +90,38 @@ export const exportToPdf = async (data: ArtistExportData) => {
             ['Net Payout', `₹${netPayout.toLocaleString()}`],
         ],
         theme: 'striped',
+        headStyles: { fillColor: brandColors.accent }
     });
-
-    const finalYAfterFinancials = (doc as any).lastAutoTable.finalY;
 
     // Bookings
-    doc.addPage();
-    doc.setFontSize(16);
-    doc.text('Recent Bookings', 14, 20);
-    autoTable(doc, {
-        startY: 25,
-        head: [['Customer', 'Date', 'Service', 'Amount', 'Status']],
-        body: bookings.map(b => [b.customerName, b.date.toDate().toLocaleDateString(), b.service, `₹${b.amount}`, b.status]),
-        theme: 'grid',
-    });
+    if (bookings.length > 0) {
+        doc.addPage();
+        addHeader(doc, 'Bookings');
+        autoTable(doc, {
+            startY: 40,
+            head: [['Customer', 'Date', 'Service', 'Amount', 'Status']],
+            body: bookings.map(b => [b.customerName, b.date.toDate().toLocaleDateString(), b.service, `₹${b.amount}`, b.status]),
+            theme: 'grid',
+            headStyles: { fillColor: brandColors.accent }
+        });
+    }
 
     // Reviews
-    const finalYAfterBookings = (doc as any).lastAutoTable.finalY;
-    doc.setFontSize(16);
-    doc.text('Customer Reviews', 14, finalYAfterBookings + 15);
-    autoTable(doc, {
-        startY: finalYAfterBookings + 20,
-        head: [['Customer', 'Rating', 'Comment']],
-        body: reviews.map(r => [r.customerName, r.rating, r.comment]),
-        theme: 'grid',
-    });
+    if (reviews.length > 0) {
+        const finalYAfterBookings = (doc as any).lastAutoTable.finalY || 40;
+        doc.setFontSize(16);
+        doc.setTextColor(brandColors.primary);
+        doc.text('Customer Reviews', 14, finalYAfterBookings + 15);
+        autoTable(doc, {
+            startY: finalYAfterBookings + 20,
+            head: [['Customer', 'Rating', 'Comment']],
+            body: reviews.map(r => [r.customerName, r.rating, r.comment]),
+            theme: 'grid',
+            headStyles: { fillColor: brandColors.accent }
+        });
+    }
 
+    addFooter(doc);
     doc.save(`artist-report-${artist.id}.pdf`);
 };
 
@@ -159,36 +196,41 @@ export const exportToExcel = (data: ArtistExportData[], filename = 'artists-expo
 export const exportPayoutToPdf = (payout: Payout | PayoutHistory) => {
   const doc = new jsPDF();
   const isHistory = 'paymentDate' in payout;
-  const paymentDate = isHistory ? new Date(payout.paymentDate).toLocaleString() : 'N/A';
+  const paymentDate = isHistory ? new Date(payout.paymentDate).toLocaleString() : new Date().toLocaleString();
+
+  addHeader(doc, 'Payout Summary');
+
+  doc.setFontSize(12);
+  doc.setTextColor(brandColors.text);
+  doc.text(`Artist: ${payout.artistName}`, 14, 45);
+  doc.text(`Status: ${isHistory ? `Paid` : 'Pending'}`, 14, 51);
+  doc.text(`Generated On: ${paymentDate}`, doc.internal.pageSize.getWidth() - 14, 45, { align: 'right' });
+
 
   const taxableAmount = payout.grossRevenue / 1.18;
 
-  doc.setFontSize(20);
-  doc.text('Payout Summary', 14, 22);
-  doc.setFontSize(12);
-  doc.text(`Artist: ${payout.artistName}`, 14, 32);
-  doc.text(`Status: ${isHistory ? `Paid on ${paymentDate}` : 'Pending'}`, 14, 38);
-
   autoTable(doc, {
-    startY: 45,
+    startY: 60,
     head: [['Description', 'Amount']],
     body: [
-      ['Gross Revenue from Bookings (Incl. GST)', `₹${payout.grossRevenue.toLocaleString()}`],
+      ['Gross Revenue from Online Bookings', `₹ ${payout.grossRevenue.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
       ['Total Bookings Included', payout.totalBookings.toString()],
-      { content: 'Breakdown', styles: { fontStyle: 'bold' } },
-      ['Taxable Amount (Pre-GST)', `₹${taxableAmount.toLocaleString(undefined, {maximumFractionDigits: 2})}`],
-      ['GST on Services (18%)', `₹${payout.gst.toLocaleString(undefined, {maximumFractionDigits: 2})}`],
-      ['Platform Fees (on taxable amount)', `- ₹${payout.platformFees.toLocaleString(undefined, {maximumFractionDigits: 2})}`],
+      { content: 'Breakdown', styles: { fontStyle: 'bold', fillColor: '#f0f0f0', textColor: brandColors.text } },
+      ['Taxable Amount (Pre-GST)', `₹ ${taxableAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
+      ['GST on Services (18%)', `₹ ${payout.gst.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
+      ['Platform Fees (on taxable amount)', `- ₹ ${payout.platformFees.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
+      ['Commission Owed (from Offline Bookings)', `- ₹ ${payout.commissionOwed.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
     ],
     foot: [
-        [{ content: 'Net Payout Amount', styles: { fontStyle: 'bold' } }, { content: `₹${payout.netPayout.toLocaleString(undefined, {maximumFractionDigits: 2})}`, styles: { fontStyle: 'bold' } }],
+        [{ content: 'Net Payout Amount', styles: { fontStyle: 'bold' } }, { content: `₹ ${payout.netPayout.toLocaleString(undefined, {minimumFractionDigits: 2})}`, styles: { fontStyle: 'bold' } }],
     ],
     theme: 'striped',
     styles: { fontSize: 12 },
-    headStyles: { fillColor: [41, 128, 185] },
-    footStyles: { fillColor: [22, 160, 133], textColor: [255, 255, 255] },
+    headStyles: { fillColor: brandColors.primary },
+    footStyles: { fillColor: brandColors.accent, textColor: brandColors.background },
   });
 
+  addFooter(doc);
   doc.save(`payout-summary-${payout.artistName.replace(/\s/g, '-')}.pdf`);
 };
 
@@ -201,21 +243,22 @@ export const generateGstInvoiceForPlatformFee = async (payout: Payout | PayoutHi
     const companyProfile = await getCompanyProfile();
     const platformFee = payout.platformFees;
 
-    // Invoice Header
-    doc.setFontSize(24);
-    doc.text('Tax Invoice', 105, 20, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text(companyProfile.companyName, 14, 30);
-    doc.text(companyProfile.address, 14, 36);
-    doc.text(`GSTIN: ${companyProfile.gstin}`, 14, 42);
-
-    doc.text(`Bill To: ${payout.artistName}`, 14, 60);
-
     const invoiceId = `INV-COMM-${payout.artistId.substring(0,4)}-${Date.now()}`;
     const invoiceDate = 'paymentDate' in payout ? new Date(payout.paymentDate).toLocaleDateString() : new Date().toLocaleDateString();
 
-    doc.text(`Invoice #: ${invoiceId}`, 196, 60, { align: 'right' });
-    doc.text(`Date: ${invoiceDate}`, 196, 66, { align: 'right' });
+    addHeader(doc, 'Tax Invoice');
+
+    // Company & Billing Info
+    doc.setFontSize(10);
+    doc.setTextColor(brandColors.text);
+    doc.text(companyProfile.companyName, 14, 45);
+    doc.text(companyProfile.address, 14, 50);
+    doc.text(`GSTIN: ${companyProfile.gstin}`, 14, 55);
+
+    doc.text(`Bill To: ${payout.artistName}`, 14, 70);
+
+    doc.text(`Invoice #: ${invoiceId}`, 196, 45, { align: 'right' });
+    doc.text(`Date: ${invoiceDate}`, 196, 50, { align: 'right' });
 
     // Invoice Table for Platform Commission
     const gstOnCommission = platformFee * 0.18; // Assuming 18% GST on commission
@@ -225,22 +268,24 @@ export const generateGstInvoiceForPlatformFee = async (payout: Payout | PayoutHi
         startY: 80,
         head: [['#', 'Service Description', 'Taxable Amount', 'GST Rate', 'GST Amount', 'Total']],
         body: [
-            ['1', `Platform Commission Fee`, `₹${platformFee.toLocaleString(undefined, {minimumFractionDigits: 2})}`, '18%', `₹${gstOnCommission.toLocaleString(undefined, {minimumFractionDigits: 2})}`, `₹${totalFee.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
+            ['1', `Platform Commission Fee`, `₹ ${platformFee.toLocaleString(undefined, {minimumFractionDigits: 2})}`, '18%', `₹ ${gstOnCommission.toLocaleString(undefined, {minimumFractionDigits: 2})}`, `₹ ${totalFee.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
         ],
         foot: [
-            ['', '', '', '', 'Total', `₹${totalFee.toLocaleString(undefined, {minimumFractionDigits: 2})}`]
+            ['', '', '', '', 'Total', `₹ ${totalFee.toLocaleString(undefined, {minimumFractionDigits: 2})}`]
         ],
         theme: 'grid',
-        headStyles: { fillColor: '#34495e' },
-        footStyles: { fillColor: '#34495e', textColor: '#ffffff' }
+        headStyles: { fillColor: brandColors.primary },
+        footStyles: { fillColor: brandColors.primary, textColor: '#ffffff' }
     });
 
     const finalY = (doc as any).lastAutoTable.finalY;
 
     // Footer
     doc.setFontSize(10);
+    doc.setTextColor(brandColors.muted);
     doc.text('This is a computer-generated invoice and does not require a signature.', 105, finalY + 20, { align: 'center' });
 
+    addFooter(doc);
     doc.save(`gst-commission-invoice-${invoiceId}.pdf`);
 };
 
@@ -255,51 +300,50 @@ export const generateCustomerInvoice = async (booking: Booking, customer: Custom
     const totalAmount = booking.amount;
     const taxableAmount = totalAmount / 1.18;
     const gstAmount = totalAmount - taxableAmount;
-
-    // Invoice Header
-    doc.setFontSize(24);
-    doc.text('Tax Invoice', 105, 20, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text(companyProfile.companyName, 14, 30);
-    doc.text(companyProfile.address, 14, 36);
-    doc.text(`GSTIN: ${companyProfile.gstin}`, 14, 42);
-
-    doc.text(`Bill To: ${customer.name}`, 14, 60);
-    doc.text(`Contact: ${customer.phone}`, 14, 66);
-    if(customer.email) doc.text(`Email: ${customer.email}`, 14, 72);
-
+    
     const invoiceId = `INV-CUST-${booking.id.substring(5)}`;
-    const invoiceDate = booking.date.toDate().toLocaleDateString();
+    const invoiceDate = booking.date instanceof Date ? booking.date.toLocaleDateString() : booking.date.toDate().toLocaleDateString();
 
-    doc.text(`Invoice #: ${invoiceId}`, 196, 60, { align: 'right' });
-    doc.text(`Date: ${invoiceDate}`, 196, 66, { align: 'right' });
+    addHeader(doc, 'Tax Invoice');
+
+    // Company & Billing Info
+    doc.setFontSize(10);
+    doc.setTextColor(brandColors.text);
+    doc.text(companyProfile.companyName, 14, 45);
+    doc.text(companyProfile.address, 14, 50);
+    doc.text(`GSTIN: ${companyProfile.gstin}`, 14, 55);
+
+    doc.text(`Bill To: ${customer.name}`, 14, 70);
+    doc.text(`Contact: ${customer.phone}`, 14, 75);
+
+    doc.text(`Invoice #: ${invoiceId}`, 196, 45, { align: 'right' });
+    doc.text(`Date: ${invoiceDate}`, 196, 50, { align: 'right' });
+
 
     // Invoice Table
     autoTable(doc, {
-        startY: 80,
+        startY: 85,
         head: [['#', 'Service Description', 'Amount (incl. GST)']],
         body: [
-            ['1', booking.service, `₹${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`]
+            ['1', booking.service, `₹ ${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`]
         ],
         theme: 'striped',
+        headStyles: { fillColor: brandColors.primary },
     });
     
     let finalY = (doc as any).lastAutoTable.finalY;
 
     // Totals Section
     autoTable(doc, {
-        startY: finalY + 2,
+        startY: finalY + 5,
         body: [
-             ['Taxable Value', `₹${taxableAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
-             ['Included GST (18%)', `₹${gstAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
-        ],
-        foot: [
-            [{ content: 'Total Amount Paid', styles: { fontStyle: 'bold' } }, { content: `₹${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`, styles: { fontStyle: 'bold' } }]
+             [{content: 'Taxable Value:', styles: {halign: 'right'}}, `₹ ${taxableAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
+             [{content: 'Included GST (18%):', styles: {halign: 'right'}}, `₹ ${gstAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`],
+             [{content: 'Total Amount Paid:', styles: {halign: 'right', fontStyle: 'bold'}}, {content: `₹ ${totalAmount.toLocaleString(undefined, {minimumFractionDigits: 2})}`, styles:{fontStyle: 'bold'}}],
         ],
         theme: 'plain',
         styles: { halign: 'right' },
-        footStyles: { halign: 'right', fillColor: false, fontStyle: 'bold' },
-        columnStyles: { 0: { halign: 'right' } },
+        columnStyles: {0: {cellWidth: 150}},
     });
 
     finalY = (doc as any).lastAutoTable.finalY;
@@ -307,8 +351,10 @@ export const generateCustomerInvoice = async (booking: Booking, customer: Custom
 
     // Footer
     doc.setFontSize(10);
+    doc.setTextColor(brandColors.muted);
     doc.text('This is a computer-generated invoice and does not require a signature.', 105, finalY + 20, { align: 'center' });
-    doc.text('Thank you for your business!', 105, finalY + 26, { align: 'center' });
+    doc.text('Thank you for choosing GlamGo!', 105, finalY + 26, { align: 'center' });
 
+    addFooter(doc);
     doc.save(`invoice-${invoiceId}.pdf`);
 }

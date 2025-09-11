@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from '@/hooks/use-toast';
 import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Pencil, Trash2, UserPlus, ShieldOff, KeyRound } from 'lucide-react';
 import type { Artist, Notification } from '@/types';
-import { listenToCollection, createArtistWithId, deletePendingArtist, deleteArtist, updateArtist, createNotification, getArtistByEmail, getTeamMembers } from '@/lib/services';
+import { listenToCollection, createArtistWithId, deletePendingArtist, deleteArtist, updateArtist, createNotification, getArtistByEmail, getTeamMembers, getArtist } from '@/lib/services';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { exportToExcel } from '@/lib/export';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,13 +27,14 @@ import { useAdminAuth } from '@/hooks/use-admin-auth';
 import {
   AlertDialog,
   AlertDialogAction,
+  AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import { createUserWithEmailAndPassword, getAuth, sendPasswordResetEmail } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 
 
@@ -63,10 +64,11 @@ export default function ArtistManagementPage() {
     const [pendingArtists, setPendingArtists] = React.useState<PendingArtist[]>([]);
     const [selectedArtistIds, setSelectedArtistIds] = React.useState<string[]>([]);
     
-    // State for showing the one-time code
+    // State for showing modals
     const [showCodeAlert, setShowCodeAlert] = React.useState(false);
     const [generatedCode, setGeneratedCode] = React.useState('');
     const [generatedArtistName, setGeneratedArtistName] = React.useState('');
+    const [artistToDelete, setArtistToDelete] = React.useState<Artist | null>(null);
     
     const form = useForm<OnboardFormValues>({
         resolver: zodResolver(onboardSchema),
@@ -114,11 +116,11 @@ export default function ArtistManagementPage() {
                 return;
             }
 
-            // Create the Firebase Auth user first
-            const userCredential = await createUserWithEmailAndPassword(auth, artistToApprove.email, `temp-password-${Date.now()}`);
-            const authUser = userCredential.user;
-
             const oneTimeCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+            // Create user in Firebase Auth first
+            const userCredential = await createUserWithEmailAndPassword(auth, artistToApprove.email, `temp-password-${oneTimeCode}`);
+            const authUser = userCredential.user;
 
             const newArtist: Omit<Artist, 'id'> = {
                 name: artistToApprove.fullName,
@@ -178,14 +180,23 @@ export default function ArtistManagementPage() {
         });
     };
     
-    const handleDeleteArtist = async (artist: Artist) => {
-        if (window.confirm(`Are you sure you want to permanently delete ${artist.name}? This action CANNOT be undone and will remove their login and profile.`)) {
-            await deleteArtist(artist.id); // This now also handles Firebase Auth deletion via a function
+    const confirmDeleteArtist = async () => {
+        if (!artistToDelete) return;
+        try {
+            await deleteArtist(artistToDelete.id); // This now also handles Firebase Auth deletion via a function
             toast({
                 title: "Artist Deleted",
-                description: `${artist.name} has been removed from the platform.`,
+                description: `${artistToDelete.name} has been permanently removed from the platform.`,
                 variant: 'destructive',
             });
+        } catch (error: any) {
+            toast({
+                title: "Deletion Failed",
+                description: error.message || "Could not delete artist. They may have related data that needs to be cleared first.",
+                variant: 'destructive'
+            });
+        } finally {
+            setArtistToDelete(null);
         }
     };
 
@@ -204,15 +215,25 @@ export default function ArtistManagementPage() {
         }
 
         const oneTimeCode = Math.floor(100000 + Math.random() * 900000).toString();
-        await updateArtist(artist.id, { firstTimeLoginCode: oneTimeCode, firstTimeLoginCodeUsed: false });
-        
-        toast({
-            title: 'New Reset Code Generated',
-            description: `A new one-time code has been generated for ${artist.name}.`,
-            duration: 9000,
-        });
-
-        displayOneTimeCode(artist.name, oneTimeCode);
+        try {
+            // This is the ideal flow using Firebase's own password reset mechanism
+            await sendPasswordResetEmail(auth, artist.email);
+            toast({
+                title: 'Password Reset Email Sent',
+                description: `An email has been sent to ${artist.name} at ${artist.email} to reset their password.`,
+                duration: 9000,
+            });
+        } catch (error) {
+             // Fallback to our custom code mechanism if email fails
+            console.error("Firebase password reset email failed, falling back to custom code:", error);
+            await updateArtist(artist.id, { firstTimeLoginCode: oneTimeCode, firstTimeLoginCodeUsed: false });
+            toast({
+                title: 'New Reset Code Generated',
+                description: `A new one-time code has been generated for ${artist.name}.`,
+                duration: 9000,
+            });
+            displayOneTimeCode(artist.name, oneTimeCode);
+        }
     };
 
 
@@ -274,10 +295,11 @@ export default function ArtistManagementPage() {
         }
 
         try {
-            const userCredential = await createUserWithEmailAndPassword(auth, data.email, `temp-password-${Date.now()}`);
+            const oneTimeCode = Math.floor(100000 + Math.random() * 900000).toString();
+            // Create user with a temporary password using the one time code. This is not ideal but works for this flow.
+            const userCredential = await createUserWithEmailAndPassword(auth, data.email, `temp-password-${oneTimeCode}`);
             const authUser = userCredential.user;
 
-            const oneTimeCode = Math.floor(100000 + Math.random() * 900000).toString();
             const newArtistData: Omit<Artist, 'id'> = {
                 name: data.name,
                 email: data.email,
@@ -373,7 +395,7 @@ export default function ArtistManagementPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {approvedArtists.map((artist) => (
-                                        <TableRow key={artist.id} className={artist.status === 'suspended' ? 'bg-red-50' : ''}>
+                                        <TableRow key={artist.id} className={artist.status === 'suspended' ? 'bg-red-50 dark:bg-red-900/20' : ''}>
                                             <TableCell>
                                                 <Checkbox
                                                     checked={selectedArtistIds.includes(artist.id)}
@@ -425,7 +447,7 @@ export default function ArtistManagementPage() {
                                                             <KeyRound className="mr-2 h-4 w-4" />
                                                             Generate Reset Code
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => handleDeleteArtist(artist)} disabled={!hasPermission('artists', 'edit')} className="text-red-600">
+                                                        <DropdownMenuItem onSelect={() => setArtistToDelete(artist)} disabled={!hasPermission('artists', 'edit')} className="text-red-600 focus:bg-red-100 focus:text-red-700">
                                                             <Trash2 className="mr-2 h-4 w-4" />
                                                             Delete
                                                         </DropdownMenuItem>
@@ -484,8 +506,8 @@ export default function ArtistManagementPage() {
                                                             <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
                                                             Approve
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => handleReject(artist.id)}>
-                                                            <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                                                        <DropdownMenuItem onSelect={() => handleReject(artist.id)} className="text-red-600 focus:text-red-700 focus:bg-red-100">
+                                                            <XCircle className="mr-2 h-4 w-4" />
                                                             Reject
                                                         </DropdownMenuItem>
                                                     </DropdownMenuContent>
@@ -558,6 +580,23 @@ export default function ArtistManagementPage() {
                     </AlertDialogDescription>
                     <AlertDialogFooter>
                         <AlertDialogAction onClick={() => setShowCodeAlert(false)}>Close</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog open={!!artistToDelete} onOpenChange={() => setArtistToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the artist profile for{' '}
+                            <span className="font-bold">{artistToDelete?.name}</span> and remove them from the platform.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmDeleteArtist} className="bg-destructive hover:bg-destructive/90">
+                            Yes, delete artist
+                        </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
