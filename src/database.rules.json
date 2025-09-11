@@ -1,107 +1,95 @@
 
-rules_version = '2';
+{
+  "rules": {
+    "service cloud.firestore": {
+      "match": "/databases/{database}/documents",
 
-service cloud.firestore {
-  match /databases/{database}/documents {
+      "function": "isSuperAdmin()",
+      "function": "isTeamMember()",
+      "function": "hasPermission(module, level)",
+      "function": "isOwner(resourceId)",
 
-    // =====================================================================
-    //  HELPER FUNCTIONS - These make the rules easier to read and manage
-    // =====================================================================
+      "// All other documents are locked down by default": {
+        "match": "/{document=**}",
+        "allow": {
+          "read, write": "if false;"
+        }
+      },
 
-    function isSuperAdmin() {
-      return request.auth != null 
-        && request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data.members
-        && get(/databases/$(database)/documents/config/teamMembers).data.members[request.auth.uid].role == 'Super Admin';
-    }
+      "artists": {
+        "match": "/{artistId}",
+        "allow": {
+          "get, list": "if true;",
+          "update": "if isOwner(artistId) || hasPermission('artists', 'edit') || isSuperAdmin();"
+        }
+      },
 
-    function isTeamMember() {
-      return request.auth != null 
-        && request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data.members;
-    }
+      "masterServices": {
+        "match": "/{docId}",
+        "allow": {
+          "get, list": "if true;",
+          "write": "if hasPermission('packages', 'edit') || isSuperAdmin();"
+        }
+      },
 
-    function hasPermission(module, level) {
-      let userPermissions = get(/databases/$(database)/documents/config/teamMembers).data.members[request.auth.uid].permissions;
-      // Use a ternary operator to correctly handle view/edit logic
-      return (level == 'view')
-        ? (userPermissions[module] in ['view', 'edit'])
-        : (userPermissions[module] == level);
-    }
+      "config": {
+        "match": "/availableLocations",
+        "allow": {
+          "get": "if true;",
+          "write": "if hasPermission('settings', 'edit') || isSuperAdmin();"
+        }
+      },
+      "config": {
+        "match": "/teamMembers",
+        "allow": {
+          "get": "if request.auth != null;",
+          "write": "if isSuperAdmin();"
+        }
+      },
+      "config": {
+        "match": "/{docId}",
+        "allow": {
+          "read": "if hasPermission('settings', 'view') || isSuperAdmin();",
+          "write": "if hasPermission('settings', 'edit') || isSuperAdmin();"
+        }
+      },
 
+      "customers": {
+        "match": "/{customerId}",
+        "allow": {
+          "create": "if true;",
+          "get, update": "if isOwner(customerId) || hasPermission('customers', 'view') || isSuperAdmin();"
+        }
+      },
 
-    // =====================================================================
-    //  SECURITY RULES
-    // =====================================================================
-    
-    // --- Public & Customer Rules (Evaluated for non-admins) ---
-    
-    // Allow ANYONE (public) to read artist and service data. This is crucial for the homepage.
-    match /artists/{artistId} {
-      allow get, list: if true;
-      allow update: if request.auth != null && request.auth.uid == artistId; // An artist can only update their own profile
-    }
-    match /masterServices/{docId} {
-      allow get, list: if true;
-    }
-    match /config/availableLocations {
-      allow get: if true;
-    }
+      "pendingArtists": {
+        "match": "/{docId}",
+        "allow": {
+          "create": "if true;",
+          "read, write": "if hasPermission('artists', 'edit') || isSuperAdmin();"
+        }
+      },
 
-    // This is the critical fix: Allow any authenticated user to read the team members list
-    // This is required for the application to check if a user is an admin or not upon login.
-    match /config/teamMembers {
-      allow get: if request.auth != null;
-      allow write: if isSuperAdmin(); // Only super admin can change team members
-    }
+      "bookings": {
+        "match": "/{bookingId}",
+        "allow": {
+          "read, write": "if request.auth != null;"
+        }
+      },
 
-    // Allow anyone to create an account or application
-    match /customers/{customerId} {
-      allow create: if true;
-      allow get, update: if request.auth != null && request.auth.uid == customerId; // A customer can only manage their own data
-    }
-    match /pendingArtists/{docId} {
-      allow create: if true;
-    }
+      "notifications": {
+        "match": "/{notificationId}",
+        "allow": {
+          "read, write": "if request.auth != null;"
+        }
+      },
 
-    // A logged-in user can manage their bookings and notifications
-    match /bookings/{bookingId} {
-      allow read, write: if request.auth != null;
-    }
-    match /notifications/{notificationId} {
-      allow read, write: if request.auth != null;
-    }
-
-
-    // --- Admin & Team Member Rules (Evaluated in addition to public rules) ---
-    // These grant EXTRA permissions to admins, without overriding public access.
-    
-    match /bookings/{docId} {
-      allow read: if isTeamMember() && hasPermission('bookings', 'view');
-      allow write: if isTeamMember() && hasPermission('bookings', 'edit');
-      allow read, write: if isSuperAdmin();
-    }
-    match /artists/{docId} {
-      allow read: if isTeamMember() && hasPermission('artists', 'view');
-      allow write: if isTeamMember() && hasPermission('artists', 'edit');
-      allow read, write: if isSuperAdmin();
-    }
-    match /customers/{docId} {
-      allow read: if isTeamMember() && hasPermission('customers', 'view');
-      allow write: if isTeamMember() && hasPermission('customers', 'edit');
-      allow read, write: if isSuperAdmin();
-    }
-    match /masterServices/{docId} {
-      allow read: if isTeamMember() && hasPermission('packages', 'view');
-      allow write: if isTeamMember() && hasPermission('packages', 'edit');
-      allow read, write: if isSuperAdmin();
-    }
-    match /config/{docId} {
-        // This rule is a fallback. More specific rules like teamMembers above take precedence.
-      allow read: if isTeamMember() && hasPermission('settings', 'view');
-      allow write: if isTeamMember() && hasPermission('settings', 'edit');
-      allow read, write: if isSuperAdmin();
-    }
-    match /pendingArtists/{docId} {
-      allow read, write: if isSuperAdmin() || (isTeamMember() && hasPermission('artists', 'edit'));
+      "functions": {
+        "isSuperAdmin": "return request.auth != null && get(/databases/$(database)/documents/config/teamMembers).data.members.get(request.auth.uid, {}).role == 'Super Admin';",
+        "isTeamMember": "return request.auth != null && request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data.members;",
+        "hasPermission": "let userPermissions = get(/databases/$(database)/documents/config/teamMembers).data.members[request.auth.uid].permissions; return (level == 'view') ? (userPermissions[module] in ['view', 'edit']) : (userPermissions[module] == level);",
+        "isOwner": "return request.auth != null && request.auth.uid == resourceId;"
+      }
     }
   }
 }
