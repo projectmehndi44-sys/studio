@@ -8,84 +8,30 @@ service cloud.firestore {
     //  HELPER FUNCTIONS - These make the rules easier to read and manage
     // =====================================================================
 
-    // Safely gets the role of the currently signed-in user.
-    // Returns null if the user is not in the team members list.
-    function getUserRole() {
-      let uid = request.auth.uid;
-      let teamData = get(/databases/$(database)/documents/config/teamMembers).data;
-      return uid in teamData ? teamData[uid].role : null;
-    }
-
-    // Safely gets a specific permission for a user.
-    // Returns null if the user or the permission does not exist.
-    function getPermission(module) {
-      let uid = request.auth.uid;
-      let teamData = get(/databases/$(database)/documents/config/teamMembers).data;
-      return (uid in teamData && module in teamData[uid].permissions) ? teamData[uid].permissions[module] : null;
-    }
-
-    // Returns true if the user's role is 'Super Admin'.
     function isSuperAdmin() {
-      return request.auth != null && getUserRole() == 'Super Admin';
-    }
-    
-    // Returns true if the user's role is 'team-member'.
-    function isTeamMember() {
-      return request.auth != null && getUserRole() == 'team-member';
+      return request.auth != null 
+        && request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data
+        && get(/databases/$(database)/documents/config/teamMembers).data[request.auth.uid].role == 'Super Admin';
     }
 
-    // The main permission checking function for Team Members.
+    function isTeamMember() {
+      return request.auth != null 
+        && request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data
+        && get(/databases/$(database)/documents/config/teamMembers).data[request.auth.uid].role == 'team-member';
+    }
+
     function hasPermission(module, level) {
-      let permission = getPermission(module);
+      let permission = get(/databases/$(database)/documents/config/teamMembers).data[request.auth.uid].permissions[module];
       if (level == 'view') {
-        // 'edit' permission also includes 'view' rights.
         return permission in ['view', 'edit'];
       }
       return permission == level;
     }
-
-
-    // =====================================================================
-    //  SECURITY RULES - Applied from most general to most specific
-    // =====================================================================
-
-    // RULE 1: Super Admins have god-mode access to everything.
-    // If this is true, no other rules are evaluated for the path.
-    match /{path=**} {
-      allow read, write: if isSuperAdmin();
-    }
-
-
-    // --- Rules for Team Members (who are NOT Super Admins) ---
     
-    match /bookings/{docId} {
-      allow read: if isTeamMember() && hasPermission('bookings', 'view');
-      allow write: if isTeamMember() && hasPermission('bookings', 'edit');
-    }
-    match /artists/{docId} {
-      allow read: if isTeamMember() && hasPermission('artists', 'view');
-      allow write: if isTeamMember() && hasPermission('artists', 'edit');
-    }
-    match /customers/{docId} {
-      allow read: if isTeamMember() && hasPermission('customers', 'view');
-      allow write: if isTeamMember() && hasPermission('customers', 'edit');
-    }
-    match /masterServices/{docId} {
-      allow read: if isTeamMember() && hasPermission('packages', 'view');
-      allow write: if isTeamMember() && hasPermission('packages', 'edit');
-    }
-    match /config/{docId} {
-      allow read: if isTeamMember() && hasPermission('settings', 'view');
-      allow write: if isTeamMember() && hasPermission('settings', 'edit');
-    }
-    // Add other team-member-specific rules here...
-
-
-    // --- Rules for Public / Authenticated Users (who are NOT admins) ---
-
-    // Anyone can see artists, service packages, and available locations.
+    // --- Public & Customer Rules (Evaluated for non-admins) ---
     match /artists/{artistId} {
       allow get, list: if true;
+      allow update: if request.auth.uid == artistId;
     }
     match /masterServices/{docId} {
       allow get, list: if true;
@@ -93,29 +39,51 @@ service cloud.firestore {
     match /config/availableLocations {
       allow get: if true;
     }
-    
-    // Anyone can create a customer account or apply to be an artist.
     match /customers/{customerId} {
       allow create: if true;
+      allow get, update: if request.auth.uid == customerId;
     }
     match /pendingArtists/{docId} {
       allow create: if true;
     }
-
-    // A logged-in user can manage their own specific data.
-    match /artists/{artistId} {
-      allow update: if request.auth.uid == artistId;
-    }
-    match /customers/{customerId} {
-      allow get, update: if request.auth.uid == customerId;
-    }
-    
-    // Any logged-in user can manage their bookings and notifications.
     match /bookings/{bookingId} {
       allow read, write: if request.auth != null;
     }
     match /notifications/{notificationId} {
       allow read, write: if request.auth != null;
+    }
+
+
+    // --- Admin & Team Member Rules (Evaluated for admins) ---
+    // These rules are evaluated alongside public rules. Access is granted if EITHER condition is met.
+    
+    match /bookings/{docId} {
+      allow read: if isTeamMember() && hasPermission('bookings', 'view');
+      allow write: if isTeamMember() && hasPermission('bookings', 'edit');
+      allow read, write: if isSuperAdmin();
+    }
+    match /artists/{docId} {
+      allow read: if isTeamMember() && hasPermission('artists', 'view');
+      allow write: if isTeamMember() && hasPermission('artists', 'edit');
+      allow read, write: if isSuperAdmin();
+    }
+    match /customers/{docId} {
+      allow read: if isTeamMember() && hasPermission('customers', 'view');
+      allow write: if isTeamMember() && hasPermission('customers', 'edit');
+      allow read, write: if isSuperAdmin();
+    }
+    match /masterServices/{docId} {
+      allow read: if isTeamMember() && hasPermission('packages', 'view');
+      allow write: if isTeamMember() && hasPermission('packages', 'edit');
+      allow read, write: if isSuperAdmin();
+    }
+    match /config/{docId} {
+      allow read: if isTeamMember() && hasPermission('settings', 'view');
+      allow write: if isTeamMember() && hasPermission('settings', 'edit');
+      allow read, write: if isSuperAdmin();
+    }
+    match /pendingArtists/{docId} {
+      allow read, write: if isSuperAdmin() || (isTeamMember() && hasPermission('artists', 'edit'));
     }
   }
 }
