@@ -10,10 +10,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Home } from 'lucide-react';
+import { Home, KeyRound } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { signInWithEmailAndPassword, sendPasswordResetEmail, getAuth } from 'firebase/auth';
 import { app } from '@/lib/firebase';
+import { Separator } from '@/components/ui/separator';
 
 export default function ArtistLoginPage() {
     const router = useRouter();
@@ -109,7 +110,14 @@ export default function ArtistLoginPage() {
                         {isLoading ? 'Logging in...' : 'Login'}
                     </Button>
                 </form>
-                 <div className="mt-4 text-center text-sm space-y-2">
+                <Separator />
+                 <div className="mt-2 text-center text-sm space-y-2">
+                        <Link href="/artist/set-password">
+                             <Button variant="outline" className="w-full">
+                                <KeyRound className="mr-2 h-4 w-4"/>
+                                First time here? Set Your Password
+                            </Button>
+                        </Link>
                         <div>
                         Don't have an account?{' '}
                         <Link href="/#artist-register" className="underline">

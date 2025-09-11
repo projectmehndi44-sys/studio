@@ -24,7 +24,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
-import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail, sendPasswordResetEmail } from 'firebase/auth';
+import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
 import { getAuth } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 
@@ -84,7 +84,6 @@ export default function ArtistManagementPage() {
         if (!artistToApprove) return;
         
         try {
-            // Check if an artist profile already exists in the main `artists` collection
             const existingArtistProfile = await getArtistByEmail(artistToApprove.email);
             if (existingArtistProfile) {
                 toast({
@@ -95,7 +94,6 @@ export default function ArtistManagementPage() {
                 return;
             }
 
-            // Check if a Firebase Auth user already exists.
             const signInMethods = await fetchSignInMethodsForEmail(auth, artistToApprove.email);
             let authUid: string;
 
@@ -104,13 +102,11 @@ export default function ArtistManagementPage() {
                     title: "Auth Account Exists",
                     description: `${artistToApprove.email} already has a login account. We will link it to their new artist profile.`,
                 });
-                // In a real app, you would need a more robust way to get the UID. This is a simplification.
                 const teamMembers = await getTeamMembers();
                 const existingUser = teamMembers.find(u => u.username === artistToApprove.email);
                 authUid = existingUser?.id || `existing_${Date.now()}`;
             } else {
-                 // Create user with a temporary password they won't use
-                const userCredential = await createUserWithEmailAndPassword(auth, artistToApprove.email, `temporary_password_${Date.now()}`);
+                const userCredential = await createUserWithEmailAndPassword(auth, artistToApprove.email, `temp-password-${Date.now()}`);
                 authUid = userCredential.user.uid;
             }
             
@@ -143,10 +139,7 @@ export default function ArtistManagementPage() {
             await createArtist(authUid, newArtist);
             await deletePendingArtist(artistToApprove.originalId);
              
-            // Send password reset email to allow them to set their first password
-            await sendPasswordResetEmail(auth, newArtist.email);
-            
-            const welcomeMessage = `Welcome to GlamGo! Your account has been approved. Please check your email to set your password and access your artist portal.`;
+            const welcomeMessage = `Welcome to GlamGo! Your account is approved. Please go to the artist login page and use the 'Set Your Password' option to create your password and access your portal.`;
             const notification: Omit<Notification, 'id'> = {
                 artistId: authUid,
                 title: 'Your Artist Account is Approved!',
@@ -159,7 +152,7 @@ export default function ArtistManagementPage() {
             
             toast({
                 title: "Artist Approved",
-                description: `A password creation email has been sent to ${newArtist.name}.`,
+                description: `${newArtist.name} is now an active artist. They need to set their password in the app.`,
                 duration: 9000,
             });
         } catch (error: any) {
@@ -270,14 +263,13 @@ export default function ArtistManagementPage() {
             if (signInMethods.length > 0) {
                  toast({
                     title: "Existing Login Found",
-                    description: `This user already has a login. A password reset email will be sent to link their new artist profile.`,
+                    description: `This user already has a login. They can use the "Set Password" feature if they've forgotten it.`,
                 });
-                // This is a simplified way to get the UID. A backend function would be more robust.
                 const teamMembers = await getTeamMembers(); 
                 const existingUser = teamMembers.find(u => u.username === data.email);
                 authUid = existingUser?.id || `existing_${Date.now()}`;
             } else {
-                const userCredential = await createUserWithEmailAndPassword(auth, data.email, `temporary_password_${Date.now()}`);
+                const userCredential = await createUserWithEmailAndPassword(auth, data.email, `temp-password-${Date.now()}`);
                 authUid = userCredential.user.uid;
             }
             
@@ -301,10 +293,7 @@ export default function ArtistManagementPage() {
             
             await createArtist(authUid, newArtistData);
 
-            // Send password reset email to allow them to set their first password
-            await sendPasswordResetEmail(auth, data.email);
-            
-            const welcomeMessage = `Welcome to the platform! Your artist account is active. Please check your email to create a secure password and log in.`;
+            const welcomeMessage = `Welcome to the platform! Your artist account is active. Please go to the artist portal and use the "Set Password" option to create your password and log in.`;
             const notification: Omit<Notification, 'id'> = {
                 artistId: authUid,
                 title: 'Welcome to GlamGo!',
@@ -317,7 +306,7 @@ export default function ArtistManagementPage() {
 
             toast({
                 title: "Artist Onboarded Successfully",
-                description: `A password creation email has been sent to ${data.name}.`,
+                description: `${data.name} can now set their password in the app.`,
                 duration: 9000,
             });
             form.reset();
@@ -515,7 +504,7 @@ export default function ArtistManagementPage() {
                         <CardHeader>
                             <CardTitle>Onboard New Artist</CardTitle>
                             <CardDescription>
-                                Directly create a new artist profile. They will be sent an email to create a password for their first login.
+                                Directly create a new artist profile. They will need to set their own password in the artist portal.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
