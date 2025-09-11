@@ -40,6 +40,8 @@ import {
 import { AdminAuthProvider, useAdminAuth } from '@/hooks/use-admin-auth';
 import type { Permissions } from '@/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { signOutUser } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 const NavLink = ({ href, pathname, icon: Icon, label }: { href: string; pathname: string; icon: React.ElementType, label: string }) => (
     <Link
@@ -57,6 +59,7 @@ const NavLink = ({ href, pathname, icon: Icon, label }: { href: string; pathname
 function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
+    const { toast } = useToast();
     const { isAuthenticated, user, isLoading, hasPermission } = useAdminAuth();
     const [adminName, setAdminName] = React.useState('Admin');
 
@@ -69,12 +72,23 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         }
     }, [isLoading, isAuthenticated, router, user, pathname]);
 
-    const handleLogout = () => {
-        localStorage.removeItem('isAdminAuthenticated');
-        localStorage.removeItem('adminRole');
-        localStorage.removeItem('adminUsername');
-        localStorage.removeItem('adminUserId');
-        router.push('/admin/login');
+    const handleLogout = async () => {
+        try {
+            await signOutUser();
+            localStorage.removeItem('adminAuthenticated'); // Keep this for good measure
+            router.push('/admin/login');
+            toast({
+                title: 'Logged Out',
+                description: 'You have been successfully logged out.',
+            });
+        } catch (error) {
+            console.error("Logout failed", error);
+            toast({
+                title: "Logout Failed",
+                description: "Could not log you out. Please try again.",
+                variant: "destructive"
+            });
+        }
     };
 
     if (pathname === '/admin/login') {
