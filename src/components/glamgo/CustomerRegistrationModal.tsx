@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -46,6 +47,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSendingOtp, setIsSendingOtp] = React.useState(false);
   const [isOtpSent, setIsOtpSent] = React.useState(false);
+  const recaptchaContainerRef = React.useRef<HTMLDivElement>(null);
 
 
   const form = useForm<RegistrationFormValues>({
@@ -59,9 +61,9 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
   });
 
   React.useEffect(() => {
-    if (isOpen) {
+    if (isOpen && recaptchaContainerRef.current) {
         // Setup reCAPTCHA verifier when modal opens
-        setTimeout(() => setupRecaptcha('recaptcha-container-register'), 100);
+        setupRecaptcha('recaptcha-container-register');
     }
   }, [isOpen]);
 
@@ -200,7 +202,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
             Join MehendiFy to start booking amazing artists.
           </DialogDescription>
         </DialogHeader>
-         <div id="recaptcha-container-register" />
+         <div id="recaptcha-container-register" ref={recaptchaContainerRef} />
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                  <FormField control={form.control} name="fullName" render={({ field }) => (

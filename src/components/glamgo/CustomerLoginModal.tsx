@@ -44,6 +44,7 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
   const [isOtpSent, setIsOtpSent] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isSendingOtp, setIsSendingOtp] = React.useState(false);
+  const recaptchaContainerRef = React.useRef<HTMLDivElement>(null);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -54,9 +55,9 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
   });
 
   React.useEffect(() => {
-    if (isOpen) {
+    if (isOpen && recaptchaContainerRef.current) {
         // Setup reCAPTCHA verifier when modal opens
-        setTimeout(() => setupRecaptcha('recaptcha-container-login'), 100);
+        setupRecaptcha('recaptcha-container-login');
     }
   }, [isOpen]);
 
@@ -182,7 +183,7 @@ export function CustomerLoginModal({ isOpen, onOpenChange, onSuccessfulLogin }: 
             Enter your phone number to receive a login OTP.
           </DialogDescription>
         </DialogHeader>
-        <div id="recaptcha-container-login" />
+        <div id="recaptcha-container-login" ref={recaptchaContainerRef}/>
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField control={form.control} name="phone" render={({ field }) => (
