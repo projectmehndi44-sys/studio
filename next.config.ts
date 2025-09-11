@@ -24,10 +24,11 @@ const nextConfig = {
     ],
   },
   experimental: {
-    allowedDevOrigins: [
-        "https://6000-firebase-studio-1757147848939.cluster-zkm2jrwbnbd4awuedc2alqxrpk.cloudworkstations.dev"
-    ],
+    // allowedDevOrigins has been moved to the root of the config
   },
+  allowedDevOrigins: [
+    "https://6000-firebase-studio-1757147848939.cluster-zkm2jrwbnbd4awuedc2alqxrpk.cloudworkstations.dev"
+  ],
 };
 
 module.exports = nextConfig;
