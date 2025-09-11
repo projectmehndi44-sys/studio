@@ -24,7 +24,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
-import { createUserWithEmailAndPassword } from '@/lib/firebase';
+import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
 import { getAuth } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 
@@ -85,6 +85,15 @@ export default function ArtistManagementPage() {
         if (!artistToApprove) return;
         
         try {
+            const signInMethods = await fetchSignInMethodsForEmail(auth, artistToApprove.email);
+            if (signInMethods.length > 0) {
+                 toast({
+                    title: "User Already Exists",
+                    description: `This user already has a login. Approving their profile. Please onboard manually if issues persist.`,
+                    variant: "destructive"
+                });
+            }
+
             const userCredential = await createUserWithEmailAndPassword(auth, artistToApprove.email, artistToApprove.password);
             const authUser = userCredential.user;
 
@@ -114,9 +123,12 @@ export default function ArtistManagementPage() {
                 description: `A notification has been sent to ${newArtist.name}.`,
             });
         } catch (error: any) {
-            toast({
+            console.error("Approval Error: ", error);
+             toast({
                 title: "Approval Failed",
-                description: error.message,
+                description: error.code === 'auth/email-already-in-use' 
+                    ? 'This email is already registered. Please onboard this artist manually to link their existing account.' 
+                    : error.message,
                 variant: 'destructive',
             });
         }
@@ -209,16 +221,14 @@ export default function ArtistManagementPage() {
     
     const onOnboardSubmit: SubmitHandler<OnboardFormValues> = async (data) => {
          if (approvedArtists.some(a => a.email === data.email)) {
-            form.setError('email', { message: 'An artist with this email already exists.' });
+            form.setError('email', { message: 'An artist with this email already exists in the database.' });
             return;
         }
 
         try {
-            // 1. Create the user in Firebase Auth directly
             const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
             const authUser = userCredential.user;
             
-            // 2. Prepare the artist data for Firestore
             const newArtistData: Omit<Artist, 'id'> = {
                 name: data.name,
                 email: data.email,
@@ -237,10 +247,8 @@ export default function ArtistManagementPage() {
                 status: 'active',
             };
             
-            // 3. Save the artist data to Firestore using the UID from Auth
             await createArtist(authUser.uid, newArtistData);
 
-            // 4. Send a welcome notification to the artist
             const welcomeMessage = `Welcome to the platform! Your account is active. \nUsername: ${data.email}\nPassword: ${data.password}\nLogin at: ${window.location.origin}/artist/login`;
             const notification: Omit<Notification, 'id'> = {
                 artistId: authUser.uid,
@@ -261,7 +269,9 @@ export default function ArtistManagementPage() {
         } catch (error: any) {
             toast({
                 title: "Onboarding Failed",
-                description: error.message || "An unexpected error occurred.",
+                description: error.code === 'auth/email-already-in-use'
+                    ? 'An account with this email already exists in Firebase Auth. Onboard them again if their profile is not in the list.'
+                    : error.message || "An unexpected error occurred.",
                 variant: "destructive",
             });
         }
@@ -493,5 +503,7 @@ export default function ArtistManagementPage() {
         </>
     );
 }
+
+    
 
     
