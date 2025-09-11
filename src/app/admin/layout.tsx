@@ -69,17 +69,18 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         }
         if (isAuthenticated && user) {
             setAdminName(user.name);
+        } else if (!isLoading && !user && pathname !== '/admin/login') {
+             router.push('/admin/login');
         }
     }, [isLoading, isAuthenticated, router, user, pathname]);
 
     const handleLogout = async () => {
         try {
             await signOutUser();
-            localStorage.removeItem('adminAuthenticated'); // Keep this for good measure
-            router.push('/admin/login');
+            // The onAuthStateChanged listener in useAdminAuth will handle the redirect.
             toast({
-                title: 'Logged Out',
-                description: 'You have been successfully logged out.',
+                title: 'Logging Out...',
+                description: 'You are being logged out securely.',
             });
         } catch (error) {
             console.error("Logout failed", error);
