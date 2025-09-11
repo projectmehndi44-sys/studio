@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
-import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Pencil, Trash2, UserPlus, ShieldOff, KeyRound } from 'lucide-react';
+import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Trash2, UserPlus, ShieldOff, KeyRound, ShieldCheck } from 'lucide-react';
 import type { Artist, Notification } from '@/types';
 import { listenToCollection, createArtistWithId, deletePendingArtist, deleteArtist, updateArtist, createNotification, getArtistByEmail, getTeamMembers, getArtist } from '@/lib/services';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -116,10 +116,8 @@ export default function ArtistManagementPage() {
                 return;
             }
 
-            const oneTimeCode = Math.floor(100000 + Math.random() * 900000).toString();
-
             // Create user in Firebase Auth first
-            const userCredential = await createUserWithEmailAndPassword(auth, artistToApprove.email, `temp-password-${oneTimeCode}`);
+            const userCredential = await createUserWithEmailAndPassword(auth, artistToApprove.email, `temp_password_${Date.now()}`);
             const authUser = userCredential.user;
 
             const newArtist: Omit<Artist, 'id'> = {
@@ -136,13 +134,13 @@ export default function ArtistManagementPage() {
                 charge: 2000,
                 charges: { mehndi: 2000, makeup: 3000 },
                 rating: 0,
-                styleTags: ['new', 'verified'],
+                styleTags: ['new'],
                 status: 'active',
+                verified: false,
                 state: artistToApprove.state,
                 district: artistToApprove.district,
                 locality: artistToApprove.locality,
                 servingAreas: artistToApprove.servingAreas,
-                firstTimeLoginCode: oneTimeCode,
                 firstTimeLoginCodeUsed: false,
             };
             
@@ -151,11 +149,16 @@ export default function ArtistManagementPage() {
              
             toast({
                 title: "Artist Approved",
-                description: `${newArtist.name} is now an active artist. Share their one-time login code with them.`,
+                description: `${newArtist.name} is now an active artist. Please send them a password creation link.`,
                 duration: 9000,
             });
 
-            displayOneTimeCode(newArtist.name, oneTimeCode);
+            await sendPasswordResetEmail(auth, newArtist.email);
+            toast({
+                title: 'Password Reset Email Sent',
+                description: `An email to create a new password has been sent to ${newArtist.email}.`,
+                duration: 9000
+            });
 
         } catch (error: any) {
             console.error("Approval Error: ", error);
@@ -209,23 +212,26 @@ export default function ArtistManagementPage() {
         });
     };
 
-    const handlePasswordReset = async (artist: Artist) => {
-        if (!window.confirm(`Are you sure you want to generate a new password reset code for ${artist.name}? Their old one-time code (if unused) will no longer work.`)) {
-            return;
-        }
+    const handleToggleVerified = async (artist: Artist) => {
+        const newStatus = !artist.verified;
+        await updateArtist(artist.id, { verified: newStatus });
+        toast({
+            title: `Artist status updated`,
+            description: `${artist.name} has been ${newStatus ? 'verified' : 'unverified'}.`,
+        });
+    };
 
-        const oneTimeCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const handlePasswordReset = async (artist: Artist) => {
         try {
-            await updateArtist(artist.id, { firstTimeLoginCode: oneTimeCode, firstTimeLoginCodeUsed: false });
+            await sendPasswordResetEmail(auth, artist.email);
             toast({
-                title: 'New Reset Code Generated',
-                description: `A new one-time code has been generated for ${artist.name}.`,
+                title: 'Password Reset Email Sent',
+                description: `An email to reset the password has been sent to ${artist.email}.`,
                 duration: 9000,
             });
-            displayOneTimeCode(artist.name, oneTimeCode);
         } catch (error) {
-            console.error("Failed to generate reset code:", error);
-            toast({ title: 'Error', description: 'Could not generate a new code.', variant: 'destructive'});
+            console.error("Failed to send password reset email:", error);
+            toast({ title: 'Error', description: 'Could not send password reset email.', variant: 'destructive'});
         }
     };
 
@@ -288,9 +294,7 @@ export default function ArtistManagementPage() {
         }
 
         try {
-            const oneTimeCode = Math.floor(100000 + Math.random() * 900000).toString();
-            // Create user with a temporary password using the one time code. This is not ideal but works for this flow.
-            const userCredential = await createUserWithEmailAndPassword(auth, data.email, `temp-password-${oneTimeCode}`);
+            const userCredential = await createUserWithEmailAndPassword(auth, data.email, `temp-password-${Date.now()}`);
             const authUser = userCredential.user;
 
             const newArtistData: Omit<Artist, 'id'> = {
@@ -307,21 +311,21 @@ export default function ArtistManagementPage() {
                 charge: data.charge,
                 charges: { mehndi: data.charge, makeup: data.charge },
                 rating: 0,
-                styleTags: ['new', 'verified'],
+                styleTags: ['new'],
                 status: 'active',
-                firstTimeLoginCode: oneTimeCode,
+                verified: false,
                 firstTimeLoginCodeUsed: false,
             };
             
             await createArtistWithId({ ...newArtistData, id: authUser.uid });
+            await sendPasswordResetEmail(auth, data.email);
 
             toast({
-                title: "Artist Onboarded Successfully",
-                description: `${data.name} can now set their password in the app.`,
+                title: "Artist Onboarded & Notified",
+                description: `${data.name} can now set their password via the link sent to their email.`,
                 duration: 9000,
             });
 
-            displayOneTimeCode(data.name, oneTimeCode);
             form.reset();
 
         } catch (error: any) {
@@ -402,7 +406,10 @@ export default function ArtistManagementPage() {
                                                     <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
                                                 </Avatar>
                                                 <div className="flex flex-col">
-                                                    <span>{artist.name}</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <span>{artist.name}</span>
+                                                        {artist.verified && <ShieldCheck className="w-4 h-4 text-green-600" title="Verified"/>}
+                                                    </div>
                                                     <span className="text-xs text-muted-foreground">{artist.location}</span>
                                                 </div>
                                             </TableCell>
@@ -431,6 +438,10 @@ export default function ArtistManagementPage() {
                                                             <Eye className="mr-2 h-4 w-4" />
                                                             View Details
                                                         </DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => handleToggleVerified(artist)} disabled={!hasPermission('artists', 'edit')}>
+                                                            <ShieldCheck className="mr-2 h-4 w-4" />
+                                                            {artist.verified ? 'Un-verify' : 'Verify'}
+                                                        </DropdownMenuItem>
                                                         <DropdownMenuItem onSelect={() => handleToggleSuspend(artist)} disabled={!hasPermission('artists', 'edit')}>
                                                             <ShieldOff className="mr-2 h-4 w-4" />
                                                             {artist.status === 'suspended' ? 'Reinstate' : 'Suspend'}
@@ -438,7 +449,7 @@ export default function ArtistManagementPage() {
                                                          <DropdownMenuSeparator />
                                                         <DropdownMenuItem onSelect={() => handlePasswordReset(artist)} disabled={!hasPermission('artists', 'edit')}>
                                                             <KeyRound className="mr-2 h-4 w-4" />
-                                                            Generate Reset Code
+                                                            Send Password Reset
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem onSelect={() => setArtistToDelete(artist)} disabled={!hasPermission('artists', 'edit')} className="text-red-600 focus:bg-red-100 focus:text-red-700">
                                                             <Trash2 className="mr-2 h-4 w-4" />
@@ -518,7 +529,7 @@ export default function ArtistManagementPage() {
                         <CardHeader>
                             <CardTitle>Onboard New Artist</CardTitle>
                             <CardDescription>
-                                Directly create a new artist profile. A one-time code will be generated for them to set their password.
+                                Directly create a new artist profile. An email will be sent to them to create their password.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -546,7 +557,7 @@ export default function ArtistManagementPage() {
                                     </div>
                                     <Button type="submit" className="w-full" disabled={form.formState.isSubmitting || !hasPermission('artists', 'edit')}>
                                         <UserPlus className="mr-2 h-4 w-4"/>
-                                        {form.formState.isSubmitting ? 'Onboarding...' : 'Onboard Artist & Generate Code'}
+                                        {form.formState.isSubmitting ? 'Onboarding...' : 'Onboard Artist & Send Invite'}
                                     </Button>
                                 </form>
                             </Form>
@@ -582,7 +593,7 @@ export default function ArtistManagementPage() {
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
                             This action cannot be undone. This will permanently delete the artist profile for{' '}
-                            <span className="font-bold">{artistToDelete?.name}</span> and remove them from the platform.
+                            <span className="font-bold">{artistToDelete?.name}</span> and remove them from the platform. Note: this does not delete their auth account.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -596,3 +607,5 @@ export default function ArtistManagementPage() {
         </>
     );
 }
+
+    

@@ -10,9 +10,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Home, KeyRound, Phone, Mail } from 'lucide-react';
+import { Home, KeyRound, Phone, Mail, LogIn } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { signInWithEmailAndPassword, getAuth } from 'firebase/auth';
+import { signInWithEmailAndPassword, getAuth, sendPasswordResetEmail } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { Separator } from '@/components/ui/separator';
 import { getCompanyProfile } from '@/lib/services';
@@ -29,9 +29,6 @@ export default function ArtistLoginPage() {
     // State for forgot password
     const [isForgotPasswordOpen, setIsForgotPasswordOpen] = React.useState(false);
     const [forgotPasswordEmail, setForgotPasswordEmail] = React.useState('');
-    const [forgotPasswordPhone, setForgotPasswordPhone] = React.useState('');
-    const [isRequestSubmitted, setIsRequestSubmitted] = React.useState(false);
-    const [adminContact, setAdminContact] = React.useState({ phone: '', email: '' });
 
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -56,27 +53,26 @@ export default function ArtistLoginPage() {
         }
     };
     
-    const handleForgotPasswordOpen = async () => {
-        const profile = await getCompanyProfile();
-        setAdminContact({ phone: profile.phone, email: profile.email });
-        setIsForgotPasswordOpen(true);
-    };
-
-    const handleForgotPasswordRequest = (e: React.FormEvent) => {
+    const handleForgotPassword = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Here, we just show the message to contact admin.
-        // A real implementation could log this request for the admin.
-        setIsRequestSubmitted(true);
-    };
+        if (!forgotPasswordEmail) return;
 
-    const closeForgotPassword = () => {
-        setIsForgotPasswordOpen(false);
-        setTimeout(() => {
-            setIsRequestSubmitted(false);
-            setForgotPasswordEmail('');
-            setForgotPasswordPhone('');
-        }, 300);
-    }
+        try {
+            await sendPasswordResetEmail(auth, forgotPasswordEmail);
+            toast({
+                title: 'Password Reset Email Sent',
+                description: `If an account exists for ${forgotPasswordEmail}, you will receive an email to reset your password shortly.`,
+            });
+            setIsForgotPasswordOpen(false);
+        } catch (error) {
+            console.error("Forgot password error:", error);
+             toast({
+                title: 'Error',
+                description: 'Could not send password reset email. Please ensure the email is correct.',
+                variant: 'destructive',
+            });
+        }
+    };
 
     return (
         <>
@@ -103,7 +99,7 @@ export default function ArtistLoginPage() {
                     <div className="grid gap-2">
                          <div className="flex items-center">
                             <Label htmlFor="password">Password</Label>
-                            <Button variant="link" type="button" className="ml-auto inline-block text-sm underline" onClick={handleForgotPasswordOpen}>
+                            <Button variant="link" type="button" className="ml-auto inline-block text-sm underline" onClick={() => setIsForgotPasswordOpen(true)}>
                                 Forgot Password?
                             </Button>
                         </div>
@@ -121,18 +117,11 @@ export default function ArtistLoginPage() {
                 </form>
                 <Separator />
                  <div className="mt-2 text-center text-sm space-y-2">
-                        <Link href="/artist/set-password">
-                             <Button variant="outline" className="w-full">
-                                <KeyRound className="mr-2 h-4 w-4"/>
-                                First time here? Set Your Password
+                         <Link href="/artist/register">
+                            <Button variant="outline" className="w-full">
+                                Don't have an account? Register Here
                             </Button>
                         </Link>
-                        <div>
-                        Don't have an account?{' '}
-                        <Link href="/#artist-register" className="underline">
-                           Register here
-                        </Link>
-                        </div>
                     </div>
                  <div className="mt-2 text-center text-sm">
                     <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors">
@@ -143,48 +132,25 @@ export default function ArtistLoginPage() {
             </div>
         </div>
            
-            <Dialog open={isForgotPasswordOpen} onOpenChange={closeForgotPassword}>
+            <Dialog open={isForgotPasswordOpen} onOpenChange={setIsForgotPasswordOpen}>
                  <DialogContent className="sm:max-w-md">
-                    {!isRequestSubmitted ? (
-                         <form onSubmit={handleForgotPasswordRequest}>
-                            <DialogHeader>
-                                <DialogTitle>Forgot Your Password?</DialogTitle>
-                                <DialogDescription>
-                                   Please enter your details to verify your account. After submitting, you'll be shown the admin's contact info to request a password reset code.
-                                </DialogDescription>
-                            </DialogHeader>
-                             <div className="py-4 space-y-4">
-                                <div>
-                                    <Label htmlFor="forgot-email">Registered Email</Label>
-                                    <Input id="forgot-email" type="email" value={forgotPasswordEmail} onChange={(e) => setForgotPasswordEmail(e.target.value)} required />
-                                </div>
-                                <div>
-                                    <Label htmlFor="forgot-phone">Registered Phone</Label>
-                                    <Input id="forgot-phone" type="tel" value={forgotPasswordPhone} onChange={(e) => setForgotPasswordPhone(e.target.value)} required />
-                                </div>
+                    <form onSubmit={handleForgotPassword}>
+                        <DialogHeader>
+                            <DialogTitle>Forgot Your Password?</DialogTitle>
+                            <DialogDescription>
+                                Enter your registered email address below. We'll send you a link to create a new password.
+                            </DialogDescription>
+                        </DialogHeader>
+                            <div className="py-4 space-y-4">
+                            <div>
+                                <Label htmlFor="forgot-email">Registered Email</Label>
+                                <Input id="forgot-email" type="email" value={forgotPasswordEmail} onChange={(e) => setForgotPasswordEmail(e.target.value)} required />
                             </div>
-                            <DialogFooter>
-                                <Button type="submit">Submit Request</Button>
-                            </DialogFooter>
-                        </form>
-                    ) : (
-                         <>
-                            <DialogHeader>
-                                <DialogTitle>Request Sent</DialogTitle>
-                                <DialogDescription>
-                                   Your request has been noted. To get your new one-time login code, please contact the administrator using the details below.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="my-4 p-4 border rounded-lg space-y-2">
-                                <h4 className="font-semibold">Admin Contact Details</h4>
-                                <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-primary"/> {adminContact.phone || 'Not available'}</p>
-                                <p className="flex items-center gap-2"><Mail className="h-4 w-4 text-primary"/> {adminContact.email || 'Not available'}</p>
-                            </div>
-                            <DialogFooter>
-                                <Button type="button" onClick={closeForgotPassword}>Close</Button>
-                            </DialogFooter>
-                         </>
-                    )}
+                        </div>
+                        <DialogFooter>
+                            <Button type="submit">Send Reset Link</Button>
+                        </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
         </>

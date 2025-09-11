@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
-import { IndianRupee, BarChart, Star, Users, Briefcase, Calendar as CalendarIcon, Image as ImageIcon, Download, ChevronDown, ArrowLeft } from 'lucide-react';
+import { IndianRupee, BarChart, Star, Users, Briefcase, Calendar as CalendarIcon, Image as ImageIcon, Download, ChevronDown, ArrowLeft, CheckCircle } from 'lucide-react';
 import type { Artist, Booking, Review } from '@/types';
 import { getArtist, listenToCollection, getFinancialSettings } from '@/lib/services';
 import NextImage from 'next/image';
@@ -140,7 +140,15 @@ export default function ArtistDetailPage() {
                             <AvatarFallback>{artist.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="grid gap-1">
-                            <CardTitle className="text-3xl">{artist.name}</CardTitle>
+                            <CardTitle className="text-3xl flex items-center gap-2">
+                                {artist.name}
+                                {artist.verified && (
+                                    <Badge className="bg-green-600 text-white pl-2 text-sm">
+                                        <CheckCircle className="w-4 h-4 mr-1"/>
+                                        GlamGo Verified
+                                    </Badge>
+                                )}
+                            </CardTitle>
                             <CardDescription>{artist.location}</CardDescription>
                             <div className="flex flex-wrap items-center gap-2">
                                     {(artist.services || []).map((service) => (
@@ -285,3 +293,5 @@ export default function ArtistDetailPage() {
         </>
     );
 }
+
+    
