@@ -267,7 +267,7 @@ export default function ArtistProfilePage() {
                         <AccordionItem value="item-2">
                              <Card>
                                 <AccordionTrigger className="p-6 hover:no-underline">
-                                    <CardTitle className="flex items-center gap-2 text-lg"><Briefcase /> Services & Pricing</CardTitle>
+                                    <CardTitle className="flex items-center gap-2 text-lg"><Briefcase /> Services &amp; Pricing</CardTitle>
                                 </AccordionTrigger>
                                 <AccordionContent>
                                     <CardContent className="space-y-6 pt-2">

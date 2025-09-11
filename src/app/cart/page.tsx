@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -290,7 +289,7 @@ export default function CartPage() {
                  </Button>
             </header>
             <main className="max-w-4xl mx-auto p-4 md:p-8">
-                 <h1 className="text-3xl font-bold text-primary mb-6">Your Cart & Booking</h1>
+                 <h1 className="text-3xl font-bold text-primary mb-6">Your Cart &amp; Booking</h1>
                 {cart.length === 0 ? (
                      <Card className="text-center p-8">
                         <CardTitle>Your Cart is Empty</CardTitle>

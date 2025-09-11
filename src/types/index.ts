@@ -1,5 +1,4 @@
 
-
 import { Timestamp } from 'firebase/firestore';
 
 export type PackageCategory = {

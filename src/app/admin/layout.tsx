@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -173,7 +172,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                     if(accessibleLinks.length === 0) return null;
                     return (
                          <AccordionItem value={group.title} key={group.title} className="border-b-0">
-                            <AccordionTrigger className="py-2 text-muted-foreground hover:text-primary hover:no-underline text-base font-normal [&[data-state=open]>svg]:rotate-180">
+                            <AccordionTrigger className="py-2 text-muted-foreground hover:text-primary hover:no-underline text-base font-normal [&[data-state=open]&gt;svg]:rotate-180">
                                 {group.title}
                             </AccordionTrigger>
                             <AccordionContent className="pl-4">
