@@ -59,6 +59,7 @@ export type Artist = {
   firstTimeLoginCode?: string;
   firstTimeLoginCodeUsed?: boolean;
   password?: string; // This is a temporary client-side property, it should not be stored in Firestore
+  verified?: boolean;
 };
 
 export type Customer = {

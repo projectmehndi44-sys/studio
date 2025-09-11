@@ -12,7 +12,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { IndianRupee, MapPin, Star, X } from 'lucide-react';
+import { IndianRupee, MapPin, Star, X, CheckCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -69,7 +69,15 @@ export function ArtistProfileModal({ artist, isOpen, onOpenChange }: ArtistProfi
           </Carousel>
           <div className="p-6">
             <DialogHeader>
-                <DialogTitle className="text-2xl font-bold text-primary mb-2">{artist.name}</DialogTitle>
+                <div className="flex justify-between items-start">
+                    <DialogTitle className="text-2xl font-bold text-primary mb-2">{artist.name}</DialogTitle>
+                    {artist.verified && (
+                         <Badge className="bg-green-600 text-white pl-2">
+                            <CheckCircle className="w-3.5 h-3.5 mr-1"/>
+                            GlamGo Verified
+                        </Badge>
+                    )}
+                </div>
             </DialogHeader>
             <div className="flex items-center text-sm text-muted-foreground mb-3">
               <MapPin className="w-4 h-4 mr-1.5 text-accent" />

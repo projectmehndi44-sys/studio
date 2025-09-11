@@ -6,7 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { IndianRupee, MapPin, Paintbrush, Star } from 'lucide-react';
+import { IndianRupee, MapPin, Paintbrush, Star, CheckCircle } from 'lucide-react';
 import { MakeupIcon, MehndiIcon, PhotographyIcon } from '@/components/icons';
 
 interface ArtistCardProps {
@@ -34,7 +34,7 @@ export function ArtistCard({ artist, onBookingRequest }: ArtistCardProps) {
 
   return (
     <Card className="overflow-hidden flex flex-col group transition-all duration-300 hover:shadow-2xl hover:border-accent">
-      <CardHeader className="p-0">
+      <CardHeader className="p-0 relative">
         <Carousel className="w-full">
           <CarouselContent>
             {artist.workImages.map((src, index) => (
@@ -55,6 +55,14 @@ export function ArtistCard({ artist, onBookingRequest }: ArtistCardProps) {
           <CarouselPrevious className="left-4 opacity-0 group-hover:opacity-100 transition-opacity" />
           <CarouselNext className="right-4 opacity-0 group-hover:opacity-100 transition-opacity" />
         </Carousel>
+        {artist.verified && (
+            <div className="absolute top-2 right-2">
+                <Badge className="bg-green-600 text-white pl-2">
+                    <CheckCircle className="w-3.5 h-3.5 mr-1"/>
+                    GlamGo Verified
+                </Badge>
+            </div>
+        )}
       </CardHeader>
       <CardContent className="p-4 flex-grow">
         <CardTitle className="text-xl font-bold text-primary mb-2">{artist.name}</CardTitle>
