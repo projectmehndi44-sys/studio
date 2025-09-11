@@ -59,20 +59,24 @@ export default function ProfileManagementPage() {
             const userIndex = teamMembers.findIndex(member => member.id === user.id);
 
             if (userIndex === -1) {
-                throw new Error('Could not find user to update.');
+                throw new Error('Could not find your user profile in the database.');
             }
 
-            // You can only change your name. Username/email is your login and cannot be changed here.
-            teamMembers[userIndex].name = data.name;
+            // Create a new array with the updated member
+            const updatedTeamMembers = [
+                ...teamMembers.slice(0, userIndex),
+                { ...teamMembers[userIndex], name: data.name },
+                ...teamMembers.slice(userIndex + 1),
+            ];
             
-            await saveTeamMembers(teamMembers);
+            await saveTeamMembers(updatedTeamMembers);
 
             toast({
                 title: 'Profile Updated',
                 description: `Your name has been successfully updated.`,
             });
-        } catch(error) {
-             toast({ title: 'Error', description: 'Could not update your profile.', variant: 'destructive' });
+        } catch(error: any) {
+             toast({ title: 'Error', description: error.message || 'Could not update your profile.', variant: 'destructive' });
         } finally {
             setIsSaving(false);
         }

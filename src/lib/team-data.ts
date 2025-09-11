@@ -30,7 +30,7 @@ export const PERMISSION_MODULES: { key: keyof Permissions, label: string }[] = [
 export const teamMembers: TeamMember[] = [
     {
         id: 'user_001',
-        name: 'Abhishek Soni',
+        name: 'Abhishek Jaiswal',
         username: 'projectmehndi44@gmail.com',
         role: 'Super Admin',
         permissions: { // Admin has all rights by default, this is illustrative
