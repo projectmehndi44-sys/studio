@@ -49,7 +49,6 @@ export default function RootLayout({
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#8B4513" />
-        <link rel="icon" href="/favicon.ico" />
       </head>
       <body className={cn('font-body antialiased min-h-screen', playfairDisplay.variable, roboto.variable, dancingScript.variable)}>
         {children}
