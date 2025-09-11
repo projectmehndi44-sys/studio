@@ -216,7 +216,7 @@ export default function Home() {
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <div className="text-center">
             <h1 className="font-headline text-5xl font-bold text-primary md:text-7xl">
-                GlamGo
+                Glam<span className="text-accent">G</span>o
             </h1>
             <p className="mt-2 font-dancing-script text-2xl text-foreground/90">Artistry at Your Fingertips</p>
             <div className="mt-4 font-body text-lg text-foreground/80 max-w-2xl mx-auto">

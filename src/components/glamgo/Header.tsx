@@ -45,7 +45,7 @@ export function Header({
       <Link href="/" className="flex items-center gap-2">
         <Sparkles className="w-8 h-8 text-accent" />
          <h1 className="font-headline text-3xl font-bold text-primary">
-            GlamGo
+            Glam<span className="text-accent">G</span>o
         </h1>
       </Link>
       <div className="flex items-center gap-2">
