@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { signInWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { Separator } from '@/components/ui/separator';
-import { getArtistByEmail, updateArtist, getCompanyProfile } from '@/lib/services';
+import { getCompanyProfile } from '@/lib/services';
 
 
 export default function ArtistLoginPage() {

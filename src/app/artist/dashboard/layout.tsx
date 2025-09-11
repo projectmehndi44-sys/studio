@@ -22,6 +22,8 @@ import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
 import { signOutUser } from '@/lib/firebase';
 import { onAuthStateChanged, getAuth } from 'firebase/auth';
 import { app } from '@/lib/firebase';
+import { collection, query, where, getFirestore } from 'firebase/firestore';
+
 
 // 1. Create a context for the artist portal
 interface ArtistPortalContextType {
@@ -97,6 +99,7 @@ export default function ArtistDashboardLayout({
     useInactivityTimeout(handleLogout);
 
     const fetchData = React.useCallback(async (uid: string) => {
+        setIsLoading(true);
         const currentArtist = await getArtist(uid);
         
         if (currentArtist) {
@@ -129,20 +132,23 @@ export default function ArtistDashboardLayout({
     React.useEffect(() => {
         if (!artist?.id) return;
         
-        const unsubscribeBookings = listenToCollection<Booking>('bookings', (allBookings) => {
-            const currentArtistBookings = allBookings
-                .filter(b => b.artistIds && b.artistIds.includes(artist.id))
-                .sort((a,b) => b.date.toMillis() - a.date.toMillis());
-            setArtistBookings(currentArtistBookings);
-        });
+        const db = getFirestore(app);
 
-        const unsubscribeNotifications = listenToCollection<Notification>('notifications', (allNotifications) => {
-            const artistNotifications = allNotifications
-                .filter(n => n.artistId === artist.id)
-                .sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-            setNotifications(artistNotifications);
-            setUnreadCount(artistNotifications.filter(n => !n.isRead).length);
-        });
+        // Fetch only bookings relevant to this artist
+        const bookingsQuery = query(collection(db, 'bookings'), where('artistIds', 'array-contains', artist.id));
+        const unsubscribeBookings = listenToCollection<Booking>('bookings', (artistSpecificBookings) => {
+            const sortedBookings = artistSpecificBookings.sort((a,b) => b.date.getTime() - a.date.getTime());
+            setArtistBookings(sortedBookings);
+        }, bookingsQuery);
+
+
+        // Fetch only notifications relevant to this artist
+        const notificationsQuery = query(collection(db, 'notifications'), where('artistId', '==', artist.id));
+        const unsubscribeNotifications = listenToCollection<Notification>('notifications', (artistNotifications) => {
+            const sortedNotifications = artistNotifications.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            setNotifications(sortedNotifications);
+            setUnreadCount(sortedNotifications.filter(n => !n.isRead).length);
+        }, notificationsQuery);
         
         return () => {
             unsubscribeBookings();

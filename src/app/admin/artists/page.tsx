@@ -33,6 +33,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import { app } from '@/lib/firebase';
 
 
 type PendingArtist = Omit<Artist, 'id'> & {
@@ -55,6 +57,7 @@ export default function ArtistManagementPage() {
     const router = useRouter();
     const { toast } = useToast();
     const { hasPermission } = useAdminAuth();
+    const auth = getAuth(app);
 
     const [approvedArtists, setApprovedArtists] = React.useState<Artist[]>([]);
     const [pendingArtists, setPendingArtists] = React.useState<PendingArtist[]>([]);
@@ -111,6 +114,10 @@ export default function ArtistManagementPage() {
                 return;
             }
 
+            // Create the Firebase Auth user first
+            const userCredential = await createUserWithEmailAndPassword(auth, artistToApprove.email, `temp-password-${Date.now()}`);
+            const authUser = userCredential.user;
+
             const oneTimeCode = Math.floor(100000 + Math.random() * 900000).toString();
 
             const newArtist: Omit<Artist, 'id'> = {
@@ -137,7 +144,7 @@ export default function ArtistManagementPage() {
                 firstTimeLoginCodeUsed: false,
             };
             
-            await createArtistWithId(newArtist); // Firestore doc only
+            await createArtistWithId({ ...newArtist, id: authUser.uid });
             await deletePendingArtist(artistToApprove.originalId);
              
             toast({
@@ -267,6 +274,9 @@ export default function ArtistManagementPage() {
         }
 
         try {
+            const userCredential = await createUserWithEmailAndPassword(auth, data.email, `temp-password-${Date.now()}`);
+            const authUser = userCredential.user;
+
             const oneTimeCode = Math.floor(100000 + Math.random() * 900000).toString();
             const newArtistData: Omit<Artist, 'id'> = {
                 name: data.name,
@@ -288,7 +298,7 @@ export default function ArtistManagementPage() {
                 firstTimeLoginCodeUsed: false,
             };
             
-            await createArtistWithId(newArtistData);
+            await createArtistWithId({ ...newArtistData, id: authUser.uid });
 
             toast({
                 title: "Artist Onboarded Successfully",
@@ -554,5 +564,3 @@ export default function ArtistManagementPage() {
         </>
     );
 }
-
-    

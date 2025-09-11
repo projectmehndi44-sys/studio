@@ -16,6 +16,8 @@ import { getArtist, listenToCollection, getFinancialSettings } from '@/lib/servi
 import NextImage from 'next/image';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { exportToExcel, exportToPdf } from '@/lib/export';
+import { collection, query, where, getFirestore } from 'firebase/firestore';
+import { app } from '@/lib/firebase';
 
 export default function ArtistDetailPage() {
     const router = useRouter();
@@ -51,11 +53,11 @@ export default function ArtistDetailPage() {
         };
         
         fetchArtist();
+        
+        const db = getFirestore(app);
+        const bookingsQuery = query(collection(db, 'bookings'), where('artistIds', 'array-contains', artistId));
 
-        const unsubscribeBookings = listenToCollection<Booking>('bookings', (allBookings) => {
-            const artistBookings = allBookings.filter(b => b.artistIds?.includes(artistId));
-            setBookings(artistBookings);
-        });
+        const unsubscribeBookings = listenToCollection<Booking>('bookings', setBookings, bookingsQuery);
 
         return () => unsubscribeBookings();
 

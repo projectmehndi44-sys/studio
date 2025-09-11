@@ -58,42 +58,27 @@ async function setConfigDocument(docId: string, data: any): Promise<void> {
 
 // --- Listener Functions for Real-Time Data ---
 
-export const listenToCollection = <T>(collectionName: string, callback: (data: T[]) => void): Unsubscribe => {
+export const listenToCollection = <T>(collectionName: string, callback: (data: T[]) => void, q?: any): Unsubscribe => {
     let unsub: Unsubscribe = () => {};
     getDb().then(db => {
-        // Special handling for config collections that are single documents
-        if (['teamMembers', 'promotions', 'availableLocations'].includes(collectionName)) {
-             unsub = onSnapshot(doc(db, "config", collectionName), (docSnap) => {
-                 if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    let result: T[] = [];
-                    if (collectionName === 'teamMembers' && data.members) result = data.members;
-                    else if (collectionName === 'promotions' && data.promos) result = data.promos;
-                    else if (collectionName === 'availableLocations' && data.locations) result = data.locations as any; // This is an object, not array
-                    callback(result);
-                 }
-             });
-        } else {
-             // Standard listener for top-level collections
-             const q = query(collection(db, collectionName));
-            unsub = onSnapshot(q, (querySnapshot) => {
-                const data: T[] = querySnapshot.docs.map(doc => {
-                    const docData = doc.data();
-                    // Convert Firestore Timestamps to JS Dates for client-side consistency
-                    Object.keys(docData).forEach(key => {
-                        if (docData[key] instanceof Timestamp) {
-                            docData[key] = docData[key].toDate();
-                        } else if (Array.isArray(docData[key])) {
-                            docData[key] = docData[key].map(item => item instanceof Timestamp ? item.toDate() : item);
-                        }
-                    });
-                    return { id: doc.id, ...docData } as T;
+        const queryToUse = q || query(collection(db, collectionName));
+        unsub = onSnapshot(queryToUse, (querySnapshot) => {
+            const data: T[] = querySnapshot.docs.map(doc => {
+                const docData = doc.data();
+                // Convert Firestore Timestamps to JS Dates
+                Object.keys(docData).forEach(key => {
+                    if (docData[key] instanceof Timestamp) {
+                        docData[key] = docData[key].toDate();
+                    } else if (Array.isArray(docData[key])) {
+                        docData[key] = docData[key].map(item => item instanceof Timestamp ? item.toDate() : item);
+                    }
                 });
-                callback(data);
-            }, (error) => {
-                console.error(`Error listening to ${collectionName}: `, error);
+                return { id: doc.id, ...docData } as T;
             });
-        }
+            callback(data);
+        }, (error) => {
+            console.error(`Error listening to ${collectionName}: `, error);
+        });
     }).catch(error => {
         console.error("Failed to get DB for listener:", error);
     });
@@ -132,13 +117,10 @@ export const getArtistByEmail = async (email: string): Promise<Artist | null> =>
 };
 
 // Creates only the Firestore document. Auth user is created separately.
-export const createArtistWithId = async (data: Omit<Artist, 'id'>): Promise<string> => {
+export const createArtistWithId = async (data: Omit<Artist, 'id'> & {id: string}): Promise<void> => {
     const db = await getDb();
-    const artistsCollection = collection(db, "artists");
-    const docRef = await addDoc(artistsCollection, data);
-    // Update the document with its own ID
-    await updateDoc(docRef, { id: docRef.id });
-    return docRef.id;
+    const docRef = doc(db, "artists", data.id);
+    await setDoc(docRef, data);
 };
 
 export const updateArtist = async (id: string, data: Partial<Artist>): Promise<void> => {
@@ -160,6 +142,8 @@ export const createBooking = async (data: Omit<Booking, 'id'>): Promise<string> 
     const db = await getDb();
     const bookingsCollection = collection(db, "bookings");
     const docRef = await addDoc(bookingsCollection, data);
+    // Also update the ID in the doc
+    await updateDoc(docRef, {id: docRef.id});
     return docRef.id;
 };
 export const updateBooking = async (id: string, data: Partial<Booking>): Promise<void> => {
@@ -243,28 +227,6 @@ export const getTeamMembers = async (): Promise<TeamMember[]> => {
 };
 export const saveTeamMembers = (members: TeamMember[]) => setConfigDocument('teamMembers', members);
 
-export const updateTeamMemberId = async (oldId: string, newId: string) => {
-    const db = await getDb();
-    const configRef = doc(db, 'config', 'teamMembers');
-    
-    await runTransaction(db, async (transaction) => {
-        const configDoc = await transaction.get(configRef);
-        if (!configDoc.exists()) {
-            throw "Team members config document does not exist!";
-        }
-        
-        const members = configDoc.data().members as TeamMember[];
-        const memberIndex = members.findIndex(m => m.id === oldId);
-        
-        if (memberIndex === -1) {
-            console.warn(`Tried to update non-existent team member with old ID: ${oldId}`);
-            return; // Or throw an error if this should not happen
-        }
-        
-        members[memberIndex].id = newId;
-        transaction.update(configRef, { members: members });
-    });
-};
 
 export const getPromotions = async (): Promise<Promotion[]> => {
     return await getConfigDocument<Promotion[]>('promotions') || [];
