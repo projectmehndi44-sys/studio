@@ -64,7 +64,7 @@ export default function ArtistDetailPage() {
 
     }, [router, artistId, toast]);
 
-    const handleDownload = (format: 'json' | 'pdf' | 'excel') => {
+    const handleDownload = (format: 'pdf' | 'excel') => {
         if (!artist) return;
         
         const artistBookings = bookings.filter(b => b.status === 'Completed' || b.status === 'Confirmed');
@@ -75,18 +75,7 @@ export default function ArtistDetailPage() {
             reviews: artist.reviews || [],
         };
 
-        if (format === 'json') {
-            const dataStr = JSON.stringify(dataToDownload, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `artist-details-${artist.id}.json`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        } else if (format === 'pdf') {
+        if (format === 'pdf') {
             exportToPdf(dataToDownload);
         } else if (format === 'excel') {
             exportToExcel([dataToDownload]);
@@ -130,7 +119,6 @@ export default function ArtistDetailPage() {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={() => handleDownload('json')}>JSON</DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => handleDownload('pdf')}>PDF</DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => handleDownload('excel')}>Excel</DropdownMenuItem>
                     </DropdownMenuContent>

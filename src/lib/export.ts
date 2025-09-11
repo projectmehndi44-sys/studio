@@ -357,3 +357,47 @@ export const generateCustomerInvoice = async (booking: Booking, customer: Custom
     addFooter(doc);
     doc.save(`invoice-${invoiceId}.pdf`);
 }
+
+export const exportTransactionsToPdf = (transactions: Transaction[]) => {
+    const doc = new jsPDF();
+    const totals = transactions.reduce((acc, t) => {
+        if (t.type === 'Revenue') acc.revenue += t.amount;
+        if (t.type === 'Payout') acc.payouts += Math.abs(t.amount);
+        return acc;
+    }, { revenue: 0, payouts: 0 });
+    const net = totals.revenue - totals.payouts;
+
+    addHeader(doc, 'Transaction Report');
+    doc.setFontSize(12);
+    doc.text(`Total Revenue: ${totals.revenue.toLocaleString()}`, 14, 45);
+    doc.text(`Total Payouts: ${totals.payouts.toLocaleString()}`, 14, 51);
+    doc.text(`Net: ${net.toLocaleString()}`, 14, 57);
+
+    autoTable(doc, {
+        startY: 65,
+        head: [['Date', 'Type', 'Description', 'Amount']],
+        body: transactions.map(t => [
+            t.date.toLocaleDateString(),
+            t.type,
+            t.description,
+            { content: t.amount.toLocaleString(), styles: { halign: 'right' } }
+        ]),
+        theme: 'grid',
+        headStyles: { fillColor: brandColors.accent }
+    });
+
+    addFooter(doc);
+    doc.save('transaction-report.pdf');
+};
+
+export const exportTransactionsToExcel = (transactions: Transaction[]) => {
+    const worksheet = XLSX.utils.json_to_sheet(transactions.map(t => ({
+        Date: t.date.toLocaleDateString(),
+        Type: t.type,
+        Description: t.description,
+        Amount: t.amount
+    })));
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Transactions');
+    XLSX.writeFile(workbook, 'transaction-report.xlsx');
+};
