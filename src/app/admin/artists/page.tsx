@@ -24,7 +24,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
-import { createUser } from '@/lib/firebase';
+import { createUserWithEmailAndPassword } from '@/lib/firebase';
+import { getAuth } from 'firebase/auth';
+import { app } from '@/lib/firebase';
 
 type PendingArtist = Omit<Artist, 'id'> & {
   id: string; // email is used as ID here
@@ -47,6 +49,7 @@ export default function ArtistManagementPage() {
     const router = useRouter();
     const { toast } = useToast();
     const { hasPermission } = useAdminAuth();
+    const auth = getAuth(app);
 
     const [approvedArtists, setApprovedArtists] = React.useState<Artist[]>([]);
     const [pendingArtists, setPendingArtists] = React.useState<PendingArtist[]>([]);
@@ -82,7 +85,8 @@ export default function ArtistManagementPage() {
         if (!artistToApprove) return;
         
         try {
-            const authUser = await createUser(artistToApprove.email, artistToApprove.password);
+            const userCredential = await createUserWithEmailAndPassword(auth, artistToApprove.email, artistToApprove.password);
+            const authUser = userCredential.user;
 
             const newArtist: Omit<Artist, 'id'> = {
                 name: artistToApprove.fullName,
@@ -210,8 +214,9 @@ export default function ArtistManagementPage() {
         }
 
         try {
-            // 1. Create the user in Firebase Auth
-            const authUser = await createUser(data.email, data.password);
+            // 1. Create the user in Firebase Auth directly
+            const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+            const authUser = userCredential.user;
             
             // 2. Prepare the artist data for Firestore
             const newArtistData: Omit<Artist, 'id'> = {
@@ -488,3 +493,5 @@ export default function ArtistManagementPage() {
         </>
     );
 }
+
+    
