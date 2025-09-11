@@ -71,12 +71,20 @@ export function ArtistProfileModal({ artist, isOpen, onOpenChange }: ArtistProfi
             <DialogHeader>
                 <div className="flex justify-between items-start">
                     <DialogTitle className="text-2xl font-bold text-primary mb-2">{artist.name}</DialogTitle>
-                    {artist.verified && (
-                         <Badge className="bg-green-600 text-white pl-2">
-                            <CheckCircle className="w-3.5 h-3.5 mr-1"/>
-                            GlamGo Verified
-                        </Badge>
-                    )}
+                    <div className="flex flex-col gap-1 items-end">
+                        {artist.verified && (
+                             <Badge className="bg-green-600 text-white pl-2">
+                                <CheckCircle className="w-3.5 h-3.5 mr-1"/>
+                                GlamGo Verified
+                            </Badge>
+                        )}
+                         {artist.isFoundersClubMember && (
+                            <Badge className="bg-amber-500 text-white pl-2">
+                                <Star className="w-3.5 h-3.5 mr-1 fill-current"/>
+                                Founder's Club
+                            </Badge>
+                        )}
+                    </div>
                 </div>
             </DialogHeader>
             <div className="flex items-center text-sm text-muted-foreground mb-3">

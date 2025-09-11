@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
-import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Trash2, UserPlus, ShieldOff, KeyRound, ShieldCheck } from 'lucide-react';
+import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Trash2, UserPlus, ShieldOff, KeyRound, ShieldCheck, Star } from 'lucide-react';
 import type { Artist, Notification } from '@/types';
 import { listenToCollection, createArtistWithId, deletePendingArtist, deleteArtist, updateArtist, createNotification, getArtistByEmail, getTeamMembers, getArtist } from '@/lib/services';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
@@ -36,6 +36,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { createUserWithEmailAndPassword, getAuth, sendPasswordResetEmail } from 'firebase/auth';
 import { app } from '@/lib/firebase';
+import { Switch } from '@/components/ui/switch';
 
 
 type PendingArtist = Omit<Artist, 'id'> & {
@@ -137,6 +138,7 @@ export default function ArtistManagementPage() {
                 styleTags: ['new'],
                 status: 'active',
                 verified: false,
+                isFoundersClubMember: false,
                 state: artistToApprove.state,
                 district: artistToApprove.district,
                 locality: artistToApprove.locality,
@@ -220,6 +222,15 @@ export default function ArtistManagementPage() {
             description: `${artist.name} has been ${newStatus ? 'verified' : 'unverified'}.`,
         });
     };
+
+    const handleToggleFoundersClub = async (artist: Artist) => {
+        const newStatus = !artist.isFoundersClubMember;
+        await updateArtist(artist.id, { isFoundersClubMember: newStatus });
+        toast({
+            title: `Artist status updated`,
+            description: `${artist.name} is ${newStatus ? 'now a Founder\'s Club member' : 'no longer a Founder\'s Club member'}.`,
+        });
+    }
 
     const handlePasswordReset = async (artist: Artist) => {
         try {
@@ -314,6 +325,7 @@ export default function ArtistManagementPage() {
                 styleTags: ['new'],
                 status: 'active',
                 verified: false,
+                isFoundersClubMember: false,
                 firstTimeLoginCodeUsed: false,
             };
             
@@ -409,6 +421,7 @@ export default function ArtistManagementPage() {
                                                     <div className="flex items-center gap-2">
                                                         <span>{artist.name}</span>
                                                         {artist.verified && <ShieldCheck className="w-4 h-4 text-green-600" title="Verified"/>}
+                                                        {artist.isFoundersClubMember && <Star className="w-4 h-4 text-amber-500 fill-current" title="Founder's Club Member"/>}
                                                     </div>
                                                     <span className="text-xs text-muted-foreground">{artist.location}</span>
                                                 </div>
@@ -446,11 +459,16 @@ export default function ArtistManagementPage() {
                                                             <ShieldOff className="mr-2 h-4 w-4" />
                                                             {artist.status === 'suspended' ? 'Reinstate' : 'Suspend'}
                                                         </DropdownMenuItem>
-                                                         <DropdownMenuSeparator />
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem onSelect={() => handleToggleFoundersClub(artist)} disabled={!hasPermission('artists', 'edit')}>
+                                                            <Star className="mr-2 h-4 w-4" />
+                                                            Toggle Founder's Club
+                                                        </DropdownMenuItem>
                                                         <DropdownMenuItem onSelect={() => handlePasswordReset(artist)} disabled={!hasPermission('artists', 'edit')}>
                                                             <KeyRound className="mr-2 h-4 w-4" />
                                                             Send Password Reset
                                                         </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
                                                         <DropdownMenuItem onSelect={() => setArtistToDelete(artist)} disabled={!hasPermission('artists', 'edit')} className="text-red-600 focus:bg-red-100 focus:text-red-700">
                                                             <Trash2 className="mr-2 h-4 w-4" />
                                                             Delete
@@ -607,5 +625,3 @@ export default function ArtistManagementPage() {
         </>
     );
 }
-
-    

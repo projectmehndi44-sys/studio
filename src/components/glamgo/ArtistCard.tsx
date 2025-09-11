@@ -55,14 +55,20 @@ export function ArtistCard({ artist, onBookingRequest }: ArtistCardProps) {
           <CarouselPrevious className="left-4 opacity-0 group-hover:opacity-100 transition-opacity" />
           <CarouselNext className="right-4 opacity-0 group-hover:opacity-100 transition-opacity" />
         </Carousel>
-        {artist.verified && (
-            <div className="absolute top-2 right-2">
+         <div className="absolute top-2 right-2 flex flex-col gap-1 items-end">
+            {artist.verified && (
                 <Badge className="bg-green-600 text-white pl-2">
                     <CheckCircle className="w-3.5 h-3.5 mr-1"/>
                     GlamGo Verified
                 </Badge>
-            </div>
-        )}
+            )}
+            {artist.isFoundersClubMember && (
+                <Badge className="bg-amber-500 text-white pl-2">
+                    <Star className="w-3.5 h-3.5 mr-1 fill-current"/>
+                    Founder's Club
+                </Badge>
+            )}
+        </div>
       </CardHeader>
       <CardContent className="p-4 flex-grow">
         <CardTitle className="text-xl font-bold text-primary mb-2">{artist.name}</CardTitle>

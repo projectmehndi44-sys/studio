@@ -60,6 +60,7 @@ export type Artist = {
   firstTimeLoginCodeUsed?: boolean;
   password?: string; // This is a temporary client-side property, it should not be stored in Firestore
   verified?: boolean;
+  isFoundersClubMember?: boolean;
 };
 
 export type Customer = {
@@ -111,6 +112,7 @@ export type Booking = {
     expectedCount: number;
   };
   appliedReferralCode?: string;
+  reviewSubmitted?: boolean;
 };
 
 export type Review = {
@@ -129,7 +131,7 @@ export type Notification = {
   message: string;
   timestamp: string;
   isRead: boolean;
-  type: 'booking' | 'payout' | 'announcement';
+  type: 'booking' | 'payout' | 'announcement' | 'review_request';
 };
 
 export type Promotion = {
@@ -198,5 +200,3 @@ export type TeamMember = {
     permissions: Permissions;
     fcmToken?: string;
 };
-
-    
