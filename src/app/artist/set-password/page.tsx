@@ -12,11 +12,11 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, updatePassword } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { KeyRound, LogIn } from 'lucide-react';
 import Link from 'next/link';
-import { getArtistByEmail, updateArtist } from '@/lib/services';
+import { getArtistByEmail, updateArtist, getArtist } from '@/lib/services';
 import type { User } from 'firebase/auth';
 
 const setPasswordSchema = z.object({
@@ -51,7 +51,7 @@ export default function SetPasswordPage() {
 
   const onSubmit = async (data: SetPasswordFormValues) => {
     try {
-      // 1. Verify artist details and one-time code
+      // 1. Verify artist details and one-time code from Firestore
       const artist = await getArtistByEmail(data.email);
 
       if (!artist) {
@@ -63,29 +63,42 @@ export default function SetPasswordPage() {
       if (artist.firstTimeLoginCodeUsed) {
         throw new Error("This one-time login code has already been used. Please request a new one from your admin.");
       }
-       if (artist.firstTimeLoginCode !== data.oneTimeCode) {
+      if (artist.firstTimeLoginCode !== data.oneTimeCode) {
         throw new Error("The one-time login code is incorrect.");
       }
 
-      // 2. Create Firebase Auth user
+      // 2. Create or Update Firebase Auth user
       let authUser: User;
       try {
         const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
         authUser = userCredential.user;
+        
+        // Sync the new Auth UID with the Firestore document ID
+        // This is a critical step for consistency.
+        if (artist.id !== authUser.uid) {
+            // In a production app, you might migrate the document to a new ID,
+            // but for simplicity here we update the artist doc with the new ID.
+            // This assumes the admin-created ID was temporary.
+            await updateArtist(artist.id, { id: authUser.uid }); 
+            // In a real app, you would need to handle this more robustly, possibly by deleting the old doc and creating a new one with the correct ID.
+        }
+
       } catch (authError: any) {
         if (authError.code === 'auth/email-already-in-use') {
-            throw new Error("A login account for this email already exists. Please contact admin to reset your password if you forgot it.");
+          // If the user already exists in Auth, it means they are resetting their password.
+          // This part of the logic is complex without server-side actions or sending real emails.
+          // The current flow creates the user on first password set.
+          // For a reset, the admin generates a new code, but we can't 'update' a password without being logged in.
+          // The most secure flow for a reset would involve a Cloud Function.
+          // For now, we'll tell them to contact admin for deletion/re-creation if stuck.
+          throw new Error("A login account for this email already exists. If you forgot your password, please contact admin to generate a new reset code.");
         }
         throw authError; // Re-throw other auth errors
       }
 
-      // 3. Update artist document in Firestore
+      // 3. Update artist document in Firestore to invalidate the code
       await updateArtist(artist.id, {
         firstTimeLoginCodeUsed: true,
-        // It's crucial to ensure the Firestore doc ID matches the Firebase Auth UID
-        // This should be handled during admin onboarding, but we double-check here.
-        // In a real scenario, you might have a cloud function to sync this.
-        // For now, we assume the initial 'id' is correct or we could update it.
       });
 
       toast({

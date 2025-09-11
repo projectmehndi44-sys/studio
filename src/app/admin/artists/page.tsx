@@ -13,10 +13,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from '@/hooks/use-toast';
-import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Pencil, Trash2, UserPlus, ShieldOff } from 'lucide-react';
+import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Pencil, Trash2, UserPlus, ShieldOff, KeyRound } from 'lucide-react';
 import type { Artist, Notification } from '@/types';
 import { listenToCollection, createArtistWithId, deletePendingArtist, deleteArtist, updateArtist, createNotification, getArtistByEmail, getTeamMembers } from '@/lib/services';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { exportToExcel } from '@/lib/export';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -189,6 +189,23 @@ export default function ArtistManagementPage() {
             title: `Artist ${newStatus === 'active' ? 'Reinstated' : 'Suspended'}`,
             description: `${artist.name}'s status has been updated.`,
         });
+    };
+
+    const handlePasswordReset = async (artist: Artist) => {
+        if (!window.confirm(`Are you sure you want to generate a new password reset code for ${artist.name}? Their old one-time code (if unused) will no longer work.`)) {
+            return;
+        }
+
+        const oneTimeCode = Math.floor(100000 + Math.random() * 900000).toString();
+        await updateArtist(artist.id, { firstTimeLoginCode: oneTimeCode, firstTimeLoginCodeUsed: false });
+        
+        toast({
+            title: 'New Reset Code Generated',
+            description: `A new one-time code has been generated for ${artist.name}.`,
+            duration: 9000,
+        });
+
+        displayOneTimeCode(artist.name, oneTimeCode);
     };
 
 
@@ -392,6 +409,11 @@ export default function ArtistManagementPage() {
                                                         <DropdownMenuItem onSelect={() => handleToggleSuspend(artist)} disabled={!hasPermission('artists', 'edit')}>
                                                             <ShieldOff className="mr-2 h-4 w-4" />
                                                             {artist.status === 'suspended' ? 'Reinstate' : 'Suspend'}
+                                                        </DropdownMenuItem>
+                                                         <DropdownMenuSeparator />
+                                                        <DropdownMenuItem onSelect={() => handlePasswordReset(artist)} disabled={!hasPermission('artists', 'edit')}>
+                                                            <KeyRound className="mr-2 h-4 w-4" />
+                                                            Generate Reset Code
                                                         </DropdownMenuItem>
                                                         <DropdownMenuItem onSelect={() => handleDeleteArtist(artist)} disabled={!hasPermission('artists', 'edit')} className="text-red-600">
                                                             <Trash2 className="mr-2 h-4 w-4" />

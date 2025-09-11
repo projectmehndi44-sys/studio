@@ -58,6 +58,7 @@ export type Artist = {
   // New fields for one-time password setup
   firstTimeLoginCode?: string;
   firstTimeLoginCodeUsed?: boolean;
+  password?: string; // This is a temporary client-side property, it should not be stored in Firestore
 };
 
 export type Customer = {
