@@ -1,4 +1,5 @@
 
+
 import { Timestamp } from 'firebase/firestore';
 
 export type PackageCategory = {
@@ -26,7 +27,7 @@ export type ArtistServiceOffering = {
 };
 
 export type Artist = {
-  id: string; // Firebase Auth UID
+  id: string; // Firestore Document ID. Should be synced with Firebase Auth UID after password creation.
   name: string;
   email: string;
   phone: string;
@@ -54,7 +55,9 @@ export type Artist = {
   referralCode?: string;
   referralDiscount?: number; // Percentage, e.g., 10 for 10%
   status?: 'active' | 'suspended';
-  password?: string;
+  // New fields for one-time password setup
+  firstTimeLoginCode?: string;
+  firstTimeLoginCodeUsed?: boolean;
 };
 
 export type Customer = {
@@ -193,3 +196,5 @@ export type TeamMember = {
     permissions: Permissions;
     fcmToken?: string;
 };
+
+    

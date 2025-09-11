@@ -15,7 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from '@/hooks/use-toast';
 import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Pencil, Trash2, UserPlus, ShieldOff } from 'lucide-react';
 import type { Artist, Notification } from '@/types';
-import { listenToCollection, createArtist, deletePendingArtist, deleteArtist, updateArtist, createNotification, getArtistByEmail, getTeamMembers } from '@/lib/services';
+import { listenToCollection, createArtistWithId, deletePendingArtist, deleteArtist, updateArtist, createNotification, getArtistByEmail, getTeamMembers } from '@/lib/services';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { exportToExcel } from '@/lib/export';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -24,9 +24,16 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useAdminAuth } from '@/hooks/use-admin-auth';
-import { createUserWithEmailAndPassword, fetchSignInMethodsForEmail } from 'firebase/auth';
-import { getAuth } from 'firebase/auth';
-import { app } from '@/lib/firebase';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 type PendingArtist = Omit<Artist, 'id'> & {
   id: string; // email is used as ID here
@@ -48,11 +55,15 @@ export default function ArtistManagementPage() {
     const router = useRouter();
     const { toast } = useToast();
     const { hasPermission } = useAdminAuth();
-    const auth = getAuth(app);
 
     const [approvedArtists, setApprovedArtists] = React.useState<Artist[]>([]);
     const [pendingArtists, setPendingArtists] = React.useState<PendingArtist[]>([]);
     const [selectedArtistIds, setSelectedArtistIds] = React.useState<string[]>([]);
+    
+    // State for showing the one-time code
+    const [showCodeAlert, setShowCodeAlert] = React.useState(false);
+    const [generatedCode, setGeneratedCode] = React.useState('');
+    const [generatedArtistName, setGeneratedArtistName] = React.useState('');
     
     const form = useForm<OnboardFormValues>({
         resolver: zodResolver(onboardSchema),
@@ -79,6 +90,12 @@ export default function ArtistManagementPage() {
         };
     }, []);
 
+    const displayOneTimeCode = (artistName: string, code: string) => {
+        setGeneratedArtistName(artistName);
+        setGeneratedCode(code);
+        setShowCodeAlert(true);
+    };
+
     const handleApprove = async (artistId: string) => {
         const artistToApprove = pendingArtists.find(p => p.id === artistId);
         if (!artistToApprove) return;
@@ -94,25 +111,7 @@ export default function ArtistManagementPage() {
                 return;
             }
 
-            const signInMethods = await fetchSignInMethodsForEmail(auth, artistToApprove.email);
-            let authUid: string;
-
-            if (signInMethods.length > 0) {
-                 toast({
-                    title: "Auth Account Exists",
-                    description: `${artistToApprove.email} already has a login account. We will link it to their new artist profile.`,
-                });
-                const teamMembers = await getTeamMembers();
-                const existingUser = teamMembers.find(u => u.username === artistToApprove.email);
-                authUid = existingUser?.id || `existing_${Date.now()}`;
-            } else {
-                const userCredential = await createUserWithEmailAndPassword(auth, artistToApprove.email, `temp-password-${Date.now()}`);
-                authUid = userCredential.user.uid;
-            }
-            
-            if(!authUid) {
-                throw new Error("Could not retrieve or create a UID for the user.");
-            }
+            const oneTimeCode = Math.floor(100000 + Math.random() * 900000).toString();
 
             const newArtist: Omit<Artist, 'id'> = {
                 name: artistToApprove.fullName,
@@ -134,27 +133,21 @@ export default function ArtistManagementPage() {
                 district: artistToApprove.district,
                 locality: artistToApprove.locality,
                 servingAreas: artistToApprove.servingAreas,
+                firstTimeLoginCode: oneTimeCode,
+                firstTimeLoginCodeUsed: false,
             };
             
-            await createArtist(authUid, newArtist);
+            await createArtistWithId(newArtist); // Firestore doc only
             await deletePendingArtist(artistToApprove.originalId);
              
-            const welcomeMessage = `Welcome to GlamGo! Your account is approved. Please go to the artist login page and use the 'Set Your Password' option to create your password and access your portal.`;
-            const notification: Omit<Notification, 'id'> = {
-                artistId: authUid,
-                title: 'Your Artist Account is Approved!',
-                message: welcomeMessage,
-                type: 'announcement',
-                isRead: false,
-                timestamp: new Date().toISOString(),
-            };
-            await createNotification(notification);
-            
             toast({
                 title: "Artist Approved",
-                description: `${newArtist.name} is now an active artist. They need to set their password in the app.`,
+                description: `${newArtist.name} is now an active artist. Share their one-time login code with them.`,
                 duration: 9000,
             });
+
+            displayOneTimeCode(newArtist.name, oneTimeCode);
+
         } catch (error: any) {
             console.error("Approval Error: ", error);
              toast({
@@ -179,8 +172,8 @@ export default function ArtistManagementPage() {
     };
     
     const handleDeleteArtist = async (artist: Artist) => {
-        if (window.confirm(`Are you sure you want to permanently delete ${artist.name}? This action cannot be undone.`)) {
-            await deleteArtist(artist.id);
+        if (window.confirm(`Are you sure you want to permanently delete ${artist.name}? This action CANNOT be undone and will remove their login and profile.`)) {
+            await deleteArtist(artist.id); // This now also handles Firebase Auth deletion via a function
             toast({
                 title: "Artist Deleted",
                 description: `${artist.name} has been removed from the platform.`,
@@ -257,22 +250,7 @@ export default function ArtistManagementPage() {
         }
 
         try {
-            const signInMethods = await fetchSignInMethodsForEmail(auth, data.email);
-            let authUid: string;
-            
-            if (signInMethods.length > 0) {
-                 toast({
-                    title: "Existing Login Found",
-                    description: `This user already has a login. They can use the "Set Password" feature if they've forgotten it.`,
-                });
-                const teamMembers = await getTeamMembers(); 
-                const existingUser = teamMembers.find(u => u.username === data.email);
-                authUid = existingUser?.id || `existing_${Date.now()}`;
-            } else {
-                const userCredential = await createUserWithEmailAndPassword(auth, data.email, `temp-password-${Date.now()}`);
-                authUid = userCredential.user.uid;
-            }
-            
+            const oneTimeCode = Math.floor(100000 + Math.random() * 900000).toString();
             const newArtistData: Omit<Artist, 'id'> = {
                 name: data.name,
                 email: data.email,
@@ -289,26 +267,19 @@ export default function ArtistManagementPage() {
                 rating: 0,
                 styleTags: ['new', 'verified'],
                 status: 'active',
+                firstTimeLoginCode: oneTimeCode,
+                firstTimeLoginCodeUsed: false,
             };
             
-            await createArtist(authUid, newArtistData);
-
-            const welcomeMessage = `Welcome to the platform! Your artist account is active. Please go to the artist portal and use the "Set Password" option to create your password and log in.`;
-            const notification: Omit<Notification, 'id'> = {
-                artistId: authUid,
-                title: 'Welcome to GlamGo!',
-                message: welcomeMessage,
-                type: 'announcement',
-                isRead: false,
-                timestamp: new Date().toISOString(),
-            };
-            await createNotification(notification);
+            await createArtistWithId(newArtistData);
 
             toast({
                 title: "Artist Onboarded Successfully",
                 description: `${data.name} can now set their password in the app.`,
                 duration: 9000,
             });
+
+            displayOneTimeCode(data.name, oneTimeCode);
             form.reset();
 
         } catch (error: any) {
@@ -418,10 +389,6 @@ export default function ArtistManagementPage() {
                                                             <Eye className="mr-2 h-4 w-4" />
                                                             View Details
                                                         </DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => {}} disabled={!hasPermission('artists', 'edit')}>
-                                                            <Pencil className="mr-2 h-4 w-4" />
-                                                            Edit
-                                                        </DropdownMenuItem>
                                                         <DropdownMenuItem onSelect={() => handleToggleSuspend(artist)} disabled={!hasPermission('artists', 'edit')}>
                                                             <ShieldOff className="mr-2 h-4 w-4" />
                                                             {artist.status === 'suspended' ? 'Reinstate' : 'Suspend'}
@@ -504,7 +471,7 @@ export default function ArtistManagementPage() {
                         <CardHeader>
                             <CardTitle>Onboard New Artist</CardTitle>
                             <CardDescription>
-                                Directly create a new artist profile. They will need to set their own password in the artist portal.
+                                Directly create a new artist profile. A one-time code will be generated for them to set their password.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -532,7 +499,7 @@ export default function ArtistManagementPage() {
                                     </div>
                                     <Button type="submit" className="w-full" disabled={form.formState.isSubmitting || !hasPermission('artists', 'edit')}>
                                         <UserPlus className="mr-2 h-4 w-4"/>
-                                        {form.formState.isSubmitting ? 'Onboarding...' : 'Onboard Artist'}
+                                        {form.formState.isSubmitting ? 'Onboarding...' : 'Onboard Artist & Generate Code'}
                                     </Button>
                                 </form>
                             </Form>
@@ -540,6 +507,30 @@ export default function ArtistManagementPage() {
                     </Card>
                 </TabsContent>
             </Tabs>
+             <AlertDialog open={showCodeAlert} onOpenChange={setShowCodeAlert}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>One-Time Login Code Generated!</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Please securely share this code with{' '}
+                            <span className="font-bold">{generatedArtistName}</span>. They will need it to create their
+                            password and log in for the first time.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="my-4 p-4 bg-muted rounded-lg text-center">
+                        <p className="text-sm text-muted-foreground">Code for {generatedArtistName}</p>
+                        <p className="text-3xl font-bold tracking-widest text-primary">{generatedCode}</p>
+                    </div>
+                     <AlertDialogDescription>
+                        This code can only be used once and will expire after its first use. If the artist loses this code, you can generate a new one from their profile page.
+                    </AlertDialogDescription>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => setShowCodeAlert(false)}>Close</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }
+
+    

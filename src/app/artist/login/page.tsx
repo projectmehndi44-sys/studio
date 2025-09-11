@@ -12,9 +12,11 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Home, KeyRound } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { signInWithEmailAndPassword, sendPasswordResetEmail, getAuth } from 'firebase/auth';
+import { signInWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { Separator } from '@/components/ui/separator';
+import { getArtistByEmail, updateArtist } from '@/lib/services';
+
 
 export default function ArtistLoginPage() {
     const router = useRouter();
@@ -26,7 +28,6 @@ export default function ArtistLoginPage() {
     
     // State for forgot password
     const [isForgotPasswordOpen, setIsForgotPasswordOpen] = React.useState(false);
-    const [forgotPasswordEmail, setForgotPasswordEmail] = React.useState('');
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -39,7 +40,7 @@ export default function ArtistLoginPage() {
         } catch (error: any) {
             console.error("Login error:", error);
             let description = 'An error occurred during login. Please try again.';
-            if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+            if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-email') {
                 description = 'Invalid credentials. Please check your email and password.';
             } else if (error.code === 'auth/user-disabled') {
                 description = 'Your account has been suspended by an administrator.';
@@ -50,24 +51,9 @@ export default function ArtistLoginPage() {
         }
     };
     
-    const handlePasswordReset = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!forgotPasswordEmail) return;
-
-        try {
-            await sendPasswordResetEmail(auth, forgotPasswordEmail);
-            toast({
-                title: 'Password Reset Email Sent',
-                description: `If an account exists for ${forgotPasswordEmail}, you will receive a password reset link. Please check your inbox.`,
-            });
-            setIsForgotPasswordOpen(false);
-            setForgotPasswordEmail('');
-        } catch (error) {
-            console.error("Password Reset Error:", error);
-            toast({ title: 'An error occurred. Please try again.', variant: 'destructive' });
-        }
+    const handleForgotPassword = () => {
+        setIsForgotPasswordOpen(true);
     };
-
 
     return (
         <>
@@ -94,7 +80,7 @@ export default function ArtistLoginPage() {
                     <div className="grid gap-2">
                          <div className="flex items-center">
                             <Label htmlFor="password">Password</Label>
-                            <Button variant="link" type="button" className="ml-auto inline-block text-sm underline" onClick={() => setIsForgotPasswordOpen(true)}>
+                            <Button variant="link" type="button" className="ml-auto inline-block text-sm underline" onClick={handleForgotPassword}>
                                 Forgot Password?
                             </Button>
                         </div>
@@ -136,23 +122,19 @@ export default function ArtistLoginPage() {
            
             <Dialog open={isForgotPasswordOpen} onOpenChange={setIsForgotPasswordOpen}>
                  <DialogContent className="sm:max-w-md">
-                    <form onSubmit={handlePasswordReset}>
                         <DialogHeader>
-                            <DialogTitle>Forgot Password</DialogTitle>
+                            <DialogTitle>Forgot Your Password?</DialogTitle>
                             <DialogDescription>
-                                Enter your registered email address to receive a password reset link.
+                                Please contact your administrator. They will generate a new one-time login code for you to reset your password.
                             </DialogDescription>
                         </DialogHeader>
-                        <div className="py-4">
-                            <Label htmlFor="forgot-email">Email Address</Label>
-                            <Input id="forgot-email" type="email" value={forgotPasswordEmail} onChange={(e) => setForgotPasswordEmail(e.target.value)} required />
-                        </div>
                         <DialogFooter>
-                            <Button type="submit">Send Reset Link</Button>
+                            <Button type="button" onClick={() => setIsForgotPasswordOpen(false)}>OK</Button>
                         </DialogFooter>
-                    </form>
                 </DialogContent>
             </Dialog>
         </>
     );
 }
+
+    

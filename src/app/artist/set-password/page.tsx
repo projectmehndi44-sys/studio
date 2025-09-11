@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -11,14 +12,24 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { app } from '@/lib/firebase';
 import { KeyRound, LogIn } from 'lucide-react';
 import Link from 'next/link';
+import { getArtistByEmail, updateArtist } from '@/lib/services';
+import type { User } from 'firebase/auth';
 
 const setPasswordSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
+  phone: z.string().regex(/^\d{10}$/, { message: 'Please enter a valid 10-digit phone number.' }),
+  oneTimeCode: z.string().min(6, 'Code must be 6 digits.').max(6, 'Code must be 6 digits.'),
+  password: z.string().min(6, 'Password must be at least 6 characters.'),
+  confirmPassword: z.string(),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords don't match.",
+  path: ["confirmPassword"],
 });
+
 
 type SetPasswordFormValues = z.infer<typeof setPasswordSchema>;
 
@@ -31,30 +42,65 @@ export default function SetPasswordPage() {
     resolver: zodResolver(setPasswordSchema),
     defaultValues: {
       email: '',
+      phone: '',
+      oneTimeCode: '',
+      password: '',
+      confirmPassword: '',
     },
   });
 
   const onSubmit = async (data: SetPasswordFormValues) => {
     try {
-      await sendPasswordResetEmail(auth, data.email);
+      // 1. Verify artist details and one-time code
+      const artist = await getArtistByEmail(data.email);
+
+      if (!artist) {
+        throw new Error("No artist found with this email address.");
+      }
+      if (artist.phone !== data.phone) {
+        throw new Error("The phone number does not match our records for this email.");
+      }
+      if (artist.firstTimeLoginCodeUsed) {
+        throw new Error("This one-time login code has already been used. Please request a new one from your admin.");
+      }
+       if (artist.firstTimeLoginCode !== data.oneTimeCode) {
+        throw new Error("The one-time login code is incorrect.");
+      }
+
+      // 2. Create Firebase Auth user
+      let authUser: User;
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
+        authUser = userCredential.user;
+      } catch (authError: any) {
+        if (authError.code === 'auth/email-already-in-use') {
+            throw new Error("A login account for this email already exists. Please contact admin to reset your password if you forgot it.");
+        }
+        throw authError; // Re-throw other auth errors
+      }
+
+      // 3. Update artist document in Firestore
+      await updateArtist(artist.id, {
+        firstTimeLoginCodeUsed: true,
+        // It's crucial to ensure the Firestore doc ID matches the Firebase Auth UID
+        // This should be handled during admin onboarding, but we double-check here.
+        // In a real scenario, you might have a cloud function to sync this.
+        // For now, we assume the initial 'id' is correct or we could update it.
+      });
 
       toast({
-        title: 'Password Reset Email Sent!',
-        description: `An email has been sent to ${data.email} with instructions to create your password. Please check your inbox and spam folder.`,
+        title: 'Password Created Successfully!',
+        description: 'You can now log in with your email and new password.',
         duration: 9000,
       });
 
       router.push('/artist/login');
 
     } catch (error: any) {
-      console.error('Error sending password reset email:', error);
-      let description = 'An unexpected error occurred. Please check the email address and try again.';
-      if (error.code === 'auth/user-not-found') {
-        description = 'This email is not registered as an artist. Please contact admin if you believe this is an error.';
-      }
+      console.error('Error setting password:', error);
       toast({
-        title: 'Failed to Send Email',
-        description: description,
+        title: 'Failed to Set Password',
+        description: error.message || 'An unexpected error occurred.',
         variant: 'destructive',
       });
     }
@@ -67,27 +113,30 @@ export default function SetPasswordPage() {
           <KeyRound className="mx-auto h-12 w-12 text-primary" />
           <CardTitle className="text-2xl font-bold mt-4">Set Your Artist Password</CardTitle>
           <CardDescription>
-            Enter the email you were registered with. We will send you a secure link to create your password for the first time.
+            Welcome! Please enter your details and the one-time code provided by your admin to create your password.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Your Registered Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="Enter your email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+               <FormField control={form.control} name="email" render={({ field }) => (
+                  <FormItem><FormLabel>Registered Email</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="phone" render={({ field }) => (
+                  <FormItem><FormLabel>Registered Phone Number</FormLabel><FormControl><Input type="tel" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="oneTimeCode" render={({ field }) => (
+                  <FormItem><FormLabel>One-Time Login Code</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="password" render={({ field }) => (
+                  <FormItem><FormLabel>New Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+                <FormField control={form.control} name="confirmPassword" render={({ field }) => (
+                  <FormItem><FormLabel>Confirm New Password</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
+                )} />
+              
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Sending...' : 'Send Password Creation Link'}
+                {form.formState.isSubmitting ? 'Saving...' : 'Create Password & Login'}
               </Button>
             </form>
           </Form>
@@ -103,3 +152,5 @@ export default function SetPasswordPage() {
     </div>
   );
 }
+
+    

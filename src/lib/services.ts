@@ -13,8 +13,17 @@ async function getDocument<T>(collectionName: string, id: string): Promise<T | n
     const docSnap = await getDoc(docRef);
     if (!docSnap.exists()) return null;
     const data = docSnap.data();
+    // Convert Firestore Timestamps to JS Dates for client-side consistency
+    Object.keys(data).forEach(key => {
+        if (data[key] instanceof Timestamp) {
+            data[key] = data[key].toDate();
+        } else if (Array.isArray(data[key])) {
+            data[key] = data[key].map(item => item instanceof Timestamp ? item.toDate() : item);
+        }
+    });
     return { id: docSnap.id, ...data } as T;
 }
+
 
 // Generic function to get a config document
 async function getConfigDocument<T>(docId: string): Promise<T | null> {
@@ -110,15 +119,28 @@ export const getArtistByEmail = async (email: string): Promise<Artist | null> =>
         return null;
     }
     const doc = querySnapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as Artist;
+    const data = doc.data();
+     // Convert Firestore Timestamps to JS Dates
+    Object.keys(data).forEach(key => {
+        if (data[key] instanceof Timestamp) {
+            data[key] = data[key].toDate();
+        } else if (Array.isArray(data[key])) {
+            data[key] = data[key].map(item => item instanceof Timestamp ? item.toDate() : item);
+        }
+    });
+    return { id: doc.id, ...data } as Artist;
 };
 
-export const createArtist = async (id: string, data: Omit<Artist, 'id'>): Promise<string> => {
+// Creates only the Firestore document. Auth user is created separately.
+export const createArtistWithId = async (data: Omit<Artist, 'id'>): Promise<string> => {
     const db = await getDb();
-    const artistRef = doc(db, "artists", id);
-    await setDoc(artistRef, data);
-    return id;
+    const artistsCollection = collection(db, "artists");
+    const docRef = await addDoc(artistsCollection, data);
+    // Update the document with its own ID
+    await updateDoc(docRef, { id: docRef.id });
+    return docRef.id;
 };
+
 export const updateArtist = async (id: string, data: Partial<Artist>): Promise<void> => {
     const db = await getDb();
     const artistRef = doc(db, "artists", id);
@@ -126,6 +148,8 @@ export const updateArtist = async (id: string, data: Partial<Artist>): Promise<v
 };
 export const deleteArtist = async (id: string): Promise<void> => {
     const db = await getDb();
+    // This should ideally be a cloud function for security to delete the auth user as well.
+    // For client-side, we can only delete the Firestore doc.
     const artistRef = doc(db, "artists", id);
     await deleteDoc(artistRef);
 }
@@ -177,10 +201,11 @@ export const createCustomer = async (data: Omit<Customer, 'id'> & {id: string}):
 
 // Config
 export const getAvailableLocations = async (): Promise<Record<string, string[]>> => {
-    return await getConfigDocument<Record<string, string[]>>('availableLocations') || {};
+    const config = await getConfigDocument<any>('availableLocations') || {};
+    return config.locations || {};
 };
 export const saveAvailableLocations = async (locations: Record<string, string[]>): Promise<void> => {
-    await setConfigDocument('availableLocations', locations);
+    await setConfigDocument('availableLocations', { locations });
 };
 
 export const getCompanyProfile = async () => {
@@ -290,3 +315,5 @@ export const getMasterServices = async (): Promise<MasterServicePackage[]> => {
     const data = await getCollection<MasterServicePackage>('masterServices');
     return data;
 };
+
+    
