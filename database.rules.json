@@ -3,12 +3,9 @@
   "rules": {
     "service cloud.firestore": {
       "match /databases/{database}/documents": {
-        // Helper function to check if a user is an admin
         "function isAdmin()": {
           "return get(/databases/$(database)/documents/config/teamMembers).data.members[request.auth.uid].role == 'Super Admin' || get(/databases/$(database)/documents/config/teamMembers).data.members[request.auth.uid].role == 'team-member';"
         },
-
-        // Publicly readable collections
         "match /artists/{artistId}": {
           "allow get, list": "if true;",
           "allow write": "if isAdmin() || request.auth.uid == artistId;"
@@ -19,31 +16,23 @@
         "match /config/masterServices": {
           "allow get": "if true;"
         },
-         "match /config/availableLocations": {
+        "match /config/availableLocations": {
           "allow get": "if true;"
         },
-
-        // Customer rules
         "match /customers/{customerId}": {
-          "allow get, list": "if true;", // Public read to check for existing users
-          "allow write": "if request.auth != null && request.auth.uid == customerId || isAdmin();"
+          "allow create": "if true;",
+          "allow get, list, update": "if request.auth.uid == customerId || isAdmin();"
         },
-        
-        // Pending Artists can be created by anyone
         "match /pendingArtists/{docId}": {
-            "allow create": "if true;",
-            "allow read, delete": "if isAdmin();"
+          "allow create": "if true;",
+          "allow read, delete": "if isAdmin();"
         },
-
-        // General authenticated user rules
         "match /bookings/{bookingId}": {
-          "allow read, write": "if request.auth != null;"
+          "allow read, write": "if request.auth != null || isAdmin();"
         },
         "match /notifications/{notificationId}": {
-          "allow read, write": "if request.auth != null;"
+          "allow read, write": "if request.auth != null || isAdmin();"
         },
-
-        // Admins can manage all other config and data
         "match /{document=**}": {
           "allow read, write": "if isAdmin();"
         }
