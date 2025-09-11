@@ -1,65 +1,41 @@
 
-rules_version = '2';
-
-service cloud.firestore {
-  match /databases/{database}/documents {
-    
-    // Securely checks if a user is an admin by verifying their UID exists as a key in the team members map.
-    function isAdmin() {
-      // The `request.auth.uid` must be a key in the `data` map. This prevents null reference errors for non-admins.
-      return request.auth != null && request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data;
-    }
-
-    // --- Admin God-Mode Rule ---
-    // If a user is an admin, grant them full read/write access to everything.
-    match /{path=**} {
-      allow read, write: if isAdmin();
-    }
-
-    // --- Public & Authenticated User Rules ---
-    // These rules apply ONLY if the user is NOT an admin.
-    
-    // Anyone can view artists, service packages, and available locations.
-    match /artists/{artistId} {
-      allow get, list: if true;
-    }
-    match /masterServices/{docId} {
-      allow get, list: if true;
-    }
-    match /config/masterServices {
-      allow get: if true;
-    }
-    match /config/availableLocations {
-      allow get: if true;
-    }
-
-    // --- Authenticated User Rules ---
-    // These rules apply to users who are logged in but are NOT admins.
-
-    // Allow artists to update their own profiles.
-    match /artists/{artistId} {
-      allow update: if request.auth != null && request.auth.uid == artistId;
-    }
-    
-    // Anyone can create a new customer profile or a pending artist application.
-    match /customers/{customerId} {
-      allow create: if true;
-    }
-     match /pendingArtists/{docId} {
-        allow create: if true;
-    }
-
-    // A customer can read or update their own profile.
-    match /customers/{customerId} {
-      allow get, update: if request.auth != null && request.auth.uid == customerId;
-    }
-    
-    // Any authenticated user can create/read/write bookings and notifications.
-    match /bookings/{bookingId} {
-        allow read, write: if request.auth != null;
-    }
-    match /notifications/{notificationId} {
-        allow read, write: if request.auth != null;
+{
+  "rules": {
+    "service cloud.firestore": {
+      "match /databases/{database}/documents": {
+        "function isAdmin()": {
+          "return request.auth != null && request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data;"
+        },
+        "match /{path=**}": {
+          "allow read, write": "if isAdmin();"
+        },
+        "match /artists/{artistId}": {
+          "allow get, list": "if true;",
+          "allow update": "if request.auth != null && request.auth.uid == artistId;"
+        },
+        "match /masterServices/{docId}": {
+          "allow get, list": "if true;"
+        },
+        "match /config/masterServices": {
+          "allow get": "if true;"
+        },
+        "match /config/availableLocations": {
+          "allow get": "if true;"
+        },
+        "match /customers/{customerId}": {
+          "allow create": "if true;",
+          "allow get, update": "if request.auth != null && request.auth.uid == customerId;"
+        },
+        "match /pendingArtists/{docId}": {
+          "allow create": "if true;"
+        },
+        "match /bookings/{bookingId}": {
+          "allow read, write": "if request.auth != null;"
+        },
+        "match /notifications/{notificationId}": {
+          "allow read, write": "if request.auth != null;"
+        }
+      }
     }
   }
 }
