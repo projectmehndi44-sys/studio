@@ -16,171 +16,20 @@ import { useAdminAuth } from '@/hooks/use-admin-auth';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { getFinancialSettings, saveFinancialSettings, getCompanyProfile, saveCompanyProfile } from '@/lib/services';
-
-const financialSchema = z.object({
-  platformFeePercentage: z.coerce.number().min(0, 'Fee cannot be negative.').max(100, 'Fee cannot exceed 100%.'),
-  platformRefundFee: z.coerce.number().min(0, 'Refund fee cannot be negative.'),
-});
-
-const companySchema = z.object({
-  companyName: z.string().min(1, 'Company Name is required.'),
-  address: z.string().min(1, 'Address is required.'),
-  phone: z.string().min(1, 'Phone number is required.'),
-  email: z.string().email('Invalid email address.'),
-  gstin: z.string().regex(/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/, { message: 'Invalid GSTIN format.' }).or(z.literal('')),
-  website: z.string().url('Invalid URL.').or(z.literal('')),
-});
-
-type FinancialFormValues = z.infer<typeof financialSchema>;
-type CompanyFormValues = z.infer<typeof companySchema>;
+import { useRouter } from 'next/navigation';
 
 export default function SettingsPage() {
-    const { toast } = useToast();
-    const { hasPermission } = useAdminAuth();
-    const [isLoading, setIsLoading] = React.useState(false);
-
-    const financialForm = useForm<FinancialFormValues>({
-        resolver: zodResolver(financialSchema),
-        defaultValues: {
-            platformFeePercentage: 10,
-            platformRefundFee: 500,
-        },
-    });
-
-    const companyForm = useForm<CompanyFormValues>({
-        resolver: zodResolver(companySchema),
-         defaultValues: {
-            companyName: 'MehendiFy Platform',
-            address: '123 Glamour Lane, Mumbai, MH, 400001',
-            phone: '+91 98765 43210',
-            email: 'contact@mehendify.com',
-            gstin: '',
-            website: 'https://www.mehendify.com',
-        },
-    });
+    const router = useRouter();
 
     React.useEffect(() => {
-        getFinancialSettings().then(settings => financialForm.reset(settings));
-        getCompanyProfile().then(profile => companyForm.reset(profile));
-    }, [financialForm, companyForm]);
+        // This page is deprecated and its contents are moved. Redirect to the new pages.
+        router.replace('/admin/financial-settings');
+    }, [router]);
 
-    const onFinancialSubmit = async (data: FinancialFormValues) => {
-        setIsLoading(true);
-        try {
-            await saveFinancialSettings(data);
-            toast({ title: 'Financial Settings Saved' });
-        } catch (error) {
-            toast({ title: 'Error Saving Settings', variant: 'destructive' });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const onCompanySubmit = async (data: CompanyFormValues) => {
-        setIsLoading(true);
-        try {
-            await saveCompanyProfile(data);
-            toast({ title: 'Company Profile Saved' });
-        } catch (error) {
-            toast({ title: 'Error Saving Profile', variant: 'destructive' });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
+    // Render a loading state or null while redirecting
     return (
-        <>
-            <div className="flex items-center justify-between">
-                <h1 className="text-lg font-semibold md:text-2xl">Platform Settings</h1>
-            </div>
-            <Tabs defaultValue="financial">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="financial">Financial Rules</TabsTrigger>
-                    <TabsTrigger value="company">Company Profile</TabsTrigger>
-                </TabsList>
-                <TabsContent value="financial">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Manage Financial Rules</CardTitle>
-                            <CardDescription>
-                                Set your platform's commission fees, and other financial parameters. These will be applied globally.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                             <Form {...financialForm}>
-                                <form onSubmit={financialForm.handleSubmit(onFinancialSubmit)} className="space-y-8">
-                                    <div className="grid md:grid-cols-2 gap-6">
-                                        <FormField control={financialForm.control} name="platformFeePercentage" render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Platform Fee Percentage</FormLabel>
-                                                <div className="relative">
-                                                    <FormControl><Input type="number" placeholder="10" {...field} className="pl-8" /></FormControl>
-                                                    <Percent className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                </div>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )} />
-                                        <FormField control={financialForm.control} name="platformRefundFee" render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Refund Processing Fee</FormLabel>
-                                                <div className="relative">
-                                                    <FormControl><Input type="number" placeholder="500" {...field} className="pl-8" /></FormControl>
-                                                    <IndianRupee className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                </div>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )} />
-                                    </div>
-                                    <Button type="submit" disabled={isLoading || !hasPermission('settings', 'edit')} className="w-full !mt-8">
-                                            {isLoading ? 'Saving...' : <><Save className="mr-2 h-4 w-4"/> Save Financials</>}
-                                    </Button>
-                                </form>
-                            </Form>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-                <TabsContent value="company">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>Manage Company Information</CardTitle>
-                            <CardDescription>
-                                This information will be used on invoices and other official documents.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                             <Form {...companyForm}>
-                                <form onSubmit={companyForm.handleSubmit(onCompanySubmit)} className="space-y-8">
-                                    <div className="grid md:grid-cols-2 gap-6">
-                                        <FormField control={companyForm.control} name="companyName" render={({ field }) => (
-                                            <FormItem><FormLabel><Building className="inline-block mr-2 h-4 w-4"/>Company Name</FormLabel><FormControl><Input placeholder="MehendiFy" {...field} /></FormControl><FormMessage /></FormItem>
-                                        )} />
-                                        <FormField control={companyForm.control} name="gstin" render={({ field }) => (
-                                            <FormItem><FormLabel><IndianRupee className="inline-block mr-2 h-4 w-4"/>Platform GSTIN</FormLabel><FormControl><Input placeholder="e.g., 27ABCDE1234F1Z5" {...field} /></FormControl><FormMessage /></FormItem>
-                                        )} />
-                                    </div>
-                                    <FormField control={companyForm.control} name="address" render={({ field }) => (
-                                        <FormItem><FormLabel>Company Address</FormLabel><FormControl><Textarea placeholder="123 Business Rd, City, State, ZIP" {...field} /></FormControl><FormMessage /></FormItem>
-                                    )} />
-                                    <div className="grid md:grid-cols-3 gap-6">
-                                        <FormField control={companyForm.control} name="phone" render={({ field }) => (
-                                            <FormItem><FormLabel><Phone className="inline-block mr-2 h-4 w-4"/>Contact Phone</FormLabel><FormControl><Input placeholder="+91 12345 67890" {...field} /></FormControl><FormMessage /></FormItem>
-                                        )} />
-                                        <FormField control={companyForm.control} name="email" render={({ field }) => (
-                                            <FormItem><FormLabel><Mail className="inline-block mr-2 h-4 w-4"/>Contact Email</FormLabel><FormControl><Input type="email" placeholder="contact@company.com" {...field} /></FormControl><FormMessage /></FormItem>
-                                        )} />
-                                        <FormField control={companyForm.control} name="website" render={({ field }) => (
-                                            <FormItem><FormLabel><Globe className="inline-block mr-2 h-4 w-4"/>Website URL</FormLabel><FormControl><Input placeholder="https://www.yourcompany.com" {...field} /></FormControl><FormMessage /></FormItem>
-                                        )} />
-                                    </div>
-                                    <Button type="submit" disabled={isLoading || !hasPermission('settings', 'edit')} className="w-full !mt-8">
-                                            {isLoading ? 'Saving...' : <><Save className="mr-2 h-4 w-4"/> Save Company Profile</>}
-                                    </Button>
-                                </form>
-                            </Form>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
-        </>
+        <div className="flex items-center justify-center min-h-full">
+            <p>Redirecting...</p>
+        </div>
     );
 }

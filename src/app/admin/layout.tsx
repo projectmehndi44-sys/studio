@@ -24,6 +24,7 @@ import {
     ListTree,
     BarChart2,
     Bell,
+    Building,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -150,9 +151,10 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
             { href: '/admin/analytics', label: 'Analytics', icon: BarChart2, permissionKey: 'dashboard' },
             { href: '/admin/team', label: 'Team', icon: Users, permissionKey: 'settings' },
             { href: '/admin/notifications', label: 'Notifications', icon: Bell, permissionKey: 'notifications' },
+            { href: '/admin/company-profile', label: 'Company Profile', icon: Building, permissionKey: 'settings' },
             { href: '/admin/images', label: 'Site Images', icon: ImageIcon, permissionKey: 'settings' },
             { href: '/admin/locations', label: 'Locations', icon: MapPin, permissionKey: 'settings' },
-            { href: '/admin/settings', label: 'Settings', icon: Settings, permissionKey: 'settings' },
+            { href: '/admin/financial-settings', label: 'Financials', icon: IndianRupee, permissionKey: 'settings' },
         ]
     };
 
