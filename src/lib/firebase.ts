@@ -8,7 +8,7 @@ const firebaseConfig = {
   projectId: "utsavlook",
   appId: "1:453887083411:web:e459c513a80c98f98c8a77",
   storageBucket: "utsavlook.appspot.com",
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  apiKey: "YOUR_API_KEY",
   authDomain: "utsavlook.firebaseapp.com",
   messagingSenderId: "453887083411",
 };
