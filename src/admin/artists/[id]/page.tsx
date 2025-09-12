@@ -18,7 +18,19 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { exportToExcel, exportToPdf } from '@/lib/export';
 import { collection, query, where, getFirestore, Timestamp } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
-import { parseISO } from 'date-fns';
+import { parseISO, isValid } from 'date-fns';
+
+const getSafeDate = (date: any): Date => {
+    if (!date) return new Date();
+    if (date instanceof Date && isValid(date)) return date;
+    if (date instanceof Timestamp) return date.toDate();
+    if (typeof date === 'string') {
+        const parsed = parseISO(date);
+        if (isValid(parsed)) return parsed;
+    }
+    // Fallback for any other case
+    return new Date();
+}
 
 export default function ArtistDetailPage() {
     const router = useRouter();
@@ -86,17 +98,6 @@ export default function ArtistDetailPage() {
             description: `Details for ${artist.name} are being downloaded as a ${format.toUpperCase()} file.`,
         });
     };
-
-    const getSafeDate = (date: any): Date => {
-        if (!date) return new Date();
-        if (date instanceof Timestamp) return date.toDate();
-        if (typeof date === 'string') {
-            const parsed = parseISO(date);
-            if (!isNaN(parsed.getTime())) return parsed;
-        }
-        if (date instanceof Date) return date;
-        return new Date();
-    }
 
     if (!artist) {
         return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
