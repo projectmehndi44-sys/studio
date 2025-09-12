@@ -6,12 +6,12 @@ import { getFirestore, enableIndexedDbPersistence, Firestore } from 'firebase/fi
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 
 const firebaseConfig = {
-  "projectId": "utsavlook-new",
-  "appId": "1:689393354344:web:e43b683375ac180055225c",
-  "storageBucket": "utsavlook-new.appspot.com",
-  "apiKey": "AIzaSyARi2hF6A2c2-S2j18V2sR_DVu3XG23nNg",
-  "authDomain": "utsavlook-new.firebaseapp.com",
-  "messagingSenderId": "689393354344"
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
 };
 
 
