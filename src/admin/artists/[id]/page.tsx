@@ -87,6 +87,17 @@ export default function ArtistDetailPage() {
         });
     };
 
+    const getSafeDate = (date: any): Date => {
+        if (!date) return new Date();
+        if (date instanceof Timestamp) return date.toDate();
+        if (typeof date === 'string') {
+            const parsed = parseISO(date);
+            if (!isNaN(parsed.getTime())) return parsed;
+        }
+        if (date instanceof Date) return date;
+        return new Date();
+    }
+
     if (!artist) {
         return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
     }
@@ -97,28 +108,11 @@ export default function ArtistDetailPage() {
     const platformFee = totalRevenue * platformFeePercentage;
     const netPayout = totalRevenue - platformFee;
 
-    const getSafeDate = (date: any): Date => {
-        if (!date) return new Date(); // Return a default date if input is invalid
-        if (date instanceof Timestamp) {
-            return date.toDate();
-        }
-        if (typeof date === 'string') {
-            const parsedDate = parseISO(date);
-            if (!isNaN(parsedDate.getTime())) {
-                return parsedDate;
-            }
-        }
-        if (date instanceof Date) {
-            return date;
-        }
-        return new Date(); // Fallback
-    }
-
     const bookedDates = bookings
         .filter(b => b.status === 'Confirmed' || b.status === 'Completed')
-        .flatMap(b => b.serviceDates?.map(d => getSafeDate(d)) || []);
+        .flatMap(b => b.serviceDates?.map(getSafeDate) || []);
     
-    const unavailableDates = (artist.unavailableDates || []).map(dateStr => getSafeDate(dateStr));
+    const unavailableDates = (artist.unavailableDates || []).map(getSafeDate);
 
 
     return (
