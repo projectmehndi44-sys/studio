@@ -5,7 +5,7 @@ import { getFirestore, enableIndexedDbPersistence, Firestore } from 'firebase/fi
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 
 const firebaseConfig = {
-  projectId: "utsavlook",
+  projectId: "mehndify",
   appId: "1:453887083411:web:e459c513a80c98f98c8a77",
   storageBucket: "utsavlook.appspot.com",
   apiKey: "YOUR_API_KEY",
