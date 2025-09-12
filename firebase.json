@@ -14,7 +14,7 @@
       {
         "source": "**",
         "apphosting": {
-          "backendId": "studio",
+          "backendId": "studio--mehndify",
           "region": "us-central1"
         }
       }

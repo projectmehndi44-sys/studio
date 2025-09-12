@@ -1,10 +1,22 @@
 # Settings to manage and configure a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
 
-# Triggering re-deployment
-buildConfig:
-  - image: us-central1-docker.pkg.dev/serverless-runtimes/google-22-full/builder/nodejs
-runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
-  maxInstances: 1
+# The following 3 fields are required for all backends.
+# You can generate a basic apphosting.yaml file by running
+# `firebase init apphosting` in your project directory.
+# You can also find your backend's ID and location by running `firebase apphosting:backends:list`.
+
+# The ID of your App Hosting backend.
+# The backend ID is the last segment of your backend's resource name.
+# For example, if your backend's name is
+# "projects/my-project/locations/us-central1/backends/my-backend",
+# the backend ID is "my-backend".
+backendId: studio--mehndify
+
+# The location of your App Hosting backend.
+# This must be in the same region as your backend.
+location: us-central1
+
+# The source directory of your app.
+# This is the directory that contains your app's source code.
+source: .
