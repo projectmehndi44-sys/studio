@@ -9,6 +9,12 @@
     ],
     "frameworksBackend": {
       "region": "us-central1"
-    }
+    },
+    "rewrites": [
+      {
+        "source": "**",
+        "function": "nextn"
+      }
+    ]
   }
 }
