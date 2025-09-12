@@ -5,4 +5,5 @@ import {firebase} from '@genkit-ai/firebase';
 
 export const ai = genkit({
   plugins: [firebase(), googleAI()],
+  enableTracing: false,
 });
