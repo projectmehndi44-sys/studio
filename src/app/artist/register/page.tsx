@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { ArtistRegistrationModal } from '@/components/glamgo/ArtistRegistrationModal';
+import { ArtistRegistrationModal } from '@/components/utsavlook/ArtistRegistrationModal';
 import { useRouter } from 'next/navigation';
 
 export default function ArtistRegisterPage() {
