@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -26,7 +27,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { ArtistProfileModal } from '@/components/glamgo/ArtistProfileModal';
+import { ArtistProfileModal } from '@/components/utsavlook/ArtistProfileModal';
 
 export default function CartPage() {
     const router = useRouter();

@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from '@/components/ui/badge';
 import type { Booking, Artist, Notification } from '@/types';
 import { listenToCollection, updateBooking } from '@/lib/services';
-import { AssignArtistModal } from '@/components/glamgo/AssignArtistModal';
+import { AssignArtistModal } from '@/components/utsavlook/AssignArtistModal';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';

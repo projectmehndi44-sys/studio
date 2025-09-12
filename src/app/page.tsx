@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -13,24 +14,24 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Header } from '@/components/glamgo/Header';
-import { ArtistRegistrationModal } from '@/components/glamgo/ArtistRegistrationModal';
-import { CustomerRegistrationModal } from '@/components/glamgo/CustomerRegistrationModal';
-import { CustomerLoginModal } from '@/components/glamgo/CustomerLoginModal';
+import { Header } from '@/components/utsavlook/Header';
+import { ArtistRegistrationModal } from '@/components/utsavlook/ArtistRegistrationModal';
+import { CustomerRegistrationModal } from '@/components/utsavlook/CustomerRegistrationModal';
+import { CustomerLoginModal } from '@/components/utsavlook/CustomerLoginModal';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
 import Autoplay from "embla-carousel-autoplay"
 import Image from 'next/image';
-import { Packages } from '@/components/glamgo/Packages';
+import { Packages } from '@/components/utsavlook/Packages';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useInactivityTimeout } from '@/hooks/use-inactivity-timeout';
-import { ServiceSelectionModal } from '@/components/glamgo/ServiceSelectionModal';
+import { ServiceSelectionModal } from '@/components/utsavlook/ServiceSelectionModal';
 import { MehndiIcon, MakeupIcon, PhotographyIcon } from '@/components/icons';
-import { PwaInstallBanner } from '@/components/glamgo/PwaInstallBanner';
-import { StyleMatch } from '@/components/glamgo/StyleMatch';
+import { PwaInstallBanner } from '@/components/utsavlook/PwaInstallBanner';
+import { StyleMatch } from '@/components/utsavlook/StyleMatch';
 
 
 const galleryImages = [
