@@ -98,7 +98,7 @@ export default function ArtistDetailPage() {
     const netPayout = totalRevenue - platformFee;
     const bookedDates = bookings
         .filter(b => b.status === 'Confirmed' || b.status === 'Completed')
-        .flatMap(b => b.serviceDates?.map(d => d.toDate()) || []);
+        .flatMap(b => b.serviceDates?.map(d => d instanceof Date ? d : d.toDate()) || []);
     const unavailableDates = (artist.unavailableDates || []).map(dateStr => parseISO(dateStr));
 
     return (
@@ -198,7 +198,7 @@ export default function ArtistDetailPage() {
                             <CardDescription>Orange indicates bookings. Red indicates manually set unavailable dates.</CardDescription>
                         </CardHeader>
                         <CardContent className="flex justify-center">
-                            <Calendar
+                           <Calendar
                                 mode="multiple"
                                 selected={[...bookedDates, ...unavailableDates]}
                                 modifiers={{ booked: bookedDates, unavailable: unavailableDates }}
@@ -231,7 +231,7 @@ export default function ArtistDetailPage() {
                                     {bookings.slice(0, 5).map(booking => (
                                         <TableRow key={booking.id}>
                                             <TableCell>{booking.customerName}</TableCell>
-                                            <TableCell>{booking.date.toDate().toLocaleDateString()}</TableCell>
+                                            <TableCell>{(booking.date as Date).toLocaleDateString()}</TableCell>
                                             <TableCell>₹{booking.amount}</TableCell>
                                             <TableCell>
                                                 <Badge variant={booking.status === 'Completed' ? 'default' : 'secondary'}>
