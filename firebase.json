@@ -16,7 +16,10 @@
     "rewrites": [
       {
         "source": "**",
-        "function": "studio"
+        "run": {
+          "serviceId": "studio",
+          "region": "us-central1"
+        }
       }
     ]
   }
