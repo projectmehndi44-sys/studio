@@ -12,21 +12,14 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
       },
       {
         protocol: 'https',
         hostname: 'picsum.photos',
-        port: '',
-        pathname: '/**',
       },
     ],
   },
-  allowedDevOrigins: [
-    "https://6000-firebase-studio-1757147848939.cluster-zkm2jrwbnbd4awuedc2alqxrpk.cloudworkstations.dev",
-    "https://utsavlook.in"
-  ],
+  output: 'standalone',
 };
 
-module.exports = nextConfig;
+export default nextConfig;
