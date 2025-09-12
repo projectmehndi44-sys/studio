@@ -18,6 +18,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { exportToExcel, exportToPdf } from '@/lib/export';
 import { collection, query, where, getFirestore } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
+import { parseISO } from 'date-fns';
 
 export default function ArtistDetailPage() {
     const router = useRouter();
@@ -63,7 +64,7 @@ export default function ArtistDetailPage() {
 
     }, [router, artistId, toast]);
 
-    const handleDownload = (format: 'json' | 'pdf' | 'excel') => {
+    const handleDownload = (format: 'pdf' | 'excel') => {
         if (!artist) return;
         
         const artistBookings = bookings.filter(b => b.status === 'Completed' || b.status === 'Confirmed');
@@ -74,18 +75,7 @@ export default function ArtistDetailPage() {
             reviews: artist.reviews || [],
         };
 
-        if (format === 'json') {
-            const dataStr = JSON.stringify(dataToDownload, null, 2);
-            const dataBlob = new Blob([dataStr], { type: 'application/json' });
-            const url = URL.createObjectURL(dataBlob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `artist-details-${artist.id}.json`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        } else if (format === 'pdf') {
+        if (format === 'pdf') {
             exportToPdf(dataToDownload);
         } else if (format === 'excel') {
             exportToExcel([dataToDownload]);
@@ -106,7 +96,10 @@ export default function ArtistDetailPage() {
     
     const platformFee = totalRevenue * platformFeePercentage;
     const netPayout = totalRevenue - platformFee;
-    const bookedDates = bookings.flatMap(b => b.serviceDates?.map(d => d.toDate()) || []);
+    const bookedDates = bookings
+        .filter(b => b.status === 'Confirmed' || b.status === 'Completed')
+        .flatMap(b => b.serviceDates?.map(d => d.toDate()) || []);
+    const unavailableDates = (artist.unavailableDates || []).map(dateStr => parseISO(dateStr));
 
     return (
         <>
@@ -126,7 +119,6 @@ export default function ArtistDetailPage() {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem onSelect={() => handleDownload('json')}>JSON</DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => handleDownload('pdf')}>PDF</DropdownMenuItem>
                         <DropdownMenuItem onSelect={() => handleDownload('excel')}>Excel</DropdownMenuItem>
                     </DropdownMenuContent>
@@ -145,7 +137,13 @@ export default function ArtistDetailPage() {
                                 {artist.verified && (
                                     <Badge className="bg-green-600 text-white pl-2 text-sm">
                                         <CheckCircle className="w-4 h-4 mr-1"/>
-                                        Verified
+                                        UtsavLook Verified
+                                    </Badge>
+                                )}
+                                 {artist.isFoundersClubMember && (
+                                    <Badge className="bg-amber-500 text-white pl-2 text-sm">
+                                        <Star className="w-4 h-4 mr-1 fill-current"/>
+                                        Founder's Club
                                     </Badge>
                                 )}
                             </CardTitle>
@@ -197,14 +195,21 @@ export default function ArtistDetailPage() {
                     <Card className="lg:col-span-1">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2"><CalendarIcon className="w-5 h-5 text-primary"/> Availability Calendar</CardTitle>
-                            <CardDescription>Red dates indicate bookings.</CardDescription>
+                            <CardDescription>Orange indicates bookings. Red indicates manually set unavailable dates.</CardDescription>
                         </CardHeader>
                         <CardContent className="flex justify-center">
                             <Calendar
                                 mode="multiple"
-                                selected={bookedDates}
+                                selected={[...bookedDates, ...unavailableDates]}
+                                modifiers={{ booked: bookedDates, unavailable: unavailableDates }}
                                 className="rounded-md border"
-                                classNames={{ day_selected: "bg-red-500 text-white hover:bg-red-600 focus:bg-red-600" }}
+                                classNames={{ 
+                                    day_selected: "", // Reset default selection
+                                }}
+                                modifiersClassNames={{
+                                    booked: "bg-orange-500 text-white hover:bg-orange-600 focus:bg-orange-600", 
+                                    unavailable: "bg-red-500 text-white hover:bg-red-600 focus:bg-red-600",
+                                }}
                             />
                         </CardContent>
                     </Card>
