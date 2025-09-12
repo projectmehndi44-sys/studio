@@ -16,7 +16,7 @@ import { getArtist, listenToCollection, getFinancialSettings } from '@/lib/servi
 import NextImage from 'next/image';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { exportToExcel, exportToPdf } from '@/lib/export';
-import { collection, query, where, getFirestore } from 'firebase/firestore';
+import { collection, query, where, getFirestore, Timestamp } from 'firebase/firestore';
 import { app } from '@/lib/firebase';
 import { parseISO } from 'date-fns';
 
@@ -96,9 +96,16 @@ export default function ArtistDetailPage() {
     
     const platformFee = totalRevenue * platformFeePercentage;
     const netPayout = totalRevenue - platformFee;
+
+    const getSafeDate = (date: Date | Timestamp): Date => {
+        return date instanceof Timestamp ? date.toDate() : date;
+    }
+
     const bookedDates = bookings
         .filter(b => b.status === 'Confirmed' || b.status === 'Completed')
-        .flatMap(b => b.serviceDates?.map(d => d instanceof Date ? d : d.toDate()) || []);
+        .flatMap(b => b.serviceDates?.map(d => getSafeDate(d)) || []);
+    
+    // Dates from `artist.unavailableDates` are strings 'YYYY-MM-DD', so they need parsing.
     const unavailableDates = (artist.unavailableDates || []).map(dateStr => parseISO(dateStr));
 
     return (
@@ -231,7 +238,7 @@ export default function ArtistDetailPage() {
                                     {bookings.slice(0, 5).map(booking => (
                                         <TableRow key={booking.id}>
                                             <TableCell>{booking.customerName}</TableCell>
-                                            <TableCell>{(booking.date as Date).toLocaleDateString()}</TableCell>
+                                            <TableCell>{getSafeDate(booking.date).toLocaleDateString()}</TableCell>
                                             <TableCell>₹{booking.amount}</TableCell>
                                             <TableCell>
                                                 <Badge variant={booking.status === 'Completed' ? 'default' : 'secondary'}>
