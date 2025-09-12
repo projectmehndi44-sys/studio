@@ -26,7 +26,7 @@ const dancingScript = Dancing_Script({
 
 
 export const metadata: Metadata = {
-  title: 'GlamGo: Artistry at Your Fingertips',
+  title: 'UtsavLook: Artistry at Your Fingertips',
   description: 'Discover and book the most talented mehndi and makeup artists near you. Your perfect look for any occasion is just a click away.',
 };
 

@@ -42,7 +42,7 @@ export function PwaInstallBanner() {
       const { outcome } = await promptEvent.userChoice;
       
       if (outcome === 'accepted') {
-        toast({ title: 'Installation successful!', description: 'MehendiFy is now on your home screen.' });
+        toast({ title: 'Installation successful!', description: 'UtsavLook is now on your home screen.' });
         setIsVisible(false);
       } else {
         toast({ title: 'Installation dismissed.', description: 'You can add it to your home screen later from your browser menu.' });
@@ -64,7 +64,7 @@ export function PwaInstallBanner() {
             <Sparkles className="w-10 h-10 text-accent hidden sm:block"/>
             <div className="flex-grow">
                 <h3 className="font-bold text-primary">Get the Full App Experience!</h3>
-                <p className="text-sm text-muted-foreground">Add MehendiFy to your home screen for faster access and offline use.</p>
+                <p className="text-sm text-muted-foreground">Add UtsavLook to your home screen for faster access and offline use.</p>
             </div>
              <Button onClick={handleInstallClick}>
                 <Download className="mr-2 h-4 w-4"/>

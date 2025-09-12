@@ -194,13 +194,13 @@ export const saveAvailableLocations = async (locations: Record<string, string[]>
 
 export const getCompanyProfile = async () => {
     return await getConfigDocument<any>('companyProfile') || {
-        companyName: 'GlamGo',
+        companyName: 'UtsavLook',
         ownerName: 'Abhishek Jaiswal',
         address: '123 Glamour Lane, Mumbai, MH, 400001',
         phone: '+91 98765 43210',
-        email: 'contact@glamgo.com',
+        email: 'contact@utsavlook.com',
         gstin: '27ABCDE1234F1Z5',
-        website: 'https://www.glamgo.com',
+        website: 'https://www.utsavlook.com',
     };
 };
 export const saveCompanyProfile = (data: any) => setConfigDocument('companyProfile', data);

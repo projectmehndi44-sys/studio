@@ -1,5 +1,4 @@
 
-
 import type { Artist } from '@/types';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -59,7 +58,7 @@ export function ArtistCard({ artist, onBookingRequest }: ArtistCardProps) {
             {artist.verified && (
                 <Badge className="bg-green-600 text-white pl-2">
                     <CheckCircle className="w-3.5 h-3.5 mr-1"/>
-                    GlamGo Verified
+                    UtsavLook Verified
                 </Badge>
             )}
             {artist.isFoundersClubMember && (

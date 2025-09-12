@@ -75,7 +75,7 @@ export function ArtistProfileModal({ artist, isOpen, onOpenChange }: ArtistProfi
                         {artist.verified && (
                              <Badge className="bg-green-600 text-white pl-2">
                                 <CheckCircle className="w-3.5 h-3.5 mr-1"/>
-                                GlamGo Verified
+                                UtsavLook Verified
                             </Badge>
                         )}
                          {artist.isFoundersClubMember && (

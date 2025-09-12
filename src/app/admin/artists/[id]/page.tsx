@@ -137,7 +137,7 @@ export default function ArtistDetailPage() {
                                 {artist.verified && (
                                     <Badge className="bg-green-600 text-white pl-2 text-sm">
                                         <CheckCircle className="w-4 h-4 mr-1"/>
-                                        GlamGo Verified
+                                        UtsavLook Verified
                                     </Badge>
                                 )}
                                  {artist.isFoundersClubMember && (

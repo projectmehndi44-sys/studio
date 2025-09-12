@@ -14,14 +14,14 @@ const benefits = [
     {
         icon: <BarChart className="w-10 h-10 text-primary" />,
         title: "Set Your Own Price",
-        description: "You know the value of your art. On GlamGo, you're in control. Set your own prices for each service tier, no unfair fixed rates. Your talent, your price.",
+        description: "You know the value of your art. On UtsavLook, you're in control. Set your own prices for each service tier, no unfair fixed rates. Your talent, your price.",
         image: "https://picsum.photos/seed/price/600/400",
         aiHint: "artist pricing"
     },
     {
         icon: <Award className="w-10 h-10 text-primary" />,
-        title: "'GlamGo Verified' Badge",
-        description: "Don't get lost in the crowd. Our 'GlamGo Verified' badge shows customers you're a trusted professional, leading to more high-quality bookings and better clients.",
+        title: "'UtsavLook Verified' Badge",
+        description: "Don't get lost in the crowd. Our 'UtsavLook Verified' badge shows customers you're a trusted professional, leading to more high-quality bookings and better clients.",
         aiHint: "verified badge"
     },
     {
@@ -73,7 +73,7 @@ export default function ArtistHomePage() {
                         <div className="grid gap-6 lg:grid-cols-1 items-center">
                             <div className="flex flex-col justify-center space-y-4">
                                 <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none font-headline text-primary">
-                                    Join GlamGo & Grow Your Artistry Business
+                                    Join UtsavLook & Grow Your Artistry Business
                                 </h1>
                                 <p className="max-w-[600px] text-foreground/80 md:text-xl mx-auto">
                                     We provide the tools, you provide the talent. Get discovered by more customers, manage your business professionally, and increase your earnings.
@@ -99,7 +99,7 @@ export default function ArtistHomePage() {
                 <section className="w-full py-12 md:py-24 lg:py-32 bg-background">
                     <div className="container px-4 md:px-6">
                         <h2 className="text-3xl font-bold tracking-tighter text-center sm:text-5xl text-primary font-headline mb-12">
-                            Why Artists Love GlamGo
+                            Why Artists Love UtsavLook
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {benefits.map((benefit, index) => (
@@ -144,7 +144,7 @@ export default function ArtistHomePage() {
                         <div className="mx-auto w-full max-w-sm space-y-2">
                             <Link href="/artist/register">
                                 <Button size="lg" className="w-full bg-accent hover:bg-accent/90">
-                                    Become a GlamGo Artist Today
+                                    Become a UtsavLook Artist Today
                                 </Button>
                             </Link>
                         </div>

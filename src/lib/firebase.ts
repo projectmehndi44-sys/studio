@@ -6,13 +6,12 @@ import { getFirestore, enableIndexedDbPersistence, Firestore } from 'firebase/fi
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 
 const firebaseConfig = {
-  "projectId": "glamgo-b3369",
-  "appId": "1:837518627913:web:2935b777173393da1d1b98",
-  "storageBucket": "glamgo-b3369.appspot.com",
-  "apiKey": "AIzaSyCERepylTUMG_oujzlwIa6kwBPZxDV-O4I",
-  "authDomain": "glamgo-b3369.firebaseapp.com",
-  "measurementId": "G-5G3W9KTE51",
-  "messagingSenderId": "837518627913"
+  "projectId": "utsavlook-new",
+  "appId": "1:689393354344:web:e43b683375ac180055225c",
+  "storageBucket": "utsavlook-new.appspot.com",
+  "apiKey": "AIzaSyARi2hF6A2c2-S2j18V2sR_DVu3XG23nNg",
+  "authDomain": "utsavlook-new.firebaseapp.com",
+  "messagingSenderId": "689393354344"
 };
 
 

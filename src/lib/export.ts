@@ -26,7 +26,7 @@ const addHeader = (doc: jsPDF, title: string) => {
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(brandColors.background);
     doc.setFontSize(22);
-    doc.text('GlamGo', 14, 18);
+    doc.text('UtsavLook', 14, 18);
     doc.setFontSize(16);
     doc.text(title, doc.internal.pageSize.getWidth() - 14, 18, { align: 'right' });
 };
@@ -352,7 +352,7 @@ export const generateCustomerInvoice = async (booking: Booking, customer: Custom
     doc.setFontSize(10);
     doc.setTextColor(brandColors.muted);
     doc.text('This is a computer-generated invoice and does not require a signature.', 105, finalY + 20, { align: 'center' });
-    doc.text('Thank you for choosing GlamGo!', 105, finalY + 26, { align: 'center' });
+    doc.text('Thank you for choosing UtsavLook!', 105, finalY + 26, { align: 'center' });
 
     addFooter(doc);
     doc.save(`invoice-${invoiceId}.pdf`);
