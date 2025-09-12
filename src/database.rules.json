@@ -1,3 +1,4 @@
+
 {
   "rules": {
     "service": "cloud.firestore",
@@ -28,7 +29,7 @@
         allow read: true;
       }
       match /config/teamMembers {
-          allow read: true;
+          allow read: true; // Allow reading team members to check for super admin
           allow write: if isSuperAdmin();
       }
       match /config/promotions {
