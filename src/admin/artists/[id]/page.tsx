@@ -97,15 +97,21 @@ export default function ArtistDetailPage() {
     const platformFee = totalRevenue * platformFeePercentage;
     const netPayout = totalRevenue - platformFee;
 
-    const getSafeDate = (date: Date | Timestamp): Date => {
+    const getSafeDate = (date: any): Date => {
         if (!date) return new Date(); // Return a default date if input is invalid
         if (date instanceof Timestamp) {
             return date.toDate();
         }
         if (typeof date === 'string') {
-            return parseISO(date);
+            const parsedDate = parseISO(date);
+            if (!isNaN(parsedDate.getTime())) {
+                return parsedDate;
+            }
         }
-        return date;
+        if (date instanceof Date) {
+            return date;
+        }
+        return new Date(); // Fallback
     }
 
     const bookedDates = bookings
@@ -309,5 +315,3 @@ export default function ArtistDetailPage() {
         </>
     );
 }
-
-    
