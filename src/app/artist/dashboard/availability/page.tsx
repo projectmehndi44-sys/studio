@@ -20,7 +20,7 @@ export default function ArtistAvailabilityPage() {
     
     React.useEffect(() => {
         if (artist?.unavailableDates) {
-            // Dates from storage are strings in 'yyyy-MM-dd', parse them into Date objects.
+            // Dates from storage are strings, parse them into Date objects.
             const savedDates = artist.unavailableDates.map(dateStr => parseISO(dateStr));
             setUnavailableDates(savedDates);
         }
@@ -95,16 +95,12 @@ export default function ArtistAvailabilityPage() {
                         onDayClick={handleDayClick}
                         modifiers={{ 
                             booked: bookedDates,
-                            // All dates that are not booked or marked as unavailable are available
-                            available: { 
-                                from: new Date(), 
-                                disabled: [...bookedDates, ...unavailableDates]
-                            }
                         }}
-                        modifiersClassNames={{
-                            selected: 'bg-red-500 text-white hover:bg-red-600 focus:bg-red-600',
-                            booked: 'bg-orange-500 text-white cursor-not-allowed',
-                            available: 'bg-green-100'
+                        classNames={{
+                            day_selected: 'bg-red-500 text-white hover:bg-red-600 focus:bg-red-600',
+                            day_outside: 'text-muted-foreground opacity-50',
+                            day_disabled: 'text-muted-foreground opacity-50',
+                            day_modifier_booked: 'bg-orange-500 text-white cursor-not-allowed',
                         }}
                         className="rounded-md border"
                         disabled={{ before: new Date() }}
@@ -112,7 +108,7 @@ export default function ArtistAvailabilityPage() {
                 </div>
                  <div className="flex justify-center gap-4 pt-4 border-t">
                     <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded-full bg-green-100 border"></div>
+                        <div className="w-4 h-4 rounded-full bg-background border"></div>
                         <span className="text-sm">Available</span>
                     </div>
                     <div className="flex items-center gap-2">
