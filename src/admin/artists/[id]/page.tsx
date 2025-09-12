@@ -203,12 +203,9 @@ export default function ArtistDetailPage() {
                                 selected={[...bookedDates, ...unavailableDates]}
                                 modifiers={{ booked: bookedDates, unavailable: unavailableDates }}
                                 className="rounded-md border"
-                                classNames={{ 
-                                    day_selected: "", // Reset default selection
-                                }}
                                 modifiersClassNames={{
-                                    booked: "bg-orange-500 text-white hover:bg-orange-600 focus:bg-orange-600", 
-                                    unavailable: "bg-red-500 text-white hover:bg-red-600 focus:bg-red-600",
+                                    booked: "bg-orange-500 text-white hover:bg-orange-600 focus:bg-orange-600",
+                                    unavailable: "bg-red-500 text-white hover:bg-red-600 focus:bg-red-600"
                                 }}
                             />
                         </CardContent>
@@ -298,3 +295,5 @@ export default function ArtistDetailPage() {
         </>
     );
 }
+
+    
