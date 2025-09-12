@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
     
     const [isForgotPasswordOpen, setIsForgotPasswordOpen] = React.useState(false);
     const [forgotPasswordEmail, setForgotPasswordEmail] = React.useState('');
-    const [superAdminExists, setSuperAdminExists] = React.useState(true); // Assume it exists initially
+    const [superAdminExists, setSuperAdminExists] = React.useState<boolean | null>(null); // Start as null
 
     const form = useForm<LoginFormValues>({
         resolver: zodResolver(loginSchema),
@@ -47,10 +47,16 @@ export default function AdminLoginPage() {
     // Check if super admin exists when component mounts
     React.useEffect(() => {
         const checkAdmin = async () => {
-            const members = await getTeamMembers();
-            const initialAdmin = initialTeamMembers[0];
-            const adminInDb = members.some(m => m.username === initialAdmin.username && m.role === 'Super Admin');
-            setSuperAdminExists(adminInDb);
+            try {
+                const members = await getTeamMembers();
+                const initialAdmin = initialTeamMembers[0];
+                const adminInDb = members.some(m => m.username === initialAdmin.username && m.role === 'Super Admin');
+                setSuperAdminExists(adminInDb);
+            } catch (error) {
+                console.error("Failed to check for super admin:", error);
+                // Assume it doesn't exist if there's an error (e.g., rules issue before fix)
+                setSuperAdminExists(false);
+            }
         };
         checkAdmin();
     }, []);
@@ -59,15 +65,30 @@ export default function AdminLoginPage() {
         const { email, password } = data;
         
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            // First, sign in with Firebase Auth
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const authUser = userCredential.user;
+
+            // THEN, check if this user is a valid team member in our database
+            const teamMembers = await getTeamMembers();
+            const memberProfile = teamMembers.find(m => m.id === authUser.uid);
             
-            toast({
-                title: 'Login Successful',
-                description: `Welcome! Redirecting...`,
-            });
-            
-            // The redirection is now handled by the useAdminAuth hook
-            // to ensure the user is a valid team member.
+            if (memberProfile) {
+                toast({
+                    title: 'Login Successful',
+                    description: `Welcome, ${memberProfile.name}! Redirecting...`,
+                });
+                router.push('/admin'); // Redirect to dashboard after successful login and verification
+            } else {
+                // This person is an authenticated Firebase user, but not in our team list.
+                // Log them out and show an error.
+                await auth.signOut();
+                toast({
+                    title: 'Access Denied',
+                    description: 'This user account does not have admin privileges.',
+                    variant: 'destructive',
+                });
+            }
 
         } catch (error: any) {
             console.error("Admin Login Error:", error);
@@ -107,11 +128,9 @@ export default function AdminLoginPage() {
     const handleCreateSuperAdmin = async () => {
         const initialAdmin = initialTeamMembers[0];
         try {
-            // 1. Create the user in Firebase Auth with a temporary password
             const userCredential = await createUserWithEmailAndPassword(auth, initialAdmin.username, `temp-password-${Date.now()}`);
             const authUser = userCredential.user;
             
-            // 2. Add the user to the Firestore database
             const newAdminMember: TeamMember = {
                 id: authUser.uid,
                 name: initialAdmin.name,
@@ -121,13 +140,14 @@ export default function AdminLoginPage() {
             };
             
             const currentMembers = await getTeamMembers();
-            const updatedMembers = [...currentMembers, newAdminMember];
+            // Filter out any placeholder admin just in case
+            const existingMembers = currentMembers.filter(m => m.username !== newAdminMember.username);
+            const updatedMembers = [...existingMembers, newAdminMember];
             await saveTeamMembers(updatedMembers);
             
-            // 3. Send password creation email
             await sendPasswordResetEmail(auth, initialAdmin.username);
 
-            setSuperAdminExists(true); // Update state to hide the setup button
+            setSuperAdminExists(true);
             
             toast({
                 title: "Super Admin Account Created!",
@@ -142,7 +162,7 @@ export default function AdminLoginPage() {
                     description: "The admin account seems to exist. Try using 'Forgot Password' or logging in directly.",
                     variant: 'destructive'
                 });
-                setSuperAdminExists(true); // Hide the button as the user exists
+                setSuperAdminExists(true);
             } else {
                 toast({ title: 'Creation Failed', description: error.message, variant: 'destructive'});
             }
@@ -220,7 +240,7 @@ export default function AdminLoginPage() {
                         </Link>
                     </div>
 
-                    {!superAdminExists && (
+                    {superAdminExists === false && (
                         <Card className="mt-6 bg-yellow-50 border-yellow-300">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-base"><AlertTriangle className="text-yellow-600"/> One-Time Super Admin Setup</CardTitle>

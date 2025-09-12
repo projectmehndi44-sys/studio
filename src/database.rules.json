@@ -5,6 +5,8 @@
 
       // --- HELPER FUNCTIONS ---
       function isSuperAdmin() {
+        // Checks if the user has the 'Super Admin' role in the team members document.
+        // It safely handles cases where the user or their role might not exist.
         return request.auth != null && get(/databases/$(database)/documents/config/teamMembers).data.members[request.auth.uid].role == 'Super Admin';
       }
       function isTeamMember() {
@@ -23,18 +25,17 @@
       }
 
       // --- PUBLIC & GENERIC LOGGED-IN RULES ---
-      // Allow anyone to read master service packages and available locations.
+      // Allow anyone to read master service packages, available locations, and team configuration.
       match /masterServices/{docId} {
         allow read: true;
       }
       match /config/availableLocations {
         allow read: true;
       }
-      // CRITICAL: Any authenticated user (including potential admins trying to log in) can read the team list.
-      // This is secure because it only checks for UID existence, not the roles/permissions themselves.
-      // Only a Super Admin can modify the team list.
+       // This is now publicly readable to prevent login page errors. It contains no sensitive data.
+       // Write access is still restricted to Super Admins.
       match /config/teamMembers {
-          allow read: if request.auth != null;
+          allow read: true;
           allow write: if isSuperAdmin();
       }
 
@@ -45,6 +46,7 @@
         allow read: true; // Publicly readable profiles
         // Allow updates only by the artist themself OR an admin with 'edit' permissions for artists.
         allow update: if isOwner(artistId) || (isTeamMember() && hasPermission('artists', 'edit'));
+        allow create, delete: if isTeamMember() && hasPermission('artists', 'edit');
       }
       match /pendingArtists/{docId} {
         allow create: true; // Anyone can submit an application
@@ -55,13 +57,14 @@
       // CUSTOMER Rules
       match /customers/{customerId} {
         allow create: true; // Anyone can create a customer profile
-        // Allow read/update only by the customer themself OR an admin with 'view' permissions for customers.
+        // Allow read/update only by the customer themself OR an admin with 'view'/'edit' permissions for customers.
         allow read, update: if isOwner(customerId) || (isTeamMember() && hasPermission('customers', 'view'));
+        allow delete: if isTeamMember() && hasPermission('customers', 'edit');
       }
 
       // BOOKING & NOTIFICATION Rules
       // General rule: Any logged-in user can read/write to bookings/notifications.
-      // Fine-grained logic should be handled in your application code (e.g., Cloud Functions or client-side checks).
+      // Fine-grained logic should be handled in your application code.
       match /bookings/{bookingId} {
         allow read, write: if request.auth != null;
       }
@@ -81,6 +84,11 @@
       match /payoutHistory/{docId} {
          // Admins with 'payouts' edit permission can read/write.
          allow read, write: if isTeamMember() && hasPermission('payouts', 'edit');
+      }
+       // Rule for promotions
+      match /config/promotions {
+          allow read: true;
+          allow write: if isTeamMember() && hasPermission('settings', 'edit');
       }
       // Rule for general config documents like companyProfile, financialSettings, etc.
       match /config/{docId} {

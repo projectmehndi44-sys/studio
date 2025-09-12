@@ -38,21 +38,19 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
                     if (memberProfile) {
                         // Successfully found the user's profile. They are a valid admin/team member.
-                        localStorage.setItem('adminAuthenticated', 'true');
                         setAuthState({ isLoading: false, isAuthenticated: true, user: memberProfile });
-                        if (pathname === '/admin/login') {
-                            router.push('/admin');
-                        }
                     } else {
                         // This person is logged into Firebase, but is NOT in our team list.
                         // This could be a customer or artist. Log them out of the admin context.
                         await auth.signOut();
-                        localStorage.removeItem('adminAuthenticated');
                         setAuthState({ isLoading: false, isAuthenticated: false, user: null });
-                        router.push('/admin/login');
+                         if (pathname !== '/admin/login') {
+                            router.push('/admin/login');
+                        }
                     }
                 } catch (error) {
                     console.error("Failed to fetch team members for auth check", error);
+                    await auth.signOut();
                     setAuthState({ isLoading: false, isAuthenticated: false, user: null });
                      if (pathname !== '/admin/login') {
                         router.push('/admin/login');
@@ -60,7 +58,6 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
                 }
             } else {
                 // No user is signed in.
-                localStorage.removeItem('adminAuthenticated');
                 setAuthState({ isLoading: false, isAuthenticated: false, user: null });
                  if (pathname !== '/admin/login') {
                     router.push('/admin/login');
