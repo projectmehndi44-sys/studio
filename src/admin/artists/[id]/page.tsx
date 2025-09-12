@@ -98,15 +98,22 @@ export default function ArtistDetailPage() {
     const netPayout = totalRevenue - platformFee;
 
     const getSafeDate = (date: Date | Timestamp): Date => {
-        return date instanceof Timestamp ? date.toDate() : date;
+        if (!date) return new Date(); // Return a default date if input is invalid
+        if (date instanceof Timestamp) {
+            return date.toDate();
+        }
+        if (typeof date === 'string') {
+            return parseISO(date);
+        }
+        return date;
     }
 
     const bookedDates = bookings
         .filter(b => b.status === 'Confirmed' || b.status === 'Completed')
         .flatMap(b => b.serviceDates?.map(d => getSafeDate(d)) || []);
     
-    // Dates from `artist.unavailableDates` are strings 'YYYY-MM-DD', so they need parsing.
-    const unavailableDates = (artist.unavailableDates || []).map(dateStr => parseISO(dateStr));
+    const unavailableDates = (artist.unavailableDates || []).map(dateStr => getSafeDate(dateStr));
+
 
     return (
         <>
@@ -210,9 +217,9 @@ export default function ArtistDetailPage() {
                                 selected={[...bookedDates, ...unavailableDates]}
                                 modifiers={{ booked: bookedDates, unavailable: unavailableDates }}
                                 className="rounded-md border"
-                                modifiersClassNames={{
-                                    booked: "bg-orange-500 text-white hover:bg-orange-600 focus:bg-orange-600",
-                                    unavailable: "bg-red-500 text-white hover:bg-red-600 focus:bg-red-600"
+                                classNames={{
+                                    day_modifier_booked: "bg-orange-500 text-white hover:bg-orange-600 focus:bg-orange-600",
+                                    day_modifier_unavailable: "bg-red-500 text-white hover:bg-red-600 focus:bg-red-600"
                                 }}
                             />
                         </CardContent>
