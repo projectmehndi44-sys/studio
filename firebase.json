@@ -1,9 +1,12 @@
 
 {
   "hosting": {
-    "source": ".",
-    "frameworksBackend": {
-      "region": "us-central1"
-    }
+    "redirects": [
+      {
+        "source": "/:path*",
+        "destination": "https://studio--mehndify.us-central1.hosted.app/",
+        "type": 302
+      }
+    ]
   }
 }
