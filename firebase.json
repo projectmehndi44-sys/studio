@@ -1,12 +1,13 @@
-
 {
   "hosting": {
-    "redirects": [
-      {
-        "source": "/:path*",
-        "destination": "https://studio--mehndify.us-central1.hosted.app/",
-        "type": 302
-      }
-    ]
+    "source": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "frameworksBackend": {
+      "region": "us-central1"
+    }
   }
 }
