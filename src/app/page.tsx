@@ -266,7 +266,7 @@ export default function Home() {
         <Separator className="my-8"/>
 
         <div className="py-12">
-            <h2 className="text-center font-headline text-5xl text-primary mb-8">Our Works</h2>
+            <h2 className="text-center font-headline text-5xl text-primary">Our Works</h2>
             <Carousel
                 opts={{
                     align: "start",
