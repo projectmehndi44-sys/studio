@@ -216,7 +216,7 @@ export default function Home() {
 
         {!isCustomerLoggedIn && (
            <div className="text-center py-8 md:py-12 bg-card/80 backdrop-blur-sm rounded-lg shadow-md max-w-lg mx-auto mt-4 space-y-6 flex flex-col items-center">
-            <h2 className="text-2xl font-bold">Welcome!</h2>
+            <h2 className="text-2xl font-bold">Welcome to UtsavLook!</h2>
             <p className="text-muted-foreground px-4">Login or create an account to book artists and manage your appointments.</p>
             <div className="flex flex-col sm:flex-row gap-4 px-4 w-full">
                 <Button onClick={handleCustomerLogin} size="lg" className="w-full">

@@ -125,7 +125,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-primary font-bold text-2xl">Register as an Artist</DialogTitle>
+          <DialogTitle className="text-primary font-bold text-2xl">Register as an Artist on UtsavLook</DialogTitle>
           <DialogDescription>
             Join our community of talented artists. Fill out the form below to get started. Your account will be created upon admin approval.
           </DialogDescription>
@@ -277,7 +277,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                                 </FormControl>
                                 <div className="space-y-1 leading-none">
                                     <FormLabel>
-                                         I agree to the <a href="/terms" target="_blank" className="underline">Terms & Conditions</a>.
+                                         I agree to the <a href="/terms" target="_blank" className="underline">Terms & Conditions</a> of UtsavLook.
                                     </FormLabel>
                                     <FormMessage />
                                 </div>

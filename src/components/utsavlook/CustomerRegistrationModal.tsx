@@ -193,7 +193,7 @@ export function CustomerRegistrationModal({ isOpen, onOpenChange, onSuccessfulRe
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-primary font-bold text-2xl">Create Customer Account</DialogTitle>
+          <DialogTitle className="text-primary font-bold text-2xl">Create Your UtsavLook Account</DialogTitle>
           <DialogDescription>
             Join UtsavLook to start booking amazing artists.
           </DialogDescription>

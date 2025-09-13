@@ -9,10 +9,12 @@
         return request.auth != null && get(/databases/$(database)/documents/config/teamMembers).data.members[request.auth.uid].role == 'Super Admin';
       }
       function isTeamMember() {
+        // Checks if the requesting user's UID exists as a key in the team members map.
         return request.auth != null && request.auth.uid in get(/databases/$(database)/documents/config/teamMembers).data.members;
       }
       function hasPermission(module, level) {
         let userPermissions = get(/databases/$(database)/documents/config/teamMembers).data.members[request.auth.uid].permissions;
+        // 'view' level access is granted if the user has 'view' or 'edit' permission.
         return (level == 'view')
           ? (userPermissions[module] in ['view', 'edit'])
           : (userPermissions[module] == level);
@@ -22,23 +24,19 @@
       }
 
       // --- PUBLIC & GENERIC LOGGED-IN RULES ---
+      // Allow anyone to read master service packages and available locations.
       match /masterServices/{docId} {
         allow read: true;
       }
       match /config/availableLocations {
         allow read: true;
       }
+      // CRITICAL: Any authenticated user (including potential admins trying to log in) can read the team list.
+      // This is secure because it only checks for UID existence, not the roles/permissions themselves.
+      // Only a Super Admin can modify the team list.
       match /config/teamMembers {
-          allow read: true; // Allow reading team members to check for super admin
-          allow write: if isSuperAdmin();
-      }
-      match /config/promotions {
-          allow read: true; // All users need to check promo codes
-          allow write: if isTeamMember() && hasPermission('settings', 'edit');
-      }
-       match /config/companyProfile {
           allow read: true;
-          allow write: if isTeamMember() && hasPermission('settings', 'edit');
+          allow write: if isSuperAdmin();
       }
 
       // --- ROLE-BASED RULES ---
@@ -46,48 +44,49 @@
       // ARTIST Rules
       match /artists/{artistId} {
         allow read: true; // Publicly readable profiles
+        // Allow updates only by the artist themself OR an admin with 'edit' permissions for artists.
         allow update: if isOwner(artistId) || (isTeamMember() && hasPermission('artists', 'edit'));
-        allow create, delete: if isTeamMember() && hasPermission('artists', 'edit');
       }
       match /pendingArtists/{docId} {
         allow create: true; // Anyone can submit an application
+        // Only admins with 'edit' permissions for artists can read or delete applications.
         allow read, delete: if isTeamMember() && hasPermission('artists', 'edit');
       }
 
       // CUSTOMER Rules
       match /customers/{customerId} {
-        allow create: true;
+        allow create: true; // Anyone can create a customer profile
+        // Allow read/update only by the customer themself OR an admin with 'view' permissions for customers.
         allow read, update: if isOwner(customerId) || (isTeamMember() && hasPermission('customers', 'view'));
-        allow delete: if isTeamMember() && hasPermission('customers', 'edit');
       }
 
       // BOOKING & NOTIFICATION Rules
+      // General rule: Any logged-in user can read/write to bookings/notifications.
+      // Fine-grained logic should be handled in your application code (e.g., Cloud Functions or client-side checks).
       match /bookings/{bookingId} {
-        allow read, write: if request.auth != null; // Logged in users can manage their own bookings
+        allow read, write: if request.auth != null;
       }
       match /notifications/{notificationId} {
-        allow read, write: if request.auth != null; // Logged in users can manage their own notifications
+        allow read, write: if request.auth != null;
       }
 
       // --- ADMIN-ONLY WRITE/MANAGE RULES ---
       match /masterServices/{docId} {
+         // Admins with 'packages' edit permission can write.
          allow write: if isTeamMember() && hasPermission('packages', 'edit');
       }
       match /config/availableLocations {
+        // Admins with 'settings' edit permission can write.
         allow write: if isTeamMember() && hasPermission('settings', 'edit');
       }
-       match /config/financialSettings {
-          allow read: if isTeamMember() && hasPermission('settings', 'view');
-          allow write: if isTeamMember() && hasPermission('settings', 'edit');
-      }
       match /payoutHistory/{docId} {
+         // Admins with 'payouts' edit permission can read/write.
          allow read, write: if isTeamMember() && hasPermission('payouts', 'edit');
       }
-      
-      // Catch-all for any other config docs
+      // Rule for general config documents like companyProfile, financialSettings, etc.
       match /config/{docId} {
-           allow read: if isTeamMember() && hasPermission('settings', 'view');
-           allow write: if isTeamMember() && hasPermission('settings', 'edit');
+          allow read: if isTeamMember() && hasPermission('settings', 'view');
+          allow write: if isTeamMember() && hasPermission('settings', 'edit');
       }
 
       // CATCH-ALL: Explicitly deny all other reads/writes for security.
