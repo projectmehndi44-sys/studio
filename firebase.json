@@ -1,12 +1,9 @@
+
 {
   "hosting": {
     "source": ".",
     "frameworksBackend": {
-      "region": "us-central1",
-      "resources": {
-        "cpu": 1,
-        "memoryMiB": 512
-      }
+      "region": "us-central1"
     }
   }
 }
