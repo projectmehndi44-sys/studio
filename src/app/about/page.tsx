@@ -5,7 +5,7 @@ import * as React from 'react';
 import type { Customer } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/utsavlook/Header';
-import { Award, Handshake, Sparkles, Heart, Users, Camera } from 'lucide-react';
+import { Handshake, Sparkles, Heart, Users } from 'lucide-react';
 import Link from 'next/link';
 import { ClientOnly } from '@/components/ClientOnly';
 import { Footer } from '@/components/utsavlook/Footer';
@@ -83,26 +83,18 @@ export default function AboutUsPage() {
                 </section>
                 
                 <section className="w-full py-12 md:py-24 lg:py-32">
-                    <div className="container px-4 md:px-6">
-                        <div className="grid gap-12 lg:grid-cols-2 lg:gap-24 items-center">
-                            <div className="space-y-4">
-                                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-headline text-primary">Our Journey</h2>
-                                <p className="text-muted-foreground text-lg">
-                                    UtsavLook began with a simple idea: finding a great mehndi artist or makeup professional for a wedding shouldn't be a matter of luck. It started from personal experience—endless phone calls, unverified portfolios, and the uncertainty of booking someone for the most important day of life.
-                                </p>
-                                <p className="text-muted-foreground text-lg">
-                                    We envisioned a place where the most talented artists could showcase their work and where anyone planning a celebration—be it a grand wedding, a sangeet, a festival, or a simple party—could find and book these professionals with confidence. We are here to bridge the gap between incredible talent and those who seek it, making every 'utsav' (celebration) look perfect.
-                                </p>
-                            </div>
-                            <div className="relative aspect-square rounded-xl shadow-brand-lg overflow-hidden transform transition-transform hover:scale-105">
-                                 <Image
-                                    src="https://picsum.photos/seed/journey/600/600"
-                                    alt="A beautiful bridal mehndi design"
-                                    layout="fill"
-                                    objectFit="cover"
-                                    data-ai-hint="bridal mehndi"
-                                />
-                            </div>
+                    <div className="container max-w-4xl px-4 md:px-6 text-lg">
+                        <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-headline text-primary text-center">Our Journey</h2>
+                        <div className="space-y-6 mt-8 text-muted-foreground">
+                            <p>
+                                UtsavLook began with a simple, frustrating experience: finding a great mehndi artist for a family wedding shouldn't be a matter of luck. It started from endless phone calls based on recommendations, scrolling through unverified social media profiles, and the gnawing uncertainty of booking a stranger for one of life's most important days. We saw a gap—a disconnect between incredible, local artistic talent and the customers who desperately wanted to find them with confidence.
+                            </p>
+                            <p>
+                                We asked ourselves: What if there was a place where artistry was celebrated and verified? A platform where a bride could find the perfect "bridal makeup artist near me" with the same ease as booking a flight? A space where a talented photographer wasn't just another name in a directory but a celebrated professional with a trusted portfolio?
+                            </p>
+                            <p>
+                                That vision became UtsavLook. We are here to bridge that gap. We envisioned a place where the most talented artists could showcase their work with pride and where anyone planning a celebration—be it a grand wedding, a sangeet, a festival, or a simple party—could find and book these professionals with absolute peace of mind. We are here to make every 'utsav' (celebration) look perfect.
+                            </p>
                         </div>
                     </div>
                 </section>
