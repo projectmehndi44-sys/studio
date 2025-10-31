@@ -128,7 +128,7 @@ export default function ArtistServicesPage() {
         <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Settings className="w-6 h-6 text-primary"/>Services & Pricing</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><Settings className="w-6 h-6 text-primary"/>Services &amp; Pricing</CardTitle>
                     <CardDescription>
                         Choose which services you want to offer from the platform's catalog and set your own prices for each tier. Your price must be equal to or above the base price.
                     </CardDescription>
