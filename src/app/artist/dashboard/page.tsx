@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -10,6 +11,8 @@ import { listenToCollection } from '@/lib/services';
 import type { Booking, Notification } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { getSafeDate } from '@/lib/utils';
+import { query, collection, where } from 'firebase/firestore';
+import { getDb } from '@/firebase';
 
 
 function DashboardCard({ title, value, description, icon: Icon, href, className }: { title: string, value: string | number, description: string, icon: React.ElementType, href?: string, className?: string }) {
@@ -38,9 +41,9 @@ export default function ArtistDashboardPage() {
     React.useEffect(() => {
         if (!artist) return;
         
-        const unsubBookings = listenToCollection<Booking>('bookings', (allBookings) => {
-            setBookings(allBookings.filter(b => b.artistIds.includes(artist.id)));
-        });
+        const db = getDb();
+        const bookingsQuery = query(collection(db, 'bookings'), where('artistIds', 'array-contains', artist.id));
+        const unsubBookings = listenToCollection<Booking>('bookings', setBookings, bookingsQuery);
 
         const unsubNotifs = listenToCollection<Notification>('notifications', (allNotifs) => {
             setNotifications(allNotifs.filter(n => n.artistId === artist.id).sort((a,b) => getSafeDate(b.timestamp).getTime() - getSafeDate(a.timestamp).getTime()));
