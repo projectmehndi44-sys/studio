@@ -368,6 +368,9 @@ export const getTeamMembers = async (): Promise<TeamMember[]> => {
     const querySnapshot = await getDocs(collection(getDb(), 'teamMembers'));
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as TeamMember);
 };
+
+export const getTeamMember = async (id: string): Promise<TeamMember | null> => getDocument<TeamMember>('teamMembers', id);
+
 export const saveTeamMembers = (members: TeamMember[]) => {
     const db = getDb();
     const batch = runTransaction(db, async (transaction) => {

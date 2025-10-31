@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase'; // Use the main firebase barrel file
-import { getTeamMembers } from '@/lib/services';
+import { getTeamMember } from '@/lib/services';
 import type { TeamMember, Permission, PermissionLevel } from '@/lib/types';
 import { initialSuperAdminPermissions } from '@/lib/team-data';
 
@@ -33,21 +33,15 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         const checkAdminStatus = async () => {
-            const teamMembers = await getTeamMembers();
-            const memberProfile = teamMembers.find(m => m.id === authUser.uid);
+            const memberProfile = await getTeamMember(authUser.uid);
             
             // Logic for the very first user becoming Super Admin
-            if (teamMembers.length === 0 && memberProfile === undefined) {
-                 const newSuperAdmin: TeamMember = {
-                    id: authUser.uid,
-                    name: authUser.displayName || 'Super Admin',
-                    username: authUser.email || '',
-                    role: 'Super Admin',
-                    permissions: initialSuperAdminPermissions,
-                };
-                // This is a simplified bootstrap. In a real app, this might be a secure Cloud Function.
-                // For now, we assume the first login through the admin portal claims the role.
-                setAdminUser(newSuperAdmin);
+            if (memberProfile === null && authUser) {
+                 // This case should ideally be handled by the verifyAdminLogin cloud function
+                 // which creates the team member document on first login.
+                 // We can have a fallback check here just in case.
+                 console.warn("No team member profile found for authenticated user. This should have been created on login.");
+                 setAdminUser(null);
             } else {
                  setAdminUser(memberProfile || null);
             }

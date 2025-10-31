@@ -48,8 +48,8 @@ service cloud.firestore {
     // Team member roles can only be written by Super Admins.
     // An authenticated user can read their own team member document to know their permissions.
     match /teamMembers/{userId} {
-      allow read: if isOwner(userId);
-      allow list: if isTeamMember();
+      allow get: if isOwner(userId);
+      allow list: if isTeamMember(); // Allow other admins to see the list of team members
       allow write: if isAuth() && get(/databases/$(database)/documents/teamMembers/$(request.auth.uid)).data.role == 'Super Admin';
     }
     
