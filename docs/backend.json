@@ -1,0 +1,381 @@
+{
+  "entities": {
+    "Customer": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Customer",
+      "type": "object",
+      "description": "Represents a customer in the UtsavLook application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Customer entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The customer's name."
+        },
+        "phone": {
+          "type": "string",
+          "description": "The customer's phone number."
+        },
+        "email": {
+          "type": "string",
+          "description": "The customer's email address.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "phone"
+      ]
+    },
+    "Artist": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Artist",
+      "type": "object",
+      "description": "Represents an artist in the UtsavLook application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Artist entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The artist's name."
+        },
+        "email": {
+          "type": "string",
+          "description": "The artist's email address.",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "The artist's phone number."
+        },
+        "profilePicture": {
+          "type": "string",
+          "description": "URL to the artist's profile picture stored in Firebase Storage.",
+          "format": "uri"
+        },
+        "workImages": {
+          "type": "array",
+          "description": "URLs to the artist's work images stored in Firebase Storage.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "services": {
+          "type": "array",
+          "description": "List of services offered by the artist (e.g., mehndi, makeup).",
+          "items": {
+            "type": "string"
+          }
+        },
+        "location": {
+          "type": "string",
+          "description": "The artist's location (City, State)."
+        },
+        "charges": {
+          "type": "string",
+          "description": "The artist's charges for different services. Consider the string as JSON.",
+          "format": "json"
+        },
+        "rating": {
+          "type": "number",
+          "description": "The artist's average rating."
+        },
+        "styleTags": {
+          "type": "array",
+          "description": "List of style tags associated with the artist.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unavailableDates": {
+          "type": "array",
+          "description": "List of dates the artist is unavailable (ISO date strings).",
+          "items": {
+            "type": "string"
+          }
+        },
+        "state": {
+          "type": "string",
+          "description": "The artist's state."
+        },
+        "district": {
+          "type": "string",
+          "description": "The artist's district."
+        },
+        "locality": {
+          "type": "string",
+          "description": "The artist's locality."
+        },
+        "servingAreas": {
+          "type": "string",
+          "description": "The artist's serving areas."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email",
+        "phone",
+        "profilePicture",
+        "workImages",
+        "services",
+        "location",
+        "charges",
+        "rating",
+        "styleTags",
+        "unavailableDates"
+      ]
+    },
+    "Booking": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Booking",
+      "type": "object",
+      "description": "Represents a booking made by a customer.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Booking entity."
+        },
+        "artistIds": {
+          "type": "array",
+          "description": "References to Artists. (Relationship: Artist 1:N Booking)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "customerId": {
+          "type": "string",
+          "description": "Reference to Customer. (Relationship: Customer 1:N Booking)"
+        },
+        "customerName": {
+          "type": "string",
+          "description": "The customer's name."
+        },
+        "serviceAddress": {
+          "type": "string",
+          "description": "The address where the service will be performed."
+        },
+        "serviceDates": {
+          "type": "array",
+          "description": "The dates when the service will be performed.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "amount": {
+          "type": "number",
+          "description": "The total amount for the booking."
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the booking (e.g., Completed, Confirmed)."
+        },
+        "eventType": {
+          "type": "string",
+          "description": "The type of event for the booking."
+        },
+        "eventDate": {
+          "type": "string",
+          "description": "The date of the event.",
+          "format": "date-time"
+        },
+        "completionCode": {
+          "type": "string",
+          "description": "The completion code for the booking."
+        }
+      },
+      "required": [
+        "id",
+        "artistIds",
+        "customerId",
+        "customerName",
+        "serviceAddress",
+        "serviceDates",
+        "amount",
+        "status",
+        "eventType",
+        "eventDate",
+        "completionCode"
+      ]
+    },
+    "MasterServicePackage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MasterServicePackage",
+      "type": "object",
+      "description": "Represents a master service package.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the MasterServicePackage entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the service package."
+        },
+        "service": {
+          "type": "string",
+          "description": "The service offered by the package (e.g., mehndi, makeup)."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the service package."
+        },
+        "image": {
+          "type": "string",
+          "description": "URL to the image for the service package.",
+          "format": "uri"
+        },
+        "tags": {
+          "type": "array",
+          "description": "List of tags associated with the service package.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "categories": {
+          "type": "array",
+          "description": "List of categories associated with the service package.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "service",
+        "description",
+        "image",
+        "tags",
+        "categories"
+      ]
+    },
+    "PackageCategory": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PackageCategory",
+      "type": "object",
+      "description": "Represents a category for a service package.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the category (e.g., Normal, Premium)."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the category."
+        },
+        "basePrice": {
+          "type": "number",
+          "description": "The base price for the category."
+        },
+        "image": {
+          "type": "string",
+          "description": "URL to the image for the category.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "name",
+        "description",
+        "basePrice",
+        "image"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/customers/{customerId}",
+        "definition": {
+          "entityName": "Customer",
+          "schema": {
+            "$ref": "#/backend/entities/Customer"
+          },
+          "description": "Stores customer profile information. Path-based ownership: only the customer (or admin) can read/write their own document.",
+          "params": [
+            {
+              "name": "customerId",
+              "description": "The unique identifier for the customer, matching their Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/artists/{artistId}",
+        "definition": {
+          "entityName": "Artist",
+          "schema": {
+            "$ref": "#/backend/entities/Artist"
+          },
+          "description": "Stores artist profile information. Includes fields like name, email, phone, profile picture, work images, services, location, charges, rating, style tags, and unavailable dates.",
+          "params": [
+            {
+              "name": "artistId",
+              "description": "The unique identifier for the artist, matching their Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/bookings/{bookingId}",
+        "definition": {
+          "entityName": "Booking",
+          "schema": {
+            "$ref": "#/backend/entities/Booking"
+          },
+          "description": "Stores booking information, including references to artists and customers. Includes denormalized 'customerName' to avoid authorization `get()` calls. Security rules can validate that artistIds and customerId exist, and that the requesting user is either the customer or one of the assigned artists.",
+          "params": [
+            {
+              "name": "bookingId",
+              "description": "The unique identifier for the booking."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/config/master_service_packages/{packageId}",
+        "definition": {
+          "entityName": "MasterServicePackage",
+          "schema": {
+            "$ref": "#/backend/entities/MasterServicePackage"
+          },
+          "description": "Stores master service packages, used for defining the services offered by the platform.",
+          "params": [
+            {
+              "name": "packageId",
+              "description": "The unique identifier for the master service package."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/config/package_categories/{categoryId}",
+        "definition": {
+          "entityName": "PackageCategory",
+          "schema": {
+            "$ref": "#/backend/entities/PackageCategory"
+          },
+          "description": "Stores package categories, used for categorizing master service packages.",
+          "params": [
+            {
+              "name": "categoryId",
+              "description": "The unique identifier for the package category."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support the UtsavLook application, focusing on Customers, Artists, Bookings, Master Service Packages and Package Categories. The structure prioritizes authorization independence, scalability, and security, following the core design principles outlined. Authorization independence is achieved through denormalization, particularly within the bookings subcollection and artist documents. Structural segregation ensures collections have homogeneous security postures, and access modeling employs consistent patterns for data ownership and collaboration.\n\nSpecifically, the `customers` and `artists` collections store profile information, while the `bookings` collection manages booking data. The `bookings` documents include denormalized customer information (`customerName`) to avoid needing to `get()` customer data during booking operations. The `config/master_service_packages` and `config/package_categories` collections store global configuration data. \n\nTo ensure QAPs (Rules are not Filters) and enable secure list operations, the data is segregated based on access needs. All documents within a collection share the same security requirements. For example, the `customers` collection has a clear ownership model based on the user's `uid`, and the `bookings` collection, while containing information about both customers and artists, can leverage security rules based on denormalized data and path-based ownership.\n\nData clarity is maintained through explicit state modeling using the `status` field in `bookings`, and predictable schema using static keys within documents. Invariants, such as ownership and timestamps, can be enforced through Firestore rules and backend logic."
+  }
+}
