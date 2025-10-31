@@ -1,6 +1,6 @@
+
 'use client';
 
-import { getFunctions, httpsCallable } from "firebase/functions";
 import { getStorage } from "firebase/storage";
 import { getFirebaseServices } from './init';
 
@@ -8,15 +8,9 @@ import { getFirebaseServices } from './init';
 const { firebaseApp: app, auth, firestore, db } = getFirebaseServices();
 
 const storage = getStorage(app);
-const functions = getFunctions(app);
-
-export const callFirebaseFunction = async (functionName: string, data: any) => {
-    const callable = httpsCallable(functions, functionName);
-    return callable(data);
-};
 
 // Export the initialized services
-export { app, auth, firestore, storage, functions };
+export { app, auth, firestore, storage, db };
 
 // Re-export all the necessary hooks and providers
 export * from './provider';
@@ -27,3 +21,4 @@ export * from './firestore/use-collection';
 export * from './firestore/use-doc';
 export * from './errors';
 export * from './error-emitter';
+export * from './functions';

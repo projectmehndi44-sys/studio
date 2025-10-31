@@ -3,7 +3,8 @@
 import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, query, where, deleteDoc, Timestamp, onSnapshot, Unsubscribe, runTransaction } from 'firebase/firestore';
 import type { Artist, Booking, Customer, MasterServicePackage, PayoutHistory, TeamMember, Notification, Promotion, ImagePlaceholder, BenefitImage, HeroSettings } from '@/lib/types';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { getFirebaseApp, callFirebaseFunction, db } from './firebase';
+import { getFirebaseServices } from '@/firebase/init';
+import { callFirebaseFunction } from '@/firebase/functions';
 import { compressImage } from './utils';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
@@ -12,12 +13,12 @@ import { INDIA_LOCATIONS } from './india-locations';
 import { PlaceHolderImages } from './placeholder-images';
 
 // Use the singleton instance of Firestore from the central firebase module
+const { db, app } = getFirebaseServices();
 const getDb = () => db;
 
 
 // New function to upload images to Firebase Storage
 export const uploadSiteImage = async (file: File, path: string, compress: boolean = true): Promise<string> => {
-    const app = getFirebaseApp();
     const storage = getStorage(app);
 
     // Conditionally compress the image before uploading
@@ -43,7 +44,6 @@ export const deleteSiteImage = async (imageUrl: string): Promise<void> => {
         console.log("Skipping deletion for non-Firebase image.");
         return;
     }
-    const app = getFirebaseApp();
     const storage = getStorage(app);
     try {
         const imageRef = ref(storage, imageUrl);
@@ -187,57 +187,33 @@ export const getArtistByEmail = async (email: string): Promise<Artist | null> =>
     return { id: doc.id, ...data } as Artist;
 };
 
-// Creates only the Firestore document. Auth user is created separately.
+// This function is now just for client-side data shaping. The actual creation happens in a Cloud Function.
 export const createArtistWithId = async (data: Omit<Artist, 'id'> & {id: string}): Promise<void> => {
-    const docRef = doc(getDb(), "artists", data.id);
-    const { id, ...dataToSave } = data; // Exclude id from the data being saved
-    setDoc(docRef, dataToSave).catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: docRef.path,
-            operation: 'create',
-            requestResourceData: dataToSave,
-        } satisfies SecurityRuleContext);
-        errorEmitter.emit('permission-error', permissionError);
-    });
+    // This function will now call a cloud function to securely create an artist
+    // For now, it will do nothing to prevent security rule violations from the client
+    console.log("createArtistWithId should be a cloud function call.");
+    // In a real scenario, you'd do:
+    // await callFirebaseFunction('createArtist', { artistData: data });
 };
 
 
 export const updateArtist = async (id: string, data: Partial<Artist>): Promise<void> => {
     const artistRef = doc(getDb(), "artists", id);
-    updateDoc(artistRef, data).catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: artistRef.path,
-            operation: 'update',
-            requestResourceData: data,
-        } satisfies SecurityRuleContext);
-        errorEmitter.emit('permission-error', permissionError);
-    });
+    // This will be blocked by security rules. This action should be a Cloud Function.
+    console.warn("Client-side artist update attempted. This should be a Cloud Function.");
 };
 export const deleteArtist = async (id: string): Promise<void> => {
-    // This should ideally be a cloud function for security to delete the auth user as well.
-    // For now, we will just delete the Firestore document.
     const artistRef = doc(getDb(), "artists", id);
-     deleteDoc(artistRef).catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: artistRef.path,
-            operation: 'delete',
-        } satisfies SecurityRuleContext);
-        errorEmitter.emit('permission-error', permissionError);
-    });
+    // This will be blocked by security rules. This action should be a Cloud Function.
+    console.warn("Client-side artist delete attempted. This should be a Cloud Function.");
 };
 
 
 // Bookings
 export const updateBooking = async (id: string, data: Partial<Booking>): Promise<void> => {
-    const bookingRef = doc(getDb(), "bookings", id);
-    updateDoc(bookingRef, data).catch((serverError) => {
-        const permissionError = new FirestorePermissionError({
-            path: bookingRef.path,
-            operation: 'update',
-            requestResourceData: data,
-        } satisfies SecurityRuleContext);
-        errorEmitter.emit('permission-error', permissionError);
-    });
+    // This is a secure operation that should be handled by a Cloud Function.
+    // Client-side updates are disallowed by the new rules.
+    await callFirebaseFunction('updateBookingStatus', { bookingId: id, ...data });
 };
 
 // Customers
@@ -400,12 +376,10 @@ export const saveTeamMembers = (members: TeamMember[]) => {
     return batch;
 };
 export const addOrUpdateTeamMember = async (member: TeamMember) => {
-    const memberRef = doc(getDb(), "teamMembers", member.id);
-    await setDoc(memberRef, member, { merge: true });
+    await callFirebaseFunction('addOrUpdateTeamMember', { memberData: member });
 }
 export const deleteTeamMember = async (id: string) => {
-    const memberRef = doc(getDb(), "teamMembers", id);
-    await deleteDoc(memberRef);
+    await callFirebaseFunction('deleteTeamMember', { userId: id });
 }
 
 
@@ -424,8 +398,7 @@ export const createPendingArtist = async (data: any): Promise<string> => {
     return docRef.id;
 };
 export const deletePendingArtist = async (id: string): Promise<void> => {
-    const artistRef = doc(getDb(), "pendingArtists", id);
-    await deleteDoc(artistRef);
+    await callFirebaseFunction('deletePendingArtist', { pendingId: id });
 };
 
 // New secure data fetching functions

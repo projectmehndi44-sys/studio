@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -14,14 +15,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from '@/hooks/use-toast';
 import { Download, ChevronDown, CheckCircle, XCircle, MoreHorizontal, Eye, Trash2, UserPlus, ShieldOff, KeyRound, ShieldCheck, Star } from 'lucide-react';
 import type { Artist } from '@/lib/types';
-import { listenToCollection, createArtistWithId, deletePendingArtist, updateArtist, deleteArtist, getAvailableLocations } from '@/lib/services';
+import { listenToCollection, updateArtist, deleteArtist, getAvailableLocations } from '@/lib/services';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { exportToExcel } from '@/lib/export';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { useAdminAuth } from '@/firebase/auth/use-admin-auth';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,9 +33,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { createUserWithEmailAndPassword, getAuth, sendPasswordResetEmail } from 'firebase/auth';
-import { app } from '@/lib/firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { useAuth } from '@/firebase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { callFirebaseFunction } from '@/firebase';
 
 
 type PendingArtist = Omit<Artist, 'id' | 'services'> & {
@@ -68,6 +70,7 @@ export default function ArtistManagementPage() {
     const router = useRouter();
     const { toast } = useToast();
     const { hasPermission } = useAdminAuth();
+    const auth = useAuth();
     const [artists, setArtists] = React.useState<Artist[]>([]);
     const [pendingArtists, setPendingArtists] = React.useState<PendingArtist[]>([]);
     const [onboardFormOpen, setOnboardFormOpen] = React.useState(false);
@@ -110,70 +113,29 @@ export default function ArtistManagementPage() {
     };
     
     const handleApprove = async (pendingArtist: PendingArtist) => {
-        const auth = getAuth(app);
-        
         try {
-            // 1. Create user in Firebase Authentication
-            const userCredential = await createUserWithEmailAndPassword(auth, pendingArtist.email, `tempPass${Date.now()}`);
-            const uid = userCredential.user.uid;
-            
-            // 2. Send password creation/reset email
-            await sendPasswordResetEmail(auth, pendingArtist.email);
-
-            // 3. Create artist document in 'artists' collection with the new UID
-            const newArtistData: Omit<Artist, 'id'> = {
-                name: pendingArtist.fullName,
-                email: pendingArtist.email,
-                phone: pendingArtist.phone,
-                location: `${pendingArtist.serviceAreas[0].localities.split(',')[0].trim()}, ${pendingArtist.serviceAreas[0].district}`,
-                serviceAreas: pendingArtist.serviceAreas,
-                profilePicture: `https://api.dicebear.com/7.x/initials/svg?seed=${pendingArtist.fullName}`,
-                workImages: [], // This would be URLs from storage in a real app
-                services: pendingArtist.services, 
-                charge: 5000, // Default value
-                charges: { mehndi: 5000, makeup: 7000, photography: 10000 },
-                rating: 0,
-                styleTags: ['bridal', 'traditional'],
-                verified: false,
-                isFoundersClubMember: false,
-            };
-            
-            await createArtistWithId({ id: uid, ...newArtistData });
-            
-            // 4. Delete from 'pendingArtists' collection
-            await deletePendingArtist(pendingArtist.id);
-
+            await callFirebaseFunction('approveArtist', { pendingArtist });
             toast({
                 title: 'Artist Approved!',
                 description: `${pendingArtist.fullName} is now a registered artist. A password creation email has been sent.`,
             });
-
         } catch (error: any) {
             console.error("Approval error: ", error);
-            // Handle specific error for existing email
-            if (error.code === 'auth/email-already-in-use') {
-                 toast({
-                    title: 'Approval Failed',
-                    description: `An account with email ${pendingArtist.email} already exists. Please onboard them manually or ask them to use a different email.`,
-                    variant: 'destructive',
-                    duration: 10000,
-                });
-            } else {
-                toast({
-                    title: 'Approval Failed',
-                    description: error.message,
-                    variant: 'destructive',
-                });
-            }
+            toast({
+                title: 'Approval Failed',
+                description: error.message,
+                variant: 'destructive',
+            });
         }
     };
 
     const handleReject = async (pendingArtistId: string) => {
-        await deletePendingArtist(pendingArtistId);
-        toast({
-            title: 'Application Rejected',
-            variant: 'destructive',
-        });
+        try {
+            await callFirebaseFunction('deletePendingArtist', { pendingId: pendingArtistId });
+            toast({ title: 'Application Rejected', variant: 'destructive' });
+        } catch (error: any) {
+             toast({ title: 'Rejection Failed', description: error.message, variant: 'destructive'});
+        }
     };
 
     const confirmAction = async () => {
@@ -182,18 +144,17 @@ export default function ArtistManagementPage() {
         const {type, data} = dialogState;
 
         try {
-            if (type === 'delete' && (data as Artist).role !== 'Super Admin') {
-                await deleteArtist(data.id);
+            if (type === 'delete' && 'role' in data && data.role !== 'Super Admin') {
+                await callFirebaseFunction('deleteArtist', { artistId: data.id });
                 toast({ title: 'Artist Deleted', description: `${data.name} has been removed.`, variant: 'destructive'});
             } else if (type === 'delete-pending') {
-                 await deletePendingArtist(data.id);
+                 await callFirebaseFunction('deletePendingArtist', { pendingId: data.id });
                 toast({ title: 'Pending Application Deleted', variant: 'destructive'});
             } else if (type === 'reset-pass' && 'email' in data) {
-                 const auth = getAuth(app);
                  await sendPasswordResetEmail(auth, data.email);
                  toast({ title: 'Password Reset Email Sent', description: `An email has been sent to ${data.name}.`});
-            } else if ((data as Artist).role === 'Super Admin') {
-                 toast({ title: 'Action Denied', description: 'Super Admin cannot be deleted.', variant: 'destructive' });
+            } else if ('role' in data && data.role === 'Super Admin') {
+                 toast({ title: 'Action Denied', description: 'Super Admin artist account cannot be deleted.', variant: 'destructive' });
             }
         } catch(error: any) {
             toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -203,33 +164,8 @@ export default function ArtistManagementPage() {
     };
     
     const handleOnboardSubmit: SubmitHandler<OnboardFormValues> = async (data) => {
-         const auth = getAuth(app);
         try {
-            // This flow is for admin-led onboarding, so we create the auth user
-            const userCredential = await createUserWithEmailAndPassword(auth, data.email, `tempPass${Date.now()}`);
-            const uid = userCredential.user.uid;
-
-             const newArtist: Omit<Artist, 'id'> = {
-                name: data.name,
-                email: data.email,
-                phone: data.phone,
-                location: `${data.locality}, ${data.state}`,
-                serviceAreas: [{id: 'primary', state: data.state, district: data.district, localities: data.locality}],
-                profilePicture: `https://api.dicebear.com/7.x/initials/svg?seed=${data.name}`,
-                workImages: [],
-                services: data.services as ('mehndi' | 'makeup' | 'photography')[],
-                charge: data.charge,
-                charges: { mehndi: data.charge, makeup: data.charge, photography: data.charge },
-                rating: 0,
-                styleTags: [],
-                verified: true, // Admin-onboarded artists are auto-verified
-                isFoundersClubMember: false,
-            };
-            await createArtistWithId({ id: uid, ...newArtist });
-            
-            // Send email to set password
-            await sendPasswordResetEmail(auth, data.email);
-
+            await callFirebaseFunction('onboardArtist', { artistData: data });
             toast({ title: 'Artist Onboarded', description: `${data.name} has been added. A password setup email has been sent.` });
             setOnboardFormOpen(false);
             form.reset();
@@ -339,7 +275,7 @@ export default function ArtistManagementPage() {
                                                         <DropdownMenuContent align="end">
                                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                             <DropdownMenuItem onSelect={() => router.push(`/admin/artists/${artist.id}`)}><Eye className="mr-2"/>View Details</DropdownMenuItem>
-                                                            <DropdownMenuItem onSelect={() => updateArtist(artist.id, { verified: !artist.verified })}>
+                                                            <DropdownMenuItem onSelect={() => callFirebaseFunction('toggleArtistVerification', { artistId: artist.id, isVerified: !artist.verified })}>
                                                                 {artist.verified ? <ShieldOff className="mr-2"/> : <ShieldCheck className="mr-2"/>}
                                                                 {artist.verified ? 'Revoke Verification' : 'Mark as Verified'}
                                                             </DropdownMenuItem>
@@ -420,14 +356,14 @@ export default function ArtistManagementPage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            {dialogState.type === 'delete' && `This action will permanently delete the artist '${dialogState.data?.name}'. This cannot be undone.`}
-                            {dialogState.type === 'delete-pending' && `This action will permanently delete the pending application from '${dialogState.data?.name}'.`}
+                            {dialogState.type === 'delete' && `This action will permanently delete the artist '${(dialogState.data as Artist)?.name}'. This cannot be undone.`}
+                            {dialogState.type === 'delete-pending' && `This action will permanently delete the pending application from '${(dialogState.data as PendingArtist)?.fullName}'.`}
                             {dialogState.type === 'reset-pass' && `This will send a password reset link to '${dialogState.data?.name}'.`}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={confirmAction} className={dialogState.type.startsWith('delete') ? 'bg-destructive hover:bg-destructive/90' : ''}>
+                        <AlertDialogAction onClick={confirmAction} className={dialogState.type?.startsWith('delete') ? 'bg-destructive hover:bg-destructive/90' : ''}>
                            Continue
                         </AlertDialogAction>
                     </AlertDialogFooter>

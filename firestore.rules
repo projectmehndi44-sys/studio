@@ -1,156 +1,67 @@
-/**
- * @file Firestore Security Rules for UtsavLook Application
- * @description This ruleset enforces a user-ownership model for customer and artist profiles,
- *              and shared access based on denormalized data for bookings. Master service packages
- *              and package categories are publicly readable.
- *
- * Data Structure:
- * - /customers/{customerId}: Stores customer profiles; accessible only by the customer themselves.
- * - /artists/{artistId}: Stores artist profiles; accessible only by the artist themselves.
- * - /bookings/{bookingId}: Stores booking data; accessible by the customer and artists involved.
- * - /config/master_service_packages/{packageId}: Stores global configuration data, publicly readable.
- * - /config/package_categories/{categoryId}: Stores global configuration data, publicly readable.
- *
- * Key Security Decisions:
- * - User listing is disallowed for both customers and artists.
- * - Bookings are secured using denormalized customerName and artistIds to avoid extra reads.
- * - Configuration data (master service packages and package categories) is publicly readable.
- *
- * Denormalization for Authorization:
- * - Bookings include the 'customerName' field directly on the document to avoid requiring a
- *   `get()` operation on the /customers/{customerId} document to check the customer's name.
- * - Bookings include the 'artistIds' array to allow checking if the requesting user is an artist
- *   associated with the booking without requiring a separate lookup.
- *
- * Structural Segregation:
- * - Private user data (customer and artist profiles) is stored in separate collections with
- *   strict ownership rules, while public configuration data is stored in the /config path.
- */
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Manages customer profile data, ensuring only the customer can access their own data.
-     * @path /customers/{customerId}
-     * @allow (create) - User 'user_abc' can create their profile if request.auth.uid == 'user_abc' and request.resource.data.id == 'user_abc'.
-     * @allow (get, update, delete) - User 'user_abc' can read/write their profile if request.auth.uid == 'user_abc'.
-     * @deny (create) - User 'user_xyz' cannot create a profile for 'user_abc'.
-     * @deny (get, update, delete) - User 'user_xyz' cannot read/write 'user_abc' profile.
-     * @principle Enforces strict user ownership.
-     */
-    match /customers/{customerId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return isSignedIn() && request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-
-      allow get: if isOwner(customerId);
-      allow list: if false; // Listing customers is not permitted.
-      allow create: if isOwner(customerId) && request.resource.data.id == customerId;
-      allow update: if isExistingOwner(customerId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(customerId);
+    // Helper Functions
+    function isAuth() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+    
+    function isTeamMember() {
+      return isAuth() && exists(/databases/$(database)/documents/teamMembers/$(request.auth.uid));
     }
 
-    /**
-     * @description Manages artist profile data, ensuring only the artist can access their own data.
-     * @path /artists/{artistId}
-     * @allow (create) - User 'artist_abc' can create their profile if request.auth.uid == 'artist_abc' and request.resource.data.id == 'artist_abc'.
-     * @allow (get, update, delete) - User 'artist_abc' can read/write their profile if request.auth.uid == 'artist_abc'.
-     * @deny (create) - User 'user_xyz' cannot create a profile for 'artist_abc'.
-     * @deny (get, update, delete) - User 'user_xyz' cannot read/write 'artist_abc' profile.
-     * @principle Enforces strict user ownership.
-     */
+    // --- Collection Rules ---
+
+    // Artists can be read by anyone, but only written to by authenticated admins (via cloud function).
     match /artists/{artistId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(artistId) {
-        return isSignedIn() && request.auth.uid == artistId;
-      }
-
-      function isExistingOwner(artistId) {
-        return isOwner(artistId) && resource != null;
-      }
-
-      allow get: if isOwner(artistId);
-      allow list: if false; // Listing artists is not permitted.
-      allow create: if isOwner(artistId) && request.resource.data.id == artistId;
-      allow update: if isExistingOwner(artistId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(artistId);
+      allow read: if true;
+      allow write: if false; // All writes must go through a Cloud Function.
     }
 
-    /**
-     * @description Manages booking data, allowing access to associated customers and artists.
-     * @path /bookings/{bookingId}
-     * @allow (get) - User 'user_abc' can read booking 'booking_123' if they are the customer or an artist in the artistIds array.
-     * @allow (create) - User 'user_abc' can create a booking. The rule will validate `customerId` and `artistIds`.
-     * @allow (update, delete) - User 'user_abc' can update/delete booking 'booking_123' if they are the customer or an artist in the artistIds array AND the document exists.
-     * @deny (get) - User 'user_xyz' cannot read booking 'booking_123' if they are not associated.
-     * @principle Enforces shared access based on denormalized customerName and artistIds.
-     */
+    // Customers can only read/write their own data.
+    match /customers/{userId} {
+      allow read, update, delete: if isOwner(userId);
+      allow create: if isAuth(); // Allow creation for new sign-ups.
+    }
+
+    // Bookings can be created by any authenticated user for themselves.
+    // They can only be read by the customer, an involved artist, or a team member.
     match /bookings/{bookingId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isCustomer(customerId) {
-        return isSignedIn() && request.auth.uid == customerId;
-      }
-
-      function isArtist(artistIds) {
-        return isSignedIn() && artistIds.hasAny([request.auth.uid]);
-      }
-
-      function isAssociated(resourceData) {
-        return isCustomer(resourceData.customerId) || isArtist(resourceData.artistIds);
-      }
-
-      function isExistingAssociated(resourceData) {
-        return isAssociated(resourceData) && resource != null;
-      }
-
-      allow get: if isSignedIn() && isAssociated(resource.data);
-      allow list: if false;
-
-      //CRITICAL: Create must require that the customerId exists
-      allow create: if isSignedIn();
-
-      //CRITICAL: Update and Delete should also verify that the document exists.
-      allow update: if isSignedIn() && isExistingAssociated(resource.data);
-      allow delete: if isSignedIn() && isExistingAssociated(resource.data);
+      allow create: if isAuth() && isOwner(request.resource.data.customerId);
+      allow read: if isAuth() && (isOwner(resource.data.customerId) || request.auth.uid in resource.data.artistIds || isTeamMember());
+      allow update, delete: if false; // All updates must go through a Cloud Function.
     }
 
-    /**
-     * @description Allows public read access to master service packages.
-     * @path /config/master_service_packages/{packageId}
-     * @allow (get, list) - Any user (signed in or not) can read master service packages.
-     * @deny (create, update, delete) - No user can create, update, or delete master service packages via client-side rules.
-     * @principle Provides public read access with restricted writes.
-     */
-    match /config/master_service_packages/{packageId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
+    // Pending artist applications can be created by anyone, but only read/deleted by admins.
+    match /pendingArtists/{pendingId} {
+      allow create: if true;
+      allow read, delete: if isTeamMember();
+      allow update: if false;
+    }
+    
+    // Team member roles can only be viewed by other team members, and written by Super Admins.
+    match /teamMembers/{userId} {
+      allow read: if isTeamMember();
+      allow write: if isAuth() && get(/databases/$(database)/documents/teamMembers/$(request.auth.uid)).data.role == 'Super Admin';
+    }
+    
+    // Notifications can be read only by the user they are intended for.
+    match /notifications/{notificationId} {
+       allow read: if isAuth() && resource.data.artistId == request.auth.uid;
+       allow write: if false;
+    }
+    
+    // All config documents are publicly readable, but not writable from the client.
+     match /config/{docId} {
+      allow read: if true;
+      allow write: if false;
     }
 
-    /**
-     * @description Allows public read access to package categories.
-     * @path /config/package_categories/{categoryId}
-     * @allow (get, list) - Any user (signed in or not) can read package categories.
-     * @deny (create, update, delete) - No user can create, update, or delete package categories via client-side rules.
-     * @principle Provides public read access with restricted writes.
-     */
-    match /config/package_categories/{categoryId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
-    }
   }
 }
