@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Home } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { signInWithPopup, GoogleAuthProvider, RecaptchaVerifier, signInWithPhoneNumber, onAuthStateChanged, User } from 'firebase/auth';
+import { signInWithPopup, GoogleAuthProvider, RecaptchaVerifier, signInWithPhoneNumber, onAuthStateChanged, User, PhoneAuthProvider } from 'firebase/auth';
 import { useAuth } from '@/firebase';
 import { createCustomer, getCustomer } from '@/lib/services';
 import { GoogleIcon } from '@/components/icons';
@@ -23,6 +23,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import { ClientOnly } from '@/components/ClientOnly';
 
 const phoneSchema = z.object({
   phone: z.string().regex(/^\d{10}$/, 'Please enter a valid 10-digit phone number.'),
@@ -110,6 +111,7 @@ export default function CustomerLoginPage() {
     }, [auth, router]);
     
     const getOtpLimit = (): OtpLimit | null => {
+        if (typeof window === 'undefined') return null;
         const item = localStorage.getItem(`otp_limit_${phoneNumber}`);
         if (!item) return null;
         const limit: OtpLimit = JSON.parse(item);
@@ -122,6 +124,7 @@ export default function CustomerLoginPage() {
     };
 
     const setOtpLimitData = (phone: string) => {
+        if (typeof window === 'undefined') return;
         const existingLimit = getOtpLimit();
         const newCount = (existingLimit?.count || 0) + 1;
         const newExpiry = existingLimit?.expiry || new Date().getTime() + 2 * 60 * 60 * 1000; // 2 hours from now
@@ -238,128 +241,130 @@ export default function CustomerLoginPage() {
     }
 
     return (
-        <>
-            <div className="w-full flex items-center justify-center min-h-screen bg-gradient-to-br from-primary/10 via-secondary/20 to-accent/10">
-                 <div className="mx-auto grid w-[400px] gap-6 bg-background p-8 rounded-lg shadow-2xl">
-                    <div className="grid gap-2 text-center">
-                        <h1 className="text-3xl font-bold text-primary font-headline">Welcome to UtsavLook</h1>
-                        <p className="text-balance text-muted-foreground">Sign in or create an account to continue</p>
-                    </div>
-                    
-                    {step === 'phone' && (
-                      <Form {...phoneForm}>
-                        <form onSubmit={phoneForm.handleSubmit(handlePhoneSubmit)} className="grid gap-4">
-                            <FormField control={phoneForm.control} name="phone" render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Phone Number</FormLabel>
-                                    <div className="flex items-center">
-                                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm h-10">+91</span>
-                                        <FormControl><Input type="tel" placeholder="9876543210" {...field} className="rounded-l-none" disabled={isOtpSendDisabled} /></FormControl>
-                                    </div>
-                                    <FormMessage />
-                                </FormItem>
-                            )} />
-                            <Button type="submit" className="w-full" disabled={isSubmitting || isOtpSendDisabled}>
-                                {isSubmitting ? 'Sending OTP...' : (isOtpSendDisabled ? 'OTP Limit Reached' : 'Send OTP')}
-                            </Button>
-                        </form>
-                      </Form>
-                    )}
-
-                    {step === 'otp' && (
-                         <Form {...otpForm}>
-                            <form onSubmit={otpForm.handleSubmit(handleOtpSubmit)} className="grid gap-4 text-center">
-                                <FormField control={otpForm.control} name="otp" render={({ field }) => (
+        <ClientOnly>
+            <>
+                <div className="w-full flex items-center justify-center min-h-screen bg-gradient-to-br from-primary/10 via-secondary/20 to-accent/10">
+                     <div className="mx-auto grid w-[400px] gap-6 bg-background p-8 rounded-lg shadow-2xl">
+                        <div className="grid gap-2 text-center">
+                            <h1 className="text-3xl font-bold text-primary font-headline">Welcome to UtsavLook</h1>
+                            <p className="text-balance text-muted-foreground">Sign in or create an account to continue</p>
+                        </div>
+                        
+                        {step === 'phone' && (
+                          <Form {...phoneForm}>
+                            <form onSubmit={phoneForm.handleSubmit(handlePhoneSubmit)} className="grid gap-4">
+                                <FormField control={phoneForm.control} name="phone" render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Enter OTP sent to {phoneNumber}</FormLabel>
-                                        <FormControl>
-                                            <div className="flex justify-center">
-                                                <InputOTP maxLength={6} {...field}>
-                                                    <InputOTPGroup>
-                                                    <InputOTPSlot index={0} />
-                                                    <InputOTPSlot index={1} />
-                                                    <InputOTPSlot index={2} />
-                                                    <InputOTPSlot index={3} />
-                                                    <InputOTPSlot index={4} />
-                                                    <InputOTPSlot index={5} />
-                                                    </InputOTPGroup>
-                                                </InputOTP>
-                                            </div>
-                                        </FormControl>
+                                        <FormLabel>Phone Number</FormLabel>
+                                        <div className="flex items-center">
+                                            <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm h-10">+91</span>
+                                            <FormControl><Input type="tel" placeholder="9876543210" {...field} className="rounded-l-none" disabled={isOtpSendDisabled} /></FormControl>
+                                        </div>
                                         <FormMessage />
                                     </FormItem>
                                 )} />
-                                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                                    {isSubmitting ? 'Verifying...' : 'Verify & Login'}
+                                <Button type="submit" className="w-full" disabled={isSubmitting || isOtpSendDisabled}>
+                                    {isSubmitting ? 'Sending OTP...' : (isOtpSendDisabled ? 'OTP Limit Reached' : 'Send OTP')}
                                 </Button>
-                                <div className="text-sm text-muted-foreground">
-                                    Didn't receive OTP? 
-                                    <Button variant="link" type="button" onClick={handleResendOtp} disabled={timer > 0}>
-                                        Resend {timer > 0 ? `in ${timer}s` : ''}
-                                    </Button>
-                                </div>
                             </form>
-                         </Form>
-                    )}
-                    
-                     {isOtpSendDisabled && (
-                        <p className="text-center text-sm text-destructive">
-                            You have exceeded the maximum OTP attempts. Please try again after 2 hours or use Google sign-in.
-                        </p>
-                    )}
+                          </Form>
+                        )}
 
-                    <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t" />
+                        {step === 'otp' && (
+                             <Form {...otpForm}>
+                                <form onSubmit={otpForm.handleSubmit(handleOtpSubmit)} className="grid gap-4 text-center">
+                                    <FormField control={otpForm.control} name="otp" render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Enter OTP sent to {phoneNumber}</FormLabel>
+                                            <FormControl>
+                                                <div className="flex justify-center">
+                                                    <InputOTP maxLength={6} {...field}>
+                                                        <InputOTPGroup>
+                                                        <InputOTPSlot index={0} />
+                                                        <InputOTPSlot index={1} />
+                                                        <InputOTPSlot index={2} />
+                                                        <InputOTPSlot index={3} />
+                                                        <InputOTPSlot index={4} />
+                                                        <InputOTPSlot index={5} />
+                                                        </InputOTPGroup>
+                                                    </InputOTP>
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} />
+                                     <Button type="submit" className="w-full" disabled={isSubmitting}>
+                                        {isSubmitting ? 'Verifying...' : 'Verify & Login'}
+                                    </Button>
+                                    <div className="text-sm text-muted-foreground">
+                                        Didn't receive OTP? 
+                                        <Button variant="link" type="button" onClick={handleResendOtp} disabled={timer > 0}>
+                                            Resend {timer > 0 ? `in ${timer}s` : ''}
+                                        </Button>
+                                    </div>
+                                </form>
+                             </Form>
+                        )}
+                        
+                         {isOtpSendDisabled && (
+                            <p className="text-center text-sm text-destructive">
+                                You have exceeded the maximum OTP attempts. Please try again after 2 hours or use Google sign-in.
+                            </p>
+                        )}
+
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                                <span className="w-full border-t" />
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+                            </div>
                         </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+
+                        <Button variant="outline" onClick={handleGoogleLogin}>
+                            <GoogleIcon className="mr-2 h-5 w-5"/> Continue with Google
+                        </Button>
+
+                        <div className="mt-4 text-center text-sm">
+                            <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors">
+                                <Home className="mr-1 h-4 w-4" /> Back to Home
+                            </Link>
                         </div>
                     </div>
-
-                    <Button variant="outline" onClick={handleGoogleLogin}>
-                        <GoogleIcon className="mr-2 h-5 w-5"/> Continue with Google
-                    </Button>
-
-                    <div className="mt-4 text-center text-sm">
-                        <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-primary transition-colors">
-                            <Home className="mr-1 h-4 w-4" /> Back to Home
-                        </Link>
-                    </div>
+                    <div id="recaptcha-container" style={{ position: 'absolute', zIndex: -1, opacity: 0, bottom: 0, right: 0 }}></div>
                 </div>
-                <div id="recaptcha-container" style={{ position: 'absolute', zIndex: -1, opacity: 0, bottom: 0, right: 0 }}></div>
-            </div>
 
-            <Dialog open={isNameModalOpen} onOpenChange={(open) => !open && router.push('/')}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Welcome to UtsavLook!</DialogTitle>
-                        <DialogDescription>Let's complete your profile. Please enter your full name.</DialogDescription>
-                    </DialogHeader>
-                    <Form {...nameForm}>
-                        <form onSubmit={nameForm.handleSubmit(handleNameSubmit)} className="space-y-4">
-                            <FormField
-                                control={nameForm.control}
-                                name="fullName"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Full Name</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="Enter your name" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <DialogFooter>
-                                <Button type="submit" disabled={nameForm.formState.isSubmitting}>
-                                    {nameForm.formState.isSubmitting ? "Saving..." : "Complete Profile"}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </Form>
-                </DialogContent>
-            </Dialog>
-        </>
+                <Dialog open={isNameModalOpen} onOpenChange={(open) => !open && router.push('/')}>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Welcome to UtsavLook!</DialogTitle>
+                            <DialogDescription>Let's complete your profile. Please enter your full name.</DialogDescription>
+                        </DialogHeader>
+                        <Form {...nameForm}>
+                            <form onSubmit={nameForm.handleSubmit(handleNameSubmit)} className="space-y-4">
+                                <FormField
+                                    control={nameForm.control}
+                                    name="fullName"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Full Name</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="Enter your name" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <DialogFooter>
+                                    <Button type="submit" disabled={nameForm.formState.isSubmitting}>
+                                        {nameForm.formState.isSubmitting ? "Saving..." : "Complete Profile"}
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </Form>
+                    </DialogContent>
+                </Dialog>
+            </>
+        </ClientOnly>
     );
 }

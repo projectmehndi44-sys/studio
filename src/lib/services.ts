@@ -1,3 +1,4 @@
+
 import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, query, where, deleteDoc, Timestamp, onSnapshot, Unsubscribe, runTransaction, Query } from 'firebase/firestore';
 import type { Artist, Booking, Customer, MasterServicePackage, PayoutHistory, TeamMember, Notification, Promotion, ImagePlaceholder, BenefitImage, HeroSettings, FinancialSettings } from '@/lib/types';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
@@ -464,5 +465,3 @@ export const saveMasterServices = (packages: MasterServicePackage[]) => {
     // This now calls the secure cloud function to update the config.
     return setConfigDocument('masterServices', { packages });
 };
-
-export { getDb };

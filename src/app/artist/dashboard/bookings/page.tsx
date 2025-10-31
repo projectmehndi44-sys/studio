@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -15,7 +16,7 @@ import { BookingDetailsModal } from '@/components/utsavlook/BookingDetailsModal'
 import { callFirebaseFunction } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { query, collection, where } from 'firebase/firestore';
-import { getDb } from '@/firebase';
+import { db } from '@/firebase';
 
 
 export default function ArtistBookingsPage() {
@@ -31,7 +32,6 @@ export default function ArtistBookingsPage() {
         if (!artist) return;
         setIsLoading(true);
 
-        const db = getDb();
         const bookingsQuery = query(collection(db, 'bookings'), where('artistIds', 'array-contains', artist.id));
         
         const unsub = listenToCollection<Booking>('bookings', (artistBookings) => {

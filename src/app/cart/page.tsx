@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -14,7 +15,8 @@ import { Separator } from "@/components/ui/separator";
 import type { CartItem, Customer, Artist, Promotion, TeamMember, Booking } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { getCustomer, getAvailableLocations, listenToCollection, getPromotions, getTeamMembers, updateCustomer } from '@/lib/services';
-import { Timestamp, RecaptchaVerifier, signInWithPhoneNumber, PhoneAuthProvider } from 'firebase/firestore';
+import { Timestamp, } from 'firebase/firestore';
+import { RecaptchaVerifier, signInWithPhoneNumber, PhoneAuthProvider } from 'firebase/auth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { IndianRupee, ShieldCheck, Info, AlertCircle, CheckCircle, X, Tag, Home, Loader2, ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';

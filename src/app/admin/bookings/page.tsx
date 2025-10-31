@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -30,7 +29,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getDb } from '@/firebase';
+import { db } from '@/firebase';
 
 
 function getSafeDate(date: any): Date {
@@ -64,7 +63,6 @@ export default function BookingManagementPage() {
         const unsubscribeArtists = listenToCollection<Artist>('artists', setArtists);
         
         // Admin can listen to all bookings, so we create a simple query for the collection.
-        const db = getDb();
         const bookingsQuery = query(collection(db, 'bookings'));
         const unsubscribeBookings = listenToCollection<Booking>('bookings', (data) => {
             setBookings(data.sort((a, b) => getSafeDate(b.eventDate).getTime() - getSafeDate(a.eventDate).getTime()));

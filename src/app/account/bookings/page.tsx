@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -21,7 +22,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Separator } from '@/components/ui/separator';
-import { getDb } from '@/firebase';
+import { db } from '@/firebase';
 import { query, collection, where } from 'firebase/firestore';
 
 export default function MyBookingsPage() {
@@ -40,7 +41,6 @@ export default function MyBookingsPage() {
         if (user) {
             getCustomer(user.uid).then(setCustomer);
 
-            const db = getDb();
             const bookingsQuery = query(collection(db, 'bookings'), where('customerId', '==', user.uid));
             
             const unsub = listenToCollection<Booking>('bookings', (userBookings) => {

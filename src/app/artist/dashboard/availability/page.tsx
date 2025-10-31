@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -11,7 +12,7 @@ import type { Booking } from '@/lib/types';
 import { listenToCollection, updateArtist } from '@/lib/services';
 import { getSafeDate } from '@/lib/utils';
 import { query, collection, where } from 'firebase/firestore';
-import { getDb } from '@/firebase';
+import { db } from '@/firebase';
 
 export default function ArtistAvailabilityPage() {
     const { artist } = useArtistPortal();
@@ -26,7 +27,6 @@ export default function ArtistAvailabilityPage() {
         setIsLoading(true);
         setUnavailableDates((artist.unavailableDates || []).map(d => getSafeDate(d)));
 
-        const db = getDb();
         const bookingsQuery = query(collection(db, 'bookings'), where('artistIds', 'array-contains', artist.id));
         const unsub = listenToCollection<Booking>('bookings', (artistBookings) => {
             setBookings(artistBookings);
