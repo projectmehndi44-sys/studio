@@ -19,6 +19,7 @@ import { sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/aut
 import { useAdminAuth } from '@/firebase/auth/use-admin-auth';
 import { useAuth } from '@/firebase';
 import { callFirebaseFunction } from '@/lib/firebase';
+import { ClientOnly } from '@/components/ClientOnly';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
@@ -111,6 +112,7 @@ export default function AdminLoginPage() {
     return (
         <>
             <div className="w-full flex items-center justify-center min-h-screen bg-muted/30">
+                <ClientOnly>
                  <div className="mx-auto grid w-[400px] gap-6">
                     <div className="grid gap-2 text-center">
                         <h1 className="text-3xl font-bold text-primary">Admin Portal Login</h1>
@@ -144,6 +146,7 @@ export default function AdminLoginPage() {
                         </Link>
                     </div>
                 </div>
+                </ClientOnly>
             </div>
            
             <Dialog open={isForgotPasswordOpen} onOpenChange={setIsForgotPasswordOpen}>
