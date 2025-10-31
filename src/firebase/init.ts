@@ -48,5 +48,5 @@ export function getFirebaseServices(): FirebaseServices {
 }
 
 // Export individual services for direct import if needed
-const { firebaseApp: app, auth, db } = getFirebaseServices();
-export { app, auth, db };
+const { firebaseApp: app, auth, firestore, db } = getFirebaseServices();
+export { app, auth, firestore, db };
