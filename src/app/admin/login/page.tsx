@@ -15,10 +15,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Home } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { getAuth, sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
-import { getFirebaseApp } from '@/lib/firebase';
+import { sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
 import { getTeamMembers } from '@/lib/services';
 import { useAdminAuth } from '@/firebase/auth/use-admin-auth';
+import { useAuth } from '@/firebase';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
@@ -30,7 +30,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function AdminLoginPage() {
     const router = useRouter();
     const { toast } = useToast();
-    const auth = getAuth(getFirebaseApp());
+    const auth = useAuth();
     const { isAuthenticated, isLoading: isAuthLoading } = useAdminAuth();
     
     const [isForgotPasswordOpen, setIsForgotPasswordOpen] = React.useState(false);

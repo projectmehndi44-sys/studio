@@ -12,15 +12,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArtistProfileModal } from '@/components/utsavlook/ArtistProfileModal';
 import { Footer } from '@/components/utsavlook/Footer';
 import { ArtistCard } from '@/components/utsavlook/ArtistCard';
-import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirebaseApp } from '@/lib/firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { MehndiIcon, MakeupIcon, PhotographyIcon } from '@/components/icons';
+import { useAuth } from '@/firebase';
 
 
 export default function ArtistsPage() {
   const router = useRouter();
+  const auth = useAuth();
   const [allArtists, setAllArtists] = React.useState<Artist[]>([]);
   const [filteredArtists, setFilteredArtists] = React.useState<Artist[]>([]);
   
@@ -39,7 +40,7 @@ export default function ArtistsPage() {
   const { toast } = useToast();
 
    const handleCustomerLogout = () => {
-    signOut(getAuth(getFirebaseApp()));
+    signOut(auth);
     toast({
       title: 'Logged Out',
       description: 'You have been successfully logged out.',
@@ -47,7 +48,6 @@ export default function ArtistsPage() {
   };
 
   React.useEffect(() => {
-    const auth = getAuth(getFirebaseApp());
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const currentCustomer = await getCustomer(user.uid);
@@ -77,7 +77,7 @@ export default function ArtistsPage() {
         unsubscribeArtists();
         unsubscribeAuth();
     };
-  }, []);
+  }, [auth]);
 
   React.useEffect(() => {
     let artistsToFilter = allArtists;

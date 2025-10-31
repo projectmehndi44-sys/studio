@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -210,7 +211,7 @@ export default function CustomerLoginPage() {
             // After name submission, redirect to dashboard
             router.push('/account');
         } catch (error) {
-            toast({ title: "Profile Update Failed", description: "Could not save your name. Please try again.", variant: 'destructive' });
+            toast({ title: "Profile Update Failed", description: "Could not save your name. Please try again.", variant: "destructive" });
         }
     }
 

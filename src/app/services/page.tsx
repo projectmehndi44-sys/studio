@@ -10,16 +10,17 @@ import { useToast } from '@/hooks/use-toast';
 import { Packages } from '@/components/utsavlook/Packages';
 import { useRouter } from 'next/navigation';
 import { ServiceSelectionModal } from '@/components/utsavlook/ServiceSelectionModal';
-import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
-import { getFirebaseApp } from '@/lib/firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MehndiIcon, MakeupIcon, PhotographyIcon } from '@/components/icons';
+import { useAuth } from '@/firebase';
 
 
 export default function ServicesPage() {
   const router = useRouter();
+  const auth = useAuth();
   const [artists, setArtists] = React.useState<Artist[]>([]);
   const [masterServices, setMasterServices] = React.useState<MasterServicePackage[]>([]);
   const [filteredServices, setFilteredServices] = React.useState<MasterServicePackage[]>([]);
@@ -41,7 +42,7 @@ export default function ServicesPage() {
   const { toast } = useToast();
 
    const handleCustomerLogout = () => {
-    signOut(getAuth(getFirebaseApp()));
+    signOut(auth);
     toast({
       title: 'Logged Out',
       description: 'You have been successfully logged out.',
@@ -49,7 +50,6 @@ export default function ServicesPage() {
   };
 
   React.useEffect(() => {
-    const auth = getAuth(getFirebaseApp());
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
         const currentCustomer = await getCustomer(user.uid);
@@ -94,7 +94,7 @@ export default function ServicesPage() {
         unsubscribeArtists();
         unsubscribeAuth();
     };
-  }, []);
+  }, [auth]);
 
   React.useEffect(() => {
     let servicesToFilter = masterServices;

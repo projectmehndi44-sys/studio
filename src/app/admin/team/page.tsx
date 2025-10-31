@@ -23,8 +23,7 @@ import { useAdminAuth } from '@/firebase/auth/use-admin-auth';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { getTeamMembers, addOrUpdateTeamMember, deleteTeamMember } from '@/lib/services';
 import { createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
-import { getAuth } from 'firebase/auth';
-import { getFirebaseApp } from '@/lib/firebase';
+import { useAuth } from '@/firebase';
 
 
 const memberSchema = z.object({
@@ -54,7 +53,7 @@ export default function TeamManagementPage() {
     const { user } = useAdminAuth();
     const [teamMembers, setTeamMembers] = React.useState<TeamMember[]>([]);
     const [editingMember, setEditingMember] = React.useState<TeamMember | null>(null);
-    const auth = getAuth(getFirebaseApp());
+    const auth = useAuth();
 
     const form = useForm<MemberFormValues>({
         resolver: zodResolver(memberSchema),
