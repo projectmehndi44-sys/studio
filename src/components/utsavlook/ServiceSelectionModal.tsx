@@ -225,26 +225,32 @@ export function ServiceSelectionModal({ service, artists, isOpen, onOpenChange, 
                          </Carousel>
                     </div>
                     <h3 className="text-lg font-semibold text-center">Select a Tier</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {service.categories.map(category => (
-                            <Card key={category.name} className="flex flex-col overflow-hidden hover:border-primary transition-all cursor-pointer" onClick={() => handleSelectCategory(category)}>
-                                {category.image && (
-                                    <div className="relative w-full aspect-video">
-                                        <Image src={category.image} alt={category.name} fill className="object-cover"/>
+                    <Carousel opts={{ align: "start" }} className="w-full">
+                        <CarouselContent className="-ml-4">
+                            {service.categories.map(category => (
+                                <CarouselItem key={category.name} className="pl-4 md:basis-1/2 lg:basis-1/3">
+                                    <div className="p-1 h-full">
+                                        <Card className="flex flex-col overflow-hidden hover:border-primary transition-all cursor-pointer h-full" onClick={() => handleSelectCategory(category)}>
+                                            {category.image && (
+                                                <div className="relative w-full aspect-video">
+                                                    <Image src={category.image} alt={category.name} fill className="object-cover"/>
+                                                </div>
+                                            )}
+                                            <CardHeader>
+                                                <CardTitle className="font-headline text-2xl text-primary">{category.name}</CardTitle>
+                                                <CardDescription>{category.description}</CardDescription>
+                                            </CardHeader>
+                                            <CardContent className="flex-grow"></CardContent>
+                                            <CardFooter className="flex-col items-start gap-2 p-4 mt-auto">
+                                                <p className="text-xs text-muted-foreground">Starts from</p>
+                                                <p className="font-bold text-xl flex items-center"><IndianRupee className="w-4 h-4 mr-1"/>{category.basePrice.toLocaleString()}</p>
+                                            </CardFooter>
+                                        </Card>
                                     </div>
-                                )}
-                                <CardHeader>
-                                    <CardTitle className="font-headline text-2xl text-primary">{category.name}</CardTitle>
-                                    <CardDescription>{category.description}</CardDescription>
-                                </CardHeader>
-                                <CardContent className="flex-grow"></CardContent>
-                                <CardFooter className="flex-col items-start gap-2 p-4">
-                                    <p className="text-xs text-muted-foreground">Starts from</p>
-                                    <p className="font-bold text-xl flex items-center"><IndianRupee className="w-4 h-4 mr-1"/>{category.basePrice.toLocaleString()}</p>
-                                </CardFooter>
-                            </Card>
-                        ))}
-                    </div>
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                    </Carousel>
                 </div>
             );
         case 'artist':
@@ -298,5 +304,3 @@ export function ServiceSelectionModal({ service, artists, isOpen, onOpenChange, 
     </Dialog>
   );
 }
-
-    
