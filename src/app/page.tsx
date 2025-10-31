@@ -421,7 +421,7 @@ export default function Home() {
               <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed mx-auto">We don't just list services; we build trust and create experiences.</p>
             </div>
             
-             <div className="grid grid-cols-3 gap-4 text-center my-12 max-w-4xl mx-auto">
+            <div className="grid grid-cols-3 gap-4 text-center my-12 max-w-4xl mx-auto">
                 <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-background/50 shadow-md">
                     <Heart className="w-8 h-8 text-primary mb-2"/>
                     <span className="text-3xl md:text-4xl"><AnimatedCounter endValue={1500} /></span>
@@ -438,7 +438,7 @@ export default function Home() {
                     <p className="text-sm md:text-base text-muted-foreground">Average Rating</p>
                 </div>
             </div>
-
+            
             <Carousel
               opts={{ align: "start", loop: true }}
               className="w-full"
