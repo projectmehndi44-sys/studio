@@ -21,7 +21,7 @@ import {
   Users
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { format, parseISO, isValid } from 'date-fns';
 import { Timestamp } from 'firebase/firestore';
