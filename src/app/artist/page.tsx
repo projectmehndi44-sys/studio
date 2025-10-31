@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils';
 import { Parallax } from 'react-scroll-parallax';
 import { ParallaxProvider } from 'react-scroll-parallax';
 import { artistHeroImages } from '@/lib/artist-hero-images';
+import { Card } from '@/components/ui/card';
 
 const benefitIcons: { [key: string]: React.ReactNode } = {
     "set-your-own-price": <IndianRupee className="w-8 h-8 text-primary" />,
@@ -394,11 +395,11 @@ export default function ArtistHomePage() {
                         </div>
                         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
                             {howItWorksSteps.map(step => (
-                                <div key={step.title} className="text-center flex flex-col items-center p-4">
+                                <Card key={step.title} className="text-center flex flex-col items-center p-6 bg-secondary/30 shadow-brand hover:shadow-brand-lg transition-all duration-300 hover:-translate-y-2">
                                     <div className="flex items-center justify-center bg-primary/10 rounded-full h-16 w-16 mb-4">{step.icon}</div>
                                     <h3 className="text-xl font-bold">{step.title}</h3>
-                                    <p className="text-muted-foreground mt-2 text-sm">{step.description}</p>
-                                </div>
+                                    <p className="text-muted-foreground mt-2 text-sm flex-grow">{step.description}</p>
+                                </Card>
                             ))}
                         </div>
                     </div>
