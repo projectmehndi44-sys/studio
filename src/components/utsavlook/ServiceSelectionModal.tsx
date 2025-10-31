@@ -209,13 +209,13 @@ export function ServiceSelectionModal({ service, artists, isOpen, onOpenChange, 
              return (
                  <div className="py-4 space-y-6">
                     <div>
-                         <h3 className="text-lg font-semibold text-center mb-2">Inspiration Gallery</h3>
+                         <h3 className="text-lg font-semibold text-center mb-4">Inspiration Gallery</h3>
                          <Carousel opts={{ align: "start", loop: true }} className="w-full">
                             <CarouselContent>
                                 {inspirationImages.map((src, i) => (
                                     <CarouselItem key={i} className="md:basis-1/3 lg:basis-1/4">
                                         <div className="p-1">
-                                            <div className="aspect-square relative rounded-lg overflow-hidden">
+                                            <div className="aspect-[4/3] relative rounded-lg overflow-hidden">
                                                  <Image src={src} alt={`Inspiration ${i}`} fill className="object-cover" />
                                             </div>
                                         </div>
@@ -225,32 +225,26 @@ export function ServiceSelectionModal({ service, artists, isOpen, onOpenChange, 
                          </Carousel>
                     </div>
                     <h3 className="text-lg font-semibold text-center">Select a Tier</h3>
-                    <Carousel opts={{ align: "start" }} className="w-full">
-                        <CarouselContent className="-ml-4">
-                            {service.categories.map(category => (
-                                <CarouselItem key={category.name} className="pl-4 md:basis-1/2 lg:basis-1/3">
-                                    <div className="p-1 h-full">
-                                        <Card className="flex flex-col overflow-hidden hover:border-primary transition-all cursor-pointer h-full" onClick={() => handleSelectCategory(category)}>
-                                            {category.image && (
-                                                <div className="relative w-full aspect-video">
-                                                    <Image src={category.image} alt={category.name} fill className="object-cover"/>
-                                                </div>
-                                            )}
-                                            <CardHeader>
-                                                <CardTitle className="font-headline text-2xl text-primary">{category.name}</CardTitle>
-                                                <CardDescription>{category.description}</CardDescription>
-                                            </CardHeader>
-                                            <CardContent className="flex-grow"></CardContent>
-                                            <CardFooter className="flex-col items-start gap-2 p-4 mt-auto">
-                                                <p className="text-xs text-muted-foreground">Starts from</p>
-                                                <p className="font-bold text-xl flex items-center"><IndianRupee className="w-4 h-4 mr-1"/>{category.basePrice.toLocaleString()}</p>
-                                            </CardFooter>
-                                        </Card>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {service.categories.map(category => (
+                            <Card key={category.name} className="flex flex-col overflow-hidden hover:border-primary transition-all cursor-pointer" onClick={() => handleSelectCategory(category)}>
+                                {category.image && (
+                                    <div className="relative w-full aspect-[4/3]">
+                                        <Image src={category.image} alt={category.name} fill className="object-cover"/>
                                     </div>
-                                </CarouselItem>
-                            ))}
-                        </CarouselContent>
-                    </Carousel>
+                                )}
+                                <CardHeader className="p-4">
+                                    <CardTitle className="font-headline text-xl text-primary">{category.name}</CardTitle>
+                                    <CardDescription>{category.description}</CardDescription>
+                                </CardHeader>
+                                <CardContent className="flex-grow p-4 pt-0"></CardContent>
+                                <CardFooter className="flex-col items-start gap-1 p-4 mt-auto border-t bg-muted/50">
+                                    <p className="text-xs text-muted-foreground">Starts from</p>
+                                    <p className="font-bold text-lg flex items-center"><IndianRupee className="w-4 h-4 mr-1"/>{category.basePrice.toLocaleString()}</p>
+                                </CardFooter>
+                            </Card>
+                        ))}
+                    </div>
                 </div>
             );
         case 'artist':
