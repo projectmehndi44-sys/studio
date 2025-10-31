@@ -383,6 +383,10 @@ export const verifyAdminLogin = functions.https.onCall(async (data, context) => 
   }
   const uid = context.auth.uid;
   const email = context.auth.token.email;
+  
+  if (!email) {
+      throw new functions.https.HttpsError("invalid-argument", "The user must have an email address.");
+  }
 
   const teamMembersRef = db.collection("teamMembers");
 
@@ -422,3 +426,6 @@ export const verifyAdminLogin = functions.https.onCall(async (data, context) => 
 
 
 
+
+
+    
