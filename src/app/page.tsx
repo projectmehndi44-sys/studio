@@ -13,6 +13,9 @@ import {
   BookOpen,
   CalendarCheck,
   ShieldCheck,
+  Star,
+  Users,
+  Heart,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Header } from '@/components/utsavlook/Header';
@@ -35,6 +38,55 @@ import { ArtistProfileModal } from '@/components/utsavlook/ArtistProfileModal';
 import { useAuth, useUser } from '@/firebase';
 
 const occasionWords = occasionImages.map(img => img.occasion);
+
+const AnimatedCounter = ({ endValue, duration = 2000 }: { endValue: number; duration?: number }) => {
+    const [count, setCount] = React.useState(0);
+    const counterRef = React.useRef<HTMLSpanElement>(null);
+
+    const easeOutQuad = (t: number) => t * (2 - t);
+
+    React.useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    let startTime: number | null = null;
+                    const animateCount = (timestamp: number) => {
+                        if (!startTime) startTime = timestamp;
+                        const progress = timestamp - startTime;
+                        const progressFraction = Math.min(progress / duration, 1);
+                        const easedProgress = easeOutQuad(progressFraction);
+                        const currentCount = Math.floor(easedProgress * endValue);
+                        setCount(currentCount);
+
+                        if (progress < duration) {
+                            requestAnimationFrame(animateCount);
+                        }
+                    };
+                    requestAnimationFrame(animateCount);
+                    observer.disconnect();
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        if (counterRef.current) {
+            observer.observe(counterRef.current);
+        }
+
+        return () => {
+            if (counterRef.current) {
+                observer.unobserve(counterRef.current);
+            }
+        };
+    }, [endValue, duration]);
+
+    return (
+        <span ref={counterRef} className="animated-gradient-text font-bold">
+            {count.toLocaleString()}+
+        </span>
+    );
+};
+
 
 export default function Home() {
   const router = useRouter();
@@ -370,6 +422,25 @@ export default function Home() {
               <h2 className="animated-gradient-text text-3xl font-bold tracking-tighter sm:text-5xl font-headline mb-4 title-3d-effect">Why Choose UtsavLook?</h2>
               <p className="max-w-[900px] text-muted-foreground md:text-xl/relaxed mx-auto">We don't just list services; we build trust and create experiences.</p>
             </div>
+            
+             <div className="grid grid-cols-3 gap-4 text-center my-12 max-w-4xl mx-auto">
+                <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-background/50">
+                    <Heart className="w-8 h-8 text-primary mb-2"/>
+                    <span className="text-3xl md:text-4xl"><AnimatedCounter endValue={1500} /></span>
+                    <p className="text-sm md:text-base text-muted-foreground">Happy Customers</p>
+                </div>
+                <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-background/50">
+                    <Users className="w-8 h-8 text-primary mb-2"/>
+                    <span className="text-3xl md:text-4xl"><AnimatedCounter endValue={250} /></span>
+                    <p className="text-sm md:text-base text-muted-foreground">Verified Artists</p>
+                </div>
+                 <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-background/50">
+                    <Star className="w-8 h-8 text-amber-400 fill-amber-400 mb-2"/>
+                    <span className="animated-gradient-text font-bold text-3xl md:text-4xl">4.9/5</span>
+                    <p className="text-sm md:text-base text-muted-foreground">Average Rating</p>
+                </div>
+            </div>
+
             <Carousel
               opts={{ align: "start", loop: true }}
               className="w-full"
