@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -225,26 +224,34 @@ export function ServiceSelectionModal({ service, artists, isOpen, onOpenChange, 
                          </Carousel>
                     </div>
                     <h3 className="text-lg font-semibold text-center">Select a Tier</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {service.categories.map(category => (
-                            <Card key={category.name} className="flex flex-col overflow-hidden hover:border-primary transition-all cursor-pointer" onClick={() => handleSelectCategory(category)}>
-                                {category.image && (
-                                    <div className="relative w-full aspect-[4/3]">
-                                        <Image src={category.image} alt={category.name} fill className="object-cover"/>
+                     <Carousel opts={{ align: "start" }} className="w-full">
+                        <CarouselContent className="-ml-4">
+                            {service.categories.map((category) => (
+                               <CarouselItem key={category.name} className="pl-4 md:basis-1/2 lg:basis-1/3">
+                                    <div 
+                                        className="h-full p-1 cursor-pointer group"
+                                        onClick={() => handleSelectCategory(category)}
+                                    >
+                                        <div className="relative rounded-2xl overflow-hidden h-full flex flex-col justify-end text-white bg-black/30 shadow-lg transition-all duration-300 group-hover:scale-105">
+                                            {category.image && (
+                                                <Image 
+                                                    src={category.image} 
+                                                    alt={category.name} 
+                                                    fill 
+                                                    className="object-cover -z-10 group-hover:brightness-75 transition-all duration-300"
+                                                />
+                                            )}
+                                            <div className="p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
+                                                <h4 className="font-headline text-2xl font-bold">{category.name}</h4>
+                                                <p className="text-sm text-white/90 line-clamp-2">{category.description}</p>
+                                                 <p className="font-bold text-lg flex items-center mt-2"><IndianRupee className="w-4 h-4 mr-1"/>{category.basePrice.toLocaleString()}<span className="text-xs font-normal ml-1">onwards</span></p>
+                                            </div>
+                                        </div>
                                     </div>
-                                )}
-                                <CardHeader className="p-4">
-                                    <CardTitle className="font-headline text-xl text-primary">{category.name}</CardTitle>
-                                    <CardDescription>{category.description}</CardDescription>
-                                </CardHeader>
-                                <CardContent className="flex-grow p-4 pt-0"></CardContent>
-                                <CardFooter className="flex-col items-start gap-1 p-4 mt-auto border-t bg-muted/50">
-                                    <p className="text-xs text-muted-foreground">Starts from</p>
-                                    <p className="font-bold text-lg flex items-center"><IndianRupee className="w-4 h-4 mr-1"/>{category.basePrice.toLocaleString()}</p>
-                                </CardFooter>
-                            </Card>
-                        ))}
-                    </div>
+                               </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                     </Carousel>
                 </div>
             );
         case 'artist':
