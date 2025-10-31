@@ -253,14 +253,14 @@ export default function Home() {
       icon: <CalendarCheck className="w-8 h-8 text-primary" />,
       title: "Effortless Booking",
       description: "From discovery to booking, our streamlined process makes finding and confirming your artist faster and easier than ever before.",
-      imageUrl: "https://firebasestorage.googleapis.com/v0/b/studio-163529036-f9a8c.firebasestorage.app/o/why-choose-us-icons%2FIntelligent%20Scheduling.png?alt=media&token=7da7a0e4-fc2e-4e26-ad2c-d8a056b84db7",
+      imageUrl: "https://firebasestorage.googleapis.com/v0/b/studio-163529036-f9a8c.firebasestorage.app/o/why-choose-us-icons%2FEffortless%20Booking.png?alt=media&token=904ae217-f00d-4e29-a3c0-6c191188793e",
       aiHint: "easy booking",
     },
     {
       icon: <Heart className="w-8 h-8 text-primary" />,
       title: "Curated for You",
       description: "We don't just list artists; we curate a selection of the best talent, ensuring you always get a high-quality, memorable experience.",
-      imageUrl: "https://firebasestorage.googleapis.com/v0/b/studio-163529036-f9a8c.firebasestorage.app/o/why-choose-us-icons%2FDirect%20Client%20Communication.png?alt=media&token=e0e80753-3540-454e-902e-0cd0092ce315",
+      imageUrl: "https://firebasestorage.googleapis.com/v0/b/studio-163529036-f9a8c.firebasestorage.app/o/why-choose-us-icons%2FGemini_Generated_Image_2xjtga2xjtga2xjt.png?alt=media&token=4c811d53-dfad-4aef-90e9-cafe39d54f92",
       aiHint: "curated selection",
     },
     {
