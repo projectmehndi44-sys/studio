@@ -48,9 +48,9 @@ service cloud.firestore {
     // Team member roles can only be written by Super Admins.
     // An authenticated user can read their own team member document to know their permissions.
     match /teamMembers/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if isTeamMember(); // Allow other admins to see the list of team members
-      allow write: if isAuth() && get(/databases/$(database)/documents/teamMembers/$(request.auth.uid)).data.role == 'Super Admin';
+      allow get: if isOwner(userId) || get(/databases/$(database)/documents/teamMembers/$(request.auth.uid)).data.role == 'Super Admin';
+      allow list: if get(/databases/$(database)/documents/teamMembers/$(request.auth.uid)).data.role == 'Super Admin';
+      allow write: if get(/databases/$(database)/documents/teamMembers/$(request.auth.uid)).data.role == 'Super Admin';
     }
     
     // Notifications can be read only by the user they are intended for.

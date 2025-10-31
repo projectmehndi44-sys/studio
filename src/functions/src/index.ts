@@ -373,7 +373,10 @@ export const getPayoutHistory = functions.https.onCall(async (data, context) => 
 
 /**
  * Verifies if a logged-in user is a team member and handles the creation of the first Super Admin.
+ * This function also acts as a manual setup script for the specified Super Admin email.
  */
+const SUPER_ADMIN_EMAIL = 'utsavlook01@gmail.com';
+
 export const verifyAdminLogin = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "You must be logged in to verify admin status.");
@@ -384,11 +387,10 @@ export const verifyAdminLogin = functions.https.onCall(async (data, context) => 
   const teamMembersRef = db.collection("teamMembers");
 
   try {
-    const teamMembersSnapshot = await teamMembersRef.get();
-    const isFirstAdmin = teamMembersSnapshot.empty;
+    const userDoc = await teamMembersRef.doc(uid).get();
 
-    if (isFirstAdmin) {
-      // First user ever, automatically make them a Super Admin
+    // Check if the user is the designated Super Admin and their document doesn't exist
+    if (email === SUPER_ADMIN_EMAIL && !userDoc.exists) {
       const newSuperAdmin = {
         id: uid,
         name: context.auth.token.name || email || "Super Admin",
@@ -397,22 +399,23 @@ export const verifyAdminLogin = functions.https.onCall(async (data, context) => 
         permissions: initialSuperAdminPermissions,
       };
       await teamMembersRef.doc(uid).set(newSuperAdmin);
-      return { isAdmin: true, isFirstAdmin: true };
-    } else {
-      // Check if the current user exists in the teamMembers collection
-      const userDoc = await teamMembersRef.doc(uid).get();
-      if (userDoc.exists) {
-        return { isAdmin: true, isFirstAdmin: false };
-      } else {
-        return { isAdmin: false, isFirstAdmin: false };
-      }
+      return { isAdmin: true, isFirstAdmin: true }; // Signal that the first admin was just created
     }
+
+    // For any other user, just check if their document exists
+    if (userDoc.exists) {
+      return { isAdmin: true, isFirstAdmin: false };
+    } else {
+      return { isAdmin: false, isFirstAdmin: false };
+    }
+    
   } catch (error) {
     console.error("Error in verifyAdminLogin:", error);
     throw new functions.https.HttpsError("internal", "An error occurred while verifying admin status.");
   }
 });
     
+
 
 
 
