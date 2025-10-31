@@ -14,7 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal } from 'lucide-react';
 import { exportPayoutToPdf, generateGstInvoiceForPlatformFee } from '@/lib/export';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { useAdminAuth } from '@/firebase/auth/use-admin-auth';
 import { addDoc, collection } from 'firebase/firestore';
 import { getDb } from '@/lib/services';
 

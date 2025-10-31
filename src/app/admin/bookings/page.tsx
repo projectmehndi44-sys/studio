@@ -16,7 +16,7 @@ import { AssignArtistModal } from '@/components/utsavlook/AssignArtistModal';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format, parseISO, isValid } from 'date-fns';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { useAdminAuth } from '@/firebase/auth/use-admin-auth';
 import { Timestamp } from 'firebase/firestore';
 import { BookingDetailsModal } from '@/components/utsavlook/BookingDetailsModal';
 import { callFirebaseFunction } from '@/lib/firebase';

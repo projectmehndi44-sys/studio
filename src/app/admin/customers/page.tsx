@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from '@/components/ui/badge';
 import type { Customer } from '@/lib/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { useAdminAuth } from '@/firebase/auth/use-admin-auth';
 import { listenToCollection, updateCustomer, deleteCustomer } from '@/lib/services';
 import {
   AlertDialog,

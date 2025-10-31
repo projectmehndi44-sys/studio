@@ -13,7 +13,7 @@ import { User, Save } from 'lucide-react';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import type { TeamMember } from '@/lib/types';
 import { getTeamMembers, saveTeamMembers } from '@/lib/services';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { useAdminAuth } from '@/firebase/auth/use-admin-auth';
 
 
 const profileSchema = z.object({

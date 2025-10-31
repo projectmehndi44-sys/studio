@@ -18,7 +18,7 @@ import {
 import { listenToCollection, getFinancialSettings } from '@/lib/services';
 import type { Artist, Booking } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { useAdminAuth } from '@/firebase/auth/use-admin-auth';
 import { cn } from '@/lib/utils';
 import { Bar as BarRechart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Pie, Cell } from 'recharts';
 import { BarChart as BarChartComponent, PieChart as PieChartComponent } from 'recharts';

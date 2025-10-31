@@ -18,7 +18,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { getAuth, sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
 import { getFirebaseApp } from '@/lib/firebase';
 import { getTeamMembers } from '@/lib/services';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { useAdminAuth } from '@/firebase/auth/use-admin-auth';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),

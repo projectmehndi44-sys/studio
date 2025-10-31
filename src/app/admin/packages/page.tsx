@@ -16,7 +16,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import type { MasterServicePackage } from '@/lib/types';
 import NextImage from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { useAdminAuth } from '@/firebase/auth/use-admin-auth';
 import { Separator } from '@/components/ui/separator';
 import { doc, setDoc, addDoc, collection, deleteDoc } from 'firebase/firestore';
 import { getMasterServices, saveMasterServices } from '@/lib/services';

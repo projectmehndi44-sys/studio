@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Image as ImageIcon, Upload, Trash2, Save, PlusCircle, Gift, Megaphone, Loader2, Text, SlidersHorizontal } from 'lucide-react';
 import NextImage from 'next/image';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { useAdminAuth } from '@/firebase/auth/use-admin-auth';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import type { ImagePlaceholder, BenefitImage, HeroSettings } from '@/lib/types';
 import { getPlaceholderImages, savePlaceholderImages, getBenefitImages, saveBenefitImages, getPromotionalImage, savePromotionalImage, uploadSiteImage, deleteSiteImage, getHeroSettings, saveHeroSettings } from '@/lib/services';

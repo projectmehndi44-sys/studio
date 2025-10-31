@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -34,7 +35,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { AdminAuthProvider, useAdminAuth } from '@/hooks/use-admin-auth';
+import { AdminAuthProvider, useAdminAuth } from '@/firebase/auth/use-admin-auth';
 import type { Permissions } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { signOut } from 'firebase/auth';

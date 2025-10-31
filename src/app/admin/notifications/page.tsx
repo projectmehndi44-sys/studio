@@ -13,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Bell, Send, Upload, Image as ImageIcon, Users, User } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { useAdminAuth } from '@/firebase/auth/use-admin-auth';
 import type { Artist, Customer } from '@/lib/types';
 import { listenToCollection } from '@/lib/services';
 

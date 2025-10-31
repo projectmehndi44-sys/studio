@@ -19,7 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import type { TeamMember, Permissions } from '@/lib/types';
 import { PERMISSION_MODULES } from '@/lib/team-data';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { useAdminAuth } from '@/firebase/auth/use-admin-auth';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { getTeamMembers, addOrUpdateTeamMember, deleteTeamMember } from '@/lib/services';
 import { createUserWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';

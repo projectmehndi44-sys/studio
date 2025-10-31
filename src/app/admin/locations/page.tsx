@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { MapPin, Save } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { INDIA_LOCATIONS } from '@/lib/india-locations';
-import { useAdminAuth } from '@/hooks/use-admin-auth';
+import { useAdminAuth } from '@/firebase/auth/use-admin-auth';
 import { getDocument, setConfigDocument } from '@/lib/services';
 
 async function getSavedLocations(): Promise<Record<string, string[]>> {
