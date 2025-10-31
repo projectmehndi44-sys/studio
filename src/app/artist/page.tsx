@@ -387,7 +387,7 @@ export default function ArtistHomePage() {
                 </section>
                 
                 {/* How It Works Section */}
-                <section className="w-full py-16 bg-background">
+                <section className="w-full py-16 why-choose-us-bg">
                     <div className="container px-4 md:px-6">
                         <div className="text-center mb-12">
                             <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-primary font-headline">How It Works</h2>
@@ -405,44 +405,9 @@ export default function ArtistHomePage() {
                     </div>
                 </section>
 
-                {/* Why Join Section */}
-                <section className="w-full py-16 why-choose-us-bg">
-                    <div className="container px-4 md:px-6 grid lg:grid-cols-2 gap-12 items-center">
-                        <div>
-                             <Image
-                                src="https://firebasestorage.googleapis.com/v0/b/studio-163529036-f9a8c.firebasestorage.app/o/artist-page-hero%2Fsmiling-artist.png?alt=media&token=c190117a-a437-4d83-9b93-875883d6a74c"
-                                alt="A happy and successful makeup artist surrounded by her tools"
-                                width={600}
-                                height={700}
-                                className="rounded-2xl shadow-2xl object-cover w-full h-full"
-                                data-ai-hint="artist smiling"
-                            />
-                        </div>
-                        <div className="space-y-6">
-                            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-primary font-headline">Why You'll Love UtsavLook</h2>
-                            <p className="text-muted-foreground md:text-lg">We're more than just a listing service; we're your partner in success. We built our platform to solve the biggest challenges artists face.</p>
-                            <ul className="space-y-4">
-                                {whyJoinPoints.map((point, index) => (
-                                    <li key={index} className="flex items-start">
-                                        <div className="bg-green-100 rounded-full p-1 mr-3 mt-1">
-                                            <Check className="w-4 h-4 text-green-600" />
-                                        </div>
-                                        <span className="text-muted-foreground">{point}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                            <Link href="/artist/register">
-                                <Button size="lg" className="w-full sm:w-auto btn-gradient rounded-full text-lg px-8 py-6 mt-4">
-                                    Get Started for Free
-                                </Button>
-                            </Link>
-                        </div>
-                    </div>
-                </section>
-
                 {/* Artist Spotlight */}
                 {artists.length > 0 && (
-                <section className="py-16 bg-background">
+                <section className="py-16 why-choose-us-bg">
                     <div className="container px-4 md:px-6">
                         <h2 className="text-3xl font-bold tracking-tighter text-center sm:text-5xl text-primary font-headline mb-12">
                             Success Stories
