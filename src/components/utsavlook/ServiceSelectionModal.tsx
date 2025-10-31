@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -223,35 +224,30 @@ export function ServiceSelectionModal({ service, artists, isOpen, onOpenChange, 
                             </CarouselContent>
                          </Carousel>
                     </div>
-                    <h3 className="text-lg font-semibold text-center">Select a Tier</h3>
-                     <Carousel opts={{ align: "start" }} className="w-full">
-                        <CarouselContent className="-ml-4">
+                    <div className="p-4 rounded-xl" style={{background: 'linear-gradient(to right, hsla(var(--primary)/0.1), hsla(var(--accent)/0.1))'}}>
+                        <h3 className="text-lg font-semibold text-center text-primary mb-4">Select a Tier</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {service.categories.map((category) => (
-                               <CarouselItem key={category.name} className="pl-4 md:basis-1/2 lg:basis-1/3">
-                                    <div 
-                                        className="h-full p-1 cursor-pointer group"
-                                        onClick={() => handleSelectCategory(category)}
-                                    >
-                                        <div className="relative rounded-2xl overflow-hidden h-full flex flex-col justify-end text-white bg-black/30 shadow-lg transition-all duration-300 group-hover:scale-105">
-                                            {category.image && (
-                                                <Image 
-                                                    src={category.image} 
-                                                    alt={category.name} 
-                                                    fill 
-                                                    className="object-cover -z-10 group-hover:brightness-75 transition-all duration-300"
-                                                />
-                                            )}
-                                            <div className="p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-                                                <h4 className="font-headline text-2xl font-bold">{category.name}</h4>
-                                                <p className="text-sm text-white/90 line-clamp-2">{category.description}</p>
-                                                 <p className="font-bold text-lg flex items-center mt-2"><IndianRupee className="w-4 h-4 mr-1"/>{category.basePrice.toLocaleString()}<span className="text-xs font-normal ml-1">onwards</span></p>
-                                            </div>
-                                        </div>
-                                    </div>
-                               </CarouselItem>
+                            <div 
+                                key={category.name}
+                                className="p-1 cursor-pointer group"
+                                onClick={() => handleSelectCategory(category)}
+                            >
+                                <Card className="bg-background/80 backdrop-blur-sm h-full flex flex-col text-center items-center p-4 rounded-lg shadow-md transition-all duration-300 hover:shadow-xl hover:border-accent">
+                                    <CardHeader className="p-2">
+                                        <CardTitle className="text-accent font-headline">{category.name}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-2 flex-grow">
+                                        <p className="text-sm text-muted-foreground">{category.description}</p>
+                                    </CardContent>
+                                    <CardFooter className="p-2">
+                                        <p className="font-bold text-lg flex items-center text-primary"><IndianRupee className="w-4 h-4 mr-1"/>{category.basePrice.toLocaleString()}<span className="text-xs font-normal text-muted-foreground ml-1">onwards</span></p>
+                                    </CardFooter>
+                                </Card>
+                            </div>
                             ))}
-                        </CarouselContent>
-                     </Carousel>
+                        </div>
+                    </div>
                 </div>
             );
         case 'artist':
