@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/utsavlook/Header';
-import { Award, BarChart, CalendarCheck, IndianRupee, Sparkles, UserPlus, Share2, Loader2, Copy, Download, X, Quote, MessageSquare, Home } from 'lucide-react';
+import { Award, BarChart, CalendarCheck, IndianRupee, Sparkles, UserPlus, Share2, Loader2, Copy, Download, X, Quote, MessageSquare, Home, Check, Star } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -218,6 +218,38 @@ export default function ArtistHomePage() {
             handleDownload();
         }
     };
+    
+    const howItWorksSteps = [
+        {
+            icon: <UserPlus className="w-8 h-8 text-accent" />,
+            title: "1. Create Your Profile",
+            description: "Register for free and build your professional portfolio. Showcase your best work, define your services, and set your pricing.",
+        },
+        {
+            icon: <CalendarCheck className="w-8 h-8 text-accent" />,
+            title: "2. Receive Booking Requests",
+            description: "Get notified instantly when a customer books your service. Review the details and manage all your requests from your dashboard.",
+        },
+        {
+            icon: <Award className="w-8 h-8 text-accent" />,
+            title: "3. Deliver Your Artistry",
+            description: "Connect with your client, deliver your amazing service, and make their special day even more memorable.",
+        },
+        {
+            icon: <IndianRupee className="w-8 h-8 text-accent" />,
+            title: "4. Get Paid, Hassle-Free",
+            description: "Receive timely and transparent payouts directly to your account. Track all your earnings effortlessly through your dashboard.",
+        },
+    ];
+
+    const whyJoinPoints = [
+        "Reach thousands of new clients actively looking for your skills.",
+        "A free, professional portfolio to showcase your best work.",
+        "Secure payments and a reliable booking system you can trust.",
+        "Zero commission on your first 5 bookings to get you started.",
+        "Be part of an exclusive, verified community of top artists.",
+        "Powerful tools to manage your schedule, earnings, and client communication.",
+    ];
 
     return (
         <ParallaxProvider>
@@ -353,9 +385,63 @@ export default function ArtistHomePage() {
                     </div>
                 </section>
                 
+                {/* How It Works Section */}
+                <section className="w-full py-16 bg-background">
+                    <div className="container px-4 md:px-6">
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-primary font-headline">How It Works</h2>
+                            <p className="max-w-2xl mx-auto mt-4 text-muted-foreground md:text-xl">Joining UtsavLook is simple. Follow these four easy steps to start growing your business.</p>
+                        </div>
+                        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+                            {howItWorksSteps.map(step => (
+                                <div key={step.title} className="text-center flex flex-col items-center p-4">
+                                    <div className="flex items-center justify-center bg-primary/10 rounded-full h-16 w-16 mb-4">{step.icon}</div>
+                                    <h3 className="text-xl font-bold">{step.title}</h3>
+                                    <p className="text-muted-foreground mt-2 text-sm">{step.description}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* Why Join Section */}
+                <section className="w-full py-16 why-choose-us-bg">
+                    <div className="container px-4 md:px-6 grid lg:grid-cols-2 gap-12 items-center">
+                        <div>
+                             <Image
+                                src="https://firebasestorage.googleapis.com/v0/b/studio-163529036-f9a8c.firebasestorage.app/o/artist-page-hero%2Fsmiling-artist.png?alt=media&token=c190117a-a437-4d83-9b93-875883d6a74c"
+                                alt="A happy and successful makeup artist surrounded by her tools"
+                                width={600}
+                                height={700}
+                                className="rounded-2xl shadow-2xl object-cover w-full h-full"
+                                data-ai-hint="artist smiling"
+                            />
+                        </div>
+                        <div className="space-y-6">
+                            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-primary font-headline">Why You'll Love UtsavLook</h2>
+                            <p className="text-muted-foreground md:text-lg">We're more than just a listing service; we're your partner in success. We built our platform to solve the biggest challenges artists face.</p>
+                            <ul className="space-y-4">
+                                {whyJoinPoints.map((point, index) => (
+                                    <li key={index} className="flex items-start">
+                                        <div className="bg-green-100 rounded-full p-1 mr-3 mt-1">
+                                            <Check className="w-4 h-4 text-green-600" />
+                                        </div>
+                                        <span className="text-muted-foreground">{point}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                            <Link href="/artist/register">
+                                <Button size="lg" className="w-full sm:w-auto btn-gradient rounded-full text-lg px-8 py-6 mt-4">
+                                    Get Started for Free
+                                </Button>
+                            </Link>
+                        </div>
+                    </div>
+                </section>
+
                 {/* Artist Spotlight */}
                 {artists.length > 0 && (
-                <section className="py-16 why-choose-us-bg">
+                <section className="py-16 bg-background">
                     <div className="container px-4 md:px-6">
                         <h2 className="text-3xl font-bold tracking-tighter text-center sm:text-5xl text-primary font-headline mb-12">
                             Success Stories
