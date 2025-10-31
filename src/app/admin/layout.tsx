@@ -1,6 +1,4 @@
-
-
-      'use client';
+'use client';
 
 import * as React from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -10,7 +8,6 @@ import {
     Home,
     Briefcase,
     IndianRupee,
-    Settings,
     LogOut,
     PanelLeft,
     Package,
@@ -18,13 +15,12 @@ import {
     Palette,
     Image as ImageIcon,
     MapPin,
-    User as UserIcon,
-    EyeOff,
-    Tag,
-    ListTree,
     BarChart2,
     Bell,
     Building,
+    Tag,
+    ListTree,
+    EyeOff
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -41,8 +37,9 @@ import {
 import { AdminAuthProvider, useAdminAuth } from '@/hooks/use-admin-auth';
 import type { Permissions } from '@/lib/types';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { signOutUser } from '@/lib/firebase';
+import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/firebase';
 
 const NavLink = ({ href, pathname, icon: Icon, label }: { href: string; pathname: string; icon: React.ElementType, label: string }) => (
     <Link
@@ -61,23 +58,22 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
     const { toast } = useToast();
-    const { isAuthenticated, user, isLoading, hasPermission } = useAdminAuth();
+    const auth = useAuth();
+    const { adminUser, isAuthLoading, hasPermission } = useAdminAuth();
     const [adminName, setAdminName] = React.useState('Admin');
 
     React.useEffect(() => {
-        if (!isLoading && !isAuthenticated && pathname !== '/admin/login') {
+        if (!isAuthLoading && !adminUser && pathname !== '/admin/login') {
             router.push('/admin/login');
         }
-        if (isAuthenticated && user) {
-            setAdminName(user.name);
-        } else if (!isLoading && !user && pathname !== '/admin/login') {
-             router.push('/admin/login');
+        if (adminUser) {
+            setAdminName(adminUser.name);
         }
-    }, [isLoading, isAuthenticated, router, user, pathname]);
+    }, [isAuthLoading, adminUser, router, pathname]);
 
     const handleLogout = async () => {
         try {
-            await signOutUser();
+            await signOut(auth);
             toast({
                 title: 'Logging Out...',
                 description: 'You have been logged out successfully.',
@@ -97,7 +93,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
         return <>{children}</>;
     }
 
-    if (isLoading || !isAuthenticated) {
+    if (isAuthLoading || !adminUser) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-background">
                 <p>Loading admin portal...</p>
@@ -115,7 +111,6 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     type NavGroup = {
         title: string;
         links: NavLinkItem[];
-        permissionKey: keyof Permissions;
     }
 
     const navLinks: NavLinkItem[] = [
@@ -125,7 +120,6 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     
     const managementGroup: NavGroup = {
         title: 'Management',
-        permissionKey: 'artists', // Use a general key, access is per-link
         links: [
             { href: '/admin/artists', label: 'Artists', icon: Palette, permissionKey: 'artists' },
             { href: '/admin/customers', label: 'Customers', icon: Users, permissionKey: 'customers' },
@@ -136,7 +130,6 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
     
     const financialGroup: NavGroup = {
         title: 'Financials',
-        permissionKey: 'payouts', // Use a general key
         links: [
             { href: '/admin/payouts', label: 'Payouts', icon: IndianRupee, permissionKey: 'payouts' },
             { href: '/admin/transactions', label: 'Transactions', icon: ListTree, permissionKey: 'transactions' },
@@ -146,7 +139,6 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
 
     const settingsGroup: NavGroup = {
         title: 'Platform',
-        permissionKey: 'settings', // Use a general key
         links: [
             { href: '/admin/analytics', label: 'Analytics', icon: BarChart2, permissionKey: 'dashboard' },
             { href: '/admin/team', label: 'Team', icon: Users, permissionKey: 'settings' },
@@ -261,7 +253,7 @@ function AdminLayoutContent({ children }: { children: React.ReactNode }) {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onSelect={() => router.push('/admin/profile')}>My Profile</DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onSelect={handleLogout}>Logout</DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </header>

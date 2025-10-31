@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -6,10 +5,20 @@ import Link from 'next/link';
 import {
   ShoppingBag,
   Palette,
+  User,
+  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
 import type { Customer } from '@/lib/types';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface HeaderProps {
   isCustomerLoggedIn: boolean;
@@ -24,7 +33,6 @@ export function Header({
   customer,
   cartCount,
 }: HeaderProps) {
-  const router = useRouter();
   
   return (
     <header className="flex items-center justify-between w-full px-4 md:px-8 py-2 bg-background/80 backdrop-blur-sm sticky top-0 z-40 border-b">
@@ -45,6 +53,41 @@ export function Header({
                     <span className="sr-only">View Cart</span>
                 </Link>
             </Button>
+            
+            {isCustomerLoggedIn && customer ? (
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="rounded-full">
+                            <Avatar className="h-8 w-8">
+                                <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${customer.name}`} alt={customer.name} />
+                                <AvatarFallback>{customer.name ? customer.name.charAt(0) : 'U'}</AvatarFallback>
+                            </Avatar>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Hi, {customer.name}</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild><Link href="/account">My Account</Link></DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href="/account/bookings">My Bookings</Link></DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={onCustomerLogout}>Logout</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            ) : (
+                <Button asChild>
+                    <Link href="/login">
+                        <User className="mr-2 h-4 w-4" /> Login
+                    </Link>
+                </Button>
+            )}
+             <div className="hidden md:block">
+              <Button variant="outline" size="icon" asChild>
+                <Link href="/admin">
+                  <Shield className="h-5 w-5" />
+                  <span className="sr-only">Admin Portal</span>
+                </Link>
+              </Button>
+            </div>
       </div>
     </header>
   );
