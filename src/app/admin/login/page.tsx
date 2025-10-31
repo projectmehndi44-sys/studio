@@ -16,9 +16,9 @@ import { Home } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { sendPasswordResetEmail, signInWithEmailAndPassword } from 'firebase/auth';
-import { getTeamMembers } from '@/lib/services';
 import { useAdminAuth } from '@/firebase/auth/use-admin-auth';
 import { useAuth } from '@/firebase';
+import { callFirebaseFunction } from '@/lib/firebase';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
@@ -50,18 +50,30 @@ export default function AdminLoginPage() {
     const handleLogin = async (data: LoginFormValues) => {
         try {
             const userCredential = await signInWithEmailAndPassword(auth, data.email, data.password);
-            const teamMembers = await getTeamMembers();
             
-            const memberProfile = teamMembers.find(m => m.id === userCredential.user.uid);
+            // Call the secure cloud function to verify admin status
+            const result = await callFirebaseFunction('verifyAdminLogin', {});
+            const { isAdmin, isFirstAdmin } = (result.data as any);
             
-            if (!memberProfile) {
+            if (isFirstAdmin) {
+                 toast({ 
+                    title: 'Super Admin Created!', 
+                    description: 'This first account has been granted Super Admin privileges.' 
+                });
+                router.push('/admin'); // Redirect immediately
+            } else if (isAdmin) {
+                // Let the AdminAuthProvider handle the redirect after fetching user details
+            } else {
                  await auth.signOut();
                  toast({ title: 'Access Denied', description: 'This user account does not have admin privileges.', variant: 'destructive' });
             }
+
         } catch (error: any) {
             let description = 'An error occurred during login. Please try again.';
             if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
                 description = 'Invalid credentials. Please check your email and password.';
+            } else if (error.details?.message) {
+                description = error.details.message;
             }
             toast({ title: 'Authentication Failed', description, variant: 'destructive' });
         }
