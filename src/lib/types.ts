@@ -1,5 +1,3 @@
-
-
 import type { Timestamp } from 'firebase/firestore';
 
 export type ImagePlaceholder = {
@@ -93,7 +91,7 @@ export type Artist = {
 
 export type Customer = {
   id: string; // Firebase Auth UID
-  name: string;
+  name?: string;
   phone: string;
   email?: string;
   fcmToken?: string;
@@ -245,5 +243,3 @@ export interface RawArtistRecommendation {
   charge: number;
   reason: string;
 }
-
-    

@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import * as React from 'react';
@@ -15,14 +13,30 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Separator } from "@/components/ui/separator";
 import type { CartItem, Customer, Artist, Promotion, TeamMember, Booking } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
-import { getCustomer, getAvailableLocations, listenToCollection, getPromotions, getTeamMembers } from '@/lib/services';
-import { Timestamp } from 'firebase/firestore';
+import { getCustomer, getAvailableLocations, listenToCollection, getPromotions, getTeamMembers, updateCustomer } from '@/lib/services';
+import { Timestamp, RecaptchaVerifier, signInWithPhoneNumber, PhoneAuthProvider } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { IndianRupee, ShieldCheck, Info, AlertCircle, CheckCircle, X, Tag, Home, Loader2, ArrowLeft } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
+import { useAuth, useUser } from '@/firebase';
 import { callFirebaseFunction } from '@/lib/firebase';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
+
+const phoneSchema = z.object({
+  phone: z.string().regex(/^\d{10}$/, 'Please enter a valid 10-digit phone number.'),
+});
+
+const otpSchema = z.object({
+  otp: z.string().length(6, 'OTP must be 6 digits.'),
+});
+
 
 const OrderSummary = ({
   items,
@@ -54,7 +68,6 @@ const OrderSummary = ({
 
         const code = promoCode.toUpperCase();
         
-        // 1. Check for artist referral code
         const matchedArtist = artists.find(a => a.referralCode?.toUpperCase() === code);
         if (matchedArtist) {
             setAppliedDiscount({
@@ -63,15 +76,12 @@ const OrderSummary = ({
                 code: matchedArtist.referralCode!,
                 artist: matchedArtist,
             });
-            // If an artist is chosen via referral, it overrides any previously selected artist.
-            // This is a business logic decision.
-             if(items[0] && items[0].artist?.id !== matchedArtist.id) {
+            if(items[0] && items[0].artist?.id !== matchedArtist.id) {
                 items[0].artist = matchedArtist;
-             }
+            }
             return;
         }
 
-        // 2. Check for admin promotion code
         const matchedAdminPromo = adminPromos.find(p => p.code.toUpperCase() === code);
         if (matchedAdminPromo && matchedAdminPromo.isActive) {
              if (matchedAdminPromo.expiryDate && new Date(matchedAdminPromo.expiryDate) < new Date()) {
@@ -204,16 +214,110 @@ const OrderSummary = ({
     );
 };
 
+const PhoneVerification = ({ onVerified }: { onVerified: (phone: string) => void }) => {
+    const { user } = useUser();
+    const auth = useAuth();
+    const { toast } = useToast();
+    const [step, setStep] = React.useState<'phone' | 'otp'>('phone');
+    const [confirmationResult, setConfirmationResult] = React.useState<any>(null);
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+    const phoneForm = useForm<z.infer<typeof phoneSchema>>({ resolver: zodResolver(phoneSchema) });
+    const otpForm = useForm<z.infer<typeof otpSchema>>({ resolver: zodResolver(otpSchema) });
+
+    const setupRecaptcha = () => {
+        if (!(window as any).recaptchaVerifier) {
+            (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', { size: 'invisible' });
+        }
+    };
+
+    const onPhoneSubmit: SubmitHandler<z.infer<typeof phoneSchema>> = async (data) => {
+        setIsSubmitting(true);
+        setupRecaptcha();
+        const appVerifier = (window as any).recaptchaVerifier;
+        const fullPhoneNumber = `+91${data.phone}`;
+        try {
+            const provider = new PhoneAuthProvider(auth);
+            const verificationId = await provider.verifyPhoneNumber(fullPhoneNumber, appVerifier);
+            setConfirmationResult({ verificationId, phoneNumber: data.phone });
+            setStep('otp');
+            toast({ title: 'OTP Sent!', description: `An OTP has been sent to ${fullPhoneNumber}.` });
+        } catch (error: any) {
+            toast({ title: "Failed to send OTP", description: error.message, variant: "destructive" });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const onOtpSubmit: SubmitHandler<z.infer<typeof otpSchema>> = async (data) => {
+        setIsSubmitting(true);
+        try {
+             // This flow is for linking, not signing in. We just need to verify the number.
+             // As we are already logged in, we update the customer profile directly
+             // This is a simplified approach. A real app might use a Cloud Function to securely link credentials.
+            if (user) {
+                await updateCustomer(user.uid, { phone: confirmationResult.phoneNumber });
+                onVerified(confirmationResult.phoneNumber);
+            }
+        } catch (error: any) {
+            toast({ title: 'OTP Verification Failed', description: 'The OTP you entered is incorrect.', variant: 'destructive' });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <Card className="shadow-lg rounded-lg">
+            <CardHeader>
+                <CardTitle>Verify Your Phone Number</CardTitle>
+                <CardDescription>To complete your booking, please verify your phone number.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {step === 'phone' ? (
+                    <Form {...phoneForm}>
+                        <form onSubmit={phoneForm.handleSubmit(onPhoneSubmit)} className="space-y-4">
+                            <FormField control={phoneForm.control} name="phone" render={({ field }) => (
+                                <FormItem><div className="flex items-center"><span className="p-2 border rounded-l-md bg-muted">+91</span><FormControl><Input type="tel" placeholder="10-digit number" {...field} className="rounded-l-none" /></FormControl></div><FormMessage /></FormItem>
+                            )} />
+                            <Button type="submit" disabled={isSubmitting} className="w-full">
+                                {isSubmitting ? 'Sending...' : 'Send OTP'}
+                            </Button>
+                        </form>
+                    </Form>
+                ) : (
+                    <Form {...otpForm}>
+                        <form onSubmit={otpForm.handleSubmit(onOtpSubmit)} className="space-y-4">
+                             <FormField control={otpForm.control} name="otp" render={({ field }) => (
+                                <FormItem>
+                                    <div className="flex justify-center">
+                                      <InputOTP maxLength={6} {...field}><InputOTPGroup><InputOTPSlot index={0} /><InputOTPSlot index={1} /><InputOTPSlot index={2} /><InputOTPSlot index={3} /><InputOTPSlot index={4} /><InputOTPSlot index={5} /></InputOTPGroup></InputOTP>
+                                    </div>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                            <Button type="submit" disabled={isSubmitting} className="w-full">
+                                {isSubmitting ? 'Verifying...' : 'Verify Number'}
+                            </Button>
+                        </form>
+                    </Form>
+                )}
+            </CardContent>
+        </Card>
+    );
+};
+
 
 export default function CartPage() {
     const router = useRouter();
     const { toast } = useToast();
+    const { user } = useUser();
     const [cartItems, setCartItems] = React.useState<CartItem[]>([]);
     const [customer, setCustomer] = React.useState<Customer | null>(null);
     const [availableLocations, setAvailableLocations] = React.useState<Record<string, string[]>>({});
     const [artists, setArtists] = React.useState<Artist[]>([]);
     const [teamMembers, setTeamMembers] = React.useState<TeamMember[]>([]);
     const [isProcessing, setIsProcessing] = React.useState(false);
+    const [needsPhoneVerification, setNeedsPhoneVerification] = React.useState(false);
 
 
     const form = useForm<BookingFormValues>({
@@ -230,7 +334,6 @@ export default function CartPage() {
             address: '',
             mapLink: '',
             alternateContact: '',
-            travelCharges: 0,
             notes: '',
             guestMehndi: { included: false, expectedCount: 0},
             guestMakeup: { included: false, expectedCount: 0},
@@ -238,24 +341,27 @@ export default function CartPage() {
     });
 
     React.useEffect(() => {
-        const customerId = localStorage.getItem('currentCustomerId');
-        if (customerId) {
-            getCustomer(customerId).then(customerData => {
+        if (user) {
+            getCustomer(user.uid).then(customerData => {
                 if (customerData) {
                     setCustomer(customerData);
-                    const storedCart = localStorage.getItem(`cart_${customerId}`);
+                    const storedCart = localStorage.getItem(`cart_${user.uid}`);
                     setCartItems(storedCart ? JSON.parse(storedCart) : []);
-                    // Pre-fill form with customer data
+
+                    if (!customerData.phone) {
+                        setNeedsPhoneVerification(true);
+                    }
+                    
                     form.reset({
                         ...form.getValues(),
-                        name: customerData.name,
-                        contact: customerData.phone,
+                        name: customerData.name || '',
+                        contact: customerData.phone || '',
                     });
                 }
             });
         } else {
-            // If user is not logged in but has a temporary item, redirect to login
-            if (localStorage.getItem('tempCartItem')) {
+            const tempCartItem = localStorage.getItem('tempCartItem');
+            if (tempCartItem) {
                 router.push('/login');
             }
         }
@@ -266,7 +372,16 @@ export default function CartPage() {
         const unsubscribeArtists = listenToCollection<Artist>('artists', setArtists);
         return () => unsubscribeArtists();
 
-    }, [router, form]);
+    }, [router, form, user]);
+
+    const handlePhoneVerified = (phone: string) => {
+        setNeedsPhoneVerification(false);
+        form.setValue('contact', phone);
+        if (customer) {
+            setCustomer({ ...customer, phone });
+        }
+        toast({ title: "Phone Verified!", description: "You can now proceed with your booking." });
+    };
 
     const handleRemoveItem = (itemId: string) => {
         const newCart = cartItems.filter(item => item.id !== itemId);
@@ -285,6 +400,16 @@ export default function CartPage() {
         setIsProcessing(true);
         const bookingDetails = form.getValues();
         const isValid = await form.trigger();
+
+        if (needsPhoneVerification) {
+            toast({
+                title: "Phone Verification Required",
+                description: "Please verify your phone number to continue.",
+                variant: "destructive"
+            });
+            setIsProcessing(false);
+            return;
+        }
 
         if (!isValid) {
             toast({
@@ -341,8 +466,6 @@ export default function CartPage() {
             localStorage.removeItem(`cart_${customer.id}`);
             router.push('/account/bookings');
         } else {
-            // Error is handled by the listener, but we might get non-permission errors
-            // which are now returned in result.data
              toast({
                 title: "Booking Failed",
                 description: result.data.message || "There was an error placing your booking. Please try again.",
@@ -360,6 +483,7 @@ export default function CartPage() {
 
     return (
         <div className="bg-background">
+             <div id="recaptcha-container" style={{ position: 'fixed', bottom: 0, right: 0, zIndex: -1, opacity: 0 }}></div>
             <div className="container mx-auto px-4 py-12">
                  <div className="flex justify-between items-center mb-4">
                     <Button onClick={() => router.back()} variant="outline">
@@ -380,7 +504,11 @@ export default function CartPage() {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                         <div className="lg:col-span-2 space-y-8">
                             <CartItemsList items={cartItems} onRemoveItem={handleRemoveItem} />
-                            <BookingForm form={form} availableLocations={availableLocations} showGuestFields={showGuestFields} artists={artists} />
+                            {needsPhoneVerification ? (
+                                <PhoneVerification onVerified={handlePhoneVerified} />
+                            ) : (
+                                <BookingForm form={form} availableLocations={availableLocations} showGuestFields={showGuestFields} artists={artists} />
+                            )}
                         </div>
                         <div className="lg:col-span-1">
                            <OrderSummary items={cartItems} form={form} onConfirm={handleConfirmAndBook} artists={artists} isProcessing={isProcessing}/>

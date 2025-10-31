@@ -1,5 +1,3 @@
-
-
 import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, query, where, deleteDoc, Timestamp, onSnapshot, Unsubscribe, runTransaction } from 'firebase/firestore';
 import type { Artist, Booking, Customer, MasterServicePackage, PayoutHistory, TeamMember, Notification, Promotion, ImagePlaceholder, BenefitImage, HeroSettings } from '@/lib/types';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
@@ -254,12 +252,17 @@ export const getCustomerByEmail = async (email: string): Promise<Customer | null
         return null;
     }
 };
-export const createCustomer = (data: Omit<Customer, 'id'> & {id: string}): Promise<string> => {
+export const createCustomer = (data: Partial<Customer> & {id: string}): Promise<string> => {
     return new Promise(async (resolve, reject) => {
-        const customerId = data.id; // Use UID from Google or phone auth
+        const customerId = data.id;
         const customerRef = doc(getDb(), "customers", customerId);
+        
         const { id, ...dataToSave } = data;
-        const finalData = { ...dataToSave, status: 'Active', createdOn: Timestamp.now() };
+        const finalData = { 
+            ...dataToSave,
+            status: 'Active', 
+            createdOn: Timestamp.now() 
+        };
 
         setDoc(customerRef, finalData, { merge: true })
             .then(() => resolve(customerId))
@@ -270,7 +273,7 @@ export const createCustomer = (data: Omit<Customer, 'id'> & {id: string}): Promi
                     requestResourceData: finalData,
                 } satisfies SecurityRuleContext);
                 errorEmitter.emit('permission-error', permissionError);
-                reject(permissionError); // Reject the promise so the calling function knows it failed
+                reject(permissionError);
             });
     });
 };

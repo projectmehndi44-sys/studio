@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -8,6 +7,8 @@ import {
   Palette,
   User,
   Shield,
+  Briefcase,
+  LogOut,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Customer } from '@/lib/types';
@@ -68,10 +69,11 @@ export function Header({
                     <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Hi, {customer.name}</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild><Link href="/account">My Account</Link></DropdownMenuItem>
-                        <DropdownMenuItem asChild><Link href="/account/bookings">My Bookings</Link></DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href="/account" className="flex items-center"><User className="mr-2 h-4 w-4" />Dashboard</Link></DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href="/account/profile" className="flex items-center"><User className="mr-2 h-4 w-4" />My Profile</Link></DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href="/account/bookings" className="flex items-center"><Briefcase className="mr-2 h-4 w-4" />My Bookings</Link></DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={onCustomerLogout}>Logout</DropdownMenuItem>
+                        <DropdownMenuItem onClick={onCustomerLogout} className="text-destructive"><LogOut className="mr-2 h-4 w-4" />Logout</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             ) : (
