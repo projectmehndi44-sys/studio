@@ -62,6 +62,12 @@ const nextConfig = {
       },
     ],
   },
+  devIndicators: {
+    allowedDevOrigins: [
+        "6000-firebase-studio-1757786878069.cluster-cz5nqyh5nreq6ua6gaqd7okl7o.cloudworkstations.dev",
+        "9000-firebase-studio-1757786878069.cluster-cz5nqyh5nreq6ua6gaqd7okl7o.cloudworkstations.dev"
+    ]
+  }
 };
 
 module.exports = withPWA(nextConfig);
