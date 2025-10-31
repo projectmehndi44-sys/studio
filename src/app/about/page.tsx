@@ -4,12 +4,12 @@
 import * as React from 'react';
 import type { Customer } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Header } from '@/components/utsavlook/Header';
-import { Award, Handshake, Sparkles } from 'lucide-react';
+import { Award, Handshake, Sparkles, Heart, Users, Camera } from 'lucide-react';
 import Link from 'next/link';
 import { ClientOnly } from '@/components/ClientOnly';
 import { Footer } from '@/components/utsavlook/Footer';
+import Image from 'next/image';
 
 export default function AboutUsPage() {
     const [isCustomerLoggedIn, setIsCustomerLoggedIn] = React.useState(false);
@@ -33,21 +33,21 @@ export default function AboutUsPage() {
         setCustomer(null);
     };
 
-    const features = [
+    const philosophyPoints = [
         {
-            icon: <Award className="w-10 h-10 text-accent" />,
-            title: "Verified Professionals",
-            description: "Every artist on our platform is hand-vetted for quality, professionalism, and skill. You can book with confidence, knowing you're getting the best."
+            icon: <Heart className="w-10 h-10 text-accent" />,
+            title: "Celebrating Artistry",
+            description: "From intricate bridal mehndi designs to flawless airbrush makeup and cinematic wedding photography, we believe in the power of art to make moments magical. We are a platform dedicated to the artists who create beauty."
+        },
+        {
+            icon: <Users className="w-10 h-10 text-accent" />,
+            title: "Empowering Professionals",
+            description: "We provide talented makeup artists, mehndi artists, and photographers with the tools to grow their business. UtsavLook is more than a directory; it's a partnership for success."
         },
         {
             icon: <Sparkles className="w-10 h-10 text-accent" />,
-            title: "AI-Powered Style Matching",
-            description: "Not sure what you want? Upload a photo of your outfit and let our advanced AI recommend the perfect mehndi and makeup styles to complete your look."
-        },
-        {
-            icon: <Handshake className="w-10 h-10 text-accent" />,
-            title: "Transparent & Fair",
-            description: "We believe in empowering artists and providing clarity to customers. Enjoy transparent pricing and a direct connection to the talent that makes your day special."
+            title: "Creating Joyful Experiences",
+            description: "Finding the perfect artist for your 'utsav' should be as joyful as the celebration itself. Our platform ensures a seamless, transparent, and trustworthy booking experience from start to finish."
         }
     ];
 
@@ -62,60 +62,85 @@ export default function AboutUsPage() {
                 />
             </ClientOnly>
             <main className="flex-1">
-                <section className="w-full py-12 md:py-24 lg:py-32 bg-primary/10">
-                    <div className="container px-4 md:px-6 text-center">
-                        <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl font-headline text-primary">
-                            About UtsavLook
+                <section className="relative w-full py-20 md:py-32 lg:py-40 bg-primary/10 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10"></div>
+                     <Image
+                        src="https://picsum.photos/seed/about-hero/1920/1080"
+                        alt="A collage of beautiful mehndi, makeup, and photography"
+                        layout="fill"
+                        objectFit="cover"
+                        className="opacity-20"
+                        data-ai-hint="mehndi makeup photography"
+                    />
+                    <div className="container relative z-20 px-4 md:px-6 text-center">
+                        <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl font-headline text-primary title-3d-effect">
+                           The Story of UtsavLook
                         </h1>
                         <p className="mx-auto max-w-[700px] text-foreground/80 md:text-xl mt-4">
-                            Celebrating artistry and tradition, one booking at a time.
+                            More than a platform—we are a celebration of artistry, tradition, and the moments that matter.
                         </p>
                     </div>
                 </section>
                 
                 <section className="w-full py-12 md:py-24 lg:py-32">
                     <div className="container px-4 md:px-6">
-                        <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
+                        <div className="grid gap-12 lg:grid-cols-2 lg:gap-24 items-center">
                             <div className="space-y-4">
-                                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-headline text-primary">Our Mission</h2>
+                                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-headline text-primary">Our Journey</h2>
                                 <p className="text-muted-foreground text-lg">
-                                    Our mission is to bridge the gap between talented mehndi and makeup artists and the clients who seek them. We believe that finding the perfect artist for your special occasion—be it a wedding, festival, or any celebration—should be a seamless and joyful experience. UtsavLook was born from a desire to celebrate the rich heritage of traditional artistry while embracing the convenience of modern technology.
+                                    UtsavLook began with a simple idea: finding a great mehndi artist or makeup professional for a wedding shouldn't be a matter of luck. It started from personal experience—endless phone calls, unverified portfolios, and the uncertainty of booking someone for the most important day of life.
                                 </p>
                                 <p className="text-muted-foreground text-lg">
-                                    We are dedicated to creating a platform that is fair, transparent, and beneficial for everyone. We empower artists by giving them the tools to manage their business and showcase their talent, and we provide customers with a trusted, reliable way to discover and book the perfect professional for their needs.
+                                    We envisioned a place where the most talented artists could showcase their work and where anyone planning a celebration—be it a grand wedding, a sangeet, a festival, or a simple party—could find and book these professionals with confidence. We are here to bridge the gap between incredible talent and those who seek it, making every 'utsav' (celebration) look perfect.
                                 </p>
                             </div>
-                             <div className="space-y-4">
-                                <h2 className="text-3xl font-bold tracking-tighter sm:text-4xl font-headline text-primary">The UtsavLook Difference</h2>
-                                <div className="grid gap-6">
-                                    {features.map(feature => (
-                                        <div key={feature.title} className="flex items-start gap-4">
-                                            <div className="bg-accent/10 p-3 rounded-full">{feature.icon}</div>
-                                            <div>
-                                                <h3 className="text-lg font-bold">{feature.title}</h3>
-                                                <p className="text-muted-foreground">{feature.description}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
+                            <div className="relative aspect-square rounded-xl shadow-brand-lg overflow-hidden transform transition-transform hover:scale-105">
+                                 <Image
+                                    src="https://picsum.photos/seed/journey/600/600"
+                                    alt="A beautiful bridal mehndi design"
+                                    layout="fill"
+                                    objectFit="cover"
+                                    data-ai-hint="bridal mehndi"
+                                />
                             </div>
                         </div>
                     </div>
                 </section>
 
-                <section className="w-full py-12 md:py-24 lg:py-32 bg-primary/10">
+                 <section className="w-full py-12 md:py-24 lg:py-32 why-choose-us-bg">
+                    <div className="container px-4 md:px-6">
+                        <div className="text-center mb-12">
+                            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-primary font-headline">Our Philosophy</h2>
+                            <p className="mx-auto max-w-3xl text-muted-foreground md:text-xl mt-4">We are driven by three core principles that guide every decision we make, from the artists we feature to the packages we offer.</p>
+                        </div>
+                        <div className="grid gap-8 md:grid-cols-3">
+                            {philosophyPoints.map(point => (
+                                <div key={point.title} className="text-center flex flex-col items-center">
+                                    <div className="bg-background p-4 rounded-full shadow-md mb-4">{point.icon}</div>
+                                    <h3 className="text-xl font-bold">{point.title}</h3>
+                                    <p className="text-muted-foreground mt-2">{point.description}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                <section className="w-full py-12 md:py-24 lg:py-32">
                     <div className="container grid items-center justify-center gap-4 px-4 text-center md:px-6">
                         <div className="space-y-3">
                             <h2 className="text-3xl font-bold tracking-tighter md:text-4xl/tight text-primary font-headline">
-                                Ready to Find Your Perfect Look?
+                                Find Your Perfect Look Today
                             </h2>
                             <p className="mx-auto max-w-[600px] text-foreground/80 md:text-xl/relaxed">
-                                Browse our curated selection of top-rated artists and book your appointment today.
+                                Whether you're searching for "makeup artists near me" or the latest "bridal mehndi designs," your search ends here. Browse our curated selection of top-rated artists.
                             </p>
                         </div>
-                        <div className="mx-auto w-full max-w-sm">
+                        <div className="mx-auto w-full max-w-sm flex flex-col sm:flex-row gap-4 justify-center">
                             <Button asChild size="lg" className="bg-accent hover:bg-accent/90">
-                                <Link href="/#services">Browse Services</Link>
+                                <Link href="/services">Browse Services</Link>
+                            </Button>
+                             <Button asChild size="lg" variant="outline">
+                                <Link href="/artists">Discover Artists</Link>
                             </Button>
                         </div>
                     </div>
