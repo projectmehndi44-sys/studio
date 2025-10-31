@@ -31,7 +31,7 @@ export function ArtistCard({ artist }: ArtistCardProps) {
   const primaryWorkImage = artist.workImages?.[0] || 'https://picsum.photos/seed/placeholder/800/600';
 
   return (
-    <Card className="overflow-hidden flex flex-col group transition-all duration-300 shadow-brand hover:shadow-brand-lg hover:border-accent h-full">
+    <Card className="overflow-hidden flex flex-col group transition-all duration-300 shadow-brand hover:shadow-brand-lg hover:-translate-y-2 h-full rounded-2xl">
       <CardContent className="p-0 relative">
         <Link href={`/artist/${artist.id}`} className="aspect-[4/3] relative block">
           <Image
