@@ -26,6 +26,18 @@ import { getAvailableLocations, createPendingArtist, getCompanyProfile } from '@
 import { Progress } from '../ui/progress';
 import { v4 as uuidv4 } from 'uuid';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  PhoneAuthProvider,
+} from 'firebase/auth';
+import { useAuth } from '@/firebase';
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
+
 
 const serviceItems = [
     { id: 'mehndi', label: 'Mehndi' },
@@ -49,6 +61,7 @@ const registrationSchema = z.object({
   }),
   serviceAreas: z.array(serviceAreaSchema).min(1, "You must add at least one service area."),
   agreed: z.boolean().refine((val) => val === true, { message: 'You must agree to the terms and conditions.' }),
+  otp: z.string().length(6, { message: 'OTP must be 6 digits.' }).optional(),
 });
 
 
@@ -122,12 +135,14 @@ interface ArtistRegistrationModalProps {
 
 export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistrationModalProps) {
   const { toast } = useToast();
+  const auth = useAuth();
   const [isSubmitted, setIsSubmitted] = React.useState(false);
   const [availableLocations, setAvailableLocations] = React.useState<Record<string, string[]>>({});
   const [isLoadingLocations, setIsLoadingLocations] = React.useState(true);
   const [step, setStep] = React.useState(1);
-  const totalSteps = 3;
+  const totalSteps = 4;
   const [companyProfile, setCompanyProfile] = React.useState({ phone: '', email: '' });
+  const [confirmationResult, setConfirmationResult] = React.useState<any>(null);
 
   const form = useForm<RegistrationFormValues>({
     resolver: zodResolver(registrationSchema),
@@ -166,33 +181,81 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
     }
   }, [isOpen, isLoadingLocations, availableLocations, form]);
 
+   const setupRecaptcha = () => {
+    if (!(window as any).recaptchaVerifier) {
+      (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container-artist', {
+        'size': 'invisible',
+        'callback': () => {},
+      });
+    }
+  }
+
+  const handleSendOtp = async () => {
+    const isPhoneValid = await form.trigger('phone');
+    if (!isPhoneValid) return;
+
+    setupRecaptcha();
+    const appVerifier = (window as any).recaptchaVerifier;
+    const phoneNumber = form.getValues('phone');
+    const fullPhoneNumber = `+91${phoneNumber}`;
+
+    try {
+        form.setValue('otp', ''); // Clear previous OTP
+        const result = await signInWithPhoneNumber(auth, fullPhoneNumber, appVerifier);
+        setConfirmationResult(result);
+        setStep(2); // Move to OTP step
+        toast({ title: 'OTP Sent!', description: `An OTP has been sent to ${fullPhoneNumber}.` });
+    } catch (error: any) {
+        toast({ title: "Failed to send OTP", description: error.message, variant: "destructive" });
+    }
+  };
+
+
   const handleNextStep = async () => {
     let fieldsToValidate: (keyof RegistrationFormValues)[] = [];
     if(step === 1) fieldsToValidate = ['fullName', 'email', 'phone'];
-    if(step === 2) fieldsToValidate = ['serviceAreas', 'services'];
-
+    if(step === 3) fieldsToValidate = ['serviceAreas', 'services'];
+    
     const isValid = await form.trigger(fieldsToValidate);
-    if(isValid) setStep(prev => prev + 1);
+    if(isValid) {
+        if (step === 1) {
+            await handleSendOtp(); // This will handle moving to step 2 on success
+        } else {
+             setStep(prev => prev + 1);
+        }
+    }
   }
 
   const onSubmit = async (data: RegistrationFormValues) => {
-    const { agreed, ...dataToStore } = data;
-
-    const firstServiceArea = dataToStore.serviceAreas[0];
-    const locationString = `${firstServiceArea.localities.split(',')[0].trim()}, ${firstServiceArea.district}`;
-    
-    const newPendingArtist = {
-        ...dataToStore,
-        location: locationString,
-        status: 'Pending',
-        submissionDate: new Date().toISOString(),
-    };
+    if (!confirmationResult) {
+      toast({ title: 'Verification Error', description: 'Phone number has not been verified.', variant: 'destructive'});
+      return;
+    }
 
     try {
+        // Here we just use the OTP for verification, not for sign-in
+        await confirmationResult.confirm(data.otp);
+        toast({ title: 'Phone Verified!', description: 'Your phone number has been successfully verified.' });
+        
+        const { agreed, otp, ...dataToStore } = data;
+        const firstServiceArea = dataToStore.serviceAreas[0];
+        const locationString = `${firstServiceArea.localities.split(',')[0].trim()}, ${firstServiceArea.district}`;
+        
+        const newPendingArtist = {
+            ...dataToStore,
+            location: locationString,
+            status: 'Pending',
+            submissionDate: new Date().toISOString(),
+        };
+
         await createPendingArtist(newPendingArtist);
         setIsSubmitted(true);
-    } catch (error) {
-        toast({ title: "Submission Failed", description: "Could not submit your registration. Please try again later.", variant: "destructive" });
+    } catch (error: any) {
+        if (error.code === 'auth/invalid-verification-code') {
+             toast({ title: "Invalid OTP", description: "The OTP you entered is incorrect. Please try again.", variant: "destructive" });
+        } else {
+            toast({ title: "Submission Failed", description: "Could not submit your registration. Please try again later.", variant: "destructive" });
+        }
     }
   };
 
@@ -206,6 +269,8 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
   }
 
   return (
+    <>
+    <div id="recaptcha-container-artist" style={{ position: 'absolute', zIndex: -1, opacity: 0, bottom: 0, right: 0 }}></div>
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
@@ -254,7 +319,7 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                             )} />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FormField control={form.control} name="email" render={({ field }) => (
-                                    <FormItem><FormLabel>Email Address (This will be your username)</FormLabel><FormControl><Input type="email" placeholder="your.email@example.com" {...field} /></FormControl><FormMessage /></FormItem>
+                                    <FormItem><FormLabel>Email Address</FormLabel><FormControl><Input type="email" placeholder="your.email@example.com" {...field} /></FormControl><FormMessage /></FormItem>
                                 )} />
                                 <FormField control={form.control} name="phone" render={({ field }) => (
                                     <FormItem><FormLabel>Phone Number</FormLabel><FormControl><Input type="tel" placeholder="9876543210" {...field} /></FormControl><FormMessage /></FormItem>
@@ -265,7 +330,22 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
 
                       {step === 2 && (
                         <div className="space-y-4">
-                            <h3 className="font-semibold text-lg text-primary">Step 2: Service Areas & Offerings</h3>
+                            <h3 className="font-semibold text-lg text-primary">Step 2: Phone Verification</h3>
+                            <FormField control={form.control} name="otp" render={({ field }) => (
+                                <FormItem className="flex flex-col items-center">
+                                    <FormLabel>Enter OTP sent to +91 {form.getValues('phone')}</FormLabel>
+                                    <FormControl>
+                                        <InputOTP maxLength={6} {...field}><InputOTPGroup><InputOTPSlot index={0} /><InputOTPSlot index={1} /><InputOTPSlot index={2} /><InputOTPSlot index={3} /><InputOTPSlot index={4} /><InputOTPSlot index={5} /></InputOTPGroup></InputOTP>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}/>
+                        </div>
+                      )}
+
+                      {step === 3 && (
+                        <div className="space-y-4">
+                            <h3 className="font-semibold text-lg text-primary">Step 3: Service Areas & Offerings</h3>
                              <ServiceAreaFields form={form} availableLocations={availableLocations} />
                             <FormField control={form.control} name="services" render={() => (
                                 <FormItem><FormLabel>Which services do you offer?</FormLabel><div className="flex items-center gap-4">{serviceItems.map((item) => (<FormField key={item.id} control={form.control} name="services" render={({ field }) => (<FormItem key={item.id} className="flex flex-row items-start space-x-3 space-y-0"><FormControl><Checkbox checked={field.value?.includes(item.id)} onCheckedChange={(checked) => { return checked ? field.onChange([...(field.value || []), item.id]) : field.onChange((field.value || []).filter((value) => value !== item.id)) }} /></FormControl><FormLabel className="font-normal">{item.label}</FormLabel></FormItem>)} />))}</div><FormMessage /></FormItem>
@@ -273,9 +353,9 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
                         </div>
                       )}
 
-                      {step === 3 && (
+                      {step === 4 && (
                         <div className="space-y-4">
-                            <h3 className="font-semibold text-lg text-primary">Step 3: Verification & Agreement</h3>
+                            <h3 className="font-semibold text-lg text-primary">Step 4: Verification & Agreement</h3>
                             <Alert>
                                 <Terminal className="h-4 w-4" />
                                 <AlertTitle>Portfolio Upload</AlertTitle>
@@ -309,5 +389,6 @@ export function ArtistRegistrationModal({ isOpen, onOpenChange }: ArtistRegistra
         )}
       </DialogContent>
     </Dialog>
+    </>
   );
 }
