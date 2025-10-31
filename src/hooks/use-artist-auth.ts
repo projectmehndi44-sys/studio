@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -32,6 +31,7 @@ export function useArtistAuth(): ArtistAuth {
     }
     
     // If we have a user, try to fetch their artist profile.
+    setIsArtistLoading(true);
     getArtist(user.uid).then((artistProfile) => {
       if (artistProfile) {
         setArtist(artistProfile);
@@ -40,12 +40,13 @@ export function useArtistAuth(): ArtistAuth {
         setArtist(null);
       }
       setIsArtistLoading(false);
-    }).catch(() => {
+    }).catch((err) => {
+        console.error("Failed to fetch artist profile:", err);
         setArtist(null);
         setIsArtistLoading(false);
     });
 
-  }, [user, isAuthLoading, router]);
+  }, [user, isAuthLoading]);
 
   return { artist, isArtistLoading };
 }
