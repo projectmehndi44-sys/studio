@@ -4,7 +4,7 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/utsavlook/Header';
-import { Award, BarChart, CalendarCheck, IndianRupee, Sparkles, UserPlus, Share2, Loader2, Copy, Download, X, Quote, MessageSquare } from 'lucide-react';
+import { Award, BarChart, CalendarCheck, IndianRupee, Sparkles, UserPlus, Share2, Loader2, Copy, Download, X, Quote, MessageSquare, Home } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -260,15 +260,23 @@ export default function ArtistHomePage() {
                         <p className="max-w-2xl mt-4 text-lg md:text-xl text-white/80 animate-slide-up opacity-0 [animation-fill-mode:forwards] [animation-delay:2s]">
                            Join a community that celebrates your talent. We give you the tools to get discovered, manage bookings, and grow your brand—all in one place.
                         </p>
-                        <div className="mt-8 flex gap-4 animate-fade-in opacity-0 [animation-fill-mode:forwards] [animation-delay:4s]">
-                             <Link href="/artist/register">
-                                <Button size="lg" className="btn-gradient rounded-full text-lg px-8 py-6">
-                                    Register Now
-                                </Button>
-                            </Link>
-                            <Link href="/artist/login">
-                                <Button size="lg" className="btn-gradient rounded-full text-lg px-8 py-6">
-                                    Artist Login
+                        <div className="mt-8 flex flex-col items-center gap-4 animate-fade-in opacity-0 [animation-fill-mode:forwards] [animation-delay:4s]">
+                             <div className="flex gap-4">
+                                <Link href="/artist/register">
+                                    <Button size="lg" className="btn-gradient rounded-full text-lg px-8 py-6">
+                                        Register Now
+                                    </Button>
+                                </Link>
+                                <Link href="/artist/login">
+                                    <Button size="lg" className="btn-gradient rounded-full text-lg px-8 py-6">
+                                        Artist Login
+                                    </Button>
+                                </Link>
+                            </div>
+                            <Link href="/">
+                                <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white rounded-full px-6 py-2 backdrop-blur-sm">
+                                    <Home className="mr-2 h-4 w-4"/>
+                                    Back to Home
                                 </Button>
                             </Link>
                         </div>
