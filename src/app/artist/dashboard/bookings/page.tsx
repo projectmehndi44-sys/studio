@@ -17,6 +17,7 @@ import { callFirebaseFunction } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { query, collection, where } from 'firebase/firestore';
 import { db } from '@/firebase';
+import { Button } from '@/components/ui/button';
 
 
 export default function ArtistBookingsPage() {
