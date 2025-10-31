@@ -425,17 +425,17 @@ export default function Home() {
             </div>
             
              <div className="grid grid-cols-3 gap-4 text-center my-12 max-w-4xl mx-auto">
-                <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-background/50">
+                <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-background/50 shadow-md">
                     <Heart className="w-8 h-8 text-primary mb-2"/>
                     <span className="text-3xl md:text-4xl"><AnimatedCounter endValue={1500} /></span>
                     <p className="text-sm md:text-base text-muted-foreground">Happy Customers</p>
                 </div>
-                <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-background/50">
+                <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-background/50 shadow-md">
                     <Users className="w-8 h-8 text-primary mb-2"/>
                     <span className="text-3xl md:text-4xl"><AnimatedCounter endValue={250} /></span>
                     <p className="text-sm md:text-base text-muted-foreground">Verified Artists</p>
                 </div>
-                 <div className="flex flex-col items-center justify-center p-4 rounded-lg bg-background/50">
+                 <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-background/50 shadow-md">
                     <Star className="w-8 h-8 text-amber-400 fill-amber-400 mb-2"/>
                     <span className="animated-gradient-text font-bold text-3xl md:text-4xl">4.9/5</span>
                     <p className="text-sm md:text-base text-muted-foreground">Average Rating</p>
