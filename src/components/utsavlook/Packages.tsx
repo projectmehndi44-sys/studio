@@ -27,7 +27,7 @@ export function Packages({ packages, onServiceSelect }: PackagesProps) {
                 return (
                     <div key={service.id} className="h-full p-1">
                         <Card 
-                            className="bg-background rounded-2xl shadow-brand hover:shadow-brand-lg transition-all duration-300 h-full flex flex-col cursor-pointer group hover:scale-105"
+                            className="bg-background rounded-2xl shadow-brand hover:shadow-brand-lg transition-all duration-300 h-full flex flex-col cursor-pointer group"
                             onClick={() => onServiceSelect(service)}
                         >
                             <CardContent className="p-0 flex flex-col items-center flex-grow">
