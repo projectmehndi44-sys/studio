@@ -21,6 +21,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Separator } from '@/components/ui/separator';
+import { getDb } from '@/firebase';
+import { query, collection, where } from 'firebase/firestore';
 
 export default function MyBookingsPage() {
     const { user, isUserLoading } = useUser();
@@ -33,20 +35,22 @@ export default function MyBookingsPage() {
     const [isLoading, setIsLoading] = React.useState(true);
 
     React.useEffect(() => {
-        if (!isUserLoading) {
-            if (user) {
-                getCustomer(user.uid).then(setCustomer);
-                const unsub = listenToCollection<Booking>('bookings', (allBookings) => {
-                    const userBookings = allBookings
-                        .filter(b => b.customerId === user.uid)
-                        .sort((a, b) => getSafeDate(b.eventDate).getTime() - getSafeDate(a.eventDate).getTime());
-                    setBookings(userBookings);
-                    setIsLoading(false);
-                });
-                return () => unsub();
-            } else {
-                router.push('/login');
-            }
+        if (isUserLoading) return;
+        
+        if (user) {
+            getCustomer(user.uid).then(setCustomer);
+
+            const db = getDb();
+            const bookingsQuery = query(collection(db, 'bookings'), where('customerId', '==', user.uid));
+            
+            const unsub = listenToCollection<Booking>('bookings', (userBookings) => {
+                setBookings(userBookings.sort((a, b) => getSafeDate(b.eventDate).getTime() - getSafeDate(a.eventDate).getTime()));
+                setIsLoading(false);
+            }, bookingsQuery);
+
+            return () => unsub();
+        } else {
+            router.push('/login');
         }
     }, [user, isUserLoading, router]);
 

@@ -14,6 +14,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { BookingDetailsModal } from '@/components/utsavlook/BookingDetailsModal';
 import { callFirebaseFunction } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { query, collection, where } from 'firebase/firestore';
+import { getDb } from '@/firebase';
 
 
 export default function ArtistBookingsPage() {
@@ -28,13 +30,15 @@ export default function ArtistBookingsPage() {
     React.useEffect(() => {
         if (!artist) return;
         setIsLoading(true);
-        const unsub = listenToCollection<Booking>('bookings', (allBookings) => {
-            const artistBookings = allBookings
-                .filter(b => b.artistIds.includes(artist.id))
-                .sort((a, b) => getSafeDate(b.eventDate).getTime() - getSafeDate(a.eventDate).getTime());
-            setBookings(artistBookings);
+
+        const db = getDb();
+        const bookingsQuery = query(collection(db, 'bookings'), where('artistIds', 'array-contains', artist.id));
+        
+        const unsub = listenToCollection<Booking>('bookings', (artistBookings) => {
+            setBookings(artistBookings.sort((a, b) => getSafeDate(b.eventDate).getTime() - getSafeDate(a.eventDate).getTime()));
             setIsLoading(false);
-        });
+        }, bookingsQuery);
+
         return () => unsub();
     }, [artist]);
 

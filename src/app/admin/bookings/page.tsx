@@ -17,7 +17,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format, parseISO, isValid } from 'date-fns';
 import { useAdminAuth } from '@/firebase/auth/use-admin-auth';
-import { Timestamp } from 'firebase/firestore';
+import { Timestamp, query, collection } from 'firebase/firestore';
 import { BookingDetailsModal } from '@/components/utsavlook/BookingDetailsModal';
 import { callFirebaseFunction } from '@/lib/firebase';
 import {
@@ -30,6 +30,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { getDb } from '@/firebase';
 
 
 function getSafeDate(date: any): Date {
@@ -61,9 +62,14 @@ export default function BookingManagementPage() {
             setPlatformFee(settings.platformFeePercentage / 100);
         });
         const unsubscribeArtists = listenToCollection<Artist>('artists', setArtists);
+        
+        // Admin can listen to all bookings, so we create a simple query for the collection.
+        const db = getDb();
+        const bookingsQuery = query(collection(db, 'bookings'));
         const unsubscribeBookings = listenToCollection<Booking>('bookings', (data) => {
             setBookings(data.sort((a, b) => getSafeDate(b.eventDate).getTime() - getSafeDate(a.eventDate).getTime()));
-        });
+        }, bookingsQuery);
+
 
         return () => {
             unsubscribeArtists();

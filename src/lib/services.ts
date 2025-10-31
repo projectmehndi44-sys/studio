@@ -1,4 +1,4 @@
-import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, query, where, deleteDoc, Timestamp, onSnapshot, Unsubscribe, runTransaction } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, query, where, deleteDoc, Timestamp, onSnapshot, Unsubscribe, runTransaction, Query } from 'firebase/firestore';
 import type { Artist, Booking, Customer, MasterServicePackage, PayoutHistory, TeamMember, Notification, Promotion, ImagePlaceholder, BenefitImage, HeroSettings } from '@/lib/types';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { getFirebaseServices } from '@/firebase/init';
@@ -116,7 +116,17 @@ export async function setConfigDocument(docId: string, configData: any): Promise
 
 // --- Listener Functions for Real-Time Data ---
 
-export const listenToCollection = <T>(collectionName: string, callback: (data: T[]) => void, q?: any): Unsubscribe => {
+export const listenToCollection = <T>(collectionName: string, callback: (data: T[]) => void, q?: Query): Unsubscribe => {
+    // SECURITY FIX: For 'bookings', a query must be provided.
+    if (collectionName === 'bookings' && !q) {
+        const err = new Error("Listening to the entire 'bookings' collection is not allowed. Please provide a specific query.");
+        console.error(err);
+        // You can either throw the error or call the callback with an empty array
+        callback([]);
+        // Return a no-op unsubscribe function
+        return () => {};
+    }
+
     const queryToUse = q || query(collection(getDb(), collectionName));
     const unsub = onSnapshot(queryToUse, (querySnapshot) => {
         const data: T[] = querySnapshot.docs.map(doc => {
