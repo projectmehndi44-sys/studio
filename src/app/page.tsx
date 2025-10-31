@@ -322,66 +322,62 @@ export default function Home() {
         cartCount={cart.length}
       />
       <main className="flex flex-1 flex-col">
-        <ClientOnly>
-        {!user && !isUserLoading && (
-            <div className="w-full why-choose-us-bg">
-                <div className="group relative overflow-hidden">
-                    <div className="absolute inset-0 w-full h-full">
-                        {occasionImages.map((item, index) => (
-                            <Image
-                                key={item.imageUrl}
-                                src={item.imageUrl}
-                                alt={item.occasion}
-                                fill
-                                priority={index === 0}
-                                className={cn(
-                                    "object-cover transition-opacity duration-1000",
-                                    index === imageIndex ? "opacity-100" : "opacity-0"
-                                )}
-                            />
-                        ))}
-                    </div>
-                    <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent"></div>
+          <div className="w-full why-choose-us-bg">
+              <div className="group relative overflow-hidden">
+                  <div className="absolute inset-0 w-full h-full">
+                      {occasionImages.map((item, index) => (
+                          <Image
+                              key={item.imageUrl}
+                              src={item.imageUrl}
+                              alt={item.occasion}
+                              fill
+                              priority={index === 0}
+                              className={cn(
+                                  "object-cover transition-opacity duration-1000",
+                                  index === imageIndex ? "opacity-100" : "opacity-0"
+                              )}
+                          />
+                      ))}
+                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-transparent"></div>
 
-                    <div className="relative flex flex-col justify-center p-6 md:p-10 text-center md:text-left min-h-[500px] md:min-h-[600px] md:w-3/5 lg:w-1/2">
-                        <div className="space-y-2 opacity-0 animate-fade-in [animation-delay:0s] [animation-fill-mode:forwards]">
-                        <h1 className="font-headline text-5xl md:text-6xl lg:text-7xl font-bold text-accent animate-slide-down opacity-0 [animation-fill-mode:forwards] [animation-delay:0s]">
-                            Utsav<span className="text-primary">Look</span>
-                        </h1>
-                        <p className="font-dancing-script text-2xl md:text-3xl animate-slide-in-left opacity-0 [animation-fill-mode:forwards] [animation-delay:1s]">Your Perfect Look for Every Utsav.</p>
-                        </div>
-                        
-                        <div className="mt-4 opacity-0 animate-fade-in [animation-delay:2s] [animation-fill-mode:forwards]">
-                            <div className="whitespace-nowrap text-2xl font-bold md:text-3xl animate-slide-in-left opacity-0 [animation-fill-mode:forwards] [animation-delay:2s]">Crafting Memories for Your</div>
-                            <div className="animated-gradient-text text-5xl font-bold md:text-6xl h-20">
-                                {displayedText}
-                                <span className="animate-pulse">|</span>
-                            </div>
-                        </div>
-                        
-                        <div className="mt-4 max-w-xl font-body text-base animate-slide-up opacity-0 [animation-fill-mode:forwards] [animation-delay:3s]">
-                          <p>Book top-rated, verified artists for your special day.</p>
-                        </div>
+                  <div className="relative flex flex-col justify-center p-6 md:p-10 text-center md:text-left min-h-[500px] md:min-h-[600px] md:w-3/5 lg:w-1/2">
+                      <div className="space-y-2 opacity-0 animate-fade-in [animation-delay:0s] [animation-fill-mode:forwards]">
+                      <h1 className="font-headline text-5xl md:text-6xl lg:text-7xl font-bold text-accent animate-slide-down opacity-0 [animation-fill-mode:forwards] [animation-delay:0s]">
+                          Utsav<span className="text-primary">Look</span>
+                      </h1>
+                      <p className="font-dancing-script text-2xl md:text-3xl animate-slide-in-left opacity-0 [animation-fill-mode:forwards] [animation-delay:1s]">Your Perfect Look for Every Utsav.</p>
+                      </div>
+                      
+                      <div className="mt-4 opacity-0 animate-fade-in [animation-delay:2s] [animation-fill-mode:forwards]">
+                          <div className="whitespace-nowrap text-2xl font-bold md:text-3xl animate-slide-in-left opacity-0 [animation-fill-mode:forwards] [animation-delay:2s]">Crafting Memories for Your</div>
+                          <div className="animated-gradient-text text-5xl font-bold md:text-6xl h-20">
+                              {displayedText}
+                              <span className="animate-pulse">|</span>
+                          </div>
+                      </div>
+                      
+                      <div className="mt-4 max-w-xl font-body text-base animate-slide-up opacity-0 [animation-fill-mode:forwards] [animation-delay:3s]">
+                        <p>Book top-rated, verified artists for your special day.</p>
+                      </div>
 
-                        <div className="mt-6 flex flex-col items-center sm:flex-row gap-4 justify-center md:justify-start opacity-0 animate-fade-in [animation-delay:4s] [animation-fill-mode:forwards]">
-                            <Button size="lg" className="btn-gradient rounded-full w-fit" asChild>
-                                <Link href="/services">Book a Service</Link>
-                            </Button>
-                            <Button size="lg" className="btn-gradient rounded-full w-fit" asChild>
-                                <Link href="/artists">View Artists</Link>
-                            </Button>
-                        </div>
-                         <div className="mt-8 text-center md:text-left animate-slide-up opacity-0 [animation-fill-mode:forwards] [animation-delay:5s]">
-                          <div className="inline-block px-4 py-2 rounded-full bg-primary/10 text-primary-foreground backdrop-blur-sm hover:bg-primary/20 transition-colors">
-                              <Link href="/artist" className="text-sm text-primary font-semibold">Are you an artist? <span className="font-bold underline">Join Us!</span></Link>
-                               <Link href="/artist/login" className="text-sm text-primary font-semibold ml-4"><span className="font-bold underline">Artist Login</span></Link>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        )}
-        </ClientOnly>
+                      <div className="mt-6 flex flex-col items-center sm:flex-row gap-4 justify-center md:justify-start opacity-0 animate-fade-in [animation-delay:4s] [animation-fill-mode:forwards]">
+                          <Button size="lg" className="btn-gradient rounded-full w-fit" asChild>
+                              <Link href="/services">Book a Service</Link>
+                          </Button>
+                          <Button size="lg" className="btn-gradient rounded-full w-fit" asChild>
+                              <Link href="/artists">View Artists</Link>
+                          </Button>
+                      </div>
+                       <div className="mt-8 text-center md:text-left animate-slide-up opacity-0 [animation-fill-mode:forwards] [animation-delay:5s]">
+                        <div className="inline-block px-4 py-2 rounded-full bg-primary/10 text-primary-foreground backdrop-blur-sm hover:bg-primary/20 transition-colors">
+                            <Link href="/artist" className="text-sm text-primary font-semibold">Are you an artist? <span className="font-bold underline">Join Us!</span></Link>
+                             <Link href="/artist/login" className="text-sm text-primary font-semibold ml-4"><span className="font-bold underline">Artist Login</span></Link>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
 
         <section id="services" className="w-full why-choose-us-bg">
           <div className="container mx-auto px-4 md:px-6 py-12">
