@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -41,8 +42,14 @@ export default function CustomerLoginPage() {
     const [isSubmitting, setIsSubmitting] = React.useState(false);
     const [phoneNumber, setPhoneNumber] = React.useState('');
 
-    const phoneForm = useForm<z.infer<typeof phoneSchema>>({ resolver: zodResolver(phoneSchema) });
-    const otpForm = useForm<z.infer<typeof otpSchema>>({ resolver: zodResolver(otpSchema) });
+    const phoneForm = useForm<z.infer<typeof phoneSchema>>({
+        resolver: zodResolver(phoneSchema),
+        defaultValues: { phone: '' }
+    });
+    const otpForm = useForm<z.infer<typeof otpSchema>>({
+        resolver: zodResolver(otpSchema),
+        defaultValues: { otp: '' }
+    });
     
     React.useEffect(() => {
         if (!isUserLoading && user) {
