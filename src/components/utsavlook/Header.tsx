@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -74,7 +75,7 @@ export function Header({
                     </DropdownMenuContent>
                 </DropdownMenu>
             ) : (
-                <Button asChild>
+                <Button asChild className="btn-gradient rounded-full">
                     <Link href="/login">
                         <User className="mr-2 h-4 w-4" /> Login
                     </Link>
