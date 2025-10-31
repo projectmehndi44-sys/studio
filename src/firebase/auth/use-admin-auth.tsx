@@ -1,9 +1,8 @@
-
 'use client';
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@/firebase/auth/use-user'; // Use the specific user hook
+import { useUser } from '@/firebase'; // Use the main firebase barrel file
 import { getTeamMembers } from '@/lib/services';
 import type { TeamMember, Permission, PermissionLevel } from '@/lib/types';
 import { initialSuperAdminPermissions } from '@/lib/team-data';
