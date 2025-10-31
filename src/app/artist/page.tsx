@@ -310,18 +310,18 @@ export default function ArtistHomePage() {
                                 </Link>
                             </div>
                             <div className="flex flex-wrap justify-center items-center gap-4 mt-4">
-                                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-                                    <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white rounded-full px-6 py-2 backdrop-blur-sm">
+                                 <Button asChild variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white rounded-full px-6 py-2 backdrop-blur-sm">
+                                    <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
                                         <MessageSquare className="mr-2 h-4 w-4"/>
                                         Talk to Us
-                                    </Button>
-                                </a>
-                                <Link href="/">
-                                    <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white rounded-full px-6 py-2 backdrop-blur-sm">
+                                    </a>
+                                </Button>
+                                <Button asChild variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white rounded-full px-6 py-2 backdrop-blur-sm">
+                                    <Link href="/">
                                         <Home className="mr-2 h-4 w-4"/>
                                         Back to Home
-                                    </Button>
-                                </Link>
+                                    </Link>
+                                </Button>
                             </div>
                         </div>
                     </div>
