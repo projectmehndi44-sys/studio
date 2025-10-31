@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -59,8 +60,8 @@ export default function CustomerLoginPage() {
     }, [isUserLoading, user, router]);
 
     const setupRecaptcha = () => {
-      if (!window.recaptchaVerifier) {
-        window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      if (!(window as any).recaptchaVerifier) {
+        (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
           'size': 'invisible',
           'callback': () => {},
         });
@@ -70,7 +71,7 @@ export default function CustomerLoginPage() {
     const handlePhoneSubmit: SubmitHandler<z.infer<typeof phoneSchema>> = async (data) => {
         setIsSubmitting(true);
         setupRecaptcha();
-        const appVerifier = window.recaptchaVerifier;
+        const appVerifier = (window as any).recaptchaVerifier;
         const fullPhoneNumber = `+91${data.phone}`;
         
         try {
