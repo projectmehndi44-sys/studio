@@ -1,5 +1,5 @@
 import { collection, doc, getDoc, getDocs, setDoc, addDoc, updateDoc, query, where, deleteDoc, Timestamp, onSnapshot, Unsubscribe, runTransaction, Query } from 'firebase/firestore';
-import type { Artist, Booking, Customer, MasterServicePackage, PayoutHistory, TeamMember, Notification, Promotion, ImagePlaceholder, BenefitImage, HeroSettings } from '@/lib/types';
+import type { Artist, Booking, Customer, MasterServicePackage, PayoutHistory, TeamMember, Notification, Promotion, ImagePlaceholder, BenefitImage, HeroSettings, FinancialSettings } from '@/lib/types';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { getFirebaseServices } from '@/firebase/init';
 import { callFirebaseFunction } from '@/firebase/functions';
@@ -206,9 +206,7 @@ export const createArtistWithId = async (data: Omit<Artist, 'id'> & {id: string}
 
 
 export const updateArtist = async (id: string, data: Partial<Artist>): Promise<void> => {
-    const artistRef = doc(getDb(), "artists", id);
-    // This will be blocked by security rules. This action should be a Cloud Function.
-    console.warn("Client-side artist update attempted. This should be a Cloud Function.");
+    await callFirebaseFunction('updateArtistProfile', { artistId: id, data });
 };
 export const deleteArtist = async (id: string): Promise<void> => {
     const artistRef = doc(getDb(), "artists", id);
@@ -366,8 +364,8 @@ export const getCompanyProfile = async () => {
 };
 export const saveCompanyProfile = (data: any) => setConfigDocument('companyProfile', data);
 
-export const getFinancialSettings = async () => {
-    return await getConfigDocument<any>('financialSettings') || {
+export const getFinancialSettings = async (): Promise<FinancialSettings> => {
+    return await getConfigDocument<FinancialSettings>('financialSettings') || {
         platformFeePercentage: 10,
         platformRefundFee: 500,
     };

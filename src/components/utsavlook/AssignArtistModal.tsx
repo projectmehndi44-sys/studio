@@ -16,7 +16,8 @@ import { Label } from '../ui/label';
 import { Checkbox } from '../ui/checkbox';
 import { ScrollArea } from '../ui/scroll-area';
 import { Badge } from '../ui/badge';
-import { isSameDay, parseISO } from 'date-fns';
+import { isSameDay } from 'date-fns';
+import { getSafeDate } from '@/lib/utils';
 
 interface AssignArtistModalProps {
   booking: Booking | null;
@@ -68,7 +69,7 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
     if (!booking) return new Set();
     
     const unavailableIds = new Set<string>();
-    const bookingDates = booking.serviceDates;
+    const bookingDates = booking.serviceDates.map(d => getSafeDate(d));
 
     // Add artists who are already booked on any of the same days
     allBookings
@@ -77,14 +78,14 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
             (b.status === 'Confirmed' || b.status === 'Completed') &&
             b.artistIds.length > 0 &&
             b.serviceDates.some(bookedDate => 
-                bookingDates.some(bookingDate => isSameDay(bookedDate, bookingDate)))
+                bookingDates.some(bookingDate => isSameDay(getSafeDate(bookedDate), bookingDate)))
         )
         .forEach(b => b.artistIds.forEach(id => id && unavailableIds.add(id)));
 
     // Add artists who have marked any of the days as unavailable
     artists.forEach(artist => {
         if (artist.unavailableDates?.some(unavailableDateStr => 
-            bookingDates.some(bookingDate => isSameDay(parseISO(unavailableDateStr), bookingDate))
+            bookingDates.some(bookingDate => isSameDay(getSafeDate(unavailableDateStr), bookingDate))
         )) {
             unavailableIds.add(artist.id);
         }
@@ -96,13 +97,19 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
   const sortedArtists = React.useMemo(() => {
     if (!booking) return [];
     return [...artists].sort((a, b) => {
+        const aIsUnavailable = unavailableArtistIds.has(a.id);
+        const bIsUnavailable = unavailableArtistIds.has(b.id);
+        if (aIsUnavailable && !bIsUnavailable) return 1;
+        if (!aIsUnavailable && bIsUnavailable) return -1;
+        
         const aIsLocal = a.district === booking.district;
         const bIsLocal = b.district === booking.district;
         if (aIsLocal && !bIsLocal) return -1;
         if (!aIsLocal && bIsLocal) return 1;
+        
         return a.name.localeCompare(b.name);
     });
-  }, [artists, booking]);
+  }, [artists, booking, unavailableArtistIds]);
 
   if (!booking) return null;
 
@@ -112,7 +119,7 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
         <DialogHeader>
           <DialogTitle className="text-primary font-bold text-2xl">{booking.artistIds && booking.artistIds.length > 0 ? 'Change' : 'Assign'} Artists</DialogTitle>
           <DialogDescription>
-            Select one or more available artists for booking #{booking.id}. Local artists are shown first.
+            Select one or more available artists for booking #{booking.id.substring(0,7)}. Local artists are shown first.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
@@ -152,7 +159,7 @@ export function AssignArtistModal({ booking, artists, allBookings, isOpen, onOpe
             <div className='text-sm'>
               <p><span className='font-semibold'>Customer:</span> {booking.customerName}</p>
               <p><span className='font-semibold'>Service:</span> {booking.items.map(i => i.servicePackage.name).join(', ')}</p>
-              <p><span className='font-semibold'>Date:</span> {booking.eventDate.toLocaleDateString()}</p>
+              <p><span className='font-semibold'>Date:</span> {getSafeDate(booking.eventDate).toLocaleDateString()}</p>
             </div>
           </div>
           <DialogFooter>

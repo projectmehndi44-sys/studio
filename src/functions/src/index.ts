@@ -479,13 +479,33 @@ export const verifyAdminLogin = functions.https.onCall(async (data, context) => 
     throw new functions.https.HttpsError("internal", "An error occurred while verifying admin status.");
   }
 });
+
+
+/**
+ * Securely updates an artist's profile. Callable only by the artist themselves.
+ */
+export const updateArtistProfile = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "You must be logged in.");
+    }
+    
+    const uid = context.auth.uid;
+    const { artistId, data: artistData } = data;
+
+    // An artist can only update their own profile.
+    if (uid !== artistId) {
+        throw new functions.https.HttpsError("permission-denied", "You can only update your own profile.");
+    }
+
+    const artistRef = db.collection('artists').doc(artistId);
+
+    try {
+        await artistRef.update(artistData);
+        return { success: true, message: "Profile updated successfully." };
+    } catch (error) {
+        console.error("Error updating artist profile:", error);
+        throw new functions.https.HttpsError("internal", "An error occurred while updating the profile.");
+    }
+});
     
 
-
-
-
-
-
-
-
-    

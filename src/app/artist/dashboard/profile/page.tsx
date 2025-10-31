@@ -8,13 +8,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { User, Save, Loader2, Image as ImageIcon, Copy, KeyRound } from 'lucide-react';
-import { updateArtist, uploadSiteImage } from '@/lib/services';
+import { User, Save, Loader2, Image as ImageIcon, Copy, KeyRound, PlusCircle, Trash2 } from 'lucide-react';
+import { updateArtist, uploadSiteImage, getAvailableLocations } from '@/lib/services';
 import type { Artist, ServiceArea } from '@/lib/types';
 import { Switch } from '@/components/ui/switch';
 import NextImage from 'next/image';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { useAuth } from '@/firebase';
+import { v4 as uuidv4 } from 'uuid';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function ArtistProfilePage() {
     const { artist } = useArtistPortal();
@@ -23,11 +25,13 @@ export default function ArtistProfilePage() {
     const [isSaving, setIsSaving] = React.useState(false);
     const [isUploading, setIsUploading] = React.useState<Record<string, boolean>>({});
     const [localArtist, setLocalArtist] = React.useState<Artist | null>(null);
+    const [availableLocations, setAvailableLocations] = React.useState<Record<string, string[]>>({});
 
     React.useEffect(() => {
         if (artist) {
             setLocalArtist(JSON.parse(JSON.stringify(artist))); // Deep copy
         }
+        getAvailableLocations().then(setAvailableLocations);
     }, [artist]);
     
     const handleInputChange = (field: keyof Artist, value: any) => {
@@ -39,8 +43,26 @@ export default function ArtistProfilePage() {
         if (!localArtist) return;
         const updatedAreas = [...localArtist.serviceAreas];
         updatedAreas[index] = { ...updatedAreas[index], [field]: value };
+        if (field === 'state') {
+             updatedAreas[index].district = ''; // Reset district when state changes
+        }
         handleInputChange('serviceAreas', updatedAreas);
     };
+
+    const addServiceArea = () => {
+        if (!localArtist) return;
+        const newArea: ServiceArea = { id: uuidv4(), state: '', district: '', localities: '' };
+        handleInputChange('serviceAreas', [...localArtist.serviceAreas, newArea]);
+    };
+    
+    const removeServiceArea = (index: number) => {
+         if (!localArtist || localArtist.serviceAreas.length <= 1) {
+            toast({ title: "Cannot remove", description: "You must have at least one service area.", variant: "destructive" });
+            return;
+        };
+        const updatedAreas = localArtist.serviceAreas.filter((_, i) => i !== index);
+        handleInputChange('serviceAreas', updatedAreas);
+    }
     
     const handleProfilePicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!localArtist || !e.target.files?.[0]) return;
@@ -98,6 +120,7 @@ export default function ArtistProfilePage() {
         }
     };
 
+    const availableStates = Object.keys(availableLocations);
 
     if (!localArtist) return <div>Loading profile...</div>;
 
@@ -181,23 +204,33 @@ export default function ArtistProfilePage() {
                     <CardDescription>Define the locations you serve. Be specific to get relevant booking requests.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {localArtist.serviceAreas.map((area, index) => (
-                        <div key={index} className="grid md:grid-cols-3 gap-4 p-3 border rounded-md">
+                    {localArtist.serviceAreas.map((area, index) => {
+                         const districtsForState = availableLocations[area.state] || [];
+                        return (
+                        <div key={area.id} className="grid md:grid-cols-4 gap-4 p-3 border rounded-md items-start relative">
+                           {localArtist.serviceAreas.length > 1 && <Button size="icon" variant="ghost" className="absolute top-1 right-1 h-7 w-7" onClick={() => removeServiceArea(index)}><Trash2 className="w-4 h-4 text-destructive"/></Button>}
                             <div className="space-y-1">
                                 <Label>State</Label>
-                                <Input value={area.state} disabled/>
+                                <Select onValueChange={(v) => handleServiceAreaChange(index, 'state', v)} value={area.state}>
+                                    <SelectTrigger><SelectValue placeholder="Select State" /></SelectTrigger>
+                                    <SelectContent>{availableStates.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                                </Select>
                             </div>
                             <div className="space-y-1">
                                 <Label>District</Label>
-                                <Input value={area.district} disabled/>
+                                <Select onValueChange={(v) => handleServiceAreaChange(index, 'district', v)} value={area.district} disabled={!area.state || districtsForState.length === 0}>
+                                    <SelectTrigger><SelectValue placeholder="Select District" /></SelectTrigger>
+                                    <SelectContent>{districtsForState.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                                </Select>
                             </div>
-                            <div className="space-y-1">
+                            <div className="space-y-1 md:col-span-2">
                                  <Label>Localities Served</Label>
                                 <Input value={area.localities} onChange={(e) => handleServiceAreaChange(index, 'localities', e.target.value)} placeholder="e.g., Koregaon Park, Viman Nagar"/>
+                                <p className="text-xs text-muted-foreground">Comma-separated list of neighborhoods.</p>
                             </div>
                         </div>
-                    ))}
-                    <p className="text-sm text-muted-foreground">To change State or District, please contact admin.</p>
+                    )})}
+                    <Button variant="outline" onClick={addServiceArea}><PlusCircle className="w-4 h-4 mr-2"/> Add New Area</Button>
                 </CardContent>
             </Card>
 

@@ -232,6 +232,13 @@ export type TeamMember = {
     permissions: Permissions;
     fcmToken?: string;
 };
+
+export type FinancialSettings = {
+    platformFeePercentage: number;
+    platformRefundFee: number;
+};
+
+
 // AI Recommendation Type
 export interface RawArtistRecommendation {
   artistId: string;

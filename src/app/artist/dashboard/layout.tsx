@@ -11,7 +11,9 @@ import {
     LogOut,
     PanelLeft,
     Sparkles,
-    Image as ImageIcon
+    Image as ImageIcon,
+    CalendarCheck,
+    Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -103,6 +105,8 @@ function ArtistDashboardLayoutContent({ children }: { children: React.ReactNode 
     const navLinks = [
         { href: '/artist/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { href: '/artist/dashboard/bookings', label: 'Bookings', icon: Briefcase },
+        { href: '/artist/dashboard/availability', label: 'Availability', icon: CalendarCheck },
+        { href: '/artist/dashboard/services', label: 'Services & Pricing', icon: Settings },
         { href: '/artist/dashboard/payouts', label: 'Payouts', icon: IndianRupee },
         { href: '/artist/dashboard/profile', label: 'My Profile', icon: User },
         { href: '/artist/dashboard/gallery', label: 'Work Gallery', icon: ImageIcon },
