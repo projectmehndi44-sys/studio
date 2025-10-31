@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -372,7 +373,8 @@ export default function Home() {
             <Carousel
               opts={{ align: "start", loop: true }}
               className="w-full"
-              plugins={[Autoplay({ delay: 5000, stopOnInteraction: true })]}
+              plugins={[Autoplay({ delay: 5000, stopOnInteraction: false })]}
+              setApi={setWhyChooseUsApi}
             >
               <CarouselContent>
                 {whyChooseUsFeatures.map((feature) => (
