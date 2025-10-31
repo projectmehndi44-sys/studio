@@ -1,11 +1,14 @@
+
 'use client';
 
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/firebase'; // Use the main firebase barrel file
-import { getTeamMember } from '@/lib/services';
+import { getTeamMember, addOrUpdateTeamMember } from '@/lib/services';
 import type { TeamMember, Permission, PermissionLevel } from '@/lib/types';
 import { initialSuperAdminPermissions } from '@/lib/team-data';
+import { doc, getDoc } from 'firebase/firestore';
+import { getDb } from '@/lib/services';
 
 interface AdminAuth {
   user: TeamMember | null;
@@ -35,13 +38,19 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
         const checkAdminStatus = async () => {
             const memberProfile = await getTeamMember(authUser.uid);
             
-            // Logic for the very first user becoming Super Admin
-            if (memberProfile === null && authUser) {
-                 // This case should ideally be handled by the verifyAdminLogin cloud function
-                 // which creates the team member document on first login.
-                 // We can have a fallback check here just in case.
-                 console.warn("No team member profile found for authenticated user. This should have been created on login.");
-                 setAdminUser(null);
+            // ONE-TIME MANUAL SETUP SCRIPT
+            if (memberProfile === null && authUser.email === 'utsavlook01@gmail.com') {
+                console.log("Super Admin profile not found. Creating it now...");
+                const newSuperAdmin: TeamMember = {
+                    id: authUser.uid,
+                    name: authUser.displayName || 'Super Admin',
+                    username: authUser.email!,
+                    role: 'Super Admin',
+                    permissions: initialSuperAdminPermissions,
+                };
+                await addOrUpdateTeamMember(newSuperAdmin);
+                setAdminUser(newSuperAdmin);
+                console.log("Super Admin profile created successfully.");
             } else {
                  setAdminUser(memberProfile || null);
             }
