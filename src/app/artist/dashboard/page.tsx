@@ -12,7 +12,7 @@ import type { Booking, Notification } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { getSafeDate } from '@/lib/utils';
 import { query, collection, where } from 'firebase/firestore';
-import { getDb } from '@/firebase';
+import { db } from '@/firebase';
 
 
 function DashboardCard({ title, value, description, icon: Icon, href, className }: { title: string, value: string | number, description: string, icon: React.ElementType, href?: string, className?: string }) {
@@ -41,13 +41,13 @@ export default function ArtistDashboardPage() {
     React.useEffect(() => {
         if (!artist) return;
         
-        const db = getDb();
         const bookingsQuery = query(collection(db, 'bookings'), where('artistIds', 'array-contains', artist.id));
         const unsubBookings = listenToCollection<Booking>('bookings', setBookings, bookingsQuery);
 
+        const notificationsQuery = query(collection(db, 'notifications'), where('artistId', '==', artist.id));
         const unsubNotifs = listenToCollection<Notification>('notifications', (allNotifs) => {
-            setNotifications(allNotifs.filter(n => n.artistId === artist.id).sort((a,b) => getSafeDate(b.timestamp).getTime() - getSafeDate(a.timestamp).getTime()));
-        });
+            setNotifications(allNotifs.sort((a,b) => getSafeDate(b.timestamp).getTime() - getSafeDate(a.timestamp).getTime()));
+        }, notificationsQuery);
 
         return () => {
             unsubBookings();
