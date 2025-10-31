@@ -252,6 +252,9 @@ export default function ArtistHomePage() {
         "Powerful tools to manage your schedule, earnings, and client communication.",
     ];
 
+    const whatsappUrl = `https://wa.me/918822415705?text=${encodeURIComponent("hello ! I want to join UtsavLook as an artist..")}`;
+
+
     return (
         <ParallaxProvider>
         <div className="flex min-h-screen w-full flex-col bg-background">
@@ -305,19 +308,21 @@ export default function ArtistHomePage() {
                                         Artist Login
                                     </Button>
                                 </Link>
-                                <a href="https://wa.me/918822415705" target="_blank" rel="noopener noreferrer">
-                                    <Button size="lg" variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white rounded-full text-lg px-8 py-6">
-                                        <MessageSquare className="mr-2 h-5 w-5"/>
+                            </div>
+                            <div className="flex flex-wrap justify-center items-center gap-4 mt-4">
+                                <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
+                                    <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white rounded-full px-6 py-2 backdrop-blur-sm">
+                                        <MessageSquare className="mr-2 h-4 w-4"/>
                                         Talk to Us
                                     </Button>
                                 </a>
+                                <Link href="/">
+                                    <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white rounded-full px-6 py-2 backdrop-blur-sm">
+                                        <Home className="mr-2 h-4 w-4"/>
+                                        Back to Home
+                                    </Button>
+                                </Link>
                             </div>
-                            <Link href="/">
-                                <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white rounded-full px-6 py-2 backdrop-blur-sm mt-4">
-                                    <Home className="mr-2 h-4 w-4"/>
-                                    Back to Home
-                                </Button>
-                            </Link>
                         </div>
                     </div>
                 </section>
