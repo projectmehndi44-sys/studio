@@ -8,8 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Header } from '@/components/utsavlook/Header';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArtistProfileModal } from '@/components/utsavlook/ArtistProfileModal';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Footer } from '@/components/utsavlook/Footer';
 import { ArtistCard } from '@/components/utsavlook/ArtistCard';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -29,8 +28,6 @@ export default function ArtistsPage() {
   const [customer, setCustomer] = React.useState<Customer | null>(null);
 
   const [cartCount, setCartCount] = React.useState(0);
-  const [selectedArtist, setSelectedArtist] = React.useState<Artist | null>(null);
-  const [isArtistModalOpen, setIsArtistModalOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
   const [activeTab, setActiveTab] = React.useState('all');
   const [suggestions, setSuggestions] = React.useState<string[]>([]);
@@ -188,7 +185,7 @@ export default function ArtistsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
               {filteredArtists.length > 0 ? (
                   filteredArtists.map((artist) => (
-                    <ArtistCard key={artist.id} artist={artist} onViewProfile={() => {setSelectedArtist(artist); setIsArtistModalOpen(true);}} />
+                    <ArtistCard key={artist.id} artist={artist} />
                   ))
               ) : (
                 <div className="col-span-full text-center py-16">
@@ -199,14 +196,6 @@ export default function ArtistsPage() {
             </div>
           </div>
         </section>
-
-         {selectedArtist && (
-          <ArtistProfileModal 
-            isOpen={isArtistModalOpen}
-            onOpenChange={setIsArtistModalOpen}
-            artist={selectedArtist}
-          />
-        )}
       </main>
       <Footer />
     </div>

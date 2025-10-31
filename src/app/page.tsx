@@ -35,7 +35,6 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { ClientOnly } from '@/components/ClientOnly';
 import { occasionImages } from '@/lib/occasion-images';
 import Autoplay from "embla-carousel-autoplay";
-import { ArtistProfileModal } from '@/components/utsavlook/ArtistProfileModal';
 import { useAuth, useUser } from '@/firebase';
 
 const occasionWords = occasionImages.map(img => img.occasion);
@@ -102,9 +101,7 @@ export default function Home() {
 
   const [isServiceModalOpen, setIsServiceModalOpen] = React.useState(false);
   const [selectedService, setSelectedService] = React.useState<MasterServicePackage | null>(null);
-  const [selectedArtist, setSelectedArtist] = React.useState<Artist | null>(null);
-  const [isArtistModalOpen, setIsArtistModalOpen] = React.useState(false);
-
+  
   const [topArtists, setTopArtists] = React.useState<Artist[]>([]);
   
   const [occasionIndex, setOccasionIndex] = React.useState(0);
@@ -185,7 +182,7 @@ export default function Home() {
   React.useEffect(() => {
     const unsubscribeArtists = listenToCollection<Artist>('artists', (fetchedArtists) => {
         setArtists(fetchedArtists);
-        setTopArtists([...fetchedArtists].sort(() => 0.5 - Math.random()).slice(0, 5));
+        setTopArtists([...fetchedArtists].sort(() => 0.5 - Math.random()).slice(0, 10));
     });
     
     getMasterServices().then((services) => {
@@ -484,11 +481,19 @@ export default function Home() {
           <div id="artists" className="py-12 px-4 why-choose-us-bg">
             <div className="container mx-auto px-4 md:px-6">
                 <h2 className="text-center font-headline text-4xl sm:text-5xl text-primary mb-12">Meet Our Top Artists</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 max-w-7xl mx-auto">
-                  {topArtists.map((artist) => (
-                    <ArtistCard key={artist.id} artist={artist} onViewProfile={() => {setSelectedArtist(artist); setIsArtistModalOpen(true);}} />
-                  ))}
-                </div>
+                <Carousel
+                    opts={{ align: "start", loop: true }}
+                    plugins={[ Autoplay({ delay: 3000, stopOnInteraction: true }) ]}
+                    className="w-full"
+                >
+                    <CarouselContent className="-ml-4">
+                        {topArtists.map((artist) => (
+                           <CarouselItem key={artist.id} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                                <ArtistCard artist={artist} />
+                           </CarouselItem>
+                        ))}
+                    </CarouselContent>
+                </Carousel>
                  <div className="text-center mt-8">
                     <Button asChild variant="outline">
                         <Link href="/artists">View All Artists</Link>
@@ -506,13 +511,6 @@ export default function Home() {
                 artists={artists}
                 onAddToCart={handleAddToCart}
             />
-        )}
-         {selectedArtist && (
-          <ArtistProfileModal 
-            isOpen={isArtistModalOpen}
-            onOpenChange={setIsArtistModalOpen}
-            artist={selectedArtist}
-          />
         )}
       </main>
       <Footer />

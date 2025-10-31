@@ -10,7 +10,6 @@ import Link from 'next/link';
 
 interface ArtistCardProps {
   artist: Artist;
-  onViewProfile?: (artist: Artist) => void;
 }
 
 const getServiceIcon = (service: Artist['services'][number]) => {
@@ -26,22 +25,15 @@ const getServiceIcon = (service: Artist['services'][number]) => {
     }
 }
 
-export function ArtistCard({ artist, onViewProfile }: ArtistCardProps) {
+export function ArtistCard({ artist }: ArtistCardProps) {
   const primaryService = artist.services?.[0];
   const baseCharge = (primaryService && artist.charges?.[primaryService]) || artist.charge || 0;
   const primaryWorkImage = artist.workImages?.[0] || 'https://picsum.photos/seed/placeholder/800/600';
 
-  const handleViewProfileClick = (e: React.MouseEvent) => {
-    if (onViewProfile) {
-      e.preventDefault();
-      onViewProfile(artist);
-    }
-  };
-
   return (
-    <Card className="overflow-hidden flex flex-col group transition-all duration-300 shadow-brand hover:shadow-brand-lg hover:border-accent">
+    <Card className="overflow-hidden flex flex-col group transition-all duration-300 shadow-brand hover:shadow-brand-lg hover:border-accent h-full">
       <CardContent className="p-0 relative">
-        <Link href={`/artist/${artist.id}`} onClick={handleViewProfileClick} className="aspect-[4/3] relative block">
+        <Link href={`/artist/${artist.id}`} className="aspect-[4/3] relative block">
           <Image
             src={primaryWorkImage}
             alt={`${artist.name}'s work`}
@@ -109,8 +101,8 @@ export function ArtistCard({ artist, onViewProfile }: ArtistCardProps) {
       </div>
       
       <CardFooter className="p-2 bg-background/50">
-        <Button asChild className="w-full bg-accent hover:bg-accent/90" size="lg">
-            <Link href={`/artist/${artist.id}`} onClick={handleViewProfileClick}>View Profile</Link>
+        <Button asChild className="w-full btn-gradient rounded-full" size="lg">
+            <Link href={`/artist/${artist.id}`}>View Profile</Link>
         </Button>
       </CardFooter>
     </Card>
