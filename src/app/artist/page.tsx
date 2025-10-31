@@ -294,7 +294,7 @@ export default function ArtistHomePage() {
                            Join a community that celebrates your talent. We give you the tools to get discovered, manage bookings, and grow your brand—all in one place.
                         </p>
                         <div className="mt-8 flex flex-col items-center gap-4 animate-fade-in opacity-0 [animation-fill-mode:forwards] [animation-delay:4s]">
-                             <div className="flex gap-4">
+                             <div className="flex flex-wrap justify-center gap-4">
                                 <Link href="/artist/register">
                                     <Button size="lg" className="btn-gradient rounded-full text-lg px-8 py-6">
                                         Register Now
@@ -305,9 +305,15 @@ export default function ArtistHomePage() {
                                         Artist Login
                                     </Button>
                                 </Link>
+                                <a href="https://wa.me/918822415705" target="_blank" rel="noopener noreferrer">
+                                    <Button size="lg" variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white rounded-full text-lg px-8 py-6">
+                                        <MessageSquare className="mr-2 h-5 w-5"/>
+                                        Talk to Us
+                                    </Button>
+                                </a>
                             </div>
                             <Link href="/">
-                                <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white rounded-full px-6 py-2 backdrop-blur-sm">
+                                <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white rounded-full px-6 py-2 backdrop-blur-sm mt-4">
                                     <Home className="mr-2 h-4 w-4"/>
                                     Back to Home
                                 </Button>
@@ -407,10 +413,10 @@ export default function ArtistHomePage() {
 
                 {/* Why Join Section */}
                 <section className="w-full py-16 why-choose-us-bg">
-                    <div className="container px-4 md:px-6 grid lg:grid-cols-2 gap-12 items-center">
-                        <div className="space-y-4">
+                    <div className="container px-4 md:px-6">
+                        <div className="space-y-4 text-center">
                              <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-primary font-headline">Why You'll Love UtsavLook</h2>
-                             <ul className="space-y-3 text-muted-foreground text-lg">
+                             <ul className="space-y-3 text-muted-foreground text-lg max-w-2xl mx-auto">
                                 {whyJoinPoints.map((point, index) => (
                                     <li key={index} className="flex items-start">
                                         <Check className="w-5 h-5 mr-3 mt-1 text-accent shrink-0"/>
@@ -418,15 +424,6 @@ export default function ArtistHomePage() {
                                     </li>
                                 ))}
                             </ul>
-                        </div>
-                        <div className="relative aspect-[4/5] rounded-2xl overflow-hidden shadow-brand-lg">
-                             <Image
-                                src="https://picsum.photos/seed/artist-love/600/750"
-                                alt="A happy and successful makeup artist"
-                                layout="fill"
-                                objectFit="cover"
-                                data-ai-hint="artist smiling"
-                            />
                         </div>
                     </div>
                 </section>
