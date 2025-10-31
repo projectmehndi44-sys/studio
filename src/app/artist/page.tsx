@@ -265,7 +265,7 @@ export default function ArtistHomePage() {
              </ClientOnly>
             <main className="flex-1">
                 {/* Hero Section */}
-                <section className="relative w-full h-[70vh] md:h-screen text-white overflow-hidden">
+                <section className="relative w-full h-[70vh] md:h-screen text-white overflow-hidden why-choose-us-bg">
                     {/* Background Slideshow */}
                     <div className="absolute inset-0 w-full h-full z-0">
                         {artistHeroImages.map((item, index) => (
@@ -401,6 +401,32 @@ export default function ArtistHomePage() {
                                     <p className="text-muted-foreground mt-2 text-sm flex-grow">{step.description}</p>
                                 </Card>
                             ))}
+                        </div>
+                    </div>
+                </section>
+
+                {/* Why Join Section */}
+                <section className="w-full py-16 why-choose-us-bg">
+                    <div className="container px-4 md:px-6 grid lg:grid-cols-2 gap-12 items-center">
+                        <div className="space-y-4">
+                             <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-primary font-headline">Why You'll Love UtsavLook</h2>
+                             <ul className="space-y-3 text-muted-foreground text-lg">
+                                {whyJoinPoints.map((point, index) => (
+                                    <li key={index} className="flex items-start">
+                                        <Check className="w-5 h-5 mr-3 mt-1 text-accent shrink-0"/>
+                                        <span>{point}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                        <div className="relative aspect-[4/5] rounded-2xl overflow-hidden shadow-brand-lg">
+                             <Image
+                                src="https://picsum.photos/seed/artist-love/600/750"
+                                alt="A happy and successful makeup artist"
+                                layout="fill"
+                                objectFit="cover"
+                                data-ai-hint="artist smiling"
+                            />
                         </div>
                     </div>
                 </section>
