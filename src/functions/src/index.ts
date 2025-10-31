@@ -391,6 +391,7 @@ export const verifyAdminLogin = functions.https.onCall(async (data, context) => 
 
     // Check if the user is the designated Super Admin and their document doesn't exist
     if (email === SUPER_ADMIN_EMAIL && !userDoc.exists) {
+      console.log(`Creating Super Admin profile for ${email}`);
       const newSuperAdmin = {
         id: uid,
         name: context.auth.token.name || email || "Super Admin",
@@ -415,6 +416,7 @@ export const verifyAdminLogin = functions.https.onCall(async (data, context) => 
   }
 });
     
+
 
 
 

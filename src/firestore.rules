@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -14,6 +15,10 @@ service cloud.firestore {
     
     function isTeamMember() {
       return isAuth() && exists(/databases/$(database)/documents/teamMembers/$(request.auth.uid));
+    }
+    
+    function isSuperAdmin() {
+        return isTeamMember() && get(/databases/$(database)/documents/teamMembers/$(request.auth.uid)).data.role == 'Super Admin';
     }
 
     // --- Collection Rules ---
@@ -45,12 +50,12 @@ service cloud.firestore {
       allow update: if false;
     }
     
-    // Team member roles can only be written by Super Admins.
+    // Team member roles can only be managed by Super Admins.
     // An authenticated user can read their own team member document to know their permissions.
     match /teamMembers/{userId} {
-      allow get: if isOwner(userId) || get(/databases/$(database)/documents/teamMembers/$(request.auth.uid)).data.role == 'Super Admin';
-      allow list: if get(/databases/$(database)/documents/teamMembers/$(request.auth.uid)).data.role == 'Super Admin';
-      allow write: if get(/databases/$(database)/documents/teamMembers/$(request.auth.uid)).data.role == 'Super Admin';
+      allow get: if isOwner(userId) || isSuperAdmin();
+      allow list: if isSuperAdmin(); // Only Super Admins can list all members
+      allow write: if isSuperAdmin();
     }
     
     // Notifications can be read only by the user they are intended for.
