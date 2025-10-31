@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import * as React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { IndianRupee, MoreHorizontal, Download, FileText } from 'lucide-react';
+import { IndianRupee, MoreHorizontal, Download, FileText, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Booking, Artist, Payout, PayoutHistory } from '@/lib/types';
 import { listenToCollection, updateBooking, getFinancialSettings, getArtists } from '@/lib/services';
@@ -17,6 +18,17 @@ import { exportPayoutToPdf, generateGstInvoiceForPlatformFee } from '@/lib/expor
 import { useAdminAuth } from '@/firebase/auth/use-admin-auth';
 import { addDoc, collection } from 'firebase/firestore';
 import { getDb } from '@/lib/services';
+import { callFirebaseFunction } from '@/lib/firebase';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 
 export default function PayoutManagementPage() {
@@ -27,6 +39,7 @@ export default function PayoutManagementPage() {
     const [payouts, setPayouts] = React.useState<Payout[]>([]);
     const [payoutHistory, setPayoutHistory] = React.useState<PayoutHistory[]>([]);
     const [platformFeePercentage, setPlatformFeePercentage] = React.useState(0.1);
+    const [isDeleteAlertOpen, setIsDeleteAlertOpen] = React.useState(false);
 
 
     React.useEffect(() => {
@@ -130,6 +143,25 @@ export default function PayoutManagementPage() {
         });
     }
 
+     const handleDeleteAllPayouts = async () => {
+        try {
+            await callFirebaseFunction('deleteAllPayoutHistory', {});
+            toast({
+                title: "Payout History Cleared",
+                description: "All payout history has been permanently deleted.",
+                variant: "destructive"
+            });
+        } catch (error: any) {
+            toast({
+                title: "Deletion Failed",
+                description: error.message || "You do not have permission to perform this action.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsDeleteAlertOpen(false);
+        }
+    };
+
     const PayoutRow = ({ payout }: { payout: Payout | PayoutHistory }) => (
          <TableRow>
             <TableCell className="font-medium">{'paymentDate' in payout ? new Date(payout.paymentDate).toLocaleDateString() : payout.artistName}</TableCell>
@@ -167,6 +199,12 @@ export default function PayoutManagementPage() {
         <>
             <div className="flex items-center justify-between">
                 <h1 className="text-lg font-semibold md:text-2xl">Artist Payouts</h1>
+                 {hasPermission('payouts', 'edit') && (
+                    <Button variant="destructive" onClick={() => setIsDeleteAlertOpen(true)}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Clear Payout History
+                    </Button>
+                )}
             </div>
              <Card className="flex-1">
                 <CardHeader>
@@ -278,6 +316,22 @@ export default function PayoutManagementPage() {
                     </Tabs>
                 </CardContent>
             </Card>
+             <AlertDialog open={isDeleteAlertOpen} onOpenChange={setIsDeleteAlertOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action will permanently delete all payout history records from the database. This cannot be undone. Are you sure you want to proceed?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteAllPayouts} className="bg-destructive hover:bg-destructive/80">
+                            Yes, Delete All Payout History
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }

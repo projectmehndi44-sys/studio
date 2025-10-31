@@ -342,6 +342,66 @@ export const createBooking = functions.https.onCall(async (data, context) => {
     return { success: true, bookingId: docRef.id };
 });
 
+
+/**
+ * Secure function to delete all documents in a collection.
+ * ONLY callable by a Super Admin.
+ */
+async function deleteCollection(collectionPath: string, batchSize: number) {
+    const collectionRef = db.collection(collectionPath);
+    const query = collectionRef.orderBy('__name__').limit(batchSize);
+
+    return new Promise((resolve, reject) => {
+        deleteQueryBatch(query, resolve).catch(reject);
+    });
+}
+
+async function deleteQueryBatch(query: admin.firestore.Query, resolve: (value?: unknown) => void) {
+    const snapshot = await query.get();
+
+    const batchSize = snapshot.size;
+    if (batchSize === 0) {
+        // When there are no documents left, we are done
+        resolve();
+        return;
+    }
+
+    // Delete documents in a batch
+    const batch = db.batch();
+    snapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+    });
+    await batch.commit();
+
+    // Recurse on the next process tick, to avoid hitting memory limits
+    process.nextTick(() => {
+        deleteQueryBatch(query, resolve);
+    });
+}
+
+const checkSuperAdmin = async (context: functions.https.CallableContext) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "You must be logged in.");
+    }
+    const adminDoc = await db.collection('teamMembers').doc(context.auth.uid).get();
+    if (!adminDoc.exists || adminDoc.data()?.role !== 'Super Admin') {
+        throw new functions.https.HttpsError("permission-denied", "You must be a Super Admin to perform this action.");
+    }
+};
+
+export const deleteAllBookings = functions.https.onCall(async (data, context) => {
+    await checkSuperAdmin(context);
+    await deleteCollection('bookings', 100);
+    return { success: true, message: "All bookings have been deleted." };
+});
+
+export const deleteAllPayoutHistory = functions.https.onCall(async (data, context) => {
+    await checkSuperAdmin(context);
+    await deleteCollection('payoutHistory', 100);
+    return { success: true, message: "All payout history has been deleted." };
+});
+
+
 /**
  * Gets all completed bookings.
  * This is a secure function callable only by authenticated admins.
@@ -385,7 +445,7 @@ export const verifyAdminLogin = functions.https.onCall(async (data, context) => 
   const email = context.auth.token.email;
   
   if (!email) {
-      throw new functions.https.HttpsError("invalid-argument", "The user must have an email address.");
+      throw new functions.https.HttpsError("internal", "The user performing the login must have an email address.");
   }
 
   const teamMembersRef = db.collection("teamMembers");
