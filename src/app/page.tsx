@@ -78,8 +78,12 @@ export default function POSPage() {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Shop Settings Hook
-  const settingsRef = useMemoFirebase(() => doc(db, 'settings', 'config'), [db]);
+  // Shop Settings Hook - Gate behind user auth to avoid permission errors
+  const settingsRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(db, 'settings', 'config');
+  }, [db, user]);
+  
   const { data: shopSettings } = useDoc(settingsRef);
 
   const shopName = shopSettings?.shopName || "Krishna's SUPER 9+";

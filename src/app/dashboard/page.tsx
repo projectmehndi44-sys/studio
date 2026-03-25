@@ -13,13 +13,14 @@ import {
   Search,
   Download,
   Filter,
-  Printer
+  Printer,
+  ShieldCheck
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, initiateAnonymousSignIn, useAuth } from '@/firebase';
 import { collection, query, orderBy, limit, where, Timestamp, doc } from 'firebase/firestore';
 import { PurchaseRecord, CashTransaction } from '@/lib/types';
 import { format, startOfToday, startOfMonth, startOfYesterday, subDays } from 'date-fns';
@@ -51,12 +52,18 @@ type DateFilter = 'today' | 'yesterday' | 'month' | 'last7' | 'all';
 
 export default function DashboardPage() {
   const db = useFirestore();
-  const { user } = useUser();
+  const auth = useAuth();
+  const { user, isUserLoading: isAuthLoading } = useUser();
   const [viewingSale, setViewingSale] = useState<PurchaseRecord | null>(null);
   const [dateFilter, setDateFilter] = useState<DateFilter>('today');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const settingsRef = useMemoFirebase(() => doc(db, 'settings', 'config'), [db]);
+  // Shop Settings Hook - Gate behind user auth
+  const settingsRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(db, 'settings', 'config');
+  }, [db, user]);
+  
   const { data: shopSettings } = useDoc(settingsRef);
   
   const shopAddress = shopSettings?.address || "Hoolungooree, Mariani";
@@ -143,11 +150,35 @@ export default function DashboardPage() {
     window.print();
   };
 
-  if (isSalesLoading || isCashLoading) {
+  if (isAuthLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center font-bold animate-pulse text-slate-400 text-xs uppercase tracking-[0.2em]">
           Syncing Cloud Ledger...
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-50 p-6">
+        <div className="max-w-md w-full bg-white rounded-[40px] shadow-2xl p-12 text-center space-y-8 animate-in zoom-in-95 duration-500">
+          <div className="mx-auto w-20 h-20 bg-secondary/5 rounded-[32px] flex items-center justify-center">
+            <ShieldCheck className="h-10 w-10 text-secondary" />
+          </div>
+          <div className="space-y-2">
+            <p className="text-primary font-bold text-[10px] uppercase tracking-[0.3em]">Authorized Entry</p>
+            <h1 className="text-5xl font-black tracking-tighter text-secondary leading-none uppercase">KRISHNA'S</h1>
+            <h2 className="text-3xl font-black tracking-tighter text-primary leading-none uppercase">SUPER 9+</h2>
+            <p className="text-slate-400 font-medium text-sm mt-4">Ledger Access</p>
+          </div>
+          <Button 
+            onClick={() => initiateAnonymousSignIn(auth)}
+            className="w-full h-16 text-lg font-bold rounded-2xl shadow-xl transition-all active:scale-95 bg-secondary hover:bg-secondary/95 text-white"
+          >
+            START SESSION
+          </Button>
         </div>
       </div>
     );
@@ -243,188 +274,198 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-3 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="bg-white border-none shadow-sm rounded-[24px] overflow-hidden">
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="bg-emerald-50 p-2.5 rounded-xl">
-                      <TrendingUp className="h-5 w-5 text-emerald-500" />
-                    </div>
-                  </div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Net Sales Revenue</p>
-                  <h3 className="text-3xl font-bold mt-1 text-slate-900 tracking-tight">₹{stats.sales.toLocaleString()}</h3>
-                </CardContent>
-              </Card>
+        {isSalesLoading || isCashLoading ? (
+          <div className="h-60 flex items-center justify-center">
+            <div className="text-center font-bold animate-pulse text-slate-400 text-xs uppercase tracking-[0.2em]">
+              Fetching Transactions...
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              <div className="lg:col-span-3 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <Card className="bg-white border-none shadow-sm rounded-[24px] overflow-hidden">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="bg-emerald-50 p-2.5 rounded-xl">
+                          <TrendingUp className="h-5 w-5 text-emerald-500" />
+                        </div>
+                      </div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Net Sales Revenue</p>
+                      <h3 className="text-3xl font-bold mt-1 text-slate-900 tracking-tight">₹{stats.sales.toLocaleString()}</h3>
+                    </CardContent>
+                  </Card>
 
-              <Card className="bg-white border-none shadow-sm rounded-[24px] overflow-hidden">
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="bg-primary/5 p-2.5 rounded-xl">
-                      <ShoppingBag className="h-5 w-5 text-primary" />
-                    </div>
-                  </div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Settled Orders</p>
-                  <h3 className="text-3xl font-bold mt-1 text-slate-900 tracking-tight">{sales.length}</h3>
-                </CardContent>
-              </Card>
+                  <Card className="bg-white border-none shadow-sm rounded-[24px] overflow-hidden">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="bg-primary/5 p-2.5 rounded-xl">
+                          <ShoppingBag className="h-5 w-5 text-primary" />
+                        </div>
+                      </div>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Settled Orders</p>
+                      <h3 className="text-3xl font-bold mt-1 text-slate-900 tracking-tight">{sales.length}</h3>
+                    </CardContent>
+                  </Card>
 
-              <Card className="bg-secondary text-white border-none shadow-xl rounded-[24px] overflow-hidden">
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="bg-white/10 p-2.5 rounded-xl">
-                      <History className="h-5 w-5 text-white" />
+                  <Card className="bg-secondary text-white border-none shadow-xl rounded-[24px] overflow-hidden">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start mb-4">
+                        <div className="bg-white/10 p-2.5 rounded-xl">
+                          <History className="h-5 w-5 text-white" />
+                        </div>
+                      </div>
+                      <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Cash-in-Hand</p>
+                      <h3 className="text-3xl font-bold mt-1 tracking-tight">₹{stats.cashInHand.toLocaleString()}</h3>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <Card className="bg-white border-none shadow-sm rounded-[24px] overflow-hidden">
+                  <CardHeader className="p-6 pb-0">
+                    <CardTitle className="text-lg font-bold text-secondary uppercase tracking-tight">Revenue Trends</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-6 pt-2">
+                    <div className="h-[200px] w-full">
+                      <ChartContainer config={{ amount: { label: "Sales (₹)", color: "hsl(var(--primary))" } }}>
+                        <BarChart data={chartData}>
+                          <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} />
+                          <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} barSize={40} />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                        </BarChart>
+                      </ChartContainer>
                     </div>
-                  </div>
-                  <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Cash-in-Hand</p>
-                  <h3 className="text-3xl font-bold mt-1 tracking-tight">₹{stats.cashInHand.toLocaleString()}</h3>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="space-y-6">
+                 <Card className="bg-white border-none shadow-sm rounded-[24px] overflow-hidden">
+                   <CardHeader className="p-6 border-b">
+                     <div className="flex items-center gap-3">
+                       <div className="bg-secondary/5 p-2.5 rounded-xl">
+                         <History className="h-5 w-5 text-secondary" />
+                       </div>
+                       <div>
+                         <CardTitle className="text-sm font-bold text-secondary uppercase tracking-tight">Manual Log</CardTitle>
+                       </div>
+                     </div>
+                   </CardHeader>
+                   <CardContent className="p-0">
+                     <div className="divide-y divide-slate-50 max-h-[460px] overflow-y-auto custom-scrollbar">
+                       {cashFlows.length === 0 ? (
+                         <div className="p-12 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">
+                           No Manual Log
+                         </div>
+                       ) : (
+                         cashFlows.map((cf) => (
+                           <div key={cf.id} className="p-4 flex items-center justify-between group hover:bg-slate-50 transition-colors">
+                             <div className="flex items-center gap-3">
+                               <div className={cn(
+                                 "h-9 w-9 rounded-xl flex items-center justify-center border",
+                                 cf.type === 'IN' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-primary/5 text-primary border-primary/10"
+                               )}>
+                                 {cf.type === 'IN' ? <PlusCircle className="h-4 w-4" /> : <MinusCircle className="h-4 w-4" />}
+                               </div>
+                               <div>
+                                 <p className="font-bold text-sm text-slate-900 tracking-tight">₹{cf.amount.toLocaleString()}</p>
+                                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{cf.reason}</p>
+                               </div>
+                             </div>
+                             <p className="text-[9px] font-bold text-slate-300 uppercase">
+                               {cf.timestamp?.seconds ? format(new Date(cf.timestamp.seconds * 1000), 'HH:mm') : ''}
+                             </p>
+                           </div>
+                         ))
+                       )}
+                     </div>
+                   </CardContent>
+                 </Card>
+              </div>
             </div>
 
-            <Card className="bg-white border-none shadow-sm rounded-[24px] overflow-hidden">
-              <CardHeader className="p-6 pb-0">
-                <CardTitle className="text-lg font-bold text-secondary uppercase tracking-tight">Revenue Trends</CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 pt-2">
-                <div className="h-[200px] w-full">
-                  <ChartContainer config={{ amount: { label: "Sales (₹)", color: "hsl(var(--primary))" } }}>
-                    <BarChart data={chartData}>
-                      <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} />
-                      <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} barSize={40} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                    </BarChart>
-                  </ChartContainer>
+            <Card className="bg-white border-none shadow-sm rounded-[32px] overflow-hidden">
+              <CardHeader className="p-8 border-b bg-slate-50/30 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div>
+                  <CardTitle className="text-xl font-bold text-secondary uppercase tracking-tight">Bill Explorer</CardTitle>
                 </div>
+                <div className="flex items-center gap-3">
+                   <div className="relative w-full md:w-[320px]">
+                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                     <Input 
+                       placeholder="Search ID, Name or Phone..." 
+                       className="h-11 pl-11 bg-white border-slate-100 rounded-xl font-bold text-xs"
+                       value={searchQuery}
+                       onChange={(e) => setSearchQuery(e.target.value)}
+                     />
+                   </div>
+                   <Button variant="outline" className="h-11 rounded-xl border-slate-100 font-bold uppercase text-[10px] tracking-wider gap-2">
+                     <Download className="h-4 w-4" /> Export
+                   </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                 <Table>
+                   <TableHeader className="bg-slate-50/50">
+                     <TableRow className="border-none">
+                       <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14 pl-8">Timestamp</TableHead>
+                       <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14">Bill ID</TableHead>
+                       <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14">Customer</TableHead>
+                       <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14">Items</TableHead>
+                       <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14 text-right">Amount</TableHead>
+                       <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14 text-right pr-8">Actions</TableHead>
+                     </TableRow>
+                   </TableHeader>
+                   <TableBody>
+                     {filteredSales.length === 0 ? (
+                       <TableRow>
+                         <TableCell colSpan={6} className="h-40 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">
+                           No bills found
+                         </TableCell>
+                       </TableRow>
+                     ) : (
+                       filteredSales.map((sale) => (
+                         <TableRow key={sale.id} className="hover:bg-slate-50/50 transition-colors border-slate-50">
+                           <TableCell className="pl-8">
+                             <p className="font-bold text-slate-900 text-sm">{sale.timestamp?.seconds ? format(new Date(sale.timestamp.seconds * 1000), 'dd MMM yyyy') : 'Now'}</p>
+                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{sale.timestamp?.seconds ? format(new Date(sale.timestamp.seconds * 1000), 'HH:mm') : ''}</p>
+                           </TableCell>
+                           <TableCell>
+                             <code className="text-[10px] font-bold text-secondary bg-secondary/5 px-2 py-1 rounded-lg uppercase tracking-wider">#{sale.id?.slice(-8)}</code>
+                           </TableCell>
+                           <TableCell>
+                             <p className="font-bold text-slate-900 text-sm">{sale.customerName || 'Standard Walk-in'}</p>
+                             <p className="text-[10px] font-bold text-primary uppercase tracking-widest mt-0.5">{sale.customerId || 'No Mobile'}</p>
+                           </TableCell>
+                           <TableCell>
+                             <Badge variant="outline" className="rounded-lg font-bold text-[10px] border-slate-100 text-slate-500">
+                               {sale.items.length} Units
+                             </Badge>
+                           </TableCell>
+                           <TableCell className="text-right">
+                             <p className="font-black text-slate-900 text-base">₹{sale.totalAmount.toLocaleString()}</p>
+                             <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">{sale.paymentMode}</p>
+                           </TableCell>
+                           <TableCell className="text-right pr-8">
+                             <Button 
+                               variant="ghost" 
+                               size="sm" 
+                               onClick={() => setViewingSale(sale)}
+                               className="h-9 font-bold text-[10px] uppercase tracking-wider gap-2 hover:bg-secondary hover:text-white transition-all rounded-xl"
+                             >
+                               <Eye className="h-4 w-4" /> View
+                             </Button>
+                           </TableCell>
+                         </TableRow>
+                       ))
+                     )}
+                   </TableBody>
+                 </Table>
               </CardContent>
             </Card>
-          </div>
-
-          <div className="space-y-6">
-             <Card className="bg-white border-none shadow-sm rounded-[24px] overflow-hidden">
-               <CardHeader className="p-6 border-b">
-                 <div className="flex items-center gap-3">
-                   <div className="bg-secondary/5 p-2.5 rounded-xl">
-                     <History className="h-5 w-5 text-secondary" />
-                   </div>
-                   <div>
-                     <CardTitle className="text-sm font-bold text-secondary uppercase tracking-tight">Manual Log</CardTitle>
-                   </div>
-                 </div>
-               </CardHeader>
-               <CardContent className="p-0">
-                 <div className="divide-y divide-slate-50 max-h-[460px] overflow-y-auto custom-scrollbar">
-                   {cashFlows.length === 0 ? (
-                     <div className="p-12 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">
-                       No Manual Log
-                     </div>
-                   ) : (
-                     cashFlows.map((cf) => (
-                       <div key={cf.id} className="p-4 flex items-center justify-between group hover:bg-slate-50 transition-colors">
-                         <div className="flex items-center gap-3">
-                           <div className={cn(
-                             "h-9 w-9 rounded-xl flex items-center justify-center border",
-                             cf.type === 'IN' ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-primary/5 text-primary border-primary/10"
-                           )}>
-                             {cf.type === 'IN' ? <PlusCircle className="h-4 w-4" /> : <MinusCircle className="h-4 w-4" />}
-                           </div>
-                           <div>
-                             <p className="font-bold text-sm text-slate-900 tracking-tight">₹{cf.amount.toLocaleString()}</p>
-                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{cf.reason}</p>
-                           </div>
-                         </div>
-                         <p className="text-[9px] font-bold text-slate-300 uppercase">
-                           {cf.timestamp?.seconds ? format(new Date(cf.timestamp.seconds * 1000), 'HH:mm') : ''}
-                         </p>
-                       </div>
-                     ))
-                   )}
-                 </div>
-               </CardContent>
-             </Card>
-          </div>
-        </div>
-
-        <Card className="bg-white border-none shadow-sm rounded-[32px] overflow-hidden">
-          <CardHeader className="p-8 border-b bg-slate-50/30 flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div>
-              <CardTitle className="text-xl font-bold text-secondary uppercase tracking-tight">Bill Explorer</CardTitle>
-            </div>
-            <div className="flex items-center gap-3">
-               <div className="relative w-full md:w-[320px]">
-                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                 <Input 
-                   placeholder="Search ID, Name or Phone..." 
-                   className="h-11 pl-11 bg-white border-slate-100 rounded-xl font-bold text-xs"
-                   value={searchQuery}
-                   onChange={(e) => setSearchQuery(e.target.value)}
-                 />
-               </div>
-               <Button variant="outline" className="h-11 rounded-xl border-slate-100 font-bold uppercase text-[10px] tracking-wider gap-2">
-                 <Download className="h-4 w-4" /> Export
-               </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="p-0">
-             <Table>
-               <TableHeader className="bg-slate-50/50">
-                 <TableRow className="border-none">
-                   <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14 pl-8">Timestamp</TableHead>
-                   <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14">Bill ID</TableHead>
-                   <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14">Customer</TableHead>
-                   <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14">Items</TableHead>
-                   <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14 text-right">Amount</TableHead>
-                   <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14 text-right pr-8">Actions</TableHead>
-                 </TableRow>
-               </TableHeader>
-               <TableBody>
-                 {filteredSales.length === 0 ? (
-                   <TableRow>
-                     <TableCell colSpan={6} className="h-40 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">
-                       No bills found
-                     </TableCell>
-                   </TableRow>
-                 ) : (
-                   filteredSales.map((sale) => (
-                     <TableRow key={sale.id} className="hover:bg-slate-50/50 transition-colors border-slate-50">
-                       <TableCell className="pl-8">
-                         <p className="font-bold text-slate-900 text-sm">{sale.timestamp?.seconds ? format(new Date(sale.timestamp.seconds * 1000), 'dd MMM yyyy') : 'Now'}</p>
-                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{sale.timestamp?.seconds ? format(new Date(sale.timestamp.seconds * 1000), 'HH:mm') : ''}</p>
-                       </TableCell>
-                       <TableCell>
-                         <code className="text-[10px] font-bold text-secondary bg-secondary/5 px-2 py-1 rounded-lg uppercase tracking-wider">#{sale.id?.slice(-8)}</code>
-                       </TableCell>
-                       <TableCell>
-                         <p className="font-bold text-slate-900 text-sm">{sale.customerName || 'Standard Walk-in'}</p>
-                         <p className="text-[10px] font-bold text-primary uppercase tracking-widest mt-0.5">{sale.customerId || 'No Mobile'}</p>
-                       </TableCell>
-                       <TableCell>
-                         <Badge variant="outline" className="rounded-lg font-bold text-[10px] border-slate-100 text-slate-500">
-                           {sale.items.length} Units
-                         </Badge>
-                       </TableCell>
-                       <TableCell className="text-right">
-                         <p className="font-black text-slate-900 text-base">₹{sale.totalAmount.toLocaleString()}</p>
-                         <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">{sale.paymentMode}</p>
-                       </TableCell>
-                       <TableCell className="text-right pr-8">
-                         <Button 
-                           variant="ghost" 
-                           size="sm" 
-                           onClick={() => setViewingSale(sale)}
-                           className="h-9 font-bold text-[10px] uppercase tracking-wider gap-2 hover:bg-secondary hover:text-white transition-all rounded-xl"
-                         >
-                           <Eye className="h-4 w-4" /> View
-                         </Button>
-                       </TableCell>
-                     </TableRow>
-                   ))
-                 )}
-               </TableBody>
-             </Table>
-          </CardContent>
-        </Card>
+          </>
+        )}
       </div>
 
       <Dialog open={!!viewingSale} onOpenChange={(open) => !open && setViewingSale(null)}>
