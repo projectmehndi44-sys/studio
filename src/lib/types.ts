@@ -4,7 +4,7 @@ export interface Product {
   barcode: string;
   price: number;
   costPrice: number;
-  stock?: number; // Optional inventory
+  stock?: number;
   category: string;
   image?: string;
   isPopular?: boolean;
@@ -12,7 +12,7 @@ export interface Product {
 
 export interface CartItem extends Product {
   quantity: number;
-  isQuickItem?: boolean;
+  isCustomPrice?: boolean;
 }
 
 export interface Coupon {
@@ -33,14 +33,20 @@ export interface Customer {
   history: string[];
 }
 
-export interface Sale {
-  id: string;
-  timestamp: string;
-  items: CartItem[];
-  total: number;
-  profit: number;
-  paymentMode: 'Cash' | 'UPI' | 'Credit';
-  customerPhone?: string;
-  discount: number;
+export interface PurchaseRecord {
+  id?: string;
   staffId: string;
+  timestamp: any;
+  items: {
+    id: string;
+    name: string;
+    quantity: number;
+    price: number;
+  }[];
+  totalAmount: number;
+  subtotalAmount: number;
+  discountAmount: number;
+  paymentMode: string;
+  isOfflineSale: boolean;
+  customerId: string | null;
 }

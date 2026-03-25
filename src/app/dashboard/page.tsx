@@ -20,196 +20,196 @@ import {
   DollarSign,
   Users,
   Clock,
-  ExternalLink
+  ExternalLink,
+  Download
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
-
-const HEATMAP_DATA = [
-  { hour: '8 AM', sales: 12 },
-  { hour: '10 AM', sales: 34 },
-  { hour: '12 PM', sales: 56 },
-  { hour: '2 PM', sales: 42 },
-  { hour: '4 PM', sales: 88 },
-  { hour: '6 PM', sales: 112 },
-  { hour: '8 PM', sales: 95 },
-  { hour: '10 PM', sales: 22 },
-];
-
-const DEAD_STOCK = [
-  { name: 'Imported Biscuits', days: 68, value: 4500 },
-  { name: 'Specialty Detergent', days: 62, value: 2100 },
-  { name: 'Organic Honey', days: 61, value: 1800 },
-];
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { PurchaseRecord } from '@/lib/types';
+import { format } from 'date-fns';
 
 export default function DashboardPage() {
+  const db = useFirestore();
+  const { user } = useUser();
+
+  const salesQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, 'purchases'), orderBy('timestamp', 'desc'), limit(50));
+  }, [db, user]);
+
+  const { data: sales = [], isLoading } = useCollection<PurchaseRecord>(salesQuery);
+
+  const stats = useMemo(() => {
+    const totalRevenue = sales.reduce((acc, sale) => acc + sale.totalAmount, 0);
+    const totalDiscount = sales.reduce((acc, sale) => acc + sale.discountAmount, 0);
+    const totalCustomers = new Set(sales.map(s => s.customerId).filter(Boolean)).size;
+    
+    return {
+      revenue: totalRevenue,
+      discount: totalDiscount,
+      customers: totalCustomers || sales.length,
+      avgTicket: sales.length ? totalRevenue / sales.length : 0
+    };
+  }, [sales]);
+
+  // Mock data for charts since real data might be sparse initially
+  const HEATMAP_DATA = [
+    { hour: '8 AM', sales: 12 },
+    { hour: '10 AM', sales: 34 },
+    { hour: '12 PM', sales: 56 },
+    { hour: '2 PM', sales: 42 },
+    { hour: '4 PM', sales: 88 },
+    { hour: '6 PM', sales: 112 },
+    { hour: '8 PM', sales: 95 },
+    { hour: '10 PM', sales: 22 },
+  ];
+
+  const DEAD_STOCK = [
+    { name: 'Imported Biscuits', days: 68, value: 4500 },
+    { name: 'Specialty Detergent', days: 62, value: 2100 },
+    { name: 'Organic Honey', days: 61, value: 1800 },
+  ];
+
+  if (isLoading) {
+    return <div className="p-12 text-center font-black animate-pulse">SYNCING CLOUD DATA...</div>;
+  }
+
   return (
-    <div className="min-h-screen bg-background p-6 font-body">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-slate-50 p-6 font-body">
+      <div className="max-w-7xl mx-auto space-y-10">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-6">
             <Link href="/">
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <ArrowLeft className="h-6 w-6" />
+              <Button variant="ghost" size="icon" className="rounded-full bg-white shadow-sm hover:scale-110 active:scale-90 transition-all">
+                <ArrowLeft className="h-6 w-6 text-slate-900" />
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-black text-foreground">SUPER 9+ INSIGHTS</h1>
-              <p className="text-muted-foreground">Real-time performance and inventory analytics</p>
+              <h1 className="text-4xl font-black text-slate-900 tracking-tighter">BUSINESS LEDGER</h1>
+              <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-1">Real-time Performance Reports</p>
             </div>
           </div>
-          <div className="flex gap-3">
-            <Button variant="outline" className="gap-2">
-              <Clock className="h-4 w-4" /> Last 7 Days
+          <div className="flex gap-4">
+            <Button variant="outline" className="gap-2 bg-white rounded-2xl border-none shadow-sm font-black text-xs uppercase py-6 px-6">
+              <Download className="h-4 w-4" /> Export CSV
             </Button>
-            <Button className="bg-primary text-primary-foreground font-bold">
-              Export Report
+            <Button className="bg-primary text-primary-foreground font-black text-xs uppercase rounded-2xl py-6 px-8 shadow-xl shadow-primary/20">
+              Update Catalog
             </Button>
           </div>
         </div>
 
         {/* Top Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="bg-card border-none shadow-lg overflow-hidden">
-            <div className="h-1 bg-primary w-full" />
-            <CardContent className="pt-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground uppercase">Daily Revenue</p>
-                  <h3 className="text-3xl font-black mt-1">₹1,24,500</h3>
-                  <div className="flex items-center gap-1 text-emerald-500 text-sm font-bold mt-2">
-                    <TrendingUp className="h-4 w-4" /> +12.5% vs yesterday
-                  </div>
-                </div>
-                <div className="p-3 bg-primary/10 rounded-xl">
-                  <DollarSign className="h-6 w-6 text-primary" />
-                </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <Card className="bg-white border-none shadow-xl rounded-[32px] overflow-hidden">
+            <div className="h-2 bg-primary w-full" />
+            <CardContent className="pt-8">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Sales</p>
+              <h3 className="text-4xl font-black mt-2 text-slate-900 tracking-tight">₹{stats.revenue.toLocaleString()}</h3>
+              <div className="flex items-center gap-2 text-emerald-500 text-xs font-black mt-4">
+                <TrendingUp className="h-4 w-4" /> LIVE SYNC
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-card border-none shadow-lg overflow-hidden">
-             <div className="h-1 bg-accent w-full" />
-            <CardContent className="pt-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground uppercase">Net Profit</p>
-                  <h3 className="text-3xl font-black mt-1 text-accent">₹18,675</h3>
-                  <p className="text-xs text-muted-foreground mt-2">Profit Margin: 15%</p>
-                </div>
-                <div className="p-3 bg-accent/10 rounded-xl">
-                  <TrendingUp className="h-6 w-6 text-accent" />
-                </div>
-              </div>
+          <Card className="bg-white border-none shadow-xl rounded-[32px] overflow-hidden">
+             <div className="h-2 bg-accent w-full" />
+            <CardContent className="pt-8">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Savings</p>
+              <h3 className="text-4xl font-black mt-2 text-accent tracking-tight">₹{stats.discount.toLocaleString()}</h3>
+              <p className="text-xs font-bold text-slate-300 mt-4 uppercase tracking-tighter">Coupons & Loyalty</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-card border-none shadow-lg">
-            <CardContent className="pt-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground uppercase">Footfall</p>
-                  <h3 className="text-3xl font-black mt-1">428</h3>
-                  <p className="text-xs text-muted-foreground mt-2">Peak: 6 PM - 8 PM</p>
-                </div>
-                <div className="p-3 bg-muted rounded-xl">
-                  <Users className="h-6 w-6 text-foreground" />
-                </div>
-              </div>
+          <Card className="bg-white border-none shadow-xl rounded-[32px]">
+            <CardContent className="pt-8">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Transactions</p>
+              <h3 className="text-4xl font-black mt-2 text-slate-900 tracking-tight">{sales.length}</h3>
+              <p className="text-xs font-bold text-slate-300 mt-4 uppercase tracking-tighter">Last 50 Entries</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-card border-none shadow-lg">
-            <CardContent className="pt-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground uppercase">Stock Status</p>
-                  <h3 className="text-3xl font-black mt-1">94%</h3>
-                  <div className="flex items-center gap-1 text-destructive text-sm font-bold mt-2">
-                    <AlertTriangle className="h-4 w-4" /> 12 Low Items
-                  </div>
-                </div>
-                <div className="p-3 bg-destructive/10 rounded-xl">
-                  <Package className="h-6 w-6 text-destructive" />
-                </div>
-              </div>
+          <Card className="bg-white border-none shadow-xl rounded-[32px]">
+            <CardContent className="pt-8">
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Avg Bill Value</p>
+              <h3 className="text-4xl font-black mt-2 text-slate-900 tracking-tight">₹{Math.round(stats.avgTicket)}</h3>
+              <p className="text-xs font-bold text-slate-300 mt-4 uppercase tracking-tighter">Per Customer</p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Sales Heatmap */}
-          <Card className="lg:col-span-2 bg-card border-none shadow-xl">
-            <CardHeader>
-              <CardTitle className="text-xl font-black uppercase">Hourly Sales Heatmap</CardTitle>
-              <CardDescription>Busiest hours for staffing and inventory readiness</CardDescription>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+          {/* Sales History */}
+          <Card className="lg:col-span-2 bg-white border-none shadow-2xl rounded-[40px] overflow-hidden">
+            <CardHeader className="p-8 pb-4">
+              <CardTitle className="text-2xl font-black text-slate-900 uppercase tracking-tight">Sales Activity</CardTitle>
+              <CardDescription className="font-bold text-slate-400 uppercase text-[10px] tracking-widest">Recent ledger entries synced from terminal</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="h-[350px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={HEATMAP_DATA}>
-                    <defs>
-                      <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted)/0.3)" vertical={false} />
-                    <XAxis dataKey="hour" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '12px', border: '1px solid hsl(var(--border))' }}
-                      itemStyle={{ color: 'hsl(var(--primary))', fontWeight: 'bold' }}
-                    />
-                    <Area type="monotone" dataKey="sales" stroke="hsl(var(--primary))" strokeWidth={3} fillOpacity={1} fill="url(#colorSales)" />
-                  </AreaChart>
-                </ResponsiveContainer>
+            <CardContent className="p-0">
+              <div className="divide-y divide-slate-50">
+                {sales.map((sale) => (
+                  <div key={sale.id} className="p-6 hover:bg-slate-50 transition-colors flex items-center justify-between group">
+                    <div className="flex items-center gap-4">
+                      <div className="bg-slate-100 h-12 w-12 rounded-2xl flex items-center justify-center font-black text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                        {sale.paymentMode[0]}
+                      </div>
+                      <div>
+                        <p className="font-black text-slate-900 tracking-tight">₹{sale.totalAmount}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          {sale.timestamp?.seconds ? format(new Date(sale.timestamp.seconds * 1000), 'HH:mm • dd MMM') : 'Processing...'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant="secondary" className="bg-slate-100 text-slate-500 font-black text-[10px] rounded-lg">
+                        {sale.paymentMode}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
 
-          {/* Dead Stock Alerts */}
-          <Card className="bg-card border-none shadow-xl">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle className="text-xl font-black uppercase">Dead Stock Alert</CardTitle>
-                <CardDescription>Unsold for &gt;60 days</CardDescription>
-              </div>
-              <Badge variant="destructive" className="animate-pulse">Action Required</Badge>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                {DEAD_STOCK.map((item, idx) => (
-                  <div key={idx} className="flex items-center justify-between group p-2 hover:bg-muted/50 rounded-lg transition-colors">
-                    <div className="space-y-1">
-                      <p className="font-bold text-foreground">{item.name}</p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {item.days} days idle</span>
-                        <span>•</span>
-                        <span className="font-medium">Valuation: ₹{item.value}</span>
+          {/* Business Insights */}
+          <div className="space-y-10">
+            <Card className="bg-white border-none shadow-2xl rounded-[40px] overflow-hidden">
+              <CardHeader className="p-8">
+                <CardTitle className="text-2xl font-black text-slate-900 uppercase tracking-tight">Dead Stock</CardTitle>
+                <CardDescription className="font-bold text-slate-400 uppercase text-[10px] tracking-widest">Unsold items requiring action</CardDescription>
+              </CardHeader>
+              <CardContent className="p-8 pt-0">
+                <div className="space-y-8">
+                  {DEAD_STOCK.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between group">
+                      <div className="space-y-1">
+                        <p className="font-black text-slate-900 tracking-tight">{item.name}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Idle: {item.days} days</p>
                       </div>
+                      <Button variant="outline" size="sm" className="rounded-xl font-black text-[10px] uppercase border-accent text-accent hover:bg-accent hover:text-white py-4 px-4">
+                        Liquidate
+                      </Button>
                     </div>
-                    <Button variant="outline" size="sm" className="h-8 text-xs font-bold border-accent text-accent hover:bg-accent hover:text-white">
-                      Create Coupon
-                    </Button>
-                  </div>
-                ))}
-              </div>
-              <Separator className="my-6 bg-border/50" />
-              <div className="bg-primary/5 p-4 rounded-xl border border-primary/20">
-                <p className="text-xs font-bold text-primary uppercase tracking-widest mb-1">AI Recommendation</p>
-                <p className="text-sm leading-relaxed">
-                  Generate a <span className="font-bold">"Buy 2 Get 1"</span> digital offer for regular dairy customers to clear the Imported Biscuits stock within 48 hours.
-                </p>
-                <Button variant="link" size="sm" className="p-0 h-auto mt-3 text-primary font-bold">
-                  Execute AI Flow <ExternalLink className="h-3 w-3 ml-1" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                </div>
+                <Separator className="my-10 bg-slate-50" />
+                <div className="bg-primary/5 p-6 rounded-[24px] border border-primary/10">
+                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">AI Strategy</p>
+                  <p className="text-sm font-bold leading-relaxed text-slate-600">
+                    Push <span className="text-primary font-black underline underline-offset-4 decoration-primary/30">Bulk Bundles</span> for Imported Biscuits to your regular dairy customers tonight.
+                  </p>
+                  <Button variant="link" size="sm" className="p-0 h-auto mt-6 text-primary font-black uppercase text-xs tracking-widest">
+                    Run Automation <ExternalLink className="h-3 w-3 ml-2" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

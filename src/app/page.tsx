@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback, useMemo } from 'react';
@@ -47,7 +46,6 @@ export default function POSPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState('products');
 
-  // Safely define products query only when user is authenticated to prevent permission errors
   const productsQuery = useMemoFirebase(() => {
     if (!user) return null;
     return collection(db, 'products');
@@ -92,6 +90,12 @@ export default function POSPage() {
       }
       return item;
     }));
+  };
+
+  const updatePrice = (id: string, newPrice: number) => {
+    setCartItems(prev => prev.map(item => 
+      item.id === id ? { ...item, price: newPrice } : item
+    ));
   };
 
   const removeItem = (id: string) => {
@@ -168,12 +172,12 @@ export default function POSPage() {
 
   if (isUserLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-slate-50">
+      <div className="h-screen flex items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 bg-primary rounded-2xl animate-bounce flex items-center justify-center font-black text-2xl text-primary-foreground">
+          <div className="w-16 h-16 bg-primary rounded-3xl animate-bounce flex items-center justify-center font-black text-2xl text-primary-foreground shadow-2xl shadow-primary/20">
             S9
           </div>
-          <p className="text-slate-500 font-bold animate-pulse">Initializing System...</p>
+          <p className="text-slate-400 font-black animate-pulse uppercase tracking-widest text-xs">Initializing Terminal</p>
         </div>
       </div>
     );
@@ -182,21 +186,21 @@ export default function POSPage() {
   if (!user) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-50 p-6">
-        <div className="max-w-md w-full bg-white rounded-[40px] shadow-2xl border border-slate-100 p-10 text-center space-y-8 animate-in zoom-in-95 duration-500">
-          <div className="mx-auto w-24 h-24 bg-primary/10 rounded-3xl flex items-center justify-center">
+        <div className="max-w-md w-full bg-white rounded-[48px] shadow-2xl border border-slate-100 p-12 text-center space-y-8 animate-in zoom-in-95 duration-500">
+          <div className="mx-auto w-24 h-24 bg-primary/10 rounded-[32px] flex items-center justify-center">
             <ShieldCheck className="h-12 w-12 text-primary" />
           </div>
           <div className="space-y-2">
             <h1 className="text-4xl font-black tracking-tight text-slate-900">SUPER 9+ POS</h1>
-            <p className="text-slate-500 font-medium">Please sign in to access the billing terminal</p>
+            <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">Billing Terminal v2.0</p>
           </div>
           <Button 
             onClick={handleStaffLogin}
-            className="w-full h-16 text-xl font-black rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="w-full h-20 text-xl font-black rounded-3xl shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            <LogIn className="mr-2 h-6 w-6" /> CLOCK IN
+            <LogIn className="mr-3 h-6 w-6" /> CLOCK IN
           </Button>
-          <p className="text-xs text-slate-400">Authorized Personnel Only • Secure Terminal v2.0</p>
+          <p className="text-xs text-slate-400 font-medium">Authorized Personnel Only • Encrypted Session</p>
         </div>
       </div>
     );
@@ -205,47 +209,45 @@ export default function POSPage() {
   const sidebarContent = (
     <nav className={cn(
       "flex gap-4",
-      isMobile ? "flex-row justify-around w-full px-4 pb-4 bg-white border-t" : "flex-col items-center py-6 gap-8 w-20 border-r bg-white shadow-sm"
+      isMobile ? "flex-row justify-around w-full px-4 py-2 bg-white border-t border-slate-100 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]" : "flex-col items-center py-8 gap-8 w-24 border-r border-slate-100 bg-white"
     )}>
       {!isMobile && (
-        <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center font-black text-xl text-primary-foreground shadow-xl shadow-primary/20 mb-4">
+        <div className="w-14 h-14 bg-primary rounded-[20px] flex items-center justify-center font-black text-2xl text-primary-foreground shadow-xl shadow-primary/20 mb-4 transition-transform hover:scale-105">
           S9
         </div>
       )}
-      <Link href="/" className="p-3 bg-primary text-primary-foreground rounded-2xl shadow-lg shadow-primary/20 transition-all"><ShoppingBag className="h-7 w-7" /></Link>
-      <Link href="/dashboard" className="p-3 text-slate-400 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all"><LayoutDashboard className="h-7 w-7" /></Link>
-      <button className="p-3 text-slate-400 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all"><ReceiptText className="h-7 w-7" /></button>
+      <Link href="/" className="p-4 bg-primary text-primary-foreground rounded-2xl shadow-lg shadow-primary/20 transition-all hover:scale-110 active:scale-95"><ShoppingBag className="h-7 w-7" /></Link>
+      <Link href="/dashboard" className="p-4 text-slate-300 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all hover:scale-110 active:scale-95"><LayoutDashboard className="h-7 w-7" /></Link>
+      <button className="p-4 text-slate-300 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all hover:scale-110 active:scale-95"><ReceiptText className="h-7 w-7" /></button>
       {!isMobile && (
         <>
-          <button className="p-3 text-slate-400 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all"><Bell className="h-7 w-7" /></button>
+          <button className="p-4 text-slate-300 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all hover:scale-110 active:scale-95"><Bell className="h-7 w-7" /></button>
           <div className="flex-1" />
-          <button className="p-3 text-slate-400 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all"><Settings className="h-7 w-7" /></button>
-          <button onClick={handleSignOut} className="p-3 text-destructive hover:bg-destructive/5 rounded-2xl transition-all"><LogOut className="h-7 w-7" /></button>
+          <button className="p-4 text-slate-300 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all hover:scale-110 active:scale-95"><Settings className="h-7 w-7" /></button>
+          <button onClick={handleSignOut} className="p-4 text-destructive/40 hover:text-destructive hover:bg-destructive/5 rounded-2xl transition-all hover:scale-110 active:scale-95"><LogOut className="h-7 w-7" /></button>
         </>
       )}
     </nav>
   );
 
   const productArea = (
-    <div className="flex flex-col h-full gap-4 overflow-hidden">
-      <div className="flex items-center gap-2">
-        <ProductSearch 
-          products={productsData}
-          onProductSelect={handleProductSelect} 
-          onScanClick={() => setIsScanning(!isScanning)} 
-        />
-      </div>
+    <div className="flex flex-col h-full gap-6 overflow-hidden">
+      <ProductSearch 
+        products={productsData}
+        onProductSelect={handleProductSelect} 
+        onScanClick={() => setIsScanning(!isScanning)} 
+      />
       
       <Tabs defaultValue="popular" className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1 rounded-2xl mb-2">
-          <TabsTrigger value="popular" className="font-bold flex items-center gap-2 rounded-xl py-2 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
-            <Star className="h-4 w-4" /> TOP SELLING
+        <TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1.5 rounded-[24px] mb-4">
+          <TabsTrigger value="popular" className="font-black text-sm uppercase tracking-widest flex items-center gap-2 rounded-[18px] py-3 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
+            <Star className="h-4 w-4" /> Top Sellers
           </TabsTrigger>
-          <TabsTrigger value="search" className="font-bold flex items-center gap-2 rounded-xl py-2 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
-            <Search className="h-4 w-4" /> ALL ITEMS
+          <TabsTrigger value="search" className="font-black text-sm uppercase tracking-widest flex items-center gap-2 rounded-[18px] py-3 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
+            <Search className="h-4 w-4" /> All Items
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="popular" className="flex-1 overflow-y-auto custom-scrollbar pt-2 mt-0">
+        <TabsContent value="popular" className="flex-1 overflow-y-auto custom-scrollbar mt-0">
           <QuickTapGrid products={productsData} onProductSelect={handleProductSelect} />
         </TabsContent>
         <TabsContent value="search" className="flex-1 flex flex-col overflow-hidden mt-0">
@@ -257,7 +259,7 @@ export default function POSPage() {
 
   return (
     <div className={cn(
-      "flex h-screen bg-slate-50 overflow-hidden font-body text-slate-900",
+      "flex h-screen bg-white overflow-hidden font-body text-slate-900",
       isMobile ? "flex-col" : "flex-row"
     )}>
       <Toaster />
@@ -265,37 +267,37 @@ export default function POSPage() {
       {!isMobile && sidebarContent}
 
       <main className={cn(
-        "flex-1 p-4 lg:p-6 gap-6",
+        "flex-1 p-4 lg:p-8 gap-8",
         !isMobile ? "pos-grid-container" : "flex flex-col h-full overflow-hidden"
       )}>
         {isMobile ? (
           <div className="flex flex-col h-full overflow-hidden">
-            <div className="flex items-center justify-between mb-4 px-2">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-black text-primary-foreground shadow-lg shadow-primary/20">
+            <div className="flex items-center justify-between mb-6 px-2">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center font-black text-primary-foreground shadow-lg shadow-primary/20">
                   S9
                 </div>
-                <h1 className="font-black text-xl tracking-tight text-slate-900">SUPER 9+</h1>
+                <h1 className="font-black text-2xl tracking-tighter text-slate-900 uppercase">Super 9+</h1>
               </div>
               {cartTotalPrice > 0 && (
-                <div className="text-primary font-black text-xl animate-in fade-in slide-in-from-right-4">
+                <div className="text-primary font-black text-2xl animate-in fade-in slide-in-from-right-4">
                   ₹{cartTotalPrice.toFixed(0)}
                 </div>
               )}
             </div>
 
             <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="flex-1 flex flex-col overflow-hidden">
-              <TabsList className="grid w-full grid-cols-3 bg-slate-200 rounded-2xl mb-4 p-1">
-                <TabsTrigger value="products" className="font-bold rounded-xl">POS</TabsTrigger>
-                <TabsTrigger value="cart" className="font-bold rounded-xl relative">
-                  CART
+              <TabsList className="grid w-full grid-cols-3 bg-slate-100 rounded-[20px] mb-6 p-1">
+                <TabsTrigger value="products" className="font-black text-xs uppercase rounded-[16px]">Bill</TabsTrigger>
+                <TabsTrigger value="cart" className="font-black text-xs uppercase rounded-[16px] relative">
+                  Cart
                   {cartTotalItems > 0 && (
-                    <Badge className="absolute -top-1.5 -right-1.5 h-5 w-5 flex items-center justify-center p-0 rounded-full bg-destructive text-white border-2 border-white text-[10px] font-black">
+                    <Badge className="absolute -top-2 -right-2 h-6 w-6 flex items-center justify-center p-0 rounded-full bg-destructive text-white border-2 border-white text-[10px] font-black">
                       {cartTotalItems}
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="checkout" className="font-bold rounded-xl" disabled={cartItems.length === 0}>BILL</TabsTrigger>
+                <TabsTrigger value="checkout" className="font-black text-xs uppercase rounded-[16px]" disabled={cartItems.length === 0}>Pay</TabsTrigger>
               </TabsList>
               
               <TabsContent value="products" className="flex-1 overflow-hidden mt-0">
@@ -306,6 +308,7 @@ export default function POSPage() {
                 <CartList 
                   items={cartItems} 
                   onUpdateQuantity={updateQuantity} 
+                  onUpdatePrice={updatePrice}
                   onRemoveItem={removeItem} 
                 />
               </TabsContent>
@@ -324,15 +327,16 @@ export default function POSPage() {
               <CartList 
                 items={cartItems} 
                 onUpdateQuantity={updateQuantity} 
+                onUpdatePrice={updatePrice}
                 onRemoveItem={removeItem} 
               />
             </div>
 
-            <div className="flex flex-col lg:flex-row h-full gap-6 overflow-hidden">
+            <div className="flex flex-col lg:flex-row h-full gap-8 overflow-hidden">
               <div className="flex-1 overflow-hidden">
                 {productArea}
               </div>
-              <div className="w-full lg:w-[420px] h-full flex flex-col">
+              <div className="w-full lg:w-[460px] h-full flex flex-col">
                 <CheckoutPanel 
                   items={cartItems} 
                   onComplete={handleCheckout} 
@@ -356,14 +360,14 @@ export default function POSPage() {
       />
 
       {isScanning && (
-        <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-8 animate-in fade-in">
-          <button onClick={() => setIsScanning(false)} className="absolute top-8 right-8 text-white p-4">
-             <X className="h-10 w-10" />
+        <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-8 animate-in fade-in">
+          <button onClick={() => setIsScanning(false)} className="absolute top-10 right-10 text-white p-4 transition-transform hover:scale-110 active:scale-90">
+             <X className="h-12 w-12" />
           </button>
-          <div className="w-full max-w-2xl aspect-[4/3] bg-white/5 border-4 border-dashed border-primary rounded-[40px] flex flex-col items-center justify-center text-center">
-            <Camera className="h-24 w-24 text-primary mb-6 animate-pulse" />
-            <h2 className="text-3xl font-black text-white mb-2 tracking-tight">SCANNING...</h2>
-            <p className="text-xl text-slate-400">Align barcode within the frame</p>
+          <div className="w-full max-w-2xl aspect-[4/3] bg-white/5 border-4 border-dashed border-primary rounded-[64px] flex flex-col items-center justify-center text-center">
+            <Camera className="h-32 w-32 text-primary mb-8 animate-pulse" />
+            <h2 className="text-4xl font-black text-white mb-3 tracking-tight">SCANNING...</h2>
+            <p className="text-xl text-slate-400 font-medium">Place barcode within the frame</p>
           </div>
         </div>
       )}
