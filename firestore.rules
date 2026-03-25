@@ -47,6 +47,15 @@ service cloud.firestore {
     }
 
     /**
+     * @description Rules for Shop Settings.
+     * @path /settings/config
+     */
+    match /settings/config {
+      allow read, create, update: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
+    /**
      * @description Rules for Product Categories. Used for organizing the UI.
      * @path /categories/{categoryId}
      */
