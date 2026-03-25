@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -157,7 +156,7 @@ export default function InventoryPage() {
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center font-bold animate-pulse text-slate-400 text-xs uppercase tracking-[0.2em]">
+        <div className="text-center font-bold animate-pulse text-slate-400 text-[10px] uppercase tracking-[0.2em]">
           Syncing Item Master...
         </div>
       </div>
@@ -175,12 +174,12 @@ export default function InventoryPage() {
               <ArrowLeft className="h-5 w-5 text-secondary" />
             </Button>
           </Link>
-          <div className="flex flex-col border-r pr-8 border-slate-200">
-            <p className="text-[8px] font-black text-slate-400 tracking-[0.4em] uppercase leading-none mb-1">KRISHNA&apos;S</p>
-            <h1 className="text-lg font-black tracking-tight uppercase leading-none text-secondary">SUPER 9+</h1>
+          <div className="flex items-center gap-2 border-r pr-8 border-slate-200">
+            <span className="text-[12px] font-bold text-slate-400 uppercase tracking-[0.2em]">KRISHNA'S</span>
+            <span className="text-lg font-black tracking-tight uppercase text-secondary">SUPER 9+</span>
           </div>
           <div>
-            <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Stock Master</h2>
+            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Stock Master</h2>
           </div>
         </div>
         
@@ -200,7 +199,7 @@ export default function InventoryPage() {
                 <Package className="h-5 w-5 text-secondary" />
               </div>
               <div>
-                <CardTitle className="text-xl font-bold text-secondary uppercase tracking-tight">Global Catalog</CardTitle>
+                <CardTitle className="text-lg font-bold text-secondary uppercase tracking-tight">Global Catalog</CardTitle>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{filteredProducts.length} Listed Items</p>
               </div>
             </div>
@@ -208,7 +207,7 @@ export default function InventoryPage() {
                <div className="relative w-full md:w-[320px]">
                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                  <Input 
-                   placeholder="Search item name or barcode..." 
+                   placeholder="Search ID or Label..." 
                    className="h-11 pl-11 bg-white border-slate-100 rounded-xl font-bold text-xs"
                    value={searchQuery}
                    onChange={(e) => setSearchQuery(e.target.value)}
@@ -300,8 +299,8 @@ export default function InventoryPage() {
         <aside className="space-y-6 flex flex-col min-h-0">
           <Card className="bg-white border-none shadow-sm rounded-[32px] overflow-hidden flex flex-col flex-1">
             <CardHeader className="p-8 border-b bg-slate-900 text-white shrink-0">
-              <CardTitle className="text-sm font-bold uppercase tracking-widest flex items-center gap-3">
-                {isEditing ? (selectedProduct ? 'Refine Product' : 'Enroll New Product') : 'Stock Intelligence'}
+              <CardTitle className="text-xs font-bold uppercase tracking-widest flex items-center gap-3">
+                {isEditing ? (selectedProduct ? 'Refine Product' : 'Enroll Item') : 'Intelligence'}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0 flex-1 overflow-hidden">
@@ -310,7 +309,7 @@ export default function InventoryPage() {
                     <form onSubmit={handleSubmit} className="p-8 space-y-6">
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Item Description</Label>
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Description</Label>
                           <Input
                             required
                             value={formData.name}
@@ -322,7 +321,7 @@ export default function InventoryPage() {
                         
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Sales Price (₹)</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Price (₹)</Label>
                             <Input
                               required
                               type="number"
@@ -332,7 +331,7 @@ export default function InventoryPage() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Cost Price (₹)</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Cost (₹)</Label>
                             <Input
                               type="number"
                               value={formData.costPrice}
@@ -343,13 +342,13 @@ export default function InventoryPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Category Bucket</Label>
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Category</Label>
                           <Select 
                             value={formData.category} 
                             onValueChange={(val) => setFormData({ ...formData, category: val })}
                           >
                             <SelectTrigger className="h-12 bg-slate-50 border-none rounded-xl font-bold text-xs px-6">
-                              <SelectValue placeholder="Select Category" />
+                              <SelectValue placeholder="Select" />
                             </SelectTrigger>
                             <SelectContent className="rounded-xl p-1 border-none shadow-2xl">
                               {CATEGORIES.map(cat => (
@@ -361,7 +360,7 @@ export default function InventoryPage() {
 
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Stock Count</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Stock</Label>
                             <Input
                               type="number"
                               value={formData.stock}
@@ -370,7 +369,7 @@ export default function InventoryPage() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Barcode ID</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Barcode</Label>
                             <Input
                               value={formData.barcode}
                               onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
@@ -382,7 +381,7 @@ export default function InventoryPage() {
 
                       <div className="pt-6 space-y-3">
                         <Button type="submit" className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest bg-primary text-white shadow-xl shadow-primary/10">
-                          {selectedProduct ? 'COMMIT CHANGES' : 'SAVE TO LEDGER'}
+                          {selectedProduct ? 'COMMIT' : 'SAVE'}
                         </Button>
                         <Button 
                           type="button" 
@@ -401,8 +400,8 @@ export default function InventoryPage() {
                      <Package className="h-10 w-10 text-slate-200" />
                    </div>
                    <div className="space-y-2">
-                     <h4 className="text-xl font-black text-secondary uppercase tracking-tight">Stock Analysis</h4>
-                     <p className="text-xs font-medium text-slate-400 px-8">Select any item from the global catalog to view advanced metrics and modify stock levels.</p>
+                     <h4 className="text-sm font-black text-secondary uppercase tracking-tight">Stock Analysis</h4>
+                     <p className="text-[10px] font-medium text-slate-400 px-8">Select any item from the catalog to modify stock levels or price.</p>
                    </div>
                    <div className="grid grid-cols-2 gap-4 px-8">
                       <div className="bg-slate-50 p-4 rounded-2xl text-left">
@@ -410,7 +409,7 @@ export default function InventoryPage() {
                         <p className="text-2xl font-black text-secondary">{products.filter(p => p.stock !== undefined && p.stock < 10 && p.stock > 0).length}</p>
                       </div>
                       <div className="bg-slate-50 p-4 rounded-2xl text-left">
-                        <p className="text-[8px] font-black uppercase text-slate-400 mb-1">Dead Stock</p>
+                        <p className="text-[8px] font-black uppercase text-slate-400 mb-1">Out of Stock</p>
                         <p className="text-2xl font-black text-primary">{products.filter(p => p.stock !== undefined && p.stock <= 0).length}</p>
                       </div>
                    </div>

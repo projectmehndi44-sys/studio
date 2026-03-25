@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, useState } from 'react';
@@ -79,7 +78,6 @@ export default function DashboardPage() {
   const { data: shopSettings } = useDoc(settingsRef);
   const shopAddress = shopSettings?.address || "Hoolungooree, Mariani";
 
-  // Fetch a broad set of recent data to allow instant local filtering
   const salesQuery = useMemoFirebase(() => {
     if (!user) return null;
     return query(collection(db, 'purchases'), orderBy('timestamp', 'desc'), limit(1000));
@@ -186,10 +184,9 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 font-body">
-      {/* PROFESSIONAL PRINT-ONLY RECEIPT */}
       <div className="hidden print-only p-8 bg-white text-slate-900 font-receipt">
         <div className="text-center space-y-1 border-b-2 border-slate-900 pb-4 mb-4">
-          <p className="text-lg font-bold text-slate-600 uppercase">KRISHNA&apos;S</p>
+          <p className="text-lg font-bold text-slate-400 uppercase tracking-widest">KRISHNA'S</p>
           <h2 className="text-4xl font-black uppercase tracking-tight">SUPER 9+</h2>
           <p className="text-sm font-bold mt-2">{shopAddress}</p>
           {shopSettings?.gstin && <p className="text-[10px] font-bold">GSTIN: {shopSettings?.gstin}</p>}
@@ -236,7 +233,7 @@ export default function DashboardPage() {
           <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">
             Computer Generated Invoice • No Exchange without Bill
           </p>
-          <p className="text-xs font-bold">Thank you for shopping at Krishna&apos;s Super 9+!</p>
+          <p className="text-xs font-bold">Thank you for shopping at Krishna's Super 9+!</p>
         </div>
       </div>
 
@@ -248,12 +245,12 @@ export default function DashboardPage() {
                 <ArrowLeft className="h-5 w-5 text-secondary" />
               </Button>
             </Link>
-            <div className="flex flex-col border-r pr-8 border-slate-200">
-              <p className="text-[8px] font-black text-slate-400 tracking-[0.4em] uppercase leading-none mb-1">KRISHNA&apos;S</p>
-              <h1 className="text-lg font-black tracking-tight uppercase leading-none text-secondary">SUPER 9+</h1>
+            <div className="flex items-center gap-2 border-r pr-8 border-slate-200">
+              <span className="text-[12px] font-bold text-slate-400 uppercase tracking-[0.2em]">KRISHNA'S</span>
+              <span className="text-lg font-black tracking-tight uppercase text-secondary">SUPER 9+</span>
             </div>
             <div>
-              <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Business Ledger</h2>
+              <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Business Ledger</h2>
             </div>
           </div>
           
@@ -324,7 +321,7 @@ export default function DashboardPage() {
 
                 <Card className="bg-white border-none shadow-sm rounded-[24px] overflow-hidden">
                   <CardHeader className="p-6 pb-0">
-                    <CardTitle className="text-lg font-bold text-secondary uppercase tracking-tight">Week Performance</CardTitle>
+                    <CardTitle className="text-sm font-bold text-secondary uppercase tracking-tight">Weekly Summary</CardTitle>
                   </CardHeader>
                   <CardContent className="p-6 pt-2">
                     <div className="h-[200px] w-full">
@@ -348,7 +345,7 @@ export default function DashboardPage() {
                          <History className="h-5 w-5 text-secondary" />
                        </div>
                        <div>
-                         <CardTitle className="text-sm font-bold text-secondary uppercase tracking-tight">Manual Logs</CardTitle>
+                         <CardTitle className="text-xs font-bold text-secondary uppercase tracking-tight">Manual Logs</CardTitle>
                        </div>
                      </div>
                    </CardHeader>
@@ -356,7 +353,7 @@ export default function DashboardPage() {
                      <div className="divide-y divide-slate-50 max-h-[460px] overflow-y-auto custom-scrollbar">
                        {filteredCash.length === 0 ? (
                          <div className="p-12 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">
-                           No logs for this period
+                           No logs
                          </div>
                        ) : (
                          filteredCash.map((cf) => (
@@ -389,21 +386,18 @@ export default function DashboardPage() {
             <Card className="bg-white border-none shadow-sm rounded-[32px] overflow-hidden">
               <CardHeader className="p-8 border-b bg-slate-50/30 flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                  <CardTitle className="text-xl font-bold text-secondary uppercase tracking-tight">Bill Explorer</CardTitle>
+                  <CardTitle className="text-lg font-bold text-secondary uppercase tracking-tight">Bill Explorer</CardTitle>
                 </div>
                 <div className="flex items-center gap-3">
                    <div className="relative w-full md:w-[320px]">
                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                      <Input 
-                       placeholder="Search ID, Name or Phone..." 
+                       placeholder="Search ID or Customer..." 
                        className="h-11 pl-11 bg-white border-slate-100 rounded-xl font-bold text-xs"
                        value={searchQuery}
                        onChange={(e) => setSearchQuery(e.target.value)}
                      />
                    </div>
-                   <Button variant="outline" className="h-11 rounded-xl border-slate-100 font-bold uppercase text-[10px] tracking-wider gap-2">
-                     <Download className="h-4 w-4" /> Export
-                   </Button>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -422,7 +416,7 @@ export default function DashboardPage() {
                      {filteredSales.length === 0 ? (
                        <TableRow>
                          <TableCell colSpan={6} className="h-40 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">
-                           No matching bills found
+                           No matching bills
                          </TableCell>
                        </TableRow>
                      ) : (
@@ -436,7 +430,7 @@ export default function DashboardPage() {
                              <code className="text-[10px] font-bold text-secondary bg-secondary/5 px-2 py-1 rounded-lg uppercase tracking-wider">#{sale.id?.slice(-8)}</code>
                            </TableCell>
                            <TableCell>
-                             <p className="font-bold text-slate-900 text-sm">{sale.customerName || 'Standard Walk-in'}</p>
+                             <p className="font-bold text-slate-900 text-sm">{sale.customerName || 'Walk-in'}</p>
                              <p className="text-[10px] font-bold text-primary uppercase tracking-widest mt-0.5">{sale.customerId || 'No Mobile'}</p>
                            </TableCell>
                            <TableCell>
@@ -476,7 +470,7 @@ export default function DashboardPage() {
             <div className="mx-auto w-20 h-20 bg-secondary/5 rounded-3xl flex items-center justify-center">
               <ShoppingBag className="h-10 w-10 text-secondary" />
             </div>
-            <DialogTitle className="text-center text-2xl font-bold uppercase tracking-tight text-secondary">Receipt Archive</DialogTitle>
+            <DialogTitle className="text-center text-xl font-bold uppercase tracking-tight text-secondary">Receipt Archive</DialogTitle>
           </DialogHeader>
 
           <div className="py-6 space-y-6">

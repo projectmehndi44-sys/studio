@@ -85,7 +85,6 @@ export default function POSPage() {
 
   const staffName = getStaffName(user?.phoneNumber || null);
 
-  // Shop Settings Hook - Gate behind user auth to avoid permission errors
   const settingsRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(db, 'settings', 'config');
@@ -93,7 +92,7 @@ export default function POSPage() {
   
   const { data: shopSettings } = useDoc(settingsRef);
 
-  const shopName = shopSettings?.shopName || "Krishna's SUPER 9+";
+  const shopName = shopSettings?.shopName || "KRISHNA'S SUPER 9+";
   const shopAddress = shopSettings?.address || "Hoolungooree, Mariani";
   const shopGSTIN = shopSettings?.gstin || "";
 
@@ -109,14 +108,6 @@ export default function POSPage() {
           const total = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
           handleCheckout({ total, paymentMode: 'Cash' });
         }
-      }
-      if (e.altKey && e.key === 'c') {
-        e.preventDefault();
-        setIsCashDialogOpen(true);
-      }
-      if (e.altKey && e.key === 'i') {
-        e.preventDefault();
-        window.location.href = '/inventory';
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -318,8 +309,8 @@ export default function POSPage() {
       {/* PROFESSIONAL PRINT-ONLY RECEIPT */}
       <div className="hidden print-only p-8 bg-white text-slate-900 min-h-screen font-receipt">
         <div className="text-center space-y-1 border-b-2 border-slate-900 pb-4 mb-4">
-          <p className="text-lg font-bold text-slate-600 uppercase tracking-widest">K R I S H N A &apos; S</p>
-          <h2 className="text-4xl font-black uppercase tracking-tight">SUPER 9+</h2>
+          <h2 className="text-xl font-bold uppercase tracking-widest">KRISHNA'S</h2>
+          <h2 className="text-4xl font-black uppercase tracking-tight leading-tight">SUPER 9+</h2>
           <p className="text-sm font-bold mt-2">{shopAddress}</p>
           {shopGSTIN && <p className="text-[10px] font-bold">GSTIN: {shopGSTIN}</p>}
         </div>
@@ -371,22 +362,23 @@ export default function POSPage() {
           <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">
             Computer Generated Invoice • No Exchange without Bill
           </p>
-          <p className="text-xs font-bold">Thank you for shopping at Krishna&apos;s Super 9+!</p>
+          <p className="text-xs font-bold">Thank you for shopping at Krishna's Super 9+!</p>
         </div>
       </div>
 
       <header className="h-16 border-b border-slate-100 bg-white flex items-center justify-between px-8 shrink-0 print:hidden z-10">
         <div className="flex items-center gap-6">
-           <div className="flex flex-col border-r pr-6 border-slate-100">
-              <p className="text-[8px] font-black text-slate-400 tracking-[0.4em] uppercase leading-none mb-1">KRISHNA&apos;S</p>
-              <h1 className="text-lg font-black tracking-tight uppercase leading-none text-secondary">SUPER 9+</h1>
+           <div className="flex items-center gap-2">
+              <span className="text-[12px] font-bold text-slate-400 uppercase tracking-[0.2em]">KRISHNA'S</span>
+              <span className="text-lg font-black tracking-tight uppercase text-secondary">SUPER 9+</span>
            </div>
+           <div className="h-4 w-px bg-slate-200 mx-2" />
            <div>
-              <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Billing Desk</h2>
+              <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Billing Desk</h2>
            </div>
            <div className="hidden md:flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-lg">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{staffName}</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{staffName}</span>
            </div>
         </div>
         
@@ -413,7 +405,7 @@ export default function POSPage() {
             </SheetTrigger>
             <SheetContent side="right" className="w-[340px] p-8 space-y-8 border-none shadow-2xl rounded-l-[40px]">
               <SheetHeader>
-                <SheetTitle className="text-left font-black uppercase tracking-tight text-2xl text-secondary">Menu</SheetTitle>
+                <SheetTitle className="text-left font-black uppercase tracking-tight text-2xl text-secondary">Terminal Menu</SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col gap-3">
                 <Link href="/" className="flex items-center justify-between p-4 bg-secondary/5 text-secondary rounded-2xl font-bold uppercase text-xs">
@@ -497,7 +489,6 @@ export default function POSPage() {
         )}
       </main>
 
-      {/* SUCCESS DIALOG AND OTHER MODALS */}
       <Dialog open={isSuccessDialogOpen} onOpenChange={setIsSuccessDialogOpen}>
         <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden print:hidden">
           <div className="absolute top-0 left-0 w-full h-2 bg-emerald-500" />
@@ -544,7 +535,6 @@ export default function POSPage() {
         </DialogContent>
       </Dialog>
 
-      {/* CASH TRANSACTION DIALOG */}
       <Dialog open={isCashDialogOpen} onOpenChange={setIsCashDialogOpen}>
         <DialogContent className="rounded-[32px] p-10 sm:max-w-md print:hidden border-none shadow-2xl">
           <DialogHeader>

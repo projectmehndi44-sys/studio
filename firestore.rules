@@ -3,43 +3,25 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * CORE PHILOSOPHY:
-     * This ruleset enforces a POS (Point of Sale) security model where administrative 
-     * privileges are separated from standard staff operations. It utilizes "Authorization 
-     * Independence" by checking for the existence of a document in the /adminRoles 
-     * collection to grant elevated permissions. 
-     *
-     * DATA STRUCTURE:
-     * - Store-wide resources (Products, Categories, Coupons, PricingRules) are globally 
-     *   readable by authenticated staff.
-     * - In this prototype, staff are allowed to CREATE and UPDATE products/categories
-     *   to support rapid catalog building on-the-fly.
-     * - Purchases are immutable once created and are tied to the staff member who 
-     *   processed the transaction via a denormalized 'staffId'.
+     * @description Checks if the user is authenticated via Firebase Auth.
      */
-
-    // --- Helper Functions ---
-
-    /** @description Checks if the user is authenticated. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** @description Checks if the user has administrative privileges via the adminRoles collection. */
+    /**
+     * @description Checks if the user is an Admin or Owner based on their verified phone number.
+     * Specific numbers provided: +916000861935 (Admin), +919613993713 (Owner).
+     */
     function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/adminRoles/$(request.auth.uid));
+      return isSignedIn() && (
+        request.auth.token.phone_number == '+916000861935' || 
+        request.auth.token.phone_number == '+919613993713'
+      );
     }
-
-    /** @description Checks if the provided UID matches the authenticated user's UID. */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    // --- Collection Rules ---
 
     /**
-     * @description Rules for Product management. Staff can view and manage products for quick catalog entry.
-     * @path /products/{productId}
+     * @description Rules for Product management.
      */
     match /products/{productId} {
       allow read, create, update: if isSignedIn();
@@ -48,7 +30,6 @@ service cloud.firestore {
 
     /**
      * @description Rules for Shop Settings.
-     * @path /settings/config
      */
     match /settings/config {
       allow read, create, update: if isSignedIn();
@@ -56,78 +37,26 @@ service cloud.firestore {
     }
 
     /**
-     * @description Rules for Product Categories. Used for organizing the UI.
-     * @path /categories/{categoryId}
+     * @description Rules for Purchase transactions.
      */
-    match /categories/{categoryId} {
-      allow read, create, update: if isSignedIn();
+    match /purchases/{purchaseId} {
+      allow read, create: if isSignedIn();
       allow delete: if isAdmin();
     }
 
     /**
-     * @description Rules for Customer profiles.
-     * @path /customers/{customerId}
-     */
-    match /customers/{customerId} {
-      allow read, create, update: if isSignedIn();
-      allow delete: if isAdmin();
-    }
-
-    /**
-     * @description Rules for manual cash flow entries (In/Out).
-     * @path /cashTransactions/{transactionId}
+     * @description Rules for manual cash flow entries.
      */
     match /cashTransactions/{transactionId} {
       allow read, create: if isSignedIn();
-      allow update, delete: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     /**
-     * @description Rules for discount Coupons.
-     * @path /coupons/{couponId}
+     * @description Default deny for all other paths.
      */
-    match /coupons/{couponId} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
-    }
-
-    /**
-     * @description Rules for dynamic Pricing Rules (e.g., Happy Hour).
-     * @path /pricingRules/{ruleId}
-     */
-    match /pricingRules/{ruleId} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isAdmin();
-    }
-
-    /**
-     * @description Rules for Purchase transactions. Purchases are immutable for audit integrity.
-     * @path /purchases/{purchaseId}
-     */
-    match /purchases/{purchaseId} {
-      allow get: if isAdmin() || (isSignedIn() && resource.data.staffId == request.auth.uid);
-      allow list: if isSignedIn(); 
-      allow create: if isSignedIn() && request.resource.data.staffId == request.auth.uid;
-      allow update, delete: if false; 
-    }
-
-    /**
-     * @description Rules for Staff profiles. Matches Auth UID to document ID.
-     * @path /staff/{staffId}
-     */
-    match /staff/{staffId} {
-      allow get: if isOwner(staffId) || isAdmin();
-      allow list: if isAdmin();
-      allow create, update, delete: if isAdmin();
-    }
-
-    /**
-     * @description Rules for the Admin Roles lookup collection.
-     * @path /adminRoles/{staffId}
-     */
-    match /adminRoles/{staffId} {
-      allow read: if isSignedIn();
-      allow write: if false;
+    match /{path=**} {
+      allow read, write: if false;
     }
   }
 }
