@@ -166,6 +166,10 @@ export default function DashboardPage() {
     return last7Days;
   }, [rawSales]);
 
+  const handlePrintAction = () => {
+    window.print();
+  };
+
   if (isAuthLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-50">
@@ -190,7 +194,8 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 font-body">
-      <div className="hidden print-only p-8 bg-white text-slate-900 font-receipt">
+      {/* HIGH-FIDELITY PRINT RECEIPT (LEDGER ARCHIVE) */}
+      <div className="hidden print-only p-8 bg-white text-slate-900 font-receipt min-h-screen">
         <div className="text-center space-y-1 border-b-2 border-slate-900 pb-4 mb-4">
           <p className="text-xl font-bold uppercase tracking-tight">KRISHNA'S</p>
           <h2 className="text-4xl font-black uppercase tracking-tight leading-tight">SUPER 9+</h2>
@@ -511,10 +516,10 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-               <Button variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2">
+               <Button onClick={handlePrintAction} variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2">
                  <Printer className="h-4 w-4" /> Print
                </Button>
-               <Button variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2">
+               <Button onClick={handlePrintAction} variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2">
                  <Download className="h-4 w-4" /> PDF
                </Button>
             </div>

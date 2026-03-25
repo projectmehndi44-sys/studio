@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,13 +5,15 @@ import {
   getAuth, 
   RecaptchaVerifier, 
   signInWithPhoneNumber, 
-  ConfirmationResult 
+  ConfirmationResult,
+  signOut
 } from 'firebase/auth';
-import { ShieldCheck, Smartphone, KeyRound, ArrowRight, Loader2 } from 'lucide-react';
+import { ShieldCheck, Smartphone, KeyRound, ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { STAFF_MAPPING } from '@/lib/staff';
 
 export function PhoneAuthGate() {
   const { toast } = useToast();
@@ -33,18 +34,30 @@ export function PhoneAuthGate() {
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (phoneNumber.length < 10) {
-      toast({ variant: 'destructive', title: 'Invalid Phone', description: 'Please enter a valid mobile number.' });
+    
+    // Normalize phone number (ensure +91 is present)
+    let formattedPhone = phoneNumber.trim();
+    if (!formattedPhone.startsWith('+')) {
+      formattedPhone = `+91${formattedPhone}`;
+    }
+
+    // Check if number is in authorized list before sending OTP
+    if (!STAFF_MAPPING[formattedPhone]) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Access Denied', 
+        description: 'This number is not authorized to access the Krishna\'s SUPER 9+ Terminal.' 
+      });
       return;
     }
 
     setIsLoading(true);
     try {
       const appVerifier = window.recaptchaVerifier;
-      const result = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
+      const result = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
       setConfirmationResult(result);
       setStep('otp');
-      toast({ title: 'OTP Sent', description: `A verification code has been sent to ${phoneNumber}` });
+      toast({ title: 'OTP Sent', description: `A verification code has been sent to ${formattedPhone}` });
     } catch (error: any) {
       console.error(error);
       toast({ variant: 'destructive', title: 'Error', description: error.message || 'Failed to send OTP. Please try again.' });
@@ -65,11 +78,19 @@ export function PhoneAuthGate() {
     setIsLoading(true);
     try {
       if (confirmationResult) {
-        await confirmationResult.confirm(otp);
-        toast({ title: 'Session Started', description: 'Welcome to Krishna\'s SUPER 9+' });
+        const result = await confirmationResult.confirm(otp);
+        const user = result.user;
+
+        // Final safety check on phone number
+        if (user.phoneNumber && !STAFF_MAPPING[user.phoneNumber]) {
+          await signOut(auth);
+          throw new Error('Verification successful, but your account is not on the authorized staff list.');
+        }
+
+        toast({ title: 'Session Started', description: `Welcome back, ${STAFF_MAPPING[user.phoneNumber!]}` });
       }
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Verification Failed', description: 'Invalid OTP code. Please check and try again.' });
+      toast({ variant: 'destructive', title: 'Security Alert', description: error.message || 'Verification failed. Access Denied.' });
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +108,7 @@ export function PhoneAuthGate() {
           <p className="text-primary font-bold text-[10px] uppercase tracking-[0.3em]">Authorized Entry Only</p>
           <h1 className="text-4xl font-black tracking-tighter text-secondary leading-none uppercase">KRISHNA'S</h1>
           <h2 className="text-2xl font-black tracking-tighter text-primary leading-none uppercase">SUPER 9+</h2>
-          <p className="text-slate-400 font-medium text-xs mt-4">Security Terminal v3.0</p>
+          <p className="text-slate-400 font-medium text-xs mt-4">Staff Terminal v3.2</p>
         </div>
 
         {step === 'phone' ? (
@@ -111,7 +132,7 @@ export function PhoneAuthGate() {
               disabled={isLoading}
               className="w-full h-16 text-xs font-black rounded-2xl shadow-xl transition-all active:scale-95 bg-secondary hover:bg-secondary/95 text-white uppercase tracking-widest gap-2"
             >
-              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <>SEND OTP <ArrowRight className="h-4 w-4" /></>}
+              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <>GENERATE OTP <ArrowRight className="h-4 w-4" /></>}
             </Button>
           </form>
         ) : (
@@ -129,24 +150,29 @@ export function PhoneAuthGate() {
                   required
                 />
               </div>
-              <p className="text-[10px] text-center font-bold text-slate-400">Sent to {phoneNumber}</p>
+              <p className="text-[10px] text-center font-bold text-slate-400">Code sent to authorized device</p>
             </div>
             <Button 
               type="submit"
               disabled={isLoading}
               className="w-full h-16 text-xs font-black rounded-2xl shadow-xl transition-all active:scale-95 bg-primary hover:bg-primary/95 text-white uppercase tracking-widest gap-2"
             >
-              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <>START SESSION <ShieldCheck className="h-4 w-4" /></>}
+              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <>VERIFY & START <ShieldCheck className="h-4 w-4" /></>}
             </Button>
             <button 
               type="button" 
               onClick={() => setStep('phone')}
               className="w-full text-[10px] font-bold uppercase text-slate-400 hover:text-secondary transition-colors"
             >
-              Change Number
+              Try Different Number
             </button>
           </form>
         )}
+
+        <div className="pt-4 flex items-center justify-center gap-2 text-slate-300">
+           <AlertCircle className="h-3 w-3" />
+           <span className="text-[9px] font-bold uppercase tracking-widest">Database locked to authorized staff only</span>
+        </div>
       </div>
     </div>
   );

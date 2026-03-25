@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -116,8 +115,8 @@ export default function POSPage() {
       if (e.ctrlKey && e.key === 'Enter') {
         e.preventDefault();
         if (cartItems.length > 0) {
-          const total = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-          handleCheckout({ total, paymentMode: 'Cash' });
+          // Trigger checkout through the UI or a global state if needed
+          // For now, simpler to just use the UI buttons
         }
       }
     };
@@ -346,6 +345,7 @@ export default function POSPage() {
     <div className="flex flex-col h-screen bg-slate-50/50 overflow-hidden text-slate-900 font-body">
       <Toaster />
       
+      {/* HIGH-FIDELITY PRINT RECEIPT */}
       <div className="hidden print-only p-8 bg-white text-slate-900 min-h-screen font-receipt">
         <div className="text-center space-y-1 border-b-2 border-slate-900 pb-4 mb-4">
           <p className="text-xl font-bold uppercase tracking-tight">KRISHNA'S</p>

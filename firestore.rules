@@ -3,58 +3,49 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the user is authenticated via Firebase Auth.
+     * @description Checks if the user is authenticated and is a part of the authorized staff list.
+     * Authorized Numbers: Admin (+916000861935), Owner (+919613993713), Geeta Churi (+919181540323), Muskan Das (+918822081421).
      */
-    function isSignedIn() {
-      return request.auth != null;
+    function isAuthorizedStaff() {
+      let staffNumbers = [
+        '+916000861935', 
+        '+919613993713', 
+        '+919181540323', 
+        '+918822081421'
+      ];
+      return request.auth != null && request.auth.token.phone_number in staffNumbers;
     }
 
     /**
-     * @description Checks if the user is an Admin or Owner based on their verified phone number.
-     * Specific numbers provided: +916000861935 (Admin), +919613993713 (Owner).
+     * @description Standard admin check for destructive operations.
      */
     function isAdmin() {
-      return isSignedIn() && (
+      return request.auth != null && (
         request.auth.token.phone_number == '+916000861935' || 
         request.auth.token.phone_number == '+919613993713'
       );
     }
 
-    /**
-     * @description Rules for Product management.
-     */
     match /products/{productId} {
-      allow read, create, update: if isSignedIn();
+      allow read, create, update: if isAuthorizedStaff();
       allow delete: if isAdmin();
     }
 
-    /**
-     * @description Rules for Shop Settings.
-     */
     match /settings/config {
-      allow read, create, update: if isSignedIn();
+      allow read, create, update: if isAuthorizedStaff();
       allow delete: if isAdmin();
     }
 
-    /**
-     * @description Rules for Purchase transactions.
-     */
     match /purchases/{purchaseId} {
-      allow read, create: if isSignedIn();
+      allow read, create: if isAuthorizedStaff();
       allow delete: if isAdmin();
     }
 
-    /**
-     * @description Rules for manual cash flow entries.
-     */
     match /cashTransactions/{transactionId} {
-      allow read, create: if isSignedIn();
+      allow read, create: if isAuthorizedStaff();
       allow delete: if isAdmin();
     }
 
-    /**
-     * @description Default deny for all other paths.
-     */
     match /{path=**} {
       allow read, write: if false;
     }
