@@ -23,7 +23,7 @@
     --border: 20 5.9% 90%;
     --input: 20 5.9% 90%;
     --ring: 0 84% 45%;
-    --radius: 1.5rem;
+    --radius: 0.75rem;
   }
 }
 
@@ -32,11 +32,11 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground selection:bg-primary/30 text-lg;
+    @apply bg-background text-foreground selection:bg-primary/30 text-base;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
   h1, h2, h3 {
-    @apply font-black tracking-tighter;
+    @apply font-bold tracking-tight;
   }
 }
 
@@ -65,7 +65,7 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
   @apply bg-transparent;

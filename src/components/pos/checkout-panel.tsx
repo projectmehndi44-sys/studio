@@ -5,7 +5,6 @@ import { Smartphone, Printer, Save, FileDown, Monitor, Bluetooth, Usb } from 'lu
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { CartItem } from '@/lib/types';
 import {
@@ -13,7 +12,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 
@@ -27,7 +25,6 @@ interface CheckoutPanelProps {
 }
 
 export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
-  const { toast } = useToast();
   const [phone, setPhone] = useState('');
   const [paymentMode, setPaymentMode] = useState<'Cash' | 'UPI' | 'Credit'>('Cash');
   const [isPrinterDialogOpen, setIsPrinterDialogOpen] = useState(false);
@@ -56,40 +53,38 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-[48px] border-2 border-slate-50 shadow-2xl p-10 overflow-hidden">
+    <div className="flex flex-col h-full bg-white rounded-3xl border border-slate-100 shadow-sm p-6 overflow-hidden">
       <ScrollArea className="flex-1">
-        <div className="space-y-10 pb-6">
-          {/* Customer Profile Section */}
-          <div className="space-y-4">
-            <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Customer Profile</label>
+        <div className="space-y-6 pb-4">
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Customer Profile</label>
             <div className="relative">
-              <Smartphone className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-300" />
+              <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
               <Input
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="Mobile Number (WhatsApp)"
-                className="pl-16 h-20 text-2xl font-black bg-slate-50 border-none rounded-[24px] focus-visible:ring-primary shadow-inner"
+                placeholder="Mobile (WhatsApp)"
+                className="pl-12 h-12 text-base font-bold bg-slate-50 border-none rounded-xl focus-visible:ring-primary shadow-inner"
               />
             </div>
           </div>
 
-          {/* Settlement Method */}
-          <div className="space-y-4">
-            <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Payment Mode</label>
-            <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Payment Mode</label>
+            <div className="grid grid-cols-3 gap-2">
               {(['Cash', 'UPI', 'Credit'] as const).map((m) => (
                 <Button
                   key={m}
                   variant={paymentMode === m ? 'default' : 'outline'}
                   className={cn(
-                    "h-24 flex-col gap-2 rounded-3xl border-none transition-all",
+                    "h-16 flex-col gap-1 rounded-xl border-none transition-all",
                     paymentMode === m 
-                      ? 'bg-secondary text-white shadow-xl shadow-secondary/20 scale-[1.05]' 
-                      : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                      ? 'bg-secondary text-white shadow-md scale-[1.02]' 
+                      : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
                   )}
                   onClick={() => setPaymentMode(m)}
                 >
-                  <span className="font-black text-sm uppercase tracking-widest">{m}</span>
+                  <span className="font-bold text-[10px] uppercase tracking-wider">{m}</span>
                 </Button>
               ))}
             </div>
@@ -97,70 +92,68 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
         </div>
       </ScrollArea>
 
-      {/* Totals & Quick Actions */}
-      <div className="mt-8 pt-10 border-t-4 border-slate-50 space-y-8">
+      <div className="mt-6 pt-6 border-t space-y-6">
         <div className="flex justify-between items-end">
-          <span className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Grand Total</span>
-          <span className="text-7xl font-black text-primary tracking-tighter leading-none">₹{subtotal.toLocaleString()}</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Grand Total</span>
+          <span className="text-4xl font-bold text-primary tracking-tight leading-none">₹{subtotal.toLocaleString()}</span>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-2">
           <Button 
-            className="w-full h-24 text-3xl font-black rounded-[32px] shadow-2xl shadow-primary/30 transition-all active:scale-95 bg-primary hover:bg-primary/90"
+            className="w-full h-14 text-lg font-bold rounded-xl shadow-lg shadow-primary/10 transition-all active:scale-95 bg-primary hover:bg-primary/90"
             disabled={items.length === 0}
             onClick={handleLedgerSync}
           >
-            <Save className="h-8 w-8 mr-4" /> CONFIRM & SYNC
+            <Save className="h-5 w-5 mr-2" /> CONFIRM & SYNC
           </Button>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2">
             <Button 
               variant="outline"
-              className="h-20 bg-slate-50 border-none rounded-[24px] hover:bg-slate-100 font-black uppercase text-xs tracking-[0.2em] gap-3"
+              className="h-11 bg-slate-50 border-none rounded-lg hover:bg-slate-100 font-bold uppercase text-[9px] tracking-wider gap-2"
               onClick={handlePrintClick}
               disabled={items.length === 0}
             >
-              <Printer className="h-6 w-6" /> PRINT RECEIPT
+              <Printer className="h-4 w-4" /> PRINT BILL
             </Button>
             <Button 
               variant="outline"
-              className="h-20 bg-slate-50 border-none rounded-[24px] hover:bg-slate-100 font-black uppercase text-xs tracking-[0.2em] gap-3"
+              className="h-11 bg-slate-50 border-none rounded-lg hover:bg-slate-100 font-bold uppercase text-[9px] tracking-wider gap-2"
               onClick={handleSavePDF}
               disabled={items.length === 0}
             >
-              <FileDown className="h-6 w-6" /> SAVE DIGITAL
+              <FileDown className="h-4 w-4" /> SAVE PDF
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Printer Selection Dialog */}
       <Dialog open={isPrinterDialogOpen} onOpenChange={setIsPrinterDialogOpen}>
-        <DialogContent className="sm:max-w-md rounded-[48px] p-12 border-none shadow-2xl">
+        <DialogContent className="sm:max-w-md rounded-2xl p-8 border-none shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-4xl font-black uppercase tracking-tight text-secondary">Printer Setup</DialogTitle>
+            <DialogTitle className="text-xl font-bold uppercase tracking-tight text-secondary">Printer Setup</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-6 py-8">
+          <div className="grid grid-cols-2 gap-4 py-4">
             <button
               onClick={() => executePrint('normal')}
-              className="flex flex-col items-center justify-center h-44 bg-slate-50 rounded-[32px] hover:bg-primary/10 hover:text-primary transition-all group"
+              className="flex flex-col items-center justify-center h-32 bg-slate-50 rounded-2xl hover:bg-primary/5 hover:text-primary transition-all group"
             >
-              <Monitor className="h-12 w-12 mb-4 text-slate-400 group-hover:text-primary" />
-              <span className="font-black text-xs uppercase tracking-widest">Normal Desktop</span>
+              <Monitor className="h-8 w-8 mb-2 text-slate-400 group-hover:text-primary" />
+              <span className="font-bold text-[10px] uppercase tracking-wider">Normal (Desktop)</span>
             </button>
             <button
               onClick={() => executePrint('thermal')}
-              className="flex flex-col items-center justify-center h-44 bg-slate-50 rounded-[32px] hover:bg-secondary/10 hover:text-secondary transition-all group"
+              className="flex flex-col items-center justify-center h-32 bg-slate-50 rounded-2xl hover:bg-secondary/5 hover:text-secondary transition-all group"
             >
-              <div className="flex gap-2 mb-4">
-                <Bluetooth className="h-8 w-8 text-slate-400 group-hover:text-secondary" />
-                <Usb className="h-8 w-8 text-slate-400 group-hover:text-secondary" />
+              <div className="flex gap-1 mb-2">
+                <Bluetooth className="h-6 w-6 text-slate-400 group-hover:text-secondary" />
+                <Usb className="h-6 w-6 text-slate-400 group-hover:text-secondary" />
               </div>
-              <span className="font-black text-xs uppercase tracking-widest">Thermal (USB/BT)</span>
+              <span className="font-bold text-[10px] uppercase tracking-wider">Thermal (BT/USB)</span>
             </button>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsPrinterDialogOpen(false)} className="font-bold h-16 w-full rounded-2xl">Cancel</Button>
+            <Button variant="ghost" onClick={() => setIsPrinterDialogOpen(false)} className="font-bold h-11 w-full rounded-xl">Cancel</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

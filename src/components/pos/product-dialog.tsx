@@ -22,7 +22,7 @@ import { Product } from '@/lib/types';
 import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Edit, Trash2 } from 'lucide-react';
+import { Search, Edit } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const CATEGORIES = [
@@ -125,122 +125,122 @@ export function ProductDialog({ isOpen, onClose }: ProductDialogProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] rounded-[48px] p-12 border-none shadow-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-[600px] rounded-3xl p-8 border-none shadow-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-4xl font-black tracking-tighter uppercase text-secondary">
+          <DialogTitle className="text-2xl font-bold tracking-tight uppercase text-secondary">
             Item Master
           </DialogTitle>
         </DialogHeader>
 
         {!isEditing ? (
-          <div className="flex-1 flex flex-col gap-8 min-h-0">
-            <div className="flex gap-4 items-center">
+          <div className="flex-1 flex flex-col gap-6 min-h-0 mt-2">
+            <div className="flex gap-2 items-center">
                <div className="relative flex-1">
-                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
                  <Input 
                    placeholder="Search catalog..." 
-                   className="pl-12 h-16 bg-slate-50 border-none rounded-2xl font-bold text-lg"
+                   className="pl-10 h-11 bg-slate-50 border-none rounded-xl font-medium text-sm"
                    value={searchQuery}
                    onChange={(e) => setSearchQuery(e.target.value)}
                  />
                </div>
-               <Button onClick={() => setIsEditing(true)} className="h-16 px-10 rounded-2xl font-black uppercase tracking-widest bg-primary">
+               <Button onClick={() => setIsEditing(true)} className="h-11 px-6 rounded-xl font-bold uppercase text-[10px] tracking-wider bg-primary">
                  Add New
                </Button>
             </div>
 
-            <ScrollArea className="flex-1 border-2 border-slate-50 rounded-[32px] p-4">
+            <ScrollArea className="flex-1 border border-slate-100 rounded-xl p-2 bg-slate-50/30">
                <div className="divide-y divide-slate-50">
                  {filteredProducts.map(p => (
-                   <div key={p.id} className="p-6 flex items-center justify-between hover:bg-slate-50 transition-colors rounded-2xl">
+                   <div key={p.id} className="p-4 flex items-center justify-between hover:bg-white transition-colors rounded-lg">
                      <div>
-                       <p className="font-black text-xl text-slate-900">{p.name}</p>
-                       <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                       <p className="font-bold text-sm text-slate-900">{p.name}</p>
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                          ₹{p.price} • {p.category} • STOCK: {p.stock ?? '∞'}
                        </p>
                      </div>
-                     <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => { setSelectedProduct(p); setIsEditing(true); }} className="h-14 w-14 rounded-2xl">
-                          <Edit className="h-6 w-6" />
+                     <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => { setSelectedProduct(p); setIsEditing(true); }} className="h-9 w-9 rounded-lg">
+                          <Edit className="h-4 w-4" />
                         </Button>
                      </div>
                    </div>
                  ))}
                  {filteredProducts.length === 0 && (
-                   <div className="p-12 text-center text-slate-400 font-bold uppercase text-xs tracking-widest">
-                     No matching items found
+                   <div className="p-8 text-center text-slate-400 font-bold uppercase text-[10px] tracking-widest">
+                     No items found
                    </div>
                  )}
                </div>
             </ScrollArea>
-            <Button variant="outline" onClick={onClose} className="h-16 rounded-2xl font-black text-lg">Close Master</Button>
+            <Button variant="outline" onClick={onClose} className="h-11 rounded-xl font-bold text-xs uppercase tracking-wider">Close</Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-8 pt-4">
-            <div className="grid grid-cols-2 gap-8">
-              <div className="col-span-2 space-y-3">
-                <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Item Name</Label>
+          <form onSubmit={handleSubmit} className="space-y-6 pt-2">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2 space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Item Name</Label>
                 <Input
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g. Levi's Denim Jeans"
-                  className="h-16 bg-slate-50 border-none rounded-2xl font-bold text-xl"
+                  className="h-11 bg-slate-50 border-none rounded-xl font-bold text-sm"
                 />
               </div>
               
-              <div className="space-y-3">
-                <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Selling Price (₹)</Label>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Selling Price (₹)</Label>
                 <Input
                   required
                   type="number"
                   value={formData.price}
                   onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="h-16 bg-slate-50 border-none rounded-2xl font-bold text-xl"
+                  className="h-11 bg-slate-50 border-none rounded-xl font-bold text-sm"
                 />
               </div>
-              <div className="space-y-3">
-                <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Cost Price (₹)</Label>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Cost Price (₹)</Label>
                 <Input
                   type="number"
                   value={formData.costPrice}
                   onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
-                  className="h-16 bg-slate-50 border-none rounded-2xl font-bold text-xl"
+                  className="h-11 bg-slate-50 border-none rounded-xl font-bold text-sm"
                 />
               </div>
 
-              <div className="space-y-3">
-                <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Category</Label>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Category</Label>
                 <Select 
                   value={formData.category} 
                   onValueChange={(val) => setFormData({ ...formData, category: val })}
                 >
-                  <SelectTrigger className="h-16 bg-slate-50 border-none rounded-2xl font-bold text-lg px-6">
+                  <SelectTrigger className="h-11 bg-slate-50 border-none rounded-xl font-bold text-xs px-4">
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-3xl p-2 border-none shadow-2xl">
+                  <SelectContent className="rounded-xl p-1 border-none shadow-xl">
                     {CATEGORIES.map(cat => (
-                      <SelectItem key={cat} value={cat} className="font-bold py-4 rounded-xl">{cat}</SelectItem>
+                      <SelectItem key={cat} value={cat} className="font-bold text-xs py-2.5 rounded-lg">{cat}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-3">
-                <Label className="text-xs font-black uppercase tracking-widest text-slate-400">Stock Qty</Label>
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Stock Qty</Label>
                 <Input
                   type="number"
                   value={formData.stock}
                   onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
                   placeholder="Unlimited"
-                  className="h-16 bg-slate-50 border-none rounded-2xl font-bold text-xl"
+                  className="h-11 bg-slate-50 border-none rounded-xl font-bold text-sm"
                 />
               </div>
             </div>
 
-            <DialogFooter className="pt-8 gap-4">
-              <Button type="button" variant="ghost" onClick={() => { setIsEditing(false); setSelectedProduct(null); }} className="h-16 rounded-2xl font-bold px-10">Cancel</Button>
-              <Button type="submit" className="h-16 rounded-2xl font-black px-12 text-lg bg-primary">Save Changes</Button>
+            <DialogFooter className="pt-4 gap-2">
+              <Button type="button" variant="ghost" onClick={() => { setIsEditing(false); setSelectedProduct(null); }} className="h-11 rounded-xl font-bold px-6 text-xs uppercase">Cancel</Button>
+              <Button type="submit" className="h-11 rounded-xl font-bold px-8 text-xs uppercase bg-primary">Save Item</Button>
             </DialogFooter>
           </form>
         )}

@@ -89,9 +89,9 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
 
   return (
     <div className="relative w-full">
-      <div className="relative flex items-center gap-4">
+      <div className="relative flex items-center gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-7 w-7 text-slate-400" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -101,29 +101,29 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
               }
             }}
             placeholder="Search items or type price (e.g. 500)..."
-            className="pl-16 h-20 bg-white border-2 border-slate-50 focus-visible:ring-4 focus-visible:ring-primary/20 text-3xl font-black rounded-[28px] shadow-xl"
+            className="pl-12 h-14 bg-white border border-slate-100 focus-visible:ring-2 focus-visible:ring-primary/20 text-lg font-bold rounded-2xl shadow-sm"
           />
         </div>
         {quickPrice ? (
           <Button
             onClick={handleQuickAdd}
-            className="h-20 px-10 bg-primary text-primary-foreground font-black text-2xl animate-in scale-in rounded-[28px] shadow-2xl shadow-primary/20"
+            className="h-14 px-6 bg-primary text-primary-foreground font-bold text-sm animate-in scale-in rounded-2xl shadow-md"
           >
-            <Plus className="h-8 w-8 mr-3" /> ADD ₹{quickPrice}
+            <Plus className="h-5 w-5 mr-2" /> ADD ₹{quickPrice}
           </Button>
         ) : (
           <button
             onClick={onScanClick}
-            className="h-20 w-20 flex items-center justify-center rounded-[28px] bg-white border-2 border-slate-50 text-slate-600 hover:bg-slate-50 transition-all active:scale-90 shadow-xl"
+            className="h-14 w-14 flex items-center justify-center rounded-2xl bg-white border border-slate-100 text-slate-500 hover:bg-slate-50 transition-all active:scale-90 shadow-sm"
           >
-            <Scan className="h-10 w-10" />
+            <Scan className="h-6 w-6" />
           </button>
         )}
       </div>
 
       {(filteredProducts.length > 0 || showAddPrompt) && !quickPrice && (
-        <div className="absolute top-full left-0 right-0 mt-4 z-50 bg-white border-none rounded-[36px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] overflow-hidden animate-in fade-in slide-in-from-top-4">
-          <ScrollArea className="max-h-[500px]">
+        <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-white border rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
+          <ScrollArea className="max-h-[350px]">
             {filteredProducts.map((p) => (
               <button
                 key={p.id}
@@ -131,21 +131,21 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
                   onProductSelect(p);
                   setQuery('');
                 }}
-                className="w-full flex items-center justify-between p-8 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-none group"
+                className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors border-b last:border-none group"
               >
                 <div className="text-left">
-                  <p className="font-black text-2xl text-slate-900 group-hover:text-primary transition-colors tracking-tight">{p.name}</p>
-                  <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.2em] mt-1">
+                  <p className="font-bold text-base text-slate-900 group-hover:text-primary transition-colors">{p.name}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
                     ₹{p.price} • {p.category}
                   </p>
                 </div>
                 <div className="text-right">
                   {p.stock !== undefined ? (
-                    <Badge variant={p.stock < 10 ? "destructive" : "secondary"} className="rounded-xl font-black text-xs h-10 px-4">
+                    <Badge variant={p.stock < 10 ? "destructive" : "secondary"} className="rounded-lg font-bold text-[9px] h-6 px-2">
                       STOCK: {p.stock}
                     </Badge>
                   ) : (
-                    <Badge variant="outline" className="rounded-xl font-black text-xs text-slate-300 h-10 px-4">UNTRACKED</Badge>
+                    <Badge variant="outline" className="rounded-lg font-bold text-[9px] text-slate-300 h-6 px-2">UNTRACKED</Badge>
                   )}
                 </div>
               </button>
@@ -157,14 +157,14 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
                   onAddNewProduct(query);
                   setQuery('');
                 }}
-                className="w-full flex items-center gap-6 p-10 hover:bg-primary/5 transition-colors group"
+                className="w-full flex items-center gap-4 p-5 hover:bg-primary/5 transition-colors group"
               >
-                <div className="bg-primary/10 p-6 rounded-[28px] group-hover:bg-primary group-hover:text-white transition-all shadow-sm">
-                  <PackagePlus className="h-10 w-10 text-primary group-hover:text-white" />
+                <div className="bg-primary/10 p-4 rounded-xl group-hover:bg-primary group-hover:text-white transition-all shadow-sm">
+                  <PackagePlus className="h-6 w-6 text-primary group-hover:text-white" />
                 </div>
                 <div className="text-left">
-                  <p className="font-black text-3xl text-slate-900 tracking-tighter">Add "{query}" to Catalog</p>
-                  <p className="text-lg font-bold text-primary tracking-tight">New item detected • Tap to save details</p>
+                  <p className="font-bold text-lg text-slate-900 tracking-tight">Add "{query}" to Catalog</p>
+                  <p className="text-xs font-bold text-primary">New item detected • Tap to save details</p>
                 </div>
               </button>
             )}
