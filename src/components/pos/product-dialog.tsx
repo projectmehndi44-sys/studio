@@ -160,8 +160,8 @@ export function ProductDialog({ isOpen, onClose }: ProductDialogProps) {
         </div>
 
         {!isEditing ? (
-          <div className="flex-1 flex flex-col min-h-0 bg-white">
-            <div className="p-6 border-b flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="flex-1 flex flex-col min-h-0 bg-white overflow-hidden">
+            <div className="p-6 border-b flex flex-col md:flex-row gap-4 items-center justify-between shrink-0">
               <div className="flex items-center gap-3 w-full md:w-auto">
                  <div className="relative w-full md:w-[300px]">
                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
@@ -192,7 +192,7 @@ export function ProductDialog({ isOpen, onClose }: ProductDialogProps) {
 
             <ScrollArea className="flex-1">
               <Table>
-                <TableHeader className="bg-slate-50/50 sticky top-0 z-10">
+                <TableHeader className="bg-slate-50/50 sticky top-0 z-10 shadow-sm">
                   <TableRow className="border-slate-50">
                     <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14 pl-8">Product Name</TableHead>
                     <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14">Barcode</TableHead>
@@ -251,73 +251,77 @@ export function ProductDialog({ isOpen, onClose }: ProductDialogProps) {
             </ScrollArea>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex-1 bg-white p-10 flex flex-col">
-            <div className="grid grid-cols-2 gap-8 flex-1">
-              <div className="col-span-2 space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Detailed Product Label</Label>
-                <Input
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g. Amul Gold Full Cream Milk 1L"
-                  className="h-14 bg-slate-50 border-none rounded-2xl font-bold text-lg px-6 focus-visible:ring-primary/20"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Sales Value (MRP/SP)</Label>
-                <Input
-                  required
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                  className="h-12 bg-slate-50 border-none rounded-xl font-bold text-sm px-6"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Landing Cost (Optional)</Label>
-                <Input
-                  type="number"
-                  value={formData.costPrice}
-                  onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
-                  className="h-12 bg-slate-50 border-none rounded-xl font-bold text-sm px-6"
-                />
-              </div>
+          <div className="flex-1 bg-white overflow-hidden flex flex-col min-h-0">
+            <ScrollArea className="flex-1">
+              <form onSubmit={handleSubmit} className="p-10">
+                <div className="grid grid-cols-2 gap-8">
+                  <div className="col-span-2 space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Detailed Product Label</Label>
+                    <Input
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="e.g. Amul Gold Full Cream Milk 1L"
+                      className="h-14 bg-slate-50 border-none rounded-2xl font-bold text-lg px-6 focus-visible:ring-primary/20"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Sales Value (MRP/SP)</Label>
+                    <Input
+                      required
+                      type="number"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      className="h-12 bg-slate-50 border-none rounded-xl font-bold text-sm px-6"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Landing Cost (Optional)</Label>
+                    <Input
+                      type="number"
+                      value={formData.costPrice}
+                      onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
+                      className="h-12 bg-slate-50 border-none rounded-xl font-bold text-sm px-6"
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Category Bucket</Label>
-                <Select 
-                  value={formData.category} 
-                  onValueChange={(val) => setFormData({ ...formData, category: val })}
-                >
-                  <SelectTrigger className="h-12 bg-slate-50 border-none rounded-xl font-bold text-xs px-6">
-                    <SelectValue placeholder="Select Category" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl p-1 border-none shadow-2xl">
-                    {CATEGORIES.map(cat => (
-                      <SelectItem key={cat} value={cat} className="font-bold text-xs py-3 rounded-lg">{cat}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Category Bucket</Label>
+                    <Select 
+                      value={formData.category} 
+                      onValueChange={(val) => setFormData({ ...formData, category: val })}
+                    >
+                      <SelectTrigger className="h-12 bg-slate-50 border-none rounded-xl font-bold text-xs px-6">
+                        <SelectValue placeholder="Select Category" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl p-1 border-none shadow-2xl">
+                        {CATEGORIES.map(cat => (
+                          <SelectItem key={cat} value={cat} className="font-bold text-xs py-3 rounded-lg">{cat}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Inventory Count</Label>
-                <Input
-                  type="number"
-                  value={formData.stock}
-                  onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
-                  placeholder="Leave empty for untracked"
-                  className="h-12 bg-slate-50 border-none rounded-xl font-bold text-sm px-6"
-                />
-              </div>
-            </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Inventory Count</Label>
+                    <Input
+                      type="number"
+                      value={formData.stock}
+                      onChange={(e) => setFormData({ ...formData, stock: e.target.value })}
+                      placeholder="Leave empty for untracked"
+                      className="h-12 bg-slate-50 border-none rounded-xl font-bold text-sm px-6"
+                    />
+                  </div>
+                </div>
 
-            <DialogFooter className="pt-10 gap-4">
-              <Button type="button" variant="ghost" onClick={() => { setIsEditing(false); setSelectedProduct(null); }} className="h-14 rounded-2xl font-bold px-10 text-xs uppercase tracking-widest">Discard</Button>
-              <Button type="submit" className="h-14 rounded-2xl font-bold px-12 text-xs uppercase tracking-widest bg-primary text-white shadow-xl shadow-primary/10">Commit to Ledger</Button>
-            </DialogFooter>
-          </form>
+                <div className="pt-10 flex flex-col md:flex-row gap-4">
+                  <Button type="button" variant="ghost" onClick={() => { setIsEditing(false); setSelectedProduct(null); }} className="flex-1 h-14 rounded-2xl font-bold text-xs uppercase tracking-widest">Discard</Button>
+                  <Button type="submit" className="flex-1 h-14 rounded-2xl font-bold text-xs uppercase tracking-widest bg-primary text-white shadow-xl shadow-primary/10">Commit to Ledger</Button>
+                </div>
+              </form>
+            </ScrollArea>
+          </div>
         )}
       </DialogContent>
     </Dialog>
