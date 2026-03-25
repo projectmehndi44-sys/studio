@@ -380,7 +380,8 @@ export default function POSPage() {
           <thead>
             <tr className="border-y border-slate-900">
               <th className="text-left py-0.5 font-bold uppercase">Item</th>
-              <th className="text-center py-0.5 font-bold uppercase">Price x Qty</th>
+              <th className="text-right py-0.5 font-bold uppercase">Price</th>
+              <th className="text-center py-0.5 font-bold uppercase">Qty</th>
               <th className="text-right py-0.5 font-bold uppercase">Total</th>
             </tr>
           </thead>
@@ -388,8 +389,9 @@ export default function POSPage() {
             {lastSale?.items.map((item, idx) => (
               <tr key={idx}>
                 <td className="py-0.5">{item.name}</td>
-                <td className="py-0.5 text-center">₹{item.price} x {item.quantity}</td>
-                <td className="py-0.5 text-right">₹{(item.price * item.quantity).toFixed(2)}</td>
+                <td className="py-0.5 text-right">₹{item.price.toFixed(0)}</td>
+                <td className="py-0.5 text-center">{item.quantity}</td>
+                <td className="py-0.5 text-right">₹{(item.price * item.quantity).toFixed(0)}</td>
               </tr>
             ))}
           </tbody>
@@ -398,11 +400,11 @@ export default function POSPage() {
         <div className="space-y-0 text-right border-t border-slate-900 pt-1">
           <div className="flex justify-between items-center text-[8pt]">
             <span>Subtotal</span>
-            <span>₹{lastSale?.subtotalAmount.toFixed(2)}</span>
+            <span>₹{lastSale?.subtotalAmount.toFixed(0)}</span>
           </div>
           <div className="flex justify-between items-center pt-0.5 border-t border-slate-400">
             <span className="text-[9pt] font-bold uppercase">Grand Total</span>
-            <span className="text-[10pt] font-bold">₹{lastSale?.totalAmount.toFixed(2)}</span>
+            <span className="text-[10pt] font-bold">₹{lastSale?.totalAmount.toFixed(0)}</span>
           </div>
         </div>
 
@@ -607,17 +609,19 @@ export default function POSPage() {
                 <table className="w-full text-[8pt]">
                   <thead>
                     <tr className="border-b border-slate-200">
-                      <th className="text-left font-bold py-1">Item</th>
-                      <th className="text-center font-bold py-1">Price x Qty</th>
-                      <th className="text-right font-bold py-1">Total</th>
+                      <th className="text-left font-bold py-1 uppercase">Item</th>
+                      <th className="text-right font-bold py-1 uppercase">Price</th>
+                      <th className="text-center font-bold py-1 uppercase">Qty</th>
+                      <th className="text-right font-bold py-1 uppercase">Total</th>
                     </tr>
                   </thead>
                   <tbody>
                     {lastSale?.items.map((item, idx) => (
                       <tr key={idx}>
                         <td className="py-0.5">{item.name}</td>
-                        <td className="py-0.5 text-center">₹{item.price} x {item.quantity}</td>
-                        <td className="py-0.5 text-right">₹{(item.price * item.quantity).toFixed(2)}</td>
+                        <td className="py-0.5 text-right">₹{item.price.toFixed(0)}</td>
+                        <td className="py-0.5 text-center">{item.quantity}</td>
+                        <td className="py-0.5 text-right">₹{(item.price * item.quantity).toFixed(0)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -625,7 +629,7 @@ export default function POSPage() {
               </div>
 
               <div className="flex justify-between items-end pt-2">
-                <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">₹{lastSale?.totalAmount}</span>
+                <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">₹{lastSale?.totalAmount.toFixed(0)}</span>
                 <span className="text-[8pt] font-black text-emerald-500 uppercase tracking-widest">{lastSale?.items.length} Items</span>
               </div>
             </div>
