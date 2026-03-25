@@ -108,19 +108,17 @@ export default function POSPage() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl + Space shortcut for search focus
       if (e.ctrlKey && e.code === 'Space') {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
-      // Alt + Space shortcut for Cash Flow dialog
       if (e.altKey && e.code === 'Space') {
         e.preventDefault();
         setIsCashDialogOpen(true);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeMode('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   useEffect(() => {
@@ -345,15 +343,15 @@ export default function POSPage() {
       <Toaster />
       
       {/* HIGH-FIDELITY PRINT RECEIPT */}
-      <div className="hidden print-only p-4 bg-white text-slate-900 min-h-screen font-receipt">
-        <div className="text-center space-y-0 border-b-2 border-slate-900 pb-2 mb-2">
-          <p className="text-xl font-bold uppercase tracking-tight">KRISHNA'S</p>
-          <h2 className="text-4xl font-black uppercase tracking-tight leading-tight">SUPER 9+</h2>
-          <p className="text-sm font-bold mt-1">{shopAddress}</p>
-          {shopGSTIN && <p className="text-[10px] font-bold">GSTIN: {shopGSTIN}</p>}
+      <div className="hidden print-only p-4 bg-white text-slate-900 min-h-screen font-receipt text-[10pt] leading-tight">
+        <div className="text-center space-y-0 border-b border-slate-900 pb-1 mb-1">
+          <p className="text-[10pt] font-bold uppercase tracking-tight">KRISHNA'S</p>
+          <h2 className="text-[10pt] font-black uppercase tracking-tight leading-none">SUPER 9+</h2>
+          <p className="text-[8pt] font-bold mt-0.5">{shopAddress}</p>
+          {shopGSTIN && <p className="text-[8pt] font-bold">GSTIN: {shopGSTIN}</p>}
         </div>
 
-        <div className="grid grid-cols-2 gap-2 mb-2 text-[10px] leading-tight">
+        <div className="grid grid-cols-2 gap-1 mb-1 text-[8pt] leading-none">
           <div className="space-y-0">
             <p className="font-bold">Bill ID: #{Date.now().toString().slice(-8)}</p>
             <p className="font-bold">Date: {format(new Date(), 'dd/MM/yyyy')}</p>
@@ -367,41 +365,41 @@ export default function POSPage() {
           </div>
         </div>
 
-        <table className="w-full text-[10px] border-collapse mb-2">
+        <table className="w-full text-[8pt] border-collapse mb-1">
           <thead>
-            <tr className="border-y-2 border-slate-900">
-              <th className="text-left py-1 font-bold uppercase">Item</th>
-              <th className="text-center py-1 font-bold uppercase">Qty</th>
-              <th className="text-right py-1 font-bold uppercase">Total</th>
+            <tr className="border-y border-slate-900">
+              <th className="text-left py-0.5 font-bold uppercase">Item</th>
+              <th className="text-center py-0.5 font-bold uppercase">Qty</th>
+              <th className="text-right py-0.5 font-bold uppercase">Total</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {lastSale?.items.map((item, idx) => (
               <tr key={idx}>
-                <td className="py-1">{item.name}</td>
-                <td className="py-1 text-center">{item.quantity}</td>
-                <td className="py-1 text-right">₹{(item.price * item.quantity).toFixed(2)}</td>
+                <td className="py-0.5">{item.name}</td>
+                <td className="py-0.5 text-center">{item.quantity}</td>
+                <td className="py-0.5 text-right">₹{(item.price * item.quantity).toFixed(2)}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        <div className="space-y-0 text-right border-t-2 border-slate-900 pt-2">
-          <div className="flex justify-between items-center text-[10px]">
+        <div className="space-y-0 text-right border-t border-slate-900 pt-1">
+          <div className="flex justify-between items-center text-[8pt]">
             <span>Subtotal</span>
             <span>₹{lastSale?.subtotalAmount.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between items-center pt-1 border-t border-slate-400">
-            <span className="text-xs font-bold uppercase">Grand Total</span>
-            <span className="text-lg font-bold">₹{lastSale?.totalAmount.toFixed(2)}</span>
+          <div className="flex justify-between items-center pt-0.5 border-t border-slate-400">
+            <span className="text-[9pt] font-bold uppercase">Grand Total</span>
+            <span className="text-[10pt] font-bold">₹{lastSale?.totalAmount.toFixed(2)}</span>
           </div>
         </div>
 
-        <div className="mt-4 text-center space-y-1">
-          <p className="text-[7px] font-bold uppercase tracking-widest text-slate-400">
+        <div className="mt-2 text-center space-y-0.5">
+          <p className="text-[6pt] font-bold uppercase tracking-widest text-slate-400">
             Computer Generated Invoice • No Exchange without Bill
           </p>
-          <p className="text-[10px] font-bold">Thank you for shopping at Krishna's Super 9+!</p>
+          <p className="text-[8pt] font-bold">Thank you for shopping at Krishna's Super 9+!</p>
         </div>
       </div>
 
@@ -565,28 +563,28 @@ export default function POSPage() {
           </DialogHeader>
 
           <div className="py-4 space-y-4">
-            <div className="bg-slate-50 rounded-[28px] p-6 space-y-2 font-receipt border border-slate-200">
-              <div className="flex justify-between items-center text-[10px] font-bold uppercase text-slate-400 tracking-widest">
+            <div className="bg-slate-50 rounded-[28px] p-6 space-y-2 font-receipt border border-slate-200 text-[9pt] leading-tight">
+              <div className="flex justify-between items-center text-[8pt] font-bold uppercase text-slate-400 tracking-widest">
                 <span>INVOICE DETAILS</span>
                 <span>{lastSale?.staffName || staffName}</span>
               </div>
               <div className="flex flex-col border-y border-slate-100 py-1 space-y-0">
-                 <div className="flex justify-between text-[10px] font-bold">
+                 <div className="flex justify-between text-[8pt] font-bold">
                     <span className="text-slate-400">CUSTOMER</span>
                     <span className="text-secondary">{lastSale?.customerName || 'Walk-in'}</span>
                  </div>
-                 <div className="flex justify-between text-[10px] font-bold">
+                 <div className="flex justify-between text-[8pt] font-bold">
                     <span className="text-slate-400">MOBILE</span>
                     <span className="text-secondary">{lastSale?.customerId || 'N/A'}</span>
                  </div>
-                 <div className="flex justify-between text-[10px] font-bold">
+                 <div className="flex justify-between text-[8pt] font-bold">
                     <span className="text-slate-400">DATE/TIME</span>
                     <span className="text-secondary">{format(new Date(), 'dd/MM/yyyy HH:mm')}</span>
                  </div>
               </div>
               <div className="flex justify-between items-end pt-2">
-                <span className="text-4xl font-black text-slate-900 tracking-tighter leading-none">₹{lastSale?.totalAmount}</span>
-                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{lastSale?.items.length} Items</span>
+                <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">₹{lastSale?.totalAmount}</span>
+                <span className="text-[8pt] font-black text-emerald-500 uppercase tracking-widest">{lastSale?.items.length} Items</span>
               </div>
             </div>
 
