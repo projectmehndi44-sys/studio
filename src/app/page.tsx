@@ -17,7 +17,9 @@ import {
   Download,
   Settings,
   ChevronRight,
-  Keyboard
+  Keyboard,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { Product, CartItem, PurchaseRecord } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
@@ -41,9 +43,10 @@ import {
   initiateAnonymousSignIn, 
   useAuth,
   useDoc,
-  setDocumentNonBlocking
+  setDocumentNonBlocking,
+  deleteDocumentNonBlocking
 } from '@/firebase';
-import { collection, serverTimestamp, doc } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, getDocs, query } from 'firebase/firestore';
 import {
   Sheet,
   SheetContent,
@@ -58,6 +61,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { AdminPinDialog } from '@/components/admin/admin-pin-dialog';
 import { format } from 'date-fns';
 
 const CART_STORAGE_KEY = 'super9_pos_current_cart';
@@ -73,6 +77,7 @@ export default function POSPage() {
   const [isCashDialogOpen, setIsCashDialogOpen] = useState(false);
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isPinDialogOpen, setIsPinDialogOpen] = useState(false);
   const [lastSale, setLastSale] = useState<PurchaseRecord | null>(null);
   const [activeMainTab, setActiveMainTab] = useState('products');
 
@@ -109,6 +114,11 @@ export default function POSPage() {
       if (e.altKey && e.key === 'c') {
         e.preventDefault();
         setIsCashDialogOpen(true);
+      }
+      // Alt + I for Inventory
+      if (e.altKey && e.key === 'i') {
+        e.preventDefault();
+        window.location.href = '/inventory';
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -263,6 +273,32 @@ export default function POSPage() {
     toast({ title: "Profile Updated", description: "Shop details saved successfully." });
   };
 
+  const handlePurgeData = async () => {
+    setIsPinDialogOpen(true);
+  };
+
+  const onPurgeConfirmed = async () => {
+    setIsPinDialogOpen(false);
+    const collectionsToPurge = ['products', 'purchases', 'cashTransactions'];
+    
+    toast({ title: "Purge Initiated", description: "Cleaning all records from cloud ledger..." });
+
+    for (const colName of collectionsToPurge) {
+      const q = query(collection(db, colName));
+      const snapshot = await getDocs(q);
+      snapshot.forEach((d) => {
+        deleteDocumentNonBlocking(doc(db, colName, d.id));
+      });
+    }
+    
+    setIsSettingsOpen(false);
+    toast({
+      variant: "destructive",
+      title: "System Cleaned",
+      description: "All products and transaction history have been wiped.",
+    });
+  };
+
   if (isUserLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-white">
@@ -378,7 +414,7 @@ export default function POSPage() {
              </div>
              <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
                 <Keyboard className="h-3.5 w-3.5" />
-                <span className="text-[9px] font-bold uppercase tracking-wider">Ctrl+Enter: Sync</span>
+                <span className="text-[9px] font-bold uppercase tracking-wider">Alt+S: Sync</span>
              </div>
           </div>
 
@@ -578,7 +614,7 @@ export default function POSPage() {
       </Dialog>
 
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
-        <DialogContent className="rounded-[32px] p-10 sm:max-w-md border-none shadow-2xl">
+        <DialogContent className="rounded-[32px] p-10 sm:max-w-md border-none shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
           <DialogHeader>
             <DialogTitle className="text-2xl font-black uppercase tracking-tight text-secondary">Shop Profile</DialogTitle>
           </DialogHeader>
@@ -603,10 +639,36 @@ export default function POSPage() {
                   </div>
                 </div>
              </div>
+             
+             <div className="pt-8 border-t border-slate-100">
+               <div className="bg-primary/5 rounded-2xl p-6 space-y-4">
+                 <div className="flex items-center gap-2 text-primary">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">Danger Zone</span>
+                 </div>
+                 <p className="text-[10px] font-medium text-slate-500">Purging data will permanently remove all products, sales history, and cash flows from your cloud ledger.</p>
+                 <Button 
+                   type="button" 
+                   variant="destructive" 
+                   onClick={handlePurgeData}
+                   className="w-full h-12 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-destructive/10 gap-2"
+                 >
+                   <Trash2 className="h-4 w-4" /> Purge System Data
+                 </Button>
+               </div>
+             </div>
+
              <Button type="submit" className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest bg-primary text-white">SAVE PROFILE</Button>
           </form>
         </DialogContent>
       </Dialog>
+
+      <AdminPinDialog 
+        isOpen={isPinDialogOpen} 
+        onClose={() => setIsPinDialogOpen(false)} 
+        onSuccess={onPurgeConfirmed}
+        requiredFor="Authorize Database Purge"
+      />
     </div>
   );
 }
