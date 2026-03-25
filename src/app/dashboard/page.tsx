@@ -182,12 +182,18 @@ export default function DashboardPage() {
 
   const { filteredSales, filteredCash, stats } = processedData;
 
+  const getFormattedDateTime = (timestamp: any) => {
+    if (!timestamp) return '--';
+    if (timestamp.seconds) return format(new Date(timestamp.seconds * 1000), 'dd/MM/yyyy HH:mm');
+    return format(new Date(timestamp), 'dd/MM/yyyy HH:mm');
+  };
+
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 font-body">
       <div className="hidden print-only p-8 bg-white text-slate-900 font-receipt">
         <div className="text-center space-y-1 border-b-2 border-slate-900 pb-4 mb-4">
-          <p className="text-lg font-bold text-slate-400 uppercase tracking-widest">KRISHNA'S</p>
-          <h2 className="text-4xl font-black uppercase tracking-tight">SUPER 9+</h2>
+          <p className="text-xl font-bold uppercase tracking-tight">KRISHNA'S</p>
+          <h2 className="text-4xl font-black uppercase tracking-tight leading-tight">SUPER 9+</h2>
           <p className="text-sm font-bold mt-2">{shopAddress}</p>
           {shopSettings?.gstin && <p className="text-[10px] font-bold">GSTIN: {shopSettings?.gstin}</p>}
         </div>
@@ -195,11 +201,12 @@ export default function DashboardPage() {
         <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
           <div className="space-y-1">
             <p className="font-bold">Bill ID: #{viewingSale?.id?.slice(-8) || 'ARCHIVE'}</p>
-            <p className="font-bold">Date: {viewingSale?.timestamp?.seconds ? format(new Date(viewingSale.timestamp.seconds * 1000), 'dd/MM/yyyy') : '--'}</p>
+            <p className="font-bold">DateTime: {getFormattedDateTime(viewingSale?.timestamp)}</p>
           </div>
           <div className="space-y-1 text-right">
-            <p className="font-bold">Cust: {viewingSale?.customerId || viewingSale?.customerName || 'Walk-in'}</p>
-            <p className="font-bold">Staff: {viewingSale?.staffName || 'Admin'}</p>
+            <p className="font-bold">Cust: {viewingSale?.customerName || 'Walk-in'}</p>
+            <p className="font-bold">Mob: {viewingSale?.customerId || 'N/A'}</p>
+            <p className="font-bold">Staff: {viewingSale?.staffName || 'System'}</p>
           </div>
         </div>
 
@@ -475,7 +482,21 @@ export default function DashboardPage() {
 
           <div className="py-6 space-y-6">
             <div className="bg-slate-50 rounded-[24px] p-8 space-y-4">
-              <div className="flex justify-between items-end border-t border-slate-100 pt-4">
+              <div className="flex flex-col border-b border-slate-100 pb-4 space-y-2">
+                 <div className="flex justify-between items-center text-[10px] font-bold">
+                    <span className="text-slate-400 uppercase">Customer</span>
+                    <span className="text-secondary">{viewingSale?.customerName || 'Walk-in'}</span>
+                 </div>
+                 <div className="flex justify-between items-center text-[10px] font-bold">
+                    <span className="text-slate-400 uppercase">Identity</span>
+                    <span className="text-secondary">{viewingSale?.customerId || 'No Mobile'}</span>
+                 </div>
+                 <div className="flex justify-between items-center text-[10px] font-bold">
+                    <span className="text-slate-400 uppercase">DateTime</span>
+                    <span className="text-secondary">{getFormattedDateTime(viewingSale?.timestamp)}</span>
+                 </div>
+              </div>
+              <div className="flex justify-between items-end pt-2">
                 <div className="flex flex-col">
                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Final Amount</span>
                    <span className="text-4xl font-black text-slate-900 tracking-tighter">₹{viewingSale?.totalAmount.toLocaleString()}</span>

@@ -113,6 +113,8 @@ export default function POSPage() {
         e.preventDefault();
         if (cartItems.length > 0) {
           const total = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+          // Trigger checkout through state or find a way to access form data
+          // For simplicity, we trigger the common logic
           handleCheckout({ total, paymentMode: 'Cash' });
         }
       }
@@ -339,9 +341,10 @@ export default function POSPage() {
             <p className="font-bold">Time: {format(new Date(), 'HH:mm')}</p>
           </div>
           <div className="space-y-0.5 text-right">
-            <p className="font-bold">Cust: {lastSale?.customerName || lastSale?.customerId || 'Guest'}</p>
+            <p className="font-bold">Cust: {lastSale?.customerName || 'Walk-in'}</p>
+            <p className="font-bold">Mob: {lastSale?.customerId || 'No Mobile'}</p>
+            <p className="font-bold">Staff: {lastSale?.staffName || staffName}</p>
             <p className="font-bold">Mode: {lastSale?.paymentMode || 'Cash'}</p>
-            <p className="font-bold">Staff: {staffName}</p>
           </div>
         </div>
 
@@ -520,9 +523,23 @@ export default function POSPage() {
             <div className="bg-slate-50 rounded-[28px] p-8 space-y-4">
               <div className="flex justify-between items-center text-[10px] font-bold uppercase text-slate-400 tracking-widest">
                 <span>INVOICE DETAILS</span>
-                <span>{staffName}</span>
+                <span>{lastSale?.staffName || staffName}</span>
               </div>
-              <div className="flex justify-between items-end border-t border-slate-100 pt-4">
+              <div className="flex flex-col border-y border-slate-100 py-3 space-y-1">
+                 <div className="flex justify-between text-[10px] font-bold">
+                    <span className="text-slate-400">CUSTOMER</span>
+                    <span className="text-secondary">{lastSale?.customerName || 'Walk-in'}</span>
+                 </div>
+                 <div className="flex justify-between text-[10px] font-bold">
+                    <span className="text-slate-400">MOBILE</span>
+                    <span className="text-secondary">{lastSale?.customerId || 'N/A'}</span>
+                 </div>
+                 <div className="flex justify-between text-[10px] font-bold">
+                    <span className="text-slate-400">DATE/TIME</span>
+                    <span className="text-secondary">{format(new Date(), 'dd/MM/yyyy HH:mm')}</span>
+                 </div>
+              </div>
+              <div className="flex justify-between items-end pt-2">
                 <span className="text-5xl font-black text-slate-900 tracking-tighter leading-none">₹{lastSale?.totalAmount}</span>
                 <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{lastSale?.items.length} Items</span>
               </div>
