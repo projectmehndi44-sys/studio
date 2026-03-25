@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Search, Scan, Plus, PackagePlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Product } from '@/lib/types';
@@ -13,9 +14,10 @@ interface ProductSearchProps {
   onProductSelect: (product: Product) => void;
   onScanClick: () => void;
   onAddNewProduct: (initialName: string, isSilent?: boolean) => void;
+  inputRef?: React.RefObject<HTMLInputElement>;
 }
 
-export function ProductSearch({ products, onProductSelect, onScanClick, onAddNewProduct }: ProductSearchProps) {
+export function ProductSearch({ products, onProductSelect, onScanClick, onAddNewProduct, inputRef }: ProductSearchProps) {
   const [query, setQuery] = useState('');
 
   const filteredProducts = useMemo(() => {
@@ -93,6 +95,7 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
           <Input
+            ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
@@ -100,8 +103,9 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
                 handleSearchSubmit();
               }
             }}
-            placeholder="Search items or type price (e.g. 500)..."
+            placeholder="[Alt+F] Search or type price..."
             className="pl-12 h-14 bg-white border border-slate-100 focus-visible:ring-2 focus-visible:ring-primary/20 text-lg font-bold rounded-2xl shadow-sm"
+            autoFocus
           />
         </div>
         {quickPrice ? (

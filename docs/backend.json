@@ -5,319 +5,65 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Product",
       "type": "object",
-      "description": "Represents an individual item available for sale in the Super 9+ POS system, including inventory details and pricing.",
+      "description": "Represents an individual item available for sale in the Super 9+ POS system.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Product entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the product (e.g., Amul Milk)."
-        },
-        "description": {
-          "type": "string",
-          "description": "A brief description of the product.",
-          "format": ""
-        },
-        "barcode": {
-          "type": "string",
-          "description": "The barcode associated with the product, used for scanning.",
-          "format": ""
-        },
-        "imageUrl": {
-          "type": "string",
-          "description": "URL to the product's image, used for quick-tap icons.",
-          "format": "uri"
-        },
-        "sellingPrice": {
-          "type": "number",
-          "description": "The price at which the product is sold to customers."
-        },
-        "costPrice": {
-          "type": "number",
-          "description": "The cost price of the product, used for profit calculation.",
-          "format": ""
-        },
-        "stockQuantity": {
-          "type": "number",
-          "description": "The current quantity of the product in stock. If not provided, inventory for this item is considered untracked.",
-          "format": ""
-        },
-        "categoryId": {
-          "type": "string",
-          "description": "Reference to the Category this product belongs to. (Relationship: Category 1:N Product)",
-          "format": ""
-        },
-        "isTopSeller": {
-          "type": "boolean",
-          "description": "Indicates if the product is among the top 20 most-sold items, for quick-tap access."
-        },
-        "isActive": {
-          "type": "boolean",
-          "description": "Indicates whether the product is currently active and available for sale."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the product was first created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp of the last update to the product's information.",
-          "format": "date-time"
-        }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "barcode": { "type": "string" },
+        "price": { "type": "number" },
+        "costPrice": { "type": "number" },
+        "stock": { "type": "number" },
+        "category": { "type": "string" },
+        "isPopular": { "type": "boolean" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "id",
-        "name",
-        "sellingPrice",
-        "isActive"
-      ]
+      "required": ["id", "name", "price", "isActive"]
     },
-    "Category": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Category",
+    "ShopSettings": {
+      "title": "ShopSettings",
       "type": "object",
-      "description": "Organizes products into logical groups for better management and search functionality.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Category entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the category (e.g., Dairy, Beverages)."
-        },
-        "description": {
-          "type": "string",
-          "description": "A brief description of the category.",
-          "format": ""
-        }
-      },
-      "required": [
-        "id",
-        "name"
-      ]
-    },
-    "Customer": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Customer",
-      "type": "object",
-      "description": "Stores information about a customer, used for loyalty programs, personalized offers, and purchase history tracking.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Customer entity."
-        },
-        "phoneNumber": {
-          "type": "string",
-          "description": "The customer's phone number, used for identification and communication. This should be unique.",
-          "format": ""
-        },
-        "name": {
-          "type": "string",
-          "description": "The full name of the customer.",
-          "format": ""
-        },
-        "email": {
-          "type": "string",
-          "description": "The customer's email address for communication.",
-          "format": "email"
-        },
-        "points": {
-          "type": "number",
-          "description": "Loyalty points accumulated by the customer."
-        },
-        "totalSpent": {
-          "type": "number",
-          "description": "The total monetary amount the customer has spent."
-        },
-        "lastVisitDate": {
-          "type": "string",
-          "description": "The timestamp of the customer's last purchase or interaction. Used for 'We miss you' coupon logic.",
-          "format": "date-time"
-        },
-        "isFlaggedForCoupon": {
-          "type": "boolean",
-          "description": "Flag indicating if the customer is eligible for a 'We miss you' WhatsApp coupon."
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "Timestamp when the customer profile was first created.",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp of the last update to the customer's information.",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "id",
-        "phoneNumber",
-        "name"
-      ]
+        "shopName": { "type": "string" },
+        "address": { "type": "string" },
+        "gstin": { "type": "string" },
+        "phone": { "type": "string" }
+      }
     },
     "Purchase": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Purchase",
       "type": "object",
-      "description": "Records a single customer transaction or sale, including all items purchased, payment details, and applied discounts.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Purchase entity."
-        },
-        "customerId": {
-          "type": "string",
-          "description": "Reference to the Customer who made the purchase.",
-          "format": ""
-        },
-        "staffId": {
-          "type": "string",
-          "description": "Reference to the Staff member who processed the sale.",
-          "format": ""
-        },
-        "timestamp": {
-          "type": "string",
-          "description": "The exact date and time when the purchase was made.",
-          "format": "date-time"
-        },
-        "totalAmount": {
-          "type": "number",
-          "description": "The final total amount of the purchase after all discounts."
-        },
-        "subtotalAmount": {
-          "type": "number",
-          "description": "The total amount of the purchase before any discounts were applied."
-        },
-        "discountAmount": {
-          "type": "number",
-          "description": "The total monetary amount discounted from the purchase."
-        },
-        "paymentMode": {
-          "type": "string",
-          "description": "The method of payment used (e.g., 'Cash', 'UPI', 'Credit').",
-          "format": ""
-        },
-        "items": {
-          "type": "array",
-          "description": "An array of objects, each representing a product bought in this purchase.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "isOfflineSale": {
-          "type": "boolean",
-          "description": "Indicates if this sale was initially recorded offline."
-        }
-      },
-      "required": [
-        "id",
-        "staffId",
-        "timestamp",
-        "totalAmount",
-        "subtotalAmount",
-        "discountAmount",
-        "paymentMode",
-        "items",
-        "isOfflineSale"
-      ]
+        "id": { "type": "string" },
+        "staffId": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "totalAmount": { "type": "number" },
+        "paymentMode": { "type": "string" },
+        "items": { "type": "array", "items": { "type": "string" } }
+      }
     },
     "CashTransaction": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "CashTransaction",
       "type": "object",
-      "description": "Records manual cash flow in or out of the register without a sale (e.g., adding change, vendor payments).",
       "properties": {
         "id": { "type": "string" },
         "type": { "type": "string", "enum": ["IN", "OUT"] },
         "amount": { "type": "number" },
         "reason": { "type": "string" },
-        "timestamp": { "type": "string", "format": "date-time" },
-        "staffId": { "type": "string" }
-      },
-      "required": ["id", "type", "amount", "timestamp", "staffId"]
-    },
-    "Staff": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Staff",
-      "type": "object",
-      "description": "Manages staff accounts and roles.",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "role": { "type": "string" },
-        "isActive": { "type": "boolean" }
-      },
-      "required": ["id", "name", "role", "isActive"]
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "anonymous"
-    ]
+    "providers": ["password", "anonymous"]
   },
   "firestore": {
     "structure": [
-      {
-        "path": "/products/{productId}",
-        "definition": {
-          "entityName": "Product",
-          "schema": { "$ref": "#/backend/entities/Product" },
-          "description": "Stores individual product details."
-        }
-      },
-      {
-        "path": "/categories/{categoryId}",
-        "definition": {
-          "entityName": "Category",
-          "schema": { "$ref": "#/backend/entities/Category" },
-          "description": "Organizes products into logical groups."
-        }
-      },
-      {
-        "path": "/customers/{customerId}",
-        "definition": {
-          "entityName": "Customer",
-          "schema": { "$ref": "#/backend/entities/Customer" },
-          "description": "Stores customer loyalty and history."
-        }
-      },
-      {
-        "path": "/purchases/{purchaseId}",
-        "definition": {
-          "entityName": "Purchase",
-          "schema": { "$ref": "#/backend/entities/Purchase" },
-          "description": "Records individual customer transactions."
-        }
-      },
-      {
-        "path": "/cashTransactions/{transactionId}",
-        "definition": {
-          "entityName": "CashTransaction",
-          "schema": { "$ref": "#/backend/entities/CashTransaction" },
-          "description": "Records manual cash flow adjustments (In/Out)."
-        }
-      },
-      {
-        "path": "/staff/{staffId}",
-        "definition": {
-          "entityName": "Staff",
-          "schema": { "$ref": "#/backend/entities/Staff" },
-          "description": "Stores staff profiles."
-        }
-      },
-      {
-        "path": "/adminRoles/{staffId}",
-        "definition": {
-          "entityName": "Staff",
-          "schema": { "$ref": "#/backend/entities/Staff" },
-          "description": "Admin privileges lookup."
-        }
-      }
+      { "path": "/products/{productId}", "definition": { "entityName": "Product" } },
+      { "path": "/settings/config", "definition": { "entityName": "ShopSettings" } },
+      { "path": "/purchases/{purchaseId}", "definition": { "entityName": "Purchase" } },
+      { "path": "/cashTransactions/{transactionId}", "definition": { "entityName": "CashTransaction" } }
     ]
   }
 }

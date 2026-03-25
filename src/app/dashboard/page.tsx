@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState } from 'react';
@@ -18,8 +19,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit, where, Timestamp } from 'firebase/firestore';
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, orderBy, limit, where, Timestamp, doc } from 'firebase/firestore';
 import { PurchaseRecord, CashTransaction } from '@/lib/types';
 import { format, startOfToday, startOfMonth, startOfYesterday, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -54,6 +55,10 @@ export default function DashboardPage() {
   const [viewingSale, setViewingSale] = useState<PurchaseRecord | null>(null);
   const [dateFilter, setDateFilter] = useState<DateFilter>('today');
   const [searchQuery, setSearchQuery] = useState('');
+
+  const settingsRef = useMemoFirebase(() => doc(db, 'settings', 'config'), [db]);
+  const { data: shopSettings } = useDoc(settingsRef);
+  const shopName = shopSettings?.shopName || "Krishna's SUPER 9+";
 
   const getFilterDate = (filter: DateFilter) => {
     switch (filter) {
@@ -123,7 +128,6 @@ export default function DashboardPage() {
   }, [sales, cashFlows]);
 
   const chartData = useMemo(() => {
-    // Group sales by day for the last 7 days
     const last7Days = Array.from({ length: 7 }, (_, i) => {
       const d = subDays(new Date(), i);
       return {
@@ -164,8 +168,8 @@ export default function DashboardPage() {
       <div className="hidden print-only p-8 bg-white text-slate-900 font-receipt">
         <div className="text-center space-y-1 border-b-2 border-slate-900 pb-4 mb-4">
           <p className="text-[10px] font-bold tracking-[0.3em] text-slate-500">KRISHNA'S</p>
-          <h2 className="text-3xl font-bold uppercase tracking-tight">Super 9+ Supermarket</h2>
-          <p className="text-xs font-medium">Main Market, New Delhi • GSTIN: 07AABCU1234F1Z5</p>
+          <h2 className="text-3xl font-bold uppercase tracking-tight">{shopName}</h2>
+          <p className="text-xs font-medium">{shopSettings?.address} • GSTIN: {shopSettings?.gstin}</p>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
@@ -192,7 +196,7 @@ export default function DashboardPage() {
               <tr key={idx}>
                 <td className="py-2">{item.name}</td>
                 <td className="py-2 text-center">{item.quantity}</td>
-                <td className="py-2 text-right">₹{item.price * item.quantity}</td>
+                <td className="py-2 text-right">₹{(item.price * item.quantity).toFixed(2)}</td>
               </tr>
             ))}
           </tbody>
@@ -203,10 +207,6 @@ export default function DashboardPage() {
             <span className="text-sm font-bold uppercase">Grand Total</span>
             <span className="text-2xl font-bold">₹{viewingSale?.totalAmount.toFixed(2)}</span>
           </div>
-        </div>
-
-        <div className="mt-12 text-center">
-          <p className="text-xs font-bold">Thank you for shopping at Krishna's Super 9+!</p>
         </div>
       </div>
 
@@ -223,7 +223,7 @@ export default function DashboardPage() {
                 <p className="text-[10px] font-bold text-primary tracking-[0.2em] uppercase">Krishna's</p>
                 <div className="h-px w-8 bg-slate-200" />
               </div>
-              <h1 className="text-3xl font-bold text-secondary tracking-tight uppercase leading-none">Super9<span className="text-primary">+</span> Business Explorer</h1>
+              <h1 className="text-3xl font-bold text-secondary tracking-tight uppercase leading-none">SUPER 9+ Ledger</h1>
             </div>
           </div>
           
@@ -253,9 +253,6 @@ export default function DashboardPage() {
                     <div className="bg-emerald-50 p-2.5 rounded-xl">
                       <TrendingUp className="h-5 w-5 text-emerald-500" />
                     </div>
-                    <Badge variant="secondary" className="bg-emerald-50 text-emerald-600 font-bold text-[9px] uppercase tracking-wider rounded-lg border-none">
-                      +12.5%
-                    </Badge>
                   </div>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Net Sales Revenue</p>
                   <h3 className="text-3xl font-bold mt-1 text-slate-900 tracking-tight">₹{stats.sales.toLocaleString()}</h3>
@@ -281,7 +278,7 @@ export default function DashboardPage() {
                       <History className="h-5 w-5 text-white" />
                     </div>
                   </div>
-                  <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Current Cash-in-Hand</p>
+                  <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Cash-in-Hand</p>
                   <h3 className="text-3xl font-bold mt-1 tracking-tight">₹{stats.cashInHand.toLocaleString()}</h3>
                 </CardContent>
               </Card>
@@ -290,13 +287,10 @@ export default function DashboardPage() {
             <Card className="bg-white border-none shadow-sm rounded-[24px] overflow-hidden">
               <CardHeader className="p-6 pb-0">
                 <CardTitle className="text-lg font-bold text-secondary uppercase tracking-tight">Revenue Trends</CardTitle>
-                <CardDescription className="font-bold text-slate-400 uppercase text-[9px] tracking-widest">Past 7 Days Performance</CardDescription>
               </CardHeader>
               <CardContent className="p-6 pt-2">
                 <div className="h-[200px] w-full">
-                  <ChartContainer config={{ 
-                    amount: { label: "Sales (₹)", color: "hsl(var(--primary))" } 
-                  }}>
+                  <ChartContainer config={{ amount: { label: "Sales (₹)", color: "hsl(var(--primary))" } }}>
                     <BarChart data={chartData}>
                       <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#94a3b8' }} />
                       <Bar dataKey="amount" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} barSize={40} />
@@ -316,8 +310,7 @@ export default function DashboardPage() {
                      <History className="h-5 w-5 text-secondary" />
                    </div>
                    <div>
-                     <CardTitle className="text-sm font-bold text-secondary uppercase tracking-tight">Register Adjustments</CardTitle>
-                     <CardDescription className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Manual Float</CardDescription>
+                     <CardTitle className="text-sm font-bold text-secondary uppercase tracking-tight">Manual Log</CardTitle>
                    </div>
                  </div>
                </CardHeader>
@@ -358,7 +351,6 @@ export default function DashboardPage() {
           <CardHeader className="p-8 border-b bg-slate-50/30 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
               <CardTitle className="text-xl font-bold text-secondary uppercase tracking-tight">Bill Explorer</CardTitle>
-              <CardDescription className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Search & Audit History</CardDescription>
             </div>
             <div className="flex items-center gap-3">
                <div className="relative w-full md:w-[320px]">
@@ -381,7 +373,7 @@ export default function DashboardPage() {
                  <TableRow className="border-none">
                    <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14 pl-8">Timestamp</TableHead>
                    <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14">Bill ID</TableHead>
-                   <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14">Customer Detail</TableHead>
+                   <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14">Customer</TableHead>
                    <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14">Items</TableHead>
                    <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14 text-right">Amount</TableHead>
                    <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14 text-right pr-8">Actions</TableHead>
@@ -391,7 +383,7 @@ export default function DashboardPage() {
                  {filteredSales.length === 0 ? (
                    <TableRow>
                      <TableCell colSpan={6} className="h-40 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">
-                       No bills found for current filters
+                       No bills found
                      </TableCell>
                    </TableRow>
                  ) : (
@@ -436,7 +428,6 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* VIEW & PRINT DIALOG */}
       <Dialog open={!!viewingSale} onOpenChange={(open) => !open && setViewingSale(null)}>
         <DialogContent className="sm:max-w-md rounded-[32px] p-10 border-none shadow-2xl overflow-hidden print:hidden">
           <div className="absolute top-0 left-0 w-full h-2 bg-secondary" />
@@ -449,10 +440,6 @@ export default function DashboardPage() {
 
           <div className="py-6 space-y-6">
             <div className="bg-slate-50 rounded-[24px] p-8 space-y-4">
-              <div className="flex justify-between items-center text-[10px] font-bold uppercase text-slate-400 tracking-widest">
-                <span>Details: {viewingSale?.items.length} Items</span>
-                <span>{viewingSale?.paymentMode}</span>
-              </div>
               <div className="flex justify-between items-end border-t border-slate-100 pt-4">
                 <div className="flex flex-col">
                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Final Amount</span>
@@ -467,38 +454,18 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-3">
-               <div className="flex gap-3">
-                 <Button 
-                   variant="outline" 
-                   className="flex-1 h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-3 hover:bg-secondary hover:text-white transition-all"
-                   onClick={handlePrintAction}
-                 >
-                   Standard Print
-                 </Button>
-                 <Button 
-                   variant="outline" 
-                   className="flex-1 h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-3 hover:bg-secondary hover:text-white transition-all"
-                   onClick={handlePrintAction}
-                 >
-                   Thermal Slip
-                 </Button>
-               </div>
-              <Button 
-                variant="outline" 
-                className="h-14 rounded-2xl bg-slate-100 border-none font-bold uppercase text-[10px] gap-3 hover:bg-slate-200"
-                onClick={handlePrintAction}
-              >
-                <Download className="h-4 w-4" /> Save Digital PDF
-              </Button>
+            <div className="grid grid-cols-2 gap-3">
+               <Button variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2" onClick={handlePrintAction}>
+                 <Printer className="h-4 w-4" /> Print
+               </Button>
+               <Button variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2" onClick={handlePrintAction}>
+                 <Download className="h-4 w-4" /> PDF
+               </Button>
             </div>
           </div>
 
           <DialogFooter>
-            <Button 
-              className="w-full h-14 rounded-2xl font-bold text-sm bg-secondary text-white shadow-xl"
-              onClick={() => setViewingSale(null)}
-            >
+            <Button className="w-full h-14 rounded-2xl font-bold text-sm bg-secondary text-white" onClick={() => setViewingSale(null)}>
               CLOSE AUDIT
             </Button>
           </DialogFooter>
