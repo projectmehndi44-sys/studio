@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -72,7 +73,7 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
         onProductSelect(filteredProducts[0]);
         setQuery('');
       } else {
-        // AUTOMATIC ADD: If no match found, create it automatically
+        // AUTOMATIC ADD: If no match found, create it automatically and add to cart
         const autoItem: Product = {
           id: `auto-${Date.now()}`,
           name: query.trim(),
@@ -83,7 +84,7 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
           isPopular: false
         };
         onProductSelect(autoItem);
-        onAddNewProduct(query.trim(), true); // Silent background creation
+        onAddNewProduct(query.trim(), true); // Silent background creation in DB
         setQuery('');
       }
     }

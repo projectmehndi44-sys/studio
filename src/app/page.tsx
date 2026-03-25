@@ -5,19 +5,18 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { 
   ShoppingBag, 
   LayoutDashboard, 
-  Settings, 
   ReceiptText,
   Camera,
   LogOut,
   Bell,
-  Star,
   Search,
   X,
   LogIn,
   ShieldCheck,
   PackageSearch,
   Menu,
-  MoreVertical
+  Printer,
+  Share2
 } from 'lucide-react';
 import { Product, CartItem } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
@@ -138,15 +137,6 @@ export default function POSPage() {
   };
 
   const handleCheckout = async (data: any) => {
-    const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-    const discountPercent = subtotal > 0 ? (data.discount / subtotal) * 100 : 0;
-
-    if (discountPercent > 10) {
-      setPendingTransaction(data);
-      setIsAdminDialogOpen(true);
-      return;
-    }
-
     processFinalSale(data);
   };
 
@@ -272,22 +262,9 @@ export default function POSPage() {
         onAddNewProduct={handleAddNewProduct}
       />
       
-      <Tabs defaultValue="popular" className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1 rounded-[16px] mb-2">
-          <TabsTrigger value="popular" className="font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 rounded-[12px] py-2 data-[state=active]:bg-white data-[state=active]:text-primary">
-            <Star className="h-3 w-3" /> Top Sellers
-          </TabsTrigger>
-          <TabsTrigger value="search" className="font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 rounded-[12px] py-2 data-[state=active]:bg-white data-[state=active]:text-primary">
-            <Search className="h-3 w-3" /> All Items
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="popular" className="flex-1 overflow-y-auto custom-scrollbar mt-0">
-          <QuickTapGrid products={productsData} onProductSelect={handleProductSelect} />
-        </TabsContent>
-        <TabsContent value="search" className="flex-1 flex flex-col overflow-hidden mt-0">
-           <QuickTapGrid products={productsData} onProductSelect={handleProductSelect} showAll />
-        </TabsContent>
-      </Tabs>
+      <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <QuickTapGrid products={productsData} onProductSelect={handleProductSelect} showAll />
+      </div>
     </div>
   );
 
@@ -295,7 +272,7 @@ export default function POSPage() {
     <div className="flex flex-col h-screen bg-white overflow-hidden font-body text-slate-900">
       <Toaster />
       
-      {/* Top Navigation Bar (Replacing Sidebar) */}
+      {/* Top Navigation Bar */}
       <header className="h-16 border-b border-slate-100 bg-white flex items-center justify-between px-4 sm:px-8 shrink-0">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-black text-primary-foreground shadow-lg shadow-primary/10">
@@ -305,23 +282,21 @@ export default function POSPage() {
         </div>
         
         <div className="flex items-center gap-2">
-          {!isMobile && (
-            <div className="flex items-center gap-1 mr-4">
-              <Link href="/">
-                <Button variant="ghost" size="sm" className="font-black text-xs uppercase tracking-widest text-primary">
-                  <ShoppingBag className="h-4 w-4 mr-2" /> Billing
-                </Button>
-              </Link>
-              <Link href="/dashboard">
-                <Button variant="ghost" size="sm" className="font-black text-xs uppercase tracking-widest text-slate-400 hover:text-primary">
-                  <LayoutDashboard className="h-4 w-4 mr-2" /> Ledger
-                </Button>
-              </Link>
-              <Button onClick={() => setIsProductDialogOpen(true)} variant="ghost" size="sm" className="font-black text-xs uppercase tracking-widest text-slate-400 hover:text-primary">
-                <PackageSearch className="h-4 w-4 mr-2" /> Master
+          <div className="hidden sm:flex items-center gap-1 mr-4">
+            <Link href="/">
+              <Button variant="ghost" size="sm" className="font-black text-xs uppercase tracking-widest text-primary">
+                Billing
               </Button>
-            </div>
-          )}
+            </Link>
+            <Link href="/dashboard">
+              <Button variant="ghost" size="sm" className="font-black text-xs uppercase tracking-widest text-slate-400 hover:text-primary">
+                Ledger
+              </Button>
+            </Link>
+            <Button onClick={() => setIsProductDialogOpen(true)} variant="ghost" size="sm" className="font-black text-xs uppercase tracking-widest text-slate-400 hover:text-primary">
+              Master
+            </Button>
+          </div>
 
           <Sheet>
             <SheetTrigger asChild>
@@ -342,12 +317,6 @@ export default function POSPage() {
                 </Link>
                 <button onClick={() => { setIsProductDialogOpen(true); }} className="flex items-center gap-4 p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-black uppercase text-sm transition-colors w-full text-left">
                   <PackageSearch className="h-5 w-5" /> Product Master
-                </button>
-                <button className="flex items-center gap-4 p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-black uppercase text-sm transition-colors w-full text-left">
-                  <Bell className="h-5 w-5" /> Notifications
-                </button>
-                <button className="flex items-center gap-4 p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-black uppercase text-sm transition-colors w-full text-left">
-                  <Settings className="h-5 w-5" /> Settings
                 </button>
                 <div className="pt-8 mt-auto">
                   <Button onClick={handleSignOut} variant="destructive" className="w-full h-14 font-black rounded-2xl gap-2">
