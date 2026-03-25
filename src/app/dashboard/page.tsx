@@ -21,9 +21,19 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, useAuth } from '@/firebase';
-import { collection, query, orderBy, limit, where, Timestamp, doc } from 'firebase/firestore';
+import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
 import { PurchaseRecord, CashTransaction } from '@/lib/types';
-import { format, startOfToday, startOfMonth, startOfYesterday, subDays } from 'date-fns';
+import { 
+  format, 
+  startOfToday, 
+  startOfMonth, 
+  startOfYesterday, 
+  subDays, 
+  isAfter, 
+  isBefore, 
+  endOfYesterday,
+  isSameDay
+} from 'date-fns';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import {
@@ -54,81 +64,88 @@ type DateFilter = 'today' | 'yesterday' | 'month' | 'last7' | 'all';
 
 export default function DashboardPage() {
   const db = useFirestore();
-  const auth = useAuth();
   const { user, isUserLoading: isAuthLoading } = useUser();
   const [viewingSale, setViewingSale] = useState<PurchaseRecord | null>(null);
-  const [dateFilter, setDateFilter] = useState('today' as DateFilter);
+  const [dateFilter, setDateFilter] = useState<DateFilter>('today');
   const [searchQuery, setSearchQuery] = useState('');
 
   const staffName = getStaffName(user?.phoneNumber || null);
 
-  // Shop Settings Hook - Gate behind user auth
   const settingsRef = useMemoFirebase(() => {
     if (!user) return null;
     return doc(db, 'settings', 'config');
   }, [db, user]);
   
   const { data: shopSettings } = useDoc(settingsRef);
-  
   const shopAddress = shopSettings?.address || "Hoolungooree, Mariani";
 
-  const getFilterDate = (filter: DateFilter) => {
-    switch (filter) {
-      case 'today': return startOfToday();
-      case 'yesterday': return startOfYesterday();
-      case 'month': return startOfMonth(new Date());
-      case 'last7': return subDays(new Date(), 7);
-      default: return null;
-    }
-  };
-
+  // Fetch a broad set of recent data to allow instant local filtering
   const salesQuery = useMemoFirebase(() => {
     if (!user) return null;
-    const filterDate = getFilterDate(dateFilter);
-    const q = filterDate 
-      ? query(collection(db, 'purchases'), where('timestamp', '>=', Timestamp.fromDate(filterDate)), orderBy('timestamp', 'desc'), limit(500))
-      : query(collection(db, 'purchases'), orderBy('timestamp', 'desc'), limit(500));
-    return q;
-  }, [db, user, dateFilter]);
+    return query(collection(db, 'purchases'), orderBy('timestamp', 'desc'), limit(1000));
+  }, [db, user]);
 
   const cashQuery = useMemoFirebase(() => {
     if (!user) return null;
-    const filterDate = getFilterDate(dateFilter);
-    const q = filterDate 
-      ? query(collection(db, 'cashTransactions'), where('timestamp', '>=', Timestamp.fromDate(filterDate)), orderBy('timestamp', 'desc'), limit(200))
-      : query(collection(db, 'cashTransactions'), orderBy('timestamp', 'desc'), limit(200));
-    return q;
-  }, [db, user, dateFilter]);
+    return query(collection(db, 'cashTransactions'), orderBy('timestamp', 'desc'), limit(500));
+  }, [db, user]);
 
-  const { data: salesData, isLoading: isSalesLoading } = useCollection<PurchaseRecord>(salesQuery);
-  const { data: cashData, isLoading: isCashLoading } = useCollection<CashTransaction>(cashQuery);
+  const { data: rawSales, isLoading: isSalesLoading } = useCollection<PurchaseRecord>(salesQuery);
+  const { data: rawCash, isLoading: isCashLoading } = useCollection<CashTransaction>(cashQuery);
 
-  const sales = salesData ?? [];
-  const cashFlows = cashData ?? [];
+  const processedData = useMemo(() => {
+    const sales = rawSales ?? [];
+    const cash = rawCash ?? [];
 
-  const filteredSales = useMemo(() => {
-    if (!searchQuery) return sales;
-    const lowerQuery = searchQuery.toLowerCase();
-    return sales.filter(s => 
-      s.id?.toLowerCase().includes(lowerQuery) || 
-      s.customerId?.toLowerCase().includes(lowerQuery) ||
-      s.customerName?.toLowerCase().includes(lowerQuery) ||
-      s.staffName?.toLowerCase().includes(lowerQuery)
-    );
-  }, [sales, searchQuery]);
+    const filterByDate = (items: any[]) => {
+      const today = startOfToday();
+      const yesterdayStart = startOfYesterday();
+      const yesterdayEnd = endOfYesterday();
+      const monthStart = startOfMonth(new Date());
+      const sevenDaysAgo = subDays(new Date(), 7);
 
-  const stats = useMemo(() => {
-    const totalSales = sales.reduce((acc, sale) => acc + (sale.totalAmount || 0), 0);
-    const totalIn = cashFlows.filter(c => c.type === 'IN').reduce((acc, c) => acc + c.amount, 0);
-    const totalOut = cashFlows.filter(c => c.type === 'OUT').reduce((acc, c) => acc + c.amount, 0);
-    
-    return {
-      sales: totalSales,
-      cashInHand: totalSales + totalIn - totalOut,
-      netCashFlow: totalIn - totalOut,
-      transactions: sales.length + cashFlows.length
+      return items.filter(item => {
+        if (!item.timestamp?.seconds) return true;
+        const itemDate = new Date(item.timestamp.seconds * 1000);
+
+        switch (dateFilter) {
+          case 'today': return isAfter(itemDate, today) || isSameDay(itemDate, today);
+          case 'yesterday': return isAfter(itemDate, yesterdayStart) && isBefore(itemDate, yesterdayEnd);
+          case 'month': return isAfter(itemDate, monthStart);
+          case 'last7': return isAfter(itemDate, sevenDaysAgo);
+          case 'all': return true;
+          default: return true;
+        }
+      });
     };
-  }, [sales, cashFlows]);
+
+    const filteredSales = filterByDate(sales).filter(s => {
+      if (!searchQuery) return true;
+      const q = searchQuery.toLowerCase();
+      return (
+        s.id?.toLowerCase().includes(q) || 
+        s.customerName?.toLowerCase().includes(q) || 
+        s.customerId?.toLowerCase().includes(q) ||
+        s.staffName?.toLowerCase().includes(q)
+      );
+    });
+
+    const filteredCash = filterByDate(cash);
+
+    const totalSales = filteredSales.reduce((acc, s) => acc + (s.totalAmount || 0), 0);
+    const totalIn = filteredCash.filter(c => c.type === 'IN').reduce((acc, c) => acc + c.amount, 0);
+    const totalOut = filteredCash.filter(c => c.type === 'OUT').reduce((acc, c) => acc + c.amount, 0);
+
+    return {
+      filteredSales,
+      filteredCash,
+      stats: {
+        sales: totalSales,
+        cashInHand: totalSales + totalIn - totalOut,
+        transactions: filteredSales.length
+      }
+    };
+  }, [rawSales, rawCash, dateFilter, searchQuery]);
 
   const chartData = useMemo(() => {
     const last7Days = Array.from({ length: 7 }, (_, i) => {
@@ -140,7 +157,7 @@ export default function DashboardPage() {
       };
     }).reverse();
 
-    sales.forEach(sale => {
+    (rawSales ?? []).forEach(sale => {
       if (sale.timestamp?.seconds) {
         const dateStr = format(new Date(sale.timestamp.seconds * 1000), 'yyyy-MM-dd');
         const day = last7Days.find(d => d.fullDate === dateStr);
@@ -149,11 +166,7 @@ export default function DashboardPage() {
     });
 
     return last7Days;
-  }, [sales]);
-
-  const handlePrintAction = () => {
-    window.print();
-  };
+  }, [rawSales]);
 
   if (isAuthLoading) {
     return (
@@ -169,12 +182,14 @@ export default function DashboardPage() {
     return <PhoneAuthGate />;
   }
 
+  const { filteredSales, filteredCash, stats } = processedData;
+
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 font-body">
       {/* PROFESSIONAL PRINT-ONLY RECEIPT */}
       <div className="hidden print-only p-8 bg-white text-slate-900 font-receipt">
         <div className="text-center space-y-1 border-b-2 border-slate-900 pb-4 mb-4">
-          <p className="text-lg font-bold text-slate-600 uppercase">K R I S H N A &apos; S</p>
+          <p className="text-lg font-bold text-slate-600 uppercase">KRISHNA&apos;S</p>
           <h2 className="text-4xl font-black uppercase tracking-tight">SUPER 9+</h2>
           <p className="text-sm font-bold mt-2">{shopAddress}</p>
           {shopSettings?.gstin && <p className="text-[10px] font-bold">GSTIN: {shopSettings?.gstin}</p>}
@@ -240,14 +255,10 @@ export default function DashboardPage() {
             <div>
               <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Business Ledger</h2>
             </div>
-            <div className="hidden lg:flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl shadow-sm border border-slate-100">
-               <span className="h-2 w-2 rounded-full bg-primary" />
-               <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{staffName}</span>
-            </div>
           </div>
           
           <div className="flex flex-wrap items-center gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-100">
-             {(['today', 'yesterday', 'month', 'last7', 'all'] as const).map((filter) => (
+             {(['today', 'yesterday', 'last7', 'month', 'all'] as const).map((filter) => (
                <Button
                  key={filter}
                  variant={dateFilter === filter ? 'secondary' : 'ghost'}
@@ -266,7 +277,7 @@ export default function DashboardPage() {
         {isSalesLoading || isCashLoading ? (
           <div className="h-60 flex items-center justify-center">
             <div className="text-center font-bold animate-pulse text-slate-400 text-xs uppercase tracking-[0.2em]">
-              Fetching Transactions...
+              Analyzing Data...
             </div>
           </div>
         ) : (
@@ -281,7 +292,7 @@ export default function DashboardPage() {
                           <TrendingUp className="h-5 w-5 text-emerald-500" />
                         </div>
                       </div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Net Sales Revenue</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Filtered Revenue</p>
                       <h3 className="text-3xl font-bold mt-1 text-slate-900 tracking-tight">₹{stats.sales.toLocaleString()}</h3>
                     </CardContent>
                   </Card>
@@ -293,8 +304,8 @@ export default function DashboardPage() {
                           <ShoppingBag className="h-5 w-5 text-primary" />
                         </div>
                       </div>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Settled Orders</p>
-                      <h3 className="text-3xl font-bold mt-1 text-slate-900 tracking-tight">{sales.length}</h3>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Settled Bills</p>
+                      <h3 className="text-3xl font-bold mt-1 text-slate-900 tracking-tight">{stats.transactions}</h3>
                     </CardContent>
                   </Card>
 
@@ -305,7 +316,7 @@ export default function DashboardPage() {
                           <History className="h-5 w-5 text-white" />
                         </div>
                       </div>
-                      <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Cash-in-Hand</p>
+                      <p className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">Net Cash Flow</p>
                       <h3 className="text-3xl font-bold mt-1 tracking-tight">₹{stats.cashInHand.toLocaleString()}</h3>
                     </CardContent>
                   </Card>
@@ -313,7 +324,7 @@ export default function DashboardPage() {
 
                 <Card className="bg-white border-none shadow-sm rounded-[24px] overflow-hidden">
                   <CardHeader className="p-6 pb-0">
-                    <CardTitle className="text-lg font-bold text-secondary uppercase tracking-tight">Revenue Trends</CardTitle>
+                    <CardTitle className="text-lg font-bold text-secondary uppercase tracking-tight">Week Performance</CardTitle>
                   </CardHeader>
                   <CardContent className="p-6 pt-2">
                     <div className="h-[200px] w-full">
@@ -337,18 +348,18 @@ export default function DashboardPage() {
                          <History className="h-5 w-5 text-secondary" />
                        </div>
                        <div>
-                         <CardTitle className="text-sm font-bold text-secondary uppercase tracking-tight">Manual Log</CardTitle>
+                         <CardTitle className="text-sm font-bold text-secondary uppercase tracking-tight">Manual Logs</CardTitle>
                        </div>
                      </div>
                    </CardHeader>
                    <CardContent className="p-0">
                      <div className="divide-y divide-slate-50 max-h-[460px] overflow-y-auto custom-scrollbar">
-                       {cashFlows.length === 0 ? (
+                       {filteredCash.length === 0 ? (
                          <div className="p-12 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">
-                           No Manual Log
+                           No logs for this period
                          </div>
                        ) : (
-                         cashFlows.map((cf) => (
+                         filteredCash.map((cf) => (
                            <div key={cf.id} className="p-4 flex items-center justify-between group hover:bg-slate-50 transition-colors">
                              <div className="flex items-center gap-3">
                                <div className={cn(
@@ -411,7 +422,7 @@ export default function DashboardPage() {
                      {filteredSales.length === 0 ? (
                        <TableRow>
                          <TableCell colSpan={6} className="h-40 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">
-                           No bills found
+                           No matching bills found
                          </TableCell>
                        </TableRow>
                      ) : (
@@ -485,10 +496,10 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-               <Button variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2" onClick={handlePrintAction}>
+               <Button variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2">
                  <Printer className="h-4 w-4" /> Print
                </Button>
-               <Button variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2" onClick={handlePrintAction}>
+               <Button variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2">
                  <Download className="h-4 w-4" /> PDF
                </Button>
             </div>
