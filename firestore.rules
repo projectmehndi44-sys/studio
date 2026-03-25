@@ -65,6 +65,15 @@ service cloud.firestore {
     }
 
     /**
+     * @description Rules for manual cash flow entries (In/Out).
+     * @path /cashTransactions/{transactionId}
+     */
+    match /cashTransactions/{transactionId} {
+      allow read, create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    /**
      * @description Rules for discount Coupons.
      * @path /coupons/{couponId}
      */
