@@ -4,6 +4,34 @@
 
 @layer base {
   :root {
+    --background: 0 0% 100%;
+    --foreground: 20 14.3% 4.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 20 14.3% 4.1%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 20 14.3% 4.1%;
+    --primary: 46 93% 45%;
+    --primary-foreground: 46 93% 5%;
+    --secondary: 40 10% 96%;
+    --secondary-foreground: 24 9.8% 10%;
+    --muted: 40 10% 96%;
+    --muted-foreground: 25 5.3% 44.7%;
+    --accent: 26 79% 34%;
+    --accent-foreground: 24 9.8% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 60 9.1% 97.8%;
+    --border: 20 5.9% 90%;
+    --input: 20 5.9% 90%;
+    --ring: 46 93% 45%;
+    --radius: 0.75rem;
+    --chart-1: 46 93% 45%;
+    --chart-2: 26 79% 34%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+  }
+
+  .dark {
     --background: 49 11% 15%;
     --foreground: 49 5% 98%;
     --card: 49 11% 18%;
@@ -23,12 +51,6 @@
     --border: 49 11% 25%;
     --input: 49 11% 25%;
     --ring: 46 93% 45%;
-    --radius: 0.75rem;
-    --chart-1: 46 93% 45%;
-    --chart-2: 26 79% 34%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
   }
 }
 
@@ -42,11 +64,10 @@
   }
 }
 
-/* Responsive Grid for POS */
 .pos-grid-container {
   display: grid;
   grid-template-columns: 1fr;
-  height: calc(100vh - 80px); /* Account for bottom/top nav on mobile */
+  height: calc(100vh - 80px);
   overflow: hidden;
 }
 
@@ -67,7 +88,6 @@
   @apply bg-muted rounded-full;
 }
 
-/* Prevent zoom on mobile inputs */
 @media screen and (max-width: 768px) {
   input, select, textarea {
     font-size: 16px !important;

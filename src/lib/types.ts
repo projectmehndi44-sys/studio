@@ -1,11 +1,10 @@
-
 export interface Product {
   id: string;
   name: string;
   barcode: string;
   price: number;
   costPrice: number;
-  stock: number;
+  stock?: number; // Optional inventory
   category: string;
   image?: string;
   isPopular?: boolean;
@@ -13,6 +12,7 @@ export interface Product {
 
 export interface CartItem extends Product {
   quantity: number;
+  isQuickItem?: boolean;
 }
 
 export interface Coupon {
@@ -42,4 +42,5 @@ export interface Sale {
   paymentMode: 'Cash' | 'UPI' | 'Credit';
   customerPhone?: string;
   discount: number;
+  staffId: string;
 }

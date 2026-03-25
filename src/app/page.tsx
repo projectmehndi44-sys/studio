@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useMemo } from 'react';
@@ -11,7 +12,7 @@ import {
   Bell,
   Star,
   Search,
-  Wallet
+  X
 } from 'lucide-react';
 import { Product, CartItem } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
@@ -27,15 +28,24 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useCollection, useFirestore, useUser, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { collection, serverTimestamp } from 'firebase/firestore';
 
 export default function POSPage() {
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const db = useFirestore();
+  const { user } = useUser();
+  
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
   const [pendingTransaction, setPendingTransaction] = useState<any>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState('products');
+
+  // Firestore Products
+  const productsQuery = useMemoFirebase(() => collection(db, 'products'), [db]);
+  const { data: productsData = [] } = useCollection<Product>(productsQuery);
 
   const cartTotalItems = useMemo(() => 
     cartItems.reduce((acc, item) => acc + item.quantity, 0),
@@ -82,7 +92,7 @@ export default function POSPage() {
 
   const handleCheckout = async (data: any) => {
     const subtotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-    const discountPercent = (data.discount / subtotal) * 100;
+    const discountPercent = subtotal > 0 ? (data.discount / subtotal) * 100 : 0;
 
     if (discountPercent > 10) {
       setPendingTransaction(data);
@@ -95,13 +105,26 @@ export default function POSPage() {
 
   const processFinalSale = async (data: any) => {
     toast({
-      title: "Processing Sale...",
-      description: "Generating digital receipt and updating stock.",
+      title: "Syncing...",
+      description: "Saving transaction to cloud.",
     });
 
     try {
+      const purchasesRef = collection(db, 'purchases');
+      addDocumentNonBlocking(purchasesRef, {
+        staffId: user?.uid || 'anonymous',
+        timestamp: serverTimestamp(),
+        items: cartItems.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, price: i.price })),
+        totalAmount: data.total,
+        subtotalAmount: cartTotalPrice,
+        discountAmount: data.discount,
+        paymentMode: data.paymentMode,
+        isOfflineSale: false,
+        customerId: data.customerPhone || null
+      });
+
       if (data.customerPhone) {
-        await generatePersonalizedDigitalReceiptAndReviewRequest({
+        generatePersonalizedDigitalReceiptAndReviewRequest({
           customerName: "Valued Customer",
           orderId: `ORD-${Date.now()}`,
           orderItems: cartItems.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
@@ -109,7 +132,7 @@ export default function POSPage() {
           pdfReceiptLink: "https://super9pos.com/receipt/123",
           reviewLink: "https://g.page/krishnas-super-9/review"
         });
-        toast({ title: "WhatsApp Sent", description: "Digital receipt shared with customer." });
+        toast({ title: "WhatsApp Sent", description: "Digital receipt shared." });
       }
 
       setCartItems([]);
@@ -119,12 +142,7 @@ export default function POSPage() {
       toast({
         title: "Sale Completed",
         description: `Total Amount: ₹${data.total.toFixed(2)}`,
-        variant: "default",
       });
-
-      if (data.paymentMode === 'Credit') {
-        toast({ title: "Credit Sale", description: "Printing 2 copies for shop and customer." });
-      }
 
     } catch (error) {
       toast({ title: "Checkout Error", description: "Something went wrong.", variant: "destructive" });
@@ -134,22 +152,22 @@ export default function POSPage() {
   const sidebarContent = (
     <nav className={cn(
       "flex gap-4",
-      isMobile ? "flex-row justify-around w-full px-4 pb-4" : "flex-col items-center py-6 gap-8 w-20 border-r bg-secondary"
+      isMobile ? "flex-row justify-around w-full px-4 pb-4 bg-white border-t" : "flex-col items-center py-6 gap-8 w-20 border-r bg-slate-50 shadow-inner"
     )}>
       {!isMobile && (
-        <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center font-black text-xl text-primary-foreground shadow-lg shadow-primary/20 mb-4">
+        <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center font-black text-xl text-primary-foreground shadow-xl shadow-primary/20 mb-4">
           S9+
         </div>
       )}
-      <Link href="/" className="p-3 bg-primary/20 text-primary rounded-xl transition-all"><ShoppingBag className="h-7 w-7" /></Link>
-      <Link href="/dashboard" className="p-3 text-muted-foreground hover:bg-secondary-foreground/10 rounded-xl transition-all"><LayoutDashboard className="h-7 w-7" /></Link>
-      <button className="p-3 text-muted-foreground hover:bg-secondary-foreground/10 rounded-xl transition-all"><ReceiptText className="h-7 w-7" /></button>
+      <Link href="/" className="p-3 bg-primary text-primary-foreground rounded-2xl shadow-lg shadow-primary/20 transition-all"><ShoppingBag className="h-7 w-7" /></Link>
+      <Link href="/dashboard" className="p-3 text-slate-500 hover:bg-slate-200 rounded-2xl transition-all"><LayoutDashboard className="h-7 w-7" /></Link>
+      <button className="p-3 text-slate-500 hover:bg-slate-200 rounded-2xl transition-all"><ReceiptText className="h-7 w-7" /></button>
       {!isMobile && (
         <>
-          <button className="p-3 text-muted-foreground hover:bg-secondary-foreground/10 rounded-xl transition-all"><Bell className="h-7 w-7" /></button>
+          <button className="p-3 text-slate-500 hover:bg-slate-200 rounded-2xl transition-all"><Bell className="h-7 w-7" /></button>
           <div className="flex-1" />
-          <button className="p-3 text-muted-foreground hover:bg-secondary-foreground/10 rounded-xl transition-all"><Settings className="h-7 w-7" /></button>
-          <button className="p-3 text-destructive hover:bg-destructive/10 rounded-xl transition-all"><LogOut className="h-7 w-7" /></button>
+          <button className="p-3 text-slate-500 hover:bg-slate-200 rounded-2xl transition-all"><Settings className="h-7 w-7" /></button>
+          <button className="p-3 text-destructive hover:bg-destructive/5 rounded-2xl transition-all"><LogOut className="h-7 w-7" /></button>
         </>
       )}
     </nav>
@@ -159,28 +177,26 @@ export default function POSPage() {
     <div className="flex flex-col h-full gap-4 overflow-hidden">
       <div className="flex items-center gap-2">
         <ProductSearch 
+          products={productsData}
           onProductSelect={handleProductSelect} 
           onScanClick={() => setIsScanning(!isScanning)} 
         />
       </div>
       
       <Tabs defaultValue="popular" className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="grid w-full grid-cols-2 bg-secondary/50 p-1 rounded-lg">
-          <TabsTrigger value="popular" className="font-bold flex items-center gap-2">
+        <TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1 rounded-2xl mb-2">
+          <TabsTrigger value="popular" className="font-bold flex items-center gap-2 rounded-xl py-2">
             <Star className="h-4 w-4" /> TOP SELLING
           </TabsTrigger>
-          <TabsTrigger value="search" className="font-bold flex items-center gap-2">
+          <TabsTrigger value="search" className="font-bold flex items-center gap-2 rounded-xl py-2">
             <Search className="h-4 w-4" /> ALL ITEMS
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="popular" className="flex-1 overflow-y-auto custom-scrollbar pt-4 data-[state=inactive]:hidden">
-          <QuickTapGrid onProductSelect={handleProductSelect} />
+        <TabsContent value="popular" className="flex-1 overflow-y-auto custom-scrollbar pt-2">
+          <QuickTapGrid products={productsData} onProductSelect={handleProductSelect} />
         </TabsContent>
-        <TabsContent value="search" className="flex-1 flex items-center justify-center text-muted-foreground p-8 text-center data-[state=inactive]:hidden">
-          <div className="space-y-2">
-            <Search className="h-12 w-12 mx-auto opacity-20" />
-            <p>Use the search bar above to find specific items in the full catalogue.</p>
-          </div>
+        <TabsContent value="search" className="flex-1 flex flex-col overflow-hidden">
+           <QuickTapGrid products={productsData} onProductSelect={handleProductSelect} showAll />
         </TabsContent>
       </Tabs>
     </div>
@@ -188,7 +204,7 @@ export default function POSPage() {
 
   return (
     <div className={cn(
-      "flex h-screen bg-background overflow-hidden font-body",
+      "flex h-screen bg-slate-50 overflow-hidden font-body text-slate-900",
       isMobile ? "flex-col" : "flex-row"
     )}>
       <Toaster />
@@ -201,40 +217,39 @@ export default function POSPage() {
       )}>
         {isMobile ? (
           <div className="flex flex-col h-full overflow-hidden">
-             {/* Mobile Header */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center font-black text-sm text-primary-foreground">
-                  S9+
+            <div className="flex items-center justify-between mb-4 px-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-black text-primary-foreground shadow-lg shadow-primary/20">
+                  S9
                 </div>
-                <h1 className="font-black text-lg tracking-tight">SUPER 9+</h1>
+                <h1 className="font-black text-xl tracking-tight text-slate-900">SUPER 9+</h1>
               </div>
               {cartTotalPrice > 0 && (
-                <div className="text-primary font-black text-lg">
-                  ₹{cartTotalPrice.toFixed(2)}
+                <div className="text-primary font-black text-xl animate-in fade-in slide-in-from-right-4">
+                  ₹{cartTotalPrice.toFixed(0)}
                 </div>
               )}
             </div>
 
             <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="flex-1 flex flex-col overflow-hidden">
-              <TabsList className="grid w-full grid-cols-3 bg-secondary mb-4">
-                <TabsTrigger value="products" className="font-bold">CATALOG</TabsTrigger>
-                <TabsTrigger value="cart" className="font-bold relative">
+              <TabsList className="grid w-full grid-cols-3 bg-slate-200 rounded-2xl mb-4 p-1">
+                <TabsTrigger value="products" className="font-bold rounded-xl">POS</TabsTrigger>
+                <TabsTrigger value="cart" className="font-bold rounded-xl relative">
                   CART
                   {cartTotalItems > 0 && (
-                    <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 rounded-full bg-primary text-primary-foreground text-[10px]">
+                    <Badge className="absolute -top-1.5 -right-1.5 h-5 w-5 flex items-center justify-center p-0 rounded-full bg-destructive text-white border-2 border-white text-[10px] font-black">
                       {cartTotalItems}
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="checkout" className="font-bold" disabled={cartItems.length === 0}>PAY</TabsTrigger>
+                <TabsTrigger value="checkout" className="font-bold rounded-xl" disabled={cartItems.length === 0}>BILL</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="products" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
+              <TabsContent value="products" className="flex-1 overflow-hidden mt-0">
                 {productArea}
               </TabsContent>
               
-              <TabsContent value="cart" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
+              <TabsContent value="cart" className="flex-1 overflow-hidden mt-0">
                 <CartList 
                   items={cartItems} 
                   onUpdateQuantity={updateQuantity} 
@@ -242,7 +257,7 @@ export default function POSPage() {
                 />
               </TabsContent>
               
-              <TabsContent value="checkout" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
+              <TabsContent value="checkout" className="flex-1 overflow-hidden mt-0">
                 <CheckoutPanel 
                   items={cartItems} 
                   onComplete={handleCheckout} 
@@ -275,11 +290,7 @@ export default function POSPage() {
         )}
       </main>
 
-      {isMobile && (
-        <div className="border-t bg-secondary/30">
-          {sidebarContent}
-        </div>
-      )}
+      {isMobile && sidebarContent}
 
       <AdminPinDialog 
         isOpen={isAdminDialogOpen} 
@@ -294,27 +305,15 @@ export default function POSPage() {
       {isScanning && (
         <div className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-8 animate-in fade-in">
           <button onClick={() => setIsScanning(false)} className="absolute top-8 right-8 text-white p-4">
-            <X className="h-10 w-10" />
+             <X className="h-10 w-10" />
           </button>
-          <div className="w-full max-w-2xl aspect-[4/3] bg-muted border-4 border-dashed border-primary rounded-3xl flex flex-col items-center justify-center text-center">
+          <div className="w-full max-w-2xl aspect-[4/3] bg-white/5 border-4 border-dashed border-primary rounded-[40px] flex flex-col items-center justify-center text-center">
             <Camera className="h-24 w-24 text-primary mb-6 animate-pulse" />
-            <h2 className="text-3xl font-black text-white mb-2">SCANNING...</h2>
-            <p className="text-xl text-muted-foreground">Align barcode within the frame</p>
-          </div>
-          <div className="mt-12 flex gap-4">
-             <div className="w-3 h-3 bg-primary rounded-full animate-ping" />
-             <p className="text-primary font-bold tracking-[0.2em]">CAMERA ACTIVE</p>
+            <h2 className="text-3xl font-black text-white mb-2 tracking-tight">SCANNING...</h2>
+            <p className="text-xl text-slate-400">Align barcode within the frame</p>
           </div>
         </div>
       )}
     </div>
-  );
-}
-
-function X({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-    </svg>
   );
 }

@@ -1,30 +1,52 @@
-
 "use client";
 
 import { useState, useMemo } from 'react';
-import { Search, Scan } from 'lucide-react';
+import { Search, Scan, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Product } from '@/lib/types';
-import { MOCK_PRODUCTS } from '@/lib/mock-data';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 
 interface ProductSearchProps {
+  products: Product[] | null;
   onProductSelect: (product: Product) => void;
   onScanClick: () => void;
 }
 
-export function ProductSearch({ onProductSelect, onScanClick }: ProductSearchProps) {
+export function ProductSearch({ products, onProductSelect, onScanClick }: ProductSearchProps) {
   const [query, setQuery] = useState('');
 
   const filteredProducts = useMemo(() => {
-    if (!query) return [];
+    if (!query || !products) return [];
     const lowerQuery = query.toLowerCase();
-    return MOCK_PRODUCTS.filter(p => 
+    return products.filter(p => 
       p.name.toLowerCase().includes(lowerQuery) || 
       p.barcode.includes(lowerQuery)
     ).slice(0, 10);
+  }, [query, products]);
+
+  // Check if query is a numeric value (Calculator Mode)
+  const quickPrice = useMemo(() => {
+    const price = parseFloat(query);
+    return isNaN(price) || price <= 0 ? null : price;
   }, [query]);
+
+  const handleQuickAdd = () => {
+    if (quickPrice) {
+      const quickItem: Product = {
+        id: `quick-${Date.now()}`,
+        name: `Quick Item (₹${quickPrice})`,
+        barcode: 'QUICK',
+        price: quickPrice,
+        costPrice: quickPrice * 0.8, // Estimate
+        category: 'Custom',
+        isPopular: false
+      };
+      onProductSelect(quickItem);
+      setQuery('');
+    }
+  };
 
   return (
     <div className="relative w-full">
@@ -34,21 +56,31 @@ export function ProductSearch({ onProductSelect, onScanClick }: ProductSearchPro
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search items or barcode..."
-            className="pl-10 h-12 bg-secondary border-none focus-visible:ring-1 focus-visible:ring-primary text-lg"
+            onKeyDown={(e) => e.key === 'Enter' && quickPrice && handleQuickAdd()}
+            placeholder="Type price or search items..."
+            className="pl-10 h-14 bg-secondary border-none focus-visible:ring-2 focus-visible:ring-primary text-xl font-bold"
           />
         </div>
-        <button
-          onClick={onScanClick}
-          className="h-12 w-12 flex items-center justify-center rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
-          <Scan className="h-6 w-6" />
-        </button>
+        {quickPrice ? (
+          <Button
+            onClick={handleQuickAdd}
+            className="h-14 px-6 bg-primary text-primary-foreground font-black text-lg animate-in scale-in"
+          >
+            <Plus className="h-6 w-6 mr-2" /> ADD ₹{quickPrice}
+          </Button>
+        ) : (
+          <button
+            onClick={onScanClick}
+            className="h-14 w-14 flex items-center justify-center rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all active:scale-95 shadow-lg"
+          >
+            <Scan className="h-6 w-6" />
+          </button>
+        )}
       </div>
 
-      {filteredProducts.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-card border border-border rounded-lg shadow-2xl overflow-hidden animate-scale-in">
-          <ScrollArea className="max-h-72">
+      {filteredProducts.length > 0 && !quickPrice && (
+        <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-card border border-border rounded-xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2">
+          <ScrollArea className="max-h-80">
             {filteredProducts.map((p) => (
               <button
                 key={p.id}
@@ -56,16 +88,20 @@ export function ProductSearch({ onProductSelect, onScanClick }: ProductSearchPro
                   onProductSelect(p);
                   setQuery('');
                 }}
-                className="w-full flex items-center justify-between p-4 hover:bg-muted transition-colors border-b last:border-none"
+                className="w-full flex items-center justify-between p-4 hover:bg-muted transition-colors border-b last:border-none group"
               >
                 <div className="text-left">
-                  <p className="font-semibold text-foreground">{p.name}</p>
+                  <p className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">{p.name}</p>
                   <p className="text-sm text-muted-foreground">₹{p.price} • {p.barcode}</p>
                 </div>
                 <div className="text-right">
-                  <Badge variant={p.stock < 10 ? "destructive" : "secondary"}>
-                    Stock: {p.stock}
-                  </Badge>
+                  {p.stock !== undefined ? (
+                    <Badge variant={p.stock < 10 ? "destructive" : "secondary"}>
+                      Stock: {p.stock}
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline">Untracked</Badge>
+                  )}
                 </div>
               </button>
             ))}
