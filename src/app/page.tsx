@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -298,7 +297,7 @@ export default function POSPage() {
       {/* PROFESSIONAL PRINT-ONLY RECEIPT */}
       <div className="hidden print-only p-8 bg-white text-slate-900 min-h-screen font-receipt">
         <div className="text-center space-y-1 border-b-2 border-slate-900 pb-4 mb-4">
-          <p className="text-lg font-bold tracking-[0.6em] text-slate-600 uppercase">K R I S H N A &apos; S</p>
+          <p className="text-lg font-bold text-slate-600 uppercase">KRISHNA&apos;S</p>
           <h2 className="text-4xl font-black uppercase tracking-tight">SUPER 9+</h2>
           <p className="text-sm font-bold mt-2">{shopAddress}</p>
           {shopGSTIN && <p className="text-[10px] font-bold">GSTIN: {shopGSTIN}</p>}
