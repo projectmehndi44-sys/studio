@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -9,6 +8,9 @@ export interface Product {
   category: string;
   image?: string;
   isPopular?: boolean;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CartItem extends Product {
@@ -50,6 +52,7 @@ export interface PurchaseRecord {
   paymentMode: string;
   isOfflineSale: boolean;
   customerId: string | null;
+  customerName: string | null;
 }
 
 export interface CashTransaction {

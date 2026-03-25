@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import { Smartphone, Printer, Save, FileDown, Monitor, Bluetooth, Usb } from 'lucide-react';
+import { Smartphone, Printer, Save, Download, User, Check, CreditCard, Banknote, Wallet } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -21,11 +21,13 @@ interface CheckoutPanelProps {
     total: number;
     paymentMode: string;
     customerPhone: string;
+    customerName: string;
   }) => void;
 }
 
 export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
   const [phone, setPhone] = useState('');
+  const [name, setName] = useState('');
   const [paymentMode, setPaymentMode] = useState<'Cash' | 'UPI' | 'Credit'>('Cash');
   const [isPrinterDialogOpen, setIsPrinterDialogOpen] = useState(false);
 
@@ -34,126 +36,146 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
   }, [items]);
 
   const handleLedgerSync = () => {
-    onComplete({ total: subtotal, paymentMode, customerPhone: phone });
+    onComplete({ total: subtotal, paymentMode, customerPhone: phone, customerName: name });
   };
 
-  const handleSavePDF = () => {
-    if (items.length === 0) return;
-    handleLedgerSync();
-  };
-
-  const handlePrintClick = () => {
-    if (items.length === 0) return;
-    setIsPrinterDialogOpen(true);
-  };
-
-  const executePrint = (type: 'normal' | 'thermal') => {
+  const executePrint = () => {
     setIsPrinterDialogOpen(false);
     handleLedgerSync();
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-3xl border border-slate-100 shadow-sm p-6 overflow-hidden">
+    <div className="flex flex-col h-full bg-white p-8 overflow-hidden">
       <ScrollArea className="flex-1">
-        <div className="space-y-6 pb-4">
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Customer Profile</label>
-            <div className="relative">
-              <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
-              <Input
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="Mobile (WhatsApp)"
-                className="pl-12 h-12 text-base font-bold bg-slate-50 border-none rounded-xl focus-visible:ring-primary shadow-inner"
-              />
+        <div className="space-y-8 pb-6">
+          <div className="space-y-4">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Customer Identity</label>
+            <div className="grid grid-cols-1 gap-3">
+              <div className="relative">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Customer Name"
+                  className="pl-12 h-12 text-sm font-bold bg-slate-50 border-none rounded-xl focus-visible:ring-primary/20"
+                />
+              </div>
+              <div className="relative">
+                <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
+                <Input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="Mobile (WhatsApp)"
+                  className="pl-12 h-12 text-sm font-bold bg-slate-50 border-none rounded-xl focus-visible:ring-primary/20"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Payment Mode</label>
-            <div className="grid grid-cols-3 gap-2">
-              {(['Cash', 'UPI', 'Credit'] as const).map((m) => (
-                <Button
-                  key={m}
-                  variant={paymentMode === m ? 'default' : 'outline'}
-                  className={cn(
-                    "h-16 flex-col gap-1 rounded-xl border-none transition-all",
-                    paymentMode === m 
-                      ? 'bg-secondary text-white shadow-md scale-[1.02]' 
-                      : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
-                  )}
-                  onClick={() => setPaymentMode(m)}
-                >
-                  <span className="font-bold text-[10px] uppercase tracking-wider">{m}</span>
-                </Button>
-              ))}
+          <div className="space-y-4">
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Settlement Method</label>
+            <div className="grid grid-cols-1 gap-2">
+              {[
+                { id: 'Cash', icon: Banknote, color: 'emerald' },
+                { id: 'UPI', icon: Wallet, color: 'blue' },
+                { id: 'Credit', icon: CreditCard, color: 'orange' }
+              ].map((m) => {
+                const Icon = m.icon;
+                const isActive = paymentMode === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => setPaymentMode(m.id as any)}
+                    className={cn(
+                      "flex items-center justify-between p-4 rounded-2xl transition-all border-2",
+                      isActive 
+                        ? 'bg-secondary text-white border-secondary shadow-lg' 
+                        : 'bg-white text-slate-500 border-slate-50 hover:border-slate-200'
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center", isActive ? "bg-white/10" : "bg-slate-100")}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <span className="font-bold text-xs uppercase tracking-widest">{m.id}</span>
+                    </div>
+                    {isActive && <Check className="h-4 w-4" />}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
       </ScrollArea>
 
-      <div className="mt-6 pt-6 border-t space-y-6">
+      <div className="mt-8 pt-8 border-t space-y-8">
         <div className="flex justify-between items-end">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Grand Total</span>
-          <span className="text-4xl font-bold text-primary tracking-tight leading-none">₹{subtotal.toLocaleString()}</span>
+          <div className="flex flex-col">
+             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-1">Final Payable</span>
+             <span className="text-5xl font-black text-secondary tracking-tighter leading-none">₹{subtotal.toLocaleString()}</span>
+          </div>
+          <Badge variant="outline" className="h-8 px-4 rounded-xl font-bold text-[10px] border-slate-100 text-slate-400 uppercase">
+             {items.length} Units
+          </Badge>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-3">
           <Button 
-            className="w-full h-14 text-lg font-bold rounded-xl shadow-lg shadow-primary/10 transition-all active:scale-95 bg-primary hover:bg-primary/90"
+            className="w-full h-16 text-xs font-black rounded-2xl shadow-2xl shadow-primary/20 transition-all active:scale-95 bg-primary hover:bg-primary/95 text-white uppercase tracking-[0.2em]"
             disabled={items.length === 0}
             onClick={handleLedgerSync}
           >
-            <Save className="h-5 w-5 mr-2" /> CONFIRM & SYNC
+            CONFIRM & SYNC BILL
           </Button>
           
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             <Button 
               variant="outline"
-              className="h-11 bg-slate-50 border-none rounded-lg hover:bg-slate-100 font-bold uppercase text-[9px] tracking-wider gap-2"
-              onClick={handlePrintClick}
+              className="h-12 bg-slate-50 border-none rounded-xl hover:bg-slate-100 font-bold uppercase text-[9px] tracking-widest gap-2 text-slate-600"
+              onClick={() => setIsPrinterDialogOpen(true)}
               disabled={items.length === 0}
             >
-              <Printer className="h-4 w-4" /> PRINT BILL
+              <Printer className="h-4 w-4" /> Print
             </Button>
             <Button 
               variant="outline"
-              className="h-11 bg-slate-50 border-none rounded-lg hover:bg-slate-100 font-bold uppercase text-[9px] tracking-wider gap-2"
-              onClick={handleSavePDF}
+              className="h-12 bg-slate-50 border-none rounded-xl hover:bg-slate-100 font-bold uppercase text-[9px] tracking-widest gap-2 text-slate-600"
+              onClick={handleLedgerSync}
               disabled={items.length === 0}
             >
-              <FileDown className="h-4 w-4" /> SAVE PDF
+              <Download className="h-4 w-4" /> Digital PDF
             </Button>
           </div>
         </div>
       </div>
 
       <Dialog open={isPrinterDialogOpen} onOpenChange={setIsPrinterDialogOpen}>
-        <DialogContent className="sm:max-w-md rounded-2xl p-8 border-none shadow-2xl">
+        <DialogContent className="sm:max-w-md rounded-[32px] p-10 border-none shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold uppercase tracking-tight text-secondary">Printer Setup</DialogTitle>
+            <DialogTitle className="text-2xl font-black uppercase tracking-tight text-secondary">Output Device</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-2 gap-4 py-6">
             <button
-              onClick={() => executePrint('normal')}
-              className="flex flex-col items-center justify-center h-32 bg-slate-50 rounded-2xl hover:bg-primary/5 hover:text-primary transition-all group"
+              onClick={executePrint}
+              className="flex flex-col items-center justify-center h-40 bg-slate-50 rounded-[32px] hover:bg-secondary/5 hover:text-secondary transition-all group border-2 border-transparent hover:border-secondary/10"
             >
-              <Monitor className="h-8 w-8 mb-2 text-slate-400 group-hover:text-primary" />
-              <span className="font-bold text-[10px] uppercase tracking-wider">Normal (Desktop)</span>
+              <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Printer className="h-6 w-6 text-slate-400 group-hover:text-secondary" />
+              </div>
+              <span className="font-bold text-[10px] uppercase tracking-widest">Normal (A4/Desk)</span>
             </button>
             <button
-              onClick={() => executePrint('thermal')}
-              className="flex flex-col items-center justify-center h-32 bg-slate-50 rounded-2xl hover:bg-secondary/5 hover:text-secondary transition-all group"
+              onClick={executePrint}
+              className="flex flex-col items-center justify-center h-40 bg-slate-50 rounded-[32px] hover:bg-primary/5 hover:text-primary transition-all group border-2 border-transparent hover:border-primary/10"
             >
-              <div className="flex gap-1 mb-2">
-                <Bluetooth className="h-6 w-6 text-slate-400 group-hover:text-secondary" />
-                <Usb className="h-6 w-6 text-slate-400 group-hover:text-secondary" />
+              <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Printer className="h-6 w-6 text-slate-400 group-hover:text-primary" />
               </div>
-              <span className="font-bold text-[10px] uppercase tracking-wider">Thermal (BT/USB)</span>
+              <span className="font-bold text-[10px] uppercase tracking-widest">Thermal (58/80mm)</span>
             </button>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsPrinterDialogOpen(false)} className="font-bold h-11 w-full rounded-xl">Cancel</Button>
+            <Button variant="ghost" onClick={() => setIsPrinterDialogOpen(false)} className="font-bold h-12 w-full rounded-xl uppercase text-[10px] tracking-widest">Cancel</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
