@@ -12,7 +12,9 @@ import {
   Bell,
   Star,
   Search,
-  X
+  X,
+  LogIn,
+  ShieldCheck
 } from 'lucide-react';
 import { Product, CartItem } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
@@ -27,15 +29,17 @@ import { generatePersonalizedDigitalReceiptAndReviewRequest } from '@/ai/flows/p
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useCollection, useFirestore, useUser, useMemoFirebase, addDocumentNonBlocking } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase, addDocumentNonBlocking, initiateAnonymousSignIn, useAuth } from '@/firebase';
 import { collection, serverTimestamp } from 'firebase/firestore';
 
 export default function POSPage() {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const db = useFirestore();
-  const { user } = useUser();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
   
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
@@ -43,9 +47,13 @@ export default function POSPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState('products');
 
-  // Firestore Products
-  const productsQuery = useMemoFirebase(() => collection(db, 'products'), [db]);
-  const { data: productsData = [] } = useCollection<Product>(productsQuery);
+  // Safely define products query only when user is authenticated to prevent permission errors
+  const productsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(db, 'products');
+  }, [db, user]);
+
+  const { data: productsData = [], isLoading: isProductsLoading } = useCollection<Product>(productsQuery);
 
   const cartTotalItems = useMemo(() => 
     cartItems.reduce((acc, item) => acc + item.quantity, 0),
@@ -149,25 +157,70 @@ export default function POSPage() {
     }
   };
 
+  const handleStaffLogin = () => {
+    initiateAnonymousSignIn(auth);
+  };
+
+  const handleSignOut = () => {
+    auth.signOut();
+    toast({ title: "Logged Out", description: "Staff session ended." });
+  };
+
+  if (isUserLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 bg-primary rounded-2xl animate-bounce flex items-center justify-center font-black text-2xl text-primary-foreground">
+            S9
+          </div>
+          <p className="text-slate-500 font-bold animate-pulse">Initializing System...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-50 p-6">
+        <div className="max-w-md w-full bg-white rounded-[40px] shadow-2xl border border-slate-100 p-10 text-center space-y-8 animate-in zoom-in-95 duration-500">
+          <div className="mx-auto w-24 h-24 bg-primary/10 rounded-3xl flex items-center justify-center">
+            <ShieldCheck className="h-12 w-12 text-primary" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-4xl font-black tracking-tight text-slate-900">SUPER 9+ POS</h1>
+            <p className="text-slate-500 font-medium">Please sign in to access the billing terminal</p>
+          </div>
+          <Button 
+            onClick={handleStaffLogin}
+            className="w-full h-16 text-xl font-black rounded-2xl shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            <LogIn className="mr-2 h-6 w-6" /> CLOCK IN
+          </Button>
+          <p className="text-xs text-slate-400">Authorized Personnel Only • Secure Terminal v2.0</p>
+        </div>
+      </div>
+    );
+  }
+
   const sidebarContent = (
     <nav className={cn(
       "flex gap-4",
-      isMobile ? "flex-row justify-around w-full px-4 pb-4 bg-white border-t" : "flex-col items-center py-6 gap-8 w-20 border-r bg-slate-50 shadow-inner"
+      isMobile ? "flex-row justify-around w-full px-4 pb-4 bg-white border-t" : "flex-col items-center py-6 gap-8 w-20 border-r bg-white shadow-sm"
     )}>
       {!isMobile && (
         <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center font-black text-xl text-primary-foreground shadow-xl shadow-primary/20 mb-4">
-          S9+
+          S9
         </div>
       )}
       <Link href="/" className="p-3 bg-primary text-primary-foreground rounded-2xl shadow-lg shadow-primary/20 transition-all"><ShoppingBag className="h-7 w-7" /></Link>
-      <Link href="/dashboard" className="p-3 text-slate-500 hover:bg-slate-200 rounded-2xl transition-all"><LayoutDashboard className="h-7 w-7" /></Link>
-      <button className="p-3 text-slate-500 hover:bg-slate-200 rounded-2xl transition-all"><ReceiptText className="h-7 w-7" /></button>
+      <Link href="/dashboard" className="p-3 text-slate-400 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all"><LayoutDashboard className="h-7 w-7" /></Link>
+      <button className="p-3 text-slate-400 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all"><ReceiptText className="h-7 w-7" /></button>
       {!isMobile && (
         <>
-          <button className="p-3 text-slate-500 hover:bg-slate-200 rounded-2xl transition-all"><Bell className="h-7 w-7" /></button>
+          <button className="p-3 text-slate-400 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all"><Bell className="h-7 w-7" /></button>
           <div className="flex-1" />
-          <button className="p-3 text-slate-500 hover:bg-slate-200 rounded-2xl transition-all"><Settings className="h-7 w-7" /></button>
-          <button className="p-3 text-destructive hover:bg-destructive/5 rounded-2xl transition-all"><LogOut className="h-7 w-7" /></button>
+          <button className="p-3 text-slate-400 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all"><Settings className="h-7 w-7" /></button>
+          <button onClick={handleSignOut} className="p-3 text-destructive hover:bg-destructive/5 rounded-2xl transition-all"><LogOut className="h-7 w-7" /></button>
         </>
       )}
     </nav>
@@ -185,17 +238,17 @@ export default function POSPage() {
       
       <Tabs defaultValue="popular" className="flex-1 flex flex-col overflow-hidden">
         <TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1 rounded-2xl mb-2">
-          <TabsTrigger value="popular" className="font-bold flex items-center gap-2 rounded-xl py-2">
+          <TabsTrigger value="popular" className="font-bold flex items-center gap-2 rounded-xl py-2 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
             <Star className="h-4 w-4" /> TOP SELLING
           </TabsTrigger>
-          <TabsTrigger value="search" className="font-bold flex items-center gap-2 rounded-xl py-2">
+          <TabsTrigger value="search" className="font-bold flex items-center gap-2 rounded-xl py-2 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
             <Search className="h-4 w-4" /> ALL ITEMS
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="popular" className="flex-1 overflow-y-auto custom-scrollbar pt-2">
+        <TabsContent value="popular" className="flex-1 overflow-y-auto custom-scrollbar pt-2 mt-0">
           <QuickTapGrid products={productsData} onProductSelect={handleProductSelect} />
         </TabsContent>
-        <TabsContent value="search" className="flex-1 flex flex-col overflow-hidden">
+        <TabsContent value="search" className="flex-1 flex flex-col overflow-hidden mt-0">
            <QuickTapGrid products={productsData} onProductSelect={handleProductSelect} showAll />
         </TabsContent>
       </Tabs>
