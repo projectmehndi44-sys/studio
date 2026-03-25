@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from 'react';
 import { 
   BarChart, 
   Bar, 
@@ -57,7 +58,7 @@ export default function DashboardPage() {
     };
   }, [sales]);
 
-  // Mock data for charts since real data might be sparse initially
+  // Mock data for charts
   const HEATMAP_DATA = [
     { hour: '8 AM', sales: 12 },
     { hour: '10 AM', sales: 34 },
@@ -76,7 +77,13 @@ export default function DashboardPage() {
   ];
 
   if (isLoading) {
-    return <div className="p-12 text-center font-black animate-pulse">SYNCING CLOUD DATA...</div>;
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center font-black animate-pulse text-slate-400">
+          SYNCING BUSINESS LEDGER...
+        </div>
+      </div>
+    );
   }
 
   return (

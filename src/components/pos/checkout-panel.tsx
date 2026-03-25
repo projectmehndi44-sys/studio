@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { CartItem, Coupon } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 interface CheckoutPanelProps {
   items: CartItem[];
@@ -136,7 +137,10 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
                 <Button
                   key={m.id}
                   variant={paymentMode === m.id ? 'default' : 'outline'}
-                  className={`h-24 flex-col gap-2 rounded-2xl transition-all border-none ${paymentMode === m.id ? 'bg-primary shadow-xl shadow-primary/20 scale-[1.05]' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                  className={cn(
+                    "h-24 flex-col gap-2 rounded-2xl transition-all border-none",
+                    paymentMode === m.id ? 'bg-primary shadow-xl shadow-primary/20 scale-[1.05]' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                  )}
                   onClick={() => setPaymentMode(m.id as any)}
                 >
                   <m.icon className={cn("h-7 w-7", paymentMode === m.id ? "text-primary-foreground" : "text-slate-300")} />
