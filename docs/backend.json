@@ -1,0 +1,595 @@
+{
+  "entities": {
+    "Product": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Product",
+      "type": "object",
+      "description": "Represents an individual item available for sale in the Super 9+ POS system, including inventory details and pricing.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Product entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the product (e.g., Amul Milk)."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the product.",
+          "format": ""
+        },
+        "barcode": {
+          "type": "string",
+          "description": "The barcode associated with the product, used for scanning.",
+          "format": ""
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL to the product's image, used for quick-tap icons.",
+          "format": "uri"
+        },
+        "sellingPrice": {
+          "type": "number",
+          "description": "The price at which the product is sold to customers."
+        },
+        "costPrice": {
+          "type": "number",
+          "description": "The cost price of the product, used for profit calculation.",
+          "format": ""
+        },
+        "stockQuantity": {
+          "type": "number",
+          "description": "The current quantity of the product in stock. If not provided, inventory for this item is considered untracked.",
+          "format": ""
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Reference to the Category this product belongs to. (Relationship: Category 1:N Product)",
+          "format": ""
+        },
+        "isTopSeller": {
+          "type": "boolean",
+          "description": "Indicates if the product is among the top 20 most-sold items, for quick-tap access."
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Indicates whether the product is currently active and available for sale."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the product was first created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of the last update to the product's information.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "sellingPrice",
+        "isActive"
+      ]
+    },
+    "Category": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Category",
+      "type": "object",
+      "description": "Organizes products into logical groups for better management and search functionality.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Category entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the category (e.g., Dairy, Beverages)."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the category.",
+          "format": ""
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "Customer": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Customer",
+      "type": "object",
+      "description": "Stores information about a customer, used for loyalty programs, personalized offers, and purchase history tracking.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Customer entity."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "The customer's phone number, used for identification and communication. This should be unique.",
+          "format": ""
+        },
+        "name": {
+          "type": "string",
+          "description": "The full name of the customer.",
+          "format": ""
+        },
+        "email": {
+          "type": "string",
+          "description": "The customer's email address for communication.",
+          "format": "email"
+        },
+        "points": {
+          "type": "number",
+          "description": "Loyalty points accumulated by the customer."
+        },
+        "totalSpent": {
+          "type": "number",
+          "description": "The total monetary amount the customer has spent."
+        },
+        "lastVisitDate": {
+          "type": "string",
+          "description": "The timestamp of the customer's last purchase or interaction. Used for 'We miss you' coupon logic.",
+          "format": "date-time"
+        },
+        "isFlaggedForCoupon": {
+          "type": "boolean",
+          "description": "Flag indicating if the customer is eligible for a 'We miss you' WhatsApp coupon."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the customer profile was first created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of the last update to the customer's information.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "phoneNumber",
+        "name"
+      ]
+    },
+    "Coupon": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Coupon",
+      "type": "object",
+      "description": "Defines discount coupons that can be applied to purchases, including their type, value, and validity.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Coupon entity."
+        },
+        "code": {
+          "type": "string",
+          "description": "The unique code that customers use to redeem the coupon.",
+          "format": ""
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of discount offered (e.g., 'flat' for a fixed amount, 'percent' for a percentage off).",
+          "format": ""
+        },
+        "value": {
+          "type": "number",
+          "description": "The value of the coupon (e.g., 50 for ₹50 off, or 10 for 10% off)."
+        },
+        "minBillAmount": {
+          "type": "number",
+          "description": "The minimum total bill amount required for the coupon to be applicable."
+        },
+        "maxDiscountAmount": {
+          "type": "number",
+          "description": "The maximum discount amount that can be applied if the coupon is a percentage type.",
+          "format": ""
+        },
+        "expiryDate": {
+          "type": "string",
+          "description": "The date and time when the coupon expires.",
+          "format": "date-time"
+        },
+        "usageCount": {
+          "type": "number",
+          "description": "The number of times this specific coupon code has been used.",
+          "format": ""
+        },
+        "maxUsagePerCustomer": {
+          "type": "number",
+          "description": "The maximum number of times a single customer can use this coupon.",
+          "format": ""
+        },
+        "applicableProductIds": {
+          "type": "array",
+          "description": "An array of Product IDs to which this coupon can be applied. If empty, it applies to all products. (Relationship: Product N:N Coupon)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "applicableCategoryIds": {
+          "type": "array",
+          "description": "An array of Category IDs to which this coupon can be applied. If empty, it applies to all categories. (Relationship: Category N:N Coupon)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Indicates whether the coupon is currently active and can be redeemed."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the coupon was first created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of the last update to the coupon's information.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "code",
+        "type",
+        "value",
+        "minBillAmount",
+        "expiryDate",
+        "isActive"
+      ]
+    },
+    "PricingRule": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PricingRule",
+      "type": "object",
+      "description": "Defines dynamic pricing rules such as Happy Hour discounts or bulk purchase offers.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the PricingRule entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "A descriptive name for the pricing rule (e.g., Happy Hour Drinks, Buy 3 Get 10% Off Milk).",
+          "format": ""
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of pricing rule (e.g., 'happyHour', 'bulkDiscount', 'seasonal').",
+          "format": ""
+        },
+        "discountPercentage": {
+          "type": "number",
+          "description": "The percentage discount to apply (e.g., 10 for 10%).",
+          "format": ""
+        },
+        "discountFlatAmount": {
+          "type": "number",
+          "description": "A fixed monetary amount to discount.",
+          "format": ""
+        },
+        "minQuantity": {
+          "type": "number",
+          "description": "The minimum quantity of an item required for the bulk discount to apply.",
+          "format": ""
+        },
+        "minBillAmount": {
+          "type": "number",
+          "description": "The minimum total bill amount for the rule to be applied.",
+          "format": ""
+        },
+        "startTime": {
+          "type": "string",
+          "description": "The start date and time when the pricing rule becomes active.",
+          "format": "date-time"
+        },
+        "endTime": {
+          "type": "string",
+          "description": "The end date and time when the pricing rule expires.",
+          "format": "date-time"
+        },
+        "applicableProductIds": {
+          "type": "array",
+          "description": "An array of Product IDs to which this pricing rule applies. If empty, it applies to all products. (Relationship: Product N:N PricingRule)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "applicableCategoryIds": {
+          "type": "array",
+          "description": "An array of Category IDs to which this pricing rule applies. If empty, it applies to all categories. (Relationship: Category N:N PricingRule)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Indicates whether the pricing rule is currently active and applied automatically."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the pricing rule was first created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of the last update to the pricing rule's information.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "type",
+        "isActive"
+      ]
+    },
+    "Purchase": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Purchase",
+      "type": "object",
+      "description": "Records a single customer transaction or sale, including all items purchased, payment details, and applied discounts.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Purchase entity."
+        },
+        "customerId": {
+          "type": "string",
+          "description": "Reference to the Customer who made the purchase. Optional if the customer is not identified. (Relationship: Customer 1:N Purchase)",
+          "format": ""
+        },
+        "staffId": {
+          "type": "string",
+          "description": "Reference to the Staff member who processed the sale. (Relationship: Staff 1:N Purchase)",
+          "format": ""
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "The exact date and time when the purchase was made. Crucial for offline sync and reporting.",
+          "format": "date-time"
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "The final total amount of the purchase after all discounts."
+        },
+        "subtotalAmount": {
+          "type": "number",
+          "description": "The total amount of the purchase before any discounts were applied."
+        },
+        "discountAmount": {
+          "type": "number",
+          "description": "The total monetary amount discounted from the purchase."
+        },
+        "paymentMode": {
+          "type": "string",
+          "description": "The method of payment used (e.g., 'Cash', 'UPI', 'Credit', 'Card').",
+          "format": ""
+        },
+        "items": {
+          "type": "array",
+          "description": "An array of objects, each representing a product bought in this purchase.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "couponCodeApplied": {
+          "type": "string",
+          "description": "The code of the coupon applied to this purchase, if any. (Relationship: Coupon 1:N Purchase)",
+          "format": ""
+        },
+        "isOfflineSale": {
+          "type": "boolean",
+          "description": "Indicates if this sale was initially recorded offline and awaiting server synchronization."
+        },
+        "isCreditSale": {
+          "type": "boolean",
+          "description": "Indicates if the sale was made on credit (Udhaar), triggering specific printing logic."
+        },
+        "receiptLink": {
+          "type": "string",
+          "description": "A URI link to the digital receipt sent via WhatsApp.",
+          "format": "uri"
+        },
+        "customerReviewLink": {
+          "type": "string",
+          "description": "A URI link for the customer to leave a review, included in the WhatsApp receipt.",
+          "format": "uri"
+        },
+        "adminOverrideApplied": {
+          "type": "boolean",
+          "description": "Indicates if an admin override was used to approve a discount on this purchase."
+        }
+      },
+      "required": [
+        "id",
+        "staffId",
+        "timestamp",
+        "totalAmount",
+        "subtotalAmount",
+        "discountAmount",
+        "paymentMode",
+        "items",
+        "isOfflineSale"
+      ]
+    },
+    "Staff": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Staff",
+      "type": "object",
+      "description": "Manages staff accounts, roles, and permissions within the POS system, particularly for administrative overrides.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Staff entity, typically matching the external authentication system's user ID."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the staff member.",
+          "format": ""
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the staff member (e.g., 'Staff', 'Admin').",
+          "format": ""
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Indicates whether the staff account is currently active."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "role",
+        "isActive"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/products/{productId}",
+        "definition": {
+          "entityName": "Product",
+          "schema": {
+            "$ref": "#/backend/entities/Product"
+          },
+          "description": "Stores individual product details, including pricing (sellingPrice, costPrice) and optional inventory (stockQuantity). Supports fuzzy search and quick-tap icons. Includes denormalized 'isTopSeller' for UI prioritization.",
+          "params": [
+            {
+              "name": "productId",
+              "description": "Unique identifier for a product."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/categories/{categoryId}",
+        "definition": {
+          "entityName": "Category",
+          "schema": {
+            "$ref": "#/backend/entities/Category"
+          },
+          "description": "Organizes products into logical groups for management and search. Globally readable by authenticated staff, writeable by admins.",
+          "params": [
+            {
+              "name": "categoryId",
+              "description": "Unique identifier for a product category."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/customers/{customerId}",
+        "definition": {
+          "entityName": "Customer",
+          "schema": {
+            "$ref": "#/backend/entities/Customer"
+          },
+          "description": "Stores customer loyalty and purchase history. Includes 'isFlaggedForCoupon' for automated 'We miss you' offers. Globally accessible by authorized staff, writeable by admins/authorized staff.",
+          "params": [
+            {
+              "name": "customerId",
+              "description": "Unique identifier for a customer."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/coupons/{couponId}",
+        "definition": {
+          "entityName": "Coupon",
+          "schema": {
+            "$ref": "#/backend/entities/Coupon"
+          },
+          "description": "Defines discount coupons for application during purchases. Globally readable by authenticated staff, writeable by admins.",
+          "params": [
+            {
+              "name": "couponId",
+              "description": "Unique identifier for a coupon."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/pricingRules/{ruleId}",
+        "definition": {
+          "entityName": "PricingRule",
+          "schema": {
+            "$ref": "#/backend/entities/PricingRule"
+          },
+          "description": "Defines dynamic pricing rules (e.g., Happy Hour, Bulk Discounts). Globally readable by authenticated staff, writeable by admins.",
+          "params": [
+            {
+              "name": "ruleId",
+              "description": "Unique identifier for a pricing rule."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/purchases/{purchaseId}",
+        "definition": {
+          "entityName": "Purchase",
+          "schema": {
+            "$ref": "#/backend/entities/Purchase"
+          },
+          "description": "Records individual customer transactions. Includes 'staffId' (denormalized for authorization independence), 'isOfflineSale' for sync, and 'adminOverrideApplied' for security. Purchases are immutable after creation.",
+          "params": [
+            {
+              "name": "purchaseId",
+              "description": "Unique identifier for a purchase transaction."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/staff/{staffId}",
+        "definition": {
+          "entityName": "Staff",
+          "schema": {
+            "$ref": "#/backend/entities/Staff"
+          },
+          "description": "Stores staff profiles, where 'id' matches Firebase Authentication UID. Allows self-read and admin read/write for all staff. Role-based access for security rules is handled by '/adminRoles/{staffId}' for authorization independence.",
+          "params": [
+            {
+              "name": "staffId",
+              "description": "Unique identifier for a staff member, matching their Firebase Auth UID."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/adminRoles/{staffId}",
+        "definition": {
+          "entityName": "Staff",
+          "schema": {
+            "$ref": "#/backend/entities/Staff"
+          },
+          "description": "CRITICAL for Authorization Independence. This collection's sole purpose is to indicate admin status. The presence of a document where 'staffId' matches 'request.auth.uid' grants admin privileges in security rules (using 'exists()').",
+          "params": [
+            {
+              "name": "staffId",
+              "description": "Unique identifier for an admin staff member, matching their Firebase Auth UID."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure prioritizes secure, scalable, and debuggable authorization by strictly adhering to the core design principles. The primary strategy employed is **Authorization Independence via Denormalization** and **Structural Segregation**. All authorization logic avoids `get()` calls in security rules.\n\n**Authorization Independence (CRITICAL) & QAPs:**\n\n1.  **Admin Roles (`/adminRoles/{staffId}`):** To ensure authorization independence for administrative privileges, a dedicated collection `/adminRoles` is used. An authenticated user's `request.auth.uid` being present as a document ID in this collection directly grants admin access. Security rules will use `exists(/adminRoles/$(request.auth.uid))` for efficient and atomic role checks, completely eliminating `get()` calls. This directly supports QAPs as admin access is determined by document existence, not by filtering data within a document.\n\n2.  **Staff-Specific Data (`/staff/{staffId}` and `/purchases/{purchaseId}`):**\n    *   `staffId` in the path `/staff/{staffId}` directly ties a staff member to their profile, allowing simple self-read rules (`request.auth.uid == staffId`).\n    *   For `Purchase` records, the `staffId` of the creating staff is denormalized and stored directly within each `Purchase` document. This allows security rules to check `resource.data.staffId == request.auth.uid` for individual staff access to their own sales, or `exists(/adminRoles/$(request.auth.uid))` for global admin access. This denormalization ensures that access to a purchase document does not depend on fetching any parent document, making operations atomic and rules debuggable.\n\n3.  **Store-wide Data (`/products`, `/categories`, `/customers`, `/coupons`, `/pricingRules`):** These collections represent data that is globally accessible (read) by *any* authenticated staff member, and writable only by administrators. This adheres to **Structural Segregation** by grouping data with homogeneous security postures. Since all authenticated staff can read these documents, `list` operations are inherently secure and do not require rules to act as filters (QAPs), as any document returned is permissible.\n\n**User Request Integration:**\n*   **Inventory Optional:** The `stockQuantity` field in `Product` is designed to be optional. If not present or null, inventory tracking for that item is effectively disabled, per user request.\n*   **Add Items/Prices in Search Bar:** The `Product` collection with `name`, `sellingPrice`, `costPrice`, and `barcode` fields supports robust search functionality and pricing management. The UI would query this collection.\n*   **Sync Everything:** The `Purchase` documents include an `isOfflineSale` flag, enabling robust offline-first synchronization logic handled by Cloud Functions upon reconnection, leveraging Firestore's `enablePersistence(true)` feature for client-side resilience.\n\nOverall, the structure is designed to minimize complexity in security rules, support efficient queries, and provide a clear separation of concerns based on access patterns."
+  }
+}

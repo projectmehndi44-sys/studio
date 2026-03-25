@@ -1,0 +1,153 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * CORE PHILOSOPHY:
+     * This ruleset enforces a POS (Point of Sale) security model where administrative 
+     * privileges are separated from standard staff operations. It utilizes "Authorization 
+     * Independence" by checking for the existence of a document in the /adminRoles 
+     * collection to grant elevated permissions. 
+     *
+     * DATA STRUCTURE:
+     * - Store-wide resources (Products, Categories, Coupons, PricingRules) are globally 
+     *   readable by authenticated staff but strictly writable by Admins.
+     * - Customers can be managed by all staff to facilitate quick checkout.
+     * - Purchases are immutable once created and are tied to the staff member who 
+     *   processed the transaction via a denormalized 'staffId'.
+     *
+     * KEY DECISIONS:
+     * - Admin status is determined by the presence of a UID in the `/adminRoles` collection.
+     * - Purchases are restricted: staff see their own sales, admins see everything.
+     * - Relational integrity is enforced for 'staffId' on purchase creation.
+     */
+
+    // --- Helper Functions ---
+
+    /** @description Checks if the user is authenticated. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** @description Checks if the user has administrative privileges via the adminRoles collection. */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/adminRoles/$(request.auth.uid));
+    }
+
+    /** @description Checks if the provided UID matches the authenticated user's UID. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // The 'isExistingOwner' function was removed because it was unused and incorrectly
+    // referenced the 'resource' variable within a function context, which is not allowed.
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for Product management. Staff can view all products for search and sales.
+     * @path /products/{productId}
+     * @allow (get, list) for any signed-in staff member.
+     * @deny (create, update, delete) if the user is not an admin.
+     * @principle Structural Segregation: Global read for staff, admin-only writes.
+     */
+    match /products/{productId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Rules for Product Categories. Used for organizing the UI.
+     * @path /categories/{categoryId}
+     * @allow (get) for signed-in users.
+     * @deny (write) if not an admin.
+     * @principle Role-based access for static store configuration.
+     */
+    match /categories/{categoryId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Rules for Customer profiles. Staff can create and update customers during the checkout flow.
+     * @path /customers/{customerId}
+     * @allow (create, update) for all staff to support loyalty program signup.
+     * @deny (delete) for non-admin staff to prevent data loss.
+     * @principle Flexible data entry for operational efficiency.
+     */
+    match /customers/{customerId} {
+      allow read, create, update: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Rules for discount Coupons.
+     * @path /coupons/{couponId}
+     * @allow (read) for all staff to validate codes at checkout.
+     * @deny (write) for non-admins to prevent unauthorized discounts.
+     * @principle Centralized promotion management.
+     */
+    match /coupons/{couponId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Rules for dynamic Pricing Rules (e.g., Happy Hour).
+     * @path /pricingRules/{ruleId}
+     * @allow (read) for all staff.
+     * @deny (write) for non-admins.
+     * @principle Store-wide pricing logic protection.
+     */
+    match /pricingRules/{ruleId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Rules for Purchase transactions. Purchases are immutable for audit integrity.
+     * @path /purchases/{purchaseId}
+     * @allow (create) if staffId in data matches authenticated user.
+     * @deny (update, delete) always, as sales records must be immutable.
+     * @principle Relational integrity and Immutability.
+     */
+    match /purchases/{purchaseId} {
+      allow get: if isAdmin() || (isSignedIn() && resource.data.staffId == request.auth.uid);
+      allow list: if isSignedIn(); // Queries must be filtered by staffId in application code for non-admins.
+      allow create: if isSignedIn() && request.resource.data.staffId == request.auth.uid;
+      allow update, delete: if false; 
+    }
+
+    /**
+     * @description Rules for Staff profiles. Matches Auth UID to document ID.
+     * @path /staff/{staffId}
+     * @allow (get) for self or admins.
+     * @deny (create, update, delete) if not an admin.
+     * @principle Identity-based access control.
+     */
+    match /staff/{staffId} {
+      allow get: if isOwner(staffId) || isAdmin();
+      allow list: if isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Rules for the Admin Roles lookup collection.
+     * @path /adminRoles/{staffId}
+     * @allow (get) for signed-in users to verify permissions.
+     * @deny (write) via client SDK; admin status should be managed by system administrators.
+     * @principle Authorization Independence (exists check source).
+     */
+    match /adminRoles/{staffId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+  }
+}
+
+/**
+ * PROTOTYPING NOTE: 
+ * These rules do not enforce the schema of the documents (e.g., specific field types). 
+ * They strictly focus on "Who" can access "Which" path based on their identity and role.
+ * Timestamps and general data fields are allowed without validation to support rapid UI iteration.
+ */
