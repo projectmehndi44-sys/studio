@@ -5,6 +5,7 @@ import { Smartphone, Printer, Save, Download, User, Check, CreditCard, Banknote,
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { CartItem } from '@/lib/types';
 import {
