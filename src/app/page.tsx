@@ -32,6 +32,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { 
   useCollection, 
@@ -80,6 +81,12 @@ export default function POSPage() {
   const [isPinDialogOpen, setIsPinDialogOpen] = useState(false);
   const [lastSale, setLastSale] = useState<PurchaseRecord | null>(null);
   const [activeMainTab, setActiveMainTab] = useState('products');
+
+  const [purgeOptions, setPurgeOptions] = useState({
+    inventory: false,
+    sales: false,
+    cash: false
+  });
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -265,14 +272,21 @@ export default function POSPage() {
   };
 
   const handlePurgeData = async () => {
+    if (!purgeOptions.inventory && !purgeOptions.sales && !purgeOptions.cash) {
+      toast({ variant: "destructive", title: "Selection Required", description: "Please select at least one database to purge." });
+      return;
+    }
     setIsPinDialogOpen(true);
   };
 
   const onPurgeConfirmed = async () => {
     setIsPinDialogOpen(false);
-    const collectionsToPurge = ['products', 'purchases', 'cashTransactions'];
+    const collectionsToPurge = [];
+    if (purgeOptions.inventory) collectionsToPurge.push('products');
+    if (purgeOptions.sales) collectionsToPurge.push('purchases');
+    if (purgeOptions.cash) collectionsToPurge.push('cashTransactions');
     
-    toast({ title: "Purge Initiated", description: "Cleaning all records from cloud ledger..." });
+    toast({ title: "Purge Initiated", description: "Cleaning selected records from cloud ledger..." });
 
     for (const colName of collectionsToPurge) {
       const q = query(collection(db, colName));
@@ -285,9 +299,12 @@ export default function POSPage() {
     setIsSettingsOpen(false);
     toast({
       variant: "destructive",
-      title: "System Cleaned",
-      description: "All products and transaction history have been wiped.",
+      title: "Sync Complete",
+      description: "Selected databases have been wiped from the cloud.",
     });
+    
+    // Reset purge options
+    setPurgeOptions({ inventory: false, sales: false, cash: false });
   };
 
   if (isUserLoading) {
@@ -309,7 +326,7 @@ export default function POSPage() {
       {/* PROFESSIONAL PRINT-ONLY RECEIPT */}
       <div className="hidden print-only p-8 bg-white text-slate-900 min-h-screen font-receipt">
         <div className="text-center space-y-1 border-b-2 border-slate-900 pb-4 mb-4">
-          <h2 className="text-xl font-bold uppercase tracking-widest">KRISHNA'S</h2>
+          <p className="text-xl font-bold uppercase tracking-tight">KRISHNA'S</p>
           <h2 className="text-4xl font-black uppercase tracking-tight leading-tight">SUPER 9+</h2>
           <p className="text-sm font-bold mt-2">{shopAddress}</p>
           {shopGSTIN && <p className="text-[10px] font-bold">GSTIN: {shopGSTIN}</p>}
@@ -369,7 +386,7 @@ export default function POSPage() {
       <header className="h-16 border-b border-slate-100 bg-white flex items-center justify-between px-8 shrink-0 print:hidden z-10">
         <div className="flex items-center gap-6">
            <div className="flex items-center gap-2">
-              <span className="text-[12px] font-bold text-slate-400 uppercase tracking-[0.2em]">KRISHNA'S</span>
+              <span className="text-[12px] font-bold text-slate-400 uppercase tracking-[0.1em]">KRISHNA'S</span>
               <span className="text-lg font-black tracking-tight uppercase text-secondary">SUPER 9+</span>
            </div>
            <div className="h-4 w-px bg-slate-200 mx-2" />
@@ -580,48 +597,82 @@ export default function POSPage() {
           <DialogHeader>
             <DialogTitle className="text-2xl font-black uppercase tracking-tight text-secondary">Shop Profile</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleUpdateShopSettings} className="space-y-6 py-6">
-             <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Shop Identity</Label>
-                  <Input name="shopName" defaultValue={shopName} required className="h-12 bg-slate-50 border-none rounded-xl font-bold text-sm" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Physical Address</Label>
-                  <Input name="address" defaultValue={shopAddress} required className="h-12 bg-slate-50 border-none rounded-xl font-bold text-sm" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-8 py-6">
+            <form onSubmit={handleUpdateShopSettings} className="space-y-6">
+               <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">GSTIN</Label>
-                    <Input name="gstin" defaultValue={shopGSTIN} className="h-12 bg-slate-50 border-none rounded-xl font-bold text-sm" />
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Shop Identity</Label>
+                    <Input name="shopName" defaultValue={shopName} required className="h-12 bg-slate-50 border-none rounded-xl font-bold text-sm" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Support No.</Label>
-                    <Input name="phone" defaultValue={shopSettings?.phone || ''} className="h-12 bg-slate-50 border-none rounded-xl font-bold text-sm" />
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Physical Address</Label>
+                    <Input name="address" defaultValue={shopAddress} required className="h-12 bg-slate-50 border-none rounded-xl font-bold text-sm" />
                   </div>
-                </div>
-             </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">GSTIN</Label>
+                      <Input name="gstin" defaultValue={shopGSTIN} className="h-12 bg-slate-50 border-none rounded-xl font-bold text-sm" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Support No.</Label>
+                      <Input name="phone" defaultValue={shopSettings?.phone || ''} className="h-12 bg-slate-50 border-none rounded-xl font-bold text-sm" />
+                    </div>
+                  </div>
+               </div>
+               <Button type="submit" className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest bg-secondary text-white">SAVE PROFILE</Button>
+            </form>
              
              <div className="pt-8 border-t border-slate-100">
-               <div className="bg-primary/5 rounded-2xl p-6 space-y-4">
+               <div className="bg-primary/5 rounded-2xl p-6 space-y-6">
                  <div className="flex items-center gap-2 text-primary">
                     <AlertTriangle className="h-4 w-4" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Danger Zone</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest">Purge System Data</span>
                  </div>
-                 <p className="text-[10px] font-medium text-slate-500">Purging data will permanently remove all products, sales history, and cash flows from your cloud ledger.</p>
+                 
+                 <div className="space-y-3">
+                   <div className="flex items-center space-x-3 bg-white/50 p-3 rounded-xl">
+                     <Checkbox 
+                       id="purge-inventory" 
+                       checked={purgeOptions.inventory} 
+                       onCheckedChange={(checked) => setPurgeOptions(prev => ({ ...prev, inventory: !!checked }))}
+                     />
+                     <label htmlFor="purge-inventory" className="text-[11px] font-bold uppercase text-slate-600 cursor-pointer">
+                       Item Master (Stock/Products)
+                     </label>
+                   </div>
+                   <div className="flex items-center space-x-3 bg-white/50 p-3 rounded-xl">
+                     <Checkbox 
+                       id="purge-sales" 
+                       checked={purgeOptions.sales} 
+                       onCheckedChange={(checked) => setPurgeOptions(prev => ({ ...prev, sales: !!checked }))}
+                     />
+                     <label htmlFor="purge-sales" className="text-[11px] font-bold uppercase text-slate-600 cursor-pointer">
+                       Sales Archive (Bills/History)
+                     </label>
+                   </div>
+                   <div className="flex items-center space-x-3 bg-white/50 p-3 rounded-xl">
+                     <Checkbox 
+                       id="purge-cash" 
+                       checked={purgeOptions.cash} 
+                       onCheckedChange={(checked) => setPurgeOptions(prev => ({ ...prev, cash: !!checked }))}
+                     />
+                     <label htmlFor="purge-cash" className="text-[11px] font-bold uppercase text-slate-600 cursor-pointer">
+                       Cash Logs (Manual Flows)
+                     </label>
+                   </div>
+                 </div>
+
                  <Button 
                    type="button" 
                    variant="destructive" 
                    onClick={handlePurgeData}
                    className="w-full h-12 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-destructive/10 gap-2"
                  >
-                   <Trash2 className="h-4 w-4" /> Purge System Data
+                   <Trash2 className="h-4 w-4" /> Purge Selected
                  </Button>
                </div>
              </div>
-
-             <Button type="submit" className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest bg-primary text-white">SAVE PROFILE</Button>
-          </form>
+          </div>
         </DialogContent>
       </Dialog>
 
