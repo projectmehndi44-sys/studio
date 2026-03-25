@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect, KeyboardEvent } from 'react';
@@ -124,7 +123,7 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="[Alt+F] Search or type price..."
+            placeholder="[Ctrl+Space] Search or type price..."
             className="pl-12 h-14 bg-white border border-slate-100 focus-visible:ring-2 focus-visible:ring-primary/20 text-lg font-bold rounded-2xl shadow-sm"
             autoFocus
           />

@@ -108,16 +108,15 @@ export default function POSPage() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.altKey && e.key === 'f') {
+      // Ctrl + Space shortcut for search focus
+      if (e.ctrlKey && e.code === 'Space') {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
+      
       if (e.ctrlKey && e.key === 'Enter') {
         e.preventDefault();
-        if (cartItems.length > 0) {
-          // Trigger checkout through the UI or a global state if needed
-          // For now, simpler to just use the UI buttons
-        }
+        // Trigger checkout handled by CheckoutPanel if possible
       }
     };
     window.addEventListener('keydown', handleKeyDown);
