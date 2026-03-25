@@ -486,7 +486,7 @@ export default function DashboardPage() {
           </DialogHeader>
 
           <div className="py-6 space-y-6">
-            <div className="bg-slate-50 rounded-[24px] p-8 space-y-4">
+            <div className="bg-slate-50 rounded-[24px] p-8 space-y-4 font-receipt border border-slate-200">
               <div className="flex flex-col border-b border-slate-100 pb-4 space-y-2">
                  <div className="flex justify-between items-center text-[10px] font-bold">
                     <span className="text-slate-400 uppercase">Customer</span>

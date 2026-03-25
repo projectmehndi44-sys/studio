@@ -565,7 +565,7 @@ export default function POSPage() {
           </DialogHeader>
 
           <div className="py-8 space-y-4">
-            <div className="bg-slate-50 rounded-[28px] p-8 space-y-4">
+            <div className="bg-slate-50 rounded-[28px] p-8 space-y-4 font-receipt border border-slate-200">
               <div className="flex justify-between items-center text-[10px] font-bold uppercase text-slate-400 tracking-widest">
                 <span>INVOICE DETAILS</span>
                 <span>{lastSale?.staffName || staffName}</span>
