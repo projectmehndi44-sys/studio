@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -18,7 +19,8 @@ import {
   ChevronRight,
   Keyboard,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  ScanLine
 } from 'lucide-react';
 import { Product, CartItem, PurchaseRecord } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
@@ -61,6 +63,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { AdminPinDialog } from '@/components/admin/admin-pin-dialog';
+import { BarcodeScanner } from '@/components/pos/barcode-scanner';
 import { format } from 'date-fns';
 import { PhoneAuthGate } from '@/components/auth/phone-auth-gate';
 import { getStaffName } from '@/lib/staff';
@@ -79,6 +82,7 @@ export default function POSPage() {
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isPinDialogOpen, setIsPinDialogOpen] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [lastSale, setLastSale] = useState<PurchaseRecord | null>(null);
   const [activeMainTab, setActiveMainTab] = useState('products');
 
@@ -113,8 +117,6 @@ export default function POSPage() {
         e.preventDefault();
         if (cartItems.length > 0) {
           const total = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-          // Trigger checkout through state or find a way to access form data
-          // For simplicity, we trigger the common logic
           handleCheckout({ total, paymentMode: 'Cash' });
         }
       }
@@ -161,6 +163,26 @@ export default function POSPage() {
     });
     setTimeout(() => searchInputRef.current?.focus(), 50);
   }, []);
+
+  const handleBarcodeScan = (barcode: string) => {
+    if (!productsData) return;
+    
+    const product = productsData.find(p => p.barcode === barcode);
+    if (product) {
+      handleProductSelect(product);
+      setIsScannerOpen(false);
+      toast({
+        title: "Item Identified",
+        description: `${product.name} added via barcode.`,
+      });
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Unknown Barcode",
+        description: `Code: ${barcode} is not in Item Master.`,
+      });
+    }
+  };
 
   const updateQuantity = (id: string, delta: number) => {
     setCartItems(prev => prev.map(item => {
@@ -305,7 +327,6 @@ export default function POSPage() {
       description: "Selected databases have been wiped from the cloud.",
     });
     
-    // Reset purge options
     setPurgeOptions({ inventory: false, sales: false, cash: false });
   };
 
@@ -325,7 +346,6 @@ export default function POSPage() {
     <div className="flex flex-col h-screen bg-slate-50/50 overflow-hidden text-slate-900 font-body">
       <Toaster />
       
-      {/* PROFESSIONAL PRINT-ONLY RECEIPT */}
       <div className="hidden print-only p-8 bg-white text-slate-900 min-h-screen font-receipt">
         <div className="text-center space-y-1 border-b-2 border-slate-900 pb-4 mb-4">
           <p className="text-xl font-bold uppercase tracking-tight">KRISHNA'S</p>
@@ -469,7 +489,7 @@ export default function POSPage() {
                 inputRef={searchInputRef}
                 products={productsData || []} 
                 onProductSelect={handleProductSelect} 
-                onScanClick={() => {}} 
+                onScanClick={() => setIsScannerOpen(true)} 
                 onAddNewProduct={handleAddNewProduct} 
               />
               <div className="flex-1 overflow-hidden">
@@ -495,7 +515,7 @@ export default function POSPage() {
                   inputRef={searchInputRef}
                   products={productsData || []} 
                   onProductSelect={handleProductSelect} 
-                  onScanClick={() => {}} 
+                  onScanClick={() => setIsScannerOpen(true)} 
                   onAddNewProduct={handleAddNewProduct} 
                 />
                 <CartList items={cartItems} onUpdateQuantity={updateQuantity} onUpdatePrice={updatePrice} onRemoveItem={removeItem} />
@@ -508,6 +528,32 @@ export default function POSPage() {
           </div>
         )}
       </main>
+
+      <Dialog open={isScannerOpen} onOpenChange={setIsScannerOpen}>
+        <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden print:hidden">
+          <div className="absolute top-0 left-0 w-full h-2 bg-primary" />
+          <DialogHeader className="space-y-4">
+            <div className="mx-auto w-16 h-16 bg-primary/5 rounded-[24px] flex items-center justify-center">
+              <ScanLine className="h-8 w-8 text-primary" />
+            </div>
+            <DialogTitle className="text-center text-xl font-black uppercase tracking-tight text-secondary">Optical Scanner</DialogTitle>
+          </DialogHeader>
+
+          <div className="py-4">
+            <BarcodeScanner isOpen={isScannerOpen} onScanSuccess={handleBarcodeScan} />
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="ghost"
+              className="w-full h-14 rounded-2xl font-black text-xs uppercase text-slate-400"
+              onClick={() => setIsScannerOpen(false)}
+            >
+              Close Scanner
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isSuccessDialogOpen} onOpenChange={setIsSuccessDialogOpen}>
         <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden print:hidden">
