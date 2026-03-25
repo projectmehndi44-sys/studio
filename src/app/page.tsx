@@ -51,7 +51,8 @@ export default function POSPage() {
     return collection(db, 'products');
   }, [db, user]);
 
-  const { data: productsData = [], isLoading: isProductsLoading } = useCollection<Product>(productsQuery);
+  const { data, isLoading: isProductsLoading } = useCollection<Product>(productsQuery);
+  const productsData = data ?? [];
 
   const cartTotalItems = useMemo(() => 
     cartItems.reduce((acc, item) => acc + item.quantity, 0),

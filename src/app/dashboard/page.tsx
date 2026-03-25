@@ -43,11 +43,12 @@ export default function DashboardPage() {
     return query(collection(db, 'purchases'), orderBy('timestamp', 'desc'), limit(50));
   }, [db, user]);
 
-  const { data: sales = [], isLoading } = useCollection<PurchaseRecord>(salesQuery);
+  const { data, isLoading } = useCollection<PurchaseRecord>(salesQuery);
+  const sales = data ?? [];
 
   const stats = useMemo(() => {
-    const totalRevenue = sales.reduce((acc, sale) => acc + sale.totalAmount, 0);
-    const totalDiscount = sales.reduce((acc, sale) => acc + sale.discountAmount, 0);
+    const totalRevenue = sales.reduce((acc, sale) => acc + (sale.totalAmount || 0), 0);
+    const totalDiscount = sales.reduce((acc, sale) => acc + (sale.discountAmount || 0), 0);
     const totalCustomers = new Set(sales.map(s => s.customerId).filter(Boolean)).size;
     
     return {
@@ -159,26 +160,32 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-slate-50">
-                {sales.map((sale) => (
-                  <div key={sale.id} className="p-6 hover:bg-slate-50 transition-colors flex items-center justify-between group">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-slate-100 h-12 w-12 rounded-2xl flex items-center justify-center font-black text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                        {sale.paymentMode[0]}
-                      </div>
-                      <div>
-                        <p className="font-black text-slate-900 tracking-tight">₹{sale.totalAmount}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                          {sale.timestamp?.seconds ? format(new Date(sale.timestamp.seconds * 1000), 'HH:mm • dd MMM') : 'Processing...'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <Badge variant="secondary" className="bg-slate-100 text-slate-500 font-black text-[10px] rounded-lg">
-                        {sale.paymentMode}
-                      </Badge>
-                    </div>
+                {sales.length === 0 ? (
+                  <div className="p-12 text-center text-slate-400 font-bold uppercase text-xs tracking-widest">
+                    No transactions found
                   </div>
-                ))}
+                ) : (
+                  sales.map((sale) => (
+                    <div key={sale.id} className="p-6 hover:bg-slate-50 transition-colors flex items-center justify-between group">
+                      <div className="flex items-center gap-4">
+                        <div className="bg-slate-100 h-12 w-12 rounded-2xl flex items-center justify-center font-black text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                          {sale.paymentMode?.[0] || '₹'}
+                        </div>
+                        <div>
+                          <p className="font-black text-slate-900 tracking-tight">₹{sale.totalAmount}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            {sale.timestamp?.seconds ? format(new Date(sale.timestamp.seconds * 1000), 'HH:mm • dd MMM') : 'Processing...'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <Badge variant="secondary" className="bg-slate-100 text-slate-500 font-black text-[10px] rounded-lg">
+                          {sale.paymentMode}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
