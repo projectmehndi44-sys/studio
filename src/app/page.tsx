@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
@@ -140,7 +139,7 @@ export default function POSPage() {
   const handleCheckout = async (data: any) => {
     const saleData: PurchaseRecord = {
       staffId: user?.uid || 'anonymous',
-      timestamp: new Date(), // Local for immediate preview
+      timestamp: new Date(),
       items: cartItems.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, price: i.price })),
       totalAmount: data.total,
       subtotalAmount: cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0),
@@ -152,7 +151,7 @@ export default function POSPage() {
 
     addDocumentNonBlocking(collection(db, 'purchases'), {
       ...saleData,
-      timestamp: serverTimestamp() // Server for storage
+      timestamp: serverTimestamp()
     });
 
     setLastSale(saleData);
@@ -166,14 +165,17 @@ export default function POSPage() {
     });
   };
 
-  const handlePrint = (type: 'thermal' | 'normal') => {
-    toast({ 
-      title: type === 'thermal' ? "Thermal Print" : "Normal Print", 
-      description: type === 'thermal' ? "Sending to 58mm printer..." : "Opening standard print dialog..." 
-    });
-    if (type === 'normal') {
-      window.print();
+  const handlePrintAction = (type: 'thermal' | 'normal' | 'pdf') => {
+    if (type === 'pdf') {
+      toast({ title: "Generating PDF", description: "Saving digital invoice..." });
+    } else {
+      toast({ 
+        title: type === 'thermal' ? "Thermal Printing" : "Desktop Printing", 
+        description: `Formatting for ${type} output...` 
+      });
     }
+    // Browser print dialog handles layout via @media print in globals.css
+    window.print();
   };
 
   const handleAddNewProduct = (name: string) => {
@@ -255,6 +257,74 @@ export default function POSPage() {
     <div className="flex flex-col h-screen bg-white overflow-hidden font-body text-slate-900">
       <Toaster />
       
+      {/* PROFESSIONAL PRINT-ONLY RECEIPT */}
+      <div className="hidden print-only p-8 bg-white text-slate-900 min-h-screen">
+        <div className="text-center space-y-2 border-b-2 border-slate-900 pb-6 mb-6">
+          <h2 className="text-3xl font-black uppercase tracking-tighter">Super 9+ Supermarket</h2>
+          <p className="text-sm font-bold">Authorized Digital Receipt</p>
+          <p className="text-xs font-medium">Main Market, New Delhi • GSTIN: 07AABCU1234F1Z5</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
+          <div className="space-y-1">
+            <p className="font-bold">Bill ID: <span className="font-medium">#{Date.now()}</span></p>
+            <p className="font-bold">Date: <span className="font-medium">{new Date().toLocaleDateString()}</span></p>
+            <p className="font-bold">Time: <span className="font-medium">{new Date().toLocaleTimeString()}</span></p>
+          </div>
+          <div className="space-y-1 text-right">
+            <p className="font-bold">Customer: <span className="font-medium">{lastSale?.customerId || 'Walk-in Guest'}</span></p>
+            <p className="font-bold">Mode: <span className="font-medium">{lastSale?.paymentMode || 'Cash'}</span></p>
+            <p className="font-bold">Staff: <span className="font-medium">#{user.uid.slice(0, 5)}</span></p>
+          </div>
+        </div>
+
+        <table className="w-full text-sm border-collapse mb-8">
+          <thead>
+            <tr className="border-y-2 border-slate-900">
+              <th className="text-left py-3 font-black uppercase text-xs">Item Description</th>
+              <th className="text-center py-3 font-black uppercase text-xs">Qty</th>
+              <th className="text-right py-3 font-black uppercase text-xs">Rate</th>
+              <th className="text-right py-3 font-black uppercase text-xs">Total</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200">
+            {lastSale?.items.map((item, idx) => (
+              <tr key={idx}>
+                <td className="py-3 font-bold">{item.name}</td>
+                <td className="py-3 text-center font-bold">{item.quantity}</td>
+                <td className="py-3 text-right font-bold">₹{item.price}</td>
+                <td className="py-3 text-right font-bold">₹{item.price * item.quantity}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="space-y-2 text-right border-t-2 border-slate-900 pt-6">
+          <div className="flex justify-between items-center text-sm font-bold">
+            <span>Subtotal</span>
+            <span>₹{lastSale?.subtotalAmount.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm font-bold">
+            <span>Discount Applied</span>
+            <span>-₹{lastSale?.discountAmount.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+            <span className="text-lg font-black uppercase tracking-tight">Grand Total</span>
+            <span className="text-3xl font-black">₹{lastSale?.totalAmount.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div className="mt-16 text-center space-y-4">
+          <div className="inline-block border-2 border-slate-900 p-2 text-[10px] font-black uppercase tracking-widest">
+            Scan to Pay / Verify Bill
+          </div>
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+            No Exchange without Bill • Items including GST
+          </p>
+          <p className="text-sm font-bold">Thank you for shopping at Super 9+!</p>
+        </div>
+      </div>
+
       <header className="h-16 border-b border-slate-100 bg-white flex items-center justify-between px-6 shrink-0 print:hidden">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-black text-primary-foreground shadow-lg shadow-primary/10">S9</div>
@@ -329,7 +399,6 @@ export default function POSPage() {
         )}
       </main>
 
-      {/* SUCCESS DIALOG */}
       <Dialog open={isSuccessDialogOpen} onOpenChange={setIsSuccessDialogOpen}>
         <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden print:hidden">
           <div className="absolute top-0 left-0 w-full h-2 bg-emerald-500" />
@@ -359,24 +428,21 @@ export default function POSPage() {
               <Button 
                 variant="outline" 
                 className="h-16 rounded-2xl bg-slate-50 border-none font-black uppercase text-xs gap-3 hover:bg-slate-100"
-                onClick={() => handlePrint('normal')}
+                onClick={() => handlePrintAction('normal')}
               >
                 <Printer className="h-5 w-5 text-primary" /> Normal Desktop Print
               </Button>
               <Button 
                 variant="outline" 
                 className="h-16 rounded-2xl bg-slate-50 border-none font-black uppercase text-xs gap-3 hover:bg-slate-100"
-                onClick={() => handlePrint('thermal')}
+                onClick={() => handlePrintAction('thermal')}
               >
                 <Printer className="h-5 w-5 text-accent" /> Thermal Printer (58/80mm)
               </Button>
               <Button 
                 variant="outline" 
                 className="h-16 rounded-2xl bg-slate-50 border-none font-black uppercase text-xs gap-3 hover:bg-slate-100"
-                onClick={() => {
-                  toast({ title: "Downloading PDF", description: "Saving invoice to local storage." });
-                  window.print();
-                }}
+                onClick={() => handlePrintAction('pdf')}
               >
                 <FileDown className="h-5 w-5 text-slate-400" /> Save as PDF
               </Button>
@@ -393,52 +459,6 @@ export default function POSPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* PRINT-ONLY VIEW */}
-      <div className="hidden print:block p-8 bg-white text-slate-900">
-        <div className="text-center space-y-2 border-b-2 border-slate-900 pb-6 mb-6">
-          <h2 className="text-3xl font-black uppercase tracking-tighter">Super 9+ Supermarket</h2>
-          <p className="text-sm font-bold">Authorized Digital Receipt</p>
-        </div>
-        <div className="space-y-4 mb-6">
-          <div className="flex justify-between text-sm font-bold">
-            <span>Bill ID: {Date.now()}</span>
-            <span>Date: {new Date().toLocaleDateString()}</span>
-          </div>
-          <div className="flex justify-between text-sm font-bold">
-            <span>Customer: {lastSale?.customerId || 'Guest'}</span>
-            <span>Mode: {lastSale?.paymentMode}</span>
-          </div>
-        </div>
-        <table className="w-full text-sm border-collapse mb-8">
-          <thead>
-            <tr className="border-y-2 border-slate-900">
-              <th className="text-left py-2 font-black">ITEM</th>
-              <th className="text-center py-2 font-black">QTY</th>
-              <th className="text-right py-2 font-black">RATE</th>
-              <th className="text-right py-2 font-black">TOTAL</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200">
-            {lastSale?.items.map((item, idx) => (
-              <tr key={idx}>
-                <td className="py-2 font-bold">{item.name}</td>
-                <td className="py-2 text-center font-bold">{item.quantity}</td>
-                <td className="py-2 text-right font-bold">₹{item.price}</td>
-                <td className="py-2 text-right font-bold">₹{item.price * item.quantity}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="space-y-2 text-right border-t-2 border-slate-900 pt-6">
-          <div className="text-sm font-bold">Subtotal: ₹{lastSale?.subtotalAmount}</div>
-          <div className="text-sm font-bold">Discount: ₹{lastSale?.discountAmount}</div>
-          <div className="text-2xl font-black uppercase">Grand Total: ₹{lastSale?.totalAmount}</div>
-        </div>
-        <div className="mt-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">
-          Thank you for shopping at Super 9+!
-        </div>
-      </div>
 
       <ProductDialog 
         isOpen={isProductDialogOpen}

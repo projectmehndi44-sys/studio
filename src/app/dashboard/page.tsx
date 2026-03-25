@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, useState } from 'react';
@@ -70,14 +69,17 @@ export default function DashboardPage() {
     };
   }, [sales, cashFlows]);
 
-  const handlePrint = (type: 'thermal' | 'normal') => {
-    toast({ 
-      title: type === 'thermal' ? "Thermal Print" : "Normal Print", 
-      description: type === 'thermal' ? "Sending to thermal printer..." : "Opening standard print dialog..." 
-    });
-    if (type === 'normal') {
-      window.print();
+  const handlePrintAction = (type: 'thermal' | 'normal' | 'pdf') => {
+    if (type === 'pdf') {
+      toast({ title: "Generating PDF", description: "Saving digital invoice..." });
+    } else {
+      toast({ 
+        title: type === 'thermal' ? "Thermal Printing" : "Desktop Printing", 
+        description: `Formatting for ${type} output...` 
+      });
     }
+    // Browser print dialog handles layout via @media print in globals.css
+    window.print();
   };
 
   if (isSalesLoading || isCashLoading) {
@@ -92,6 +94,75 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 font-body">
+      {/* PROFESSIONAL PRINT-ONLY RECEIPT (HISTORICAL) */}
+      <div className="hidden print-only p-8 bg-white text-slate-900 min-h-screen">
+        <div className="text-center space-y-2 border-b-2 border-slate-900 pb-6 mb-6">
+          <h2 className="text-3xl font-black uppercase tracking-tighter">Super 9+ Supermarket</h2>
+          <p className="text-sm font-bold">Historical Digital Receipt</p>
+          <p className="text-xs font-medium">Main Market, New Delhi • GSTIN: 07AABCU1234F1Z5</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
+          <div className="space-y-1">
+            <p className="font-bold">Bill ID: <span className="font-medium">#{viewingSale?.id || Date.now()}</span></p>
+            <p className="font-bold">Date: <span className="font-medium">
+              {viewingSale?.timestamp?.seconds ? format(new Date(viewingSale.timestamp.seconds * 1000), 'dd/MM/yyyy') : format(new Date(), 'dd/MM/yyyy')}
+            </span></p>
+            <p className="font-bold">Time: <span className="font-medium">
+              {viewingSale?.timestamp?.seconds ? format(new Date(viewingSale.timestamp.seconds * 1000), 'HH:mm:ss') : format(new Date(), 'HH:mm:ss')}
+            </span></p>
+          </div>
+          <div className="space-y-1 text-right">
+            <p className="font-bold">Customer: <span className="font-medium">{viewingSale?.customerId || 'Walk-in Guest'}</span></p>
+            <p className="font-bold">Mode: <span className="font-medium">{viewingSale?.paymentMode || 'Cash'}</span></p>
+            <p className="font-bold">Status: <span className="font-medium">Duplicate Copy</span></p>
+          </div>
+        </div>
+
+        <table className="w-full text-sm border-collapse mb-8">
+          <thead>
+            <tr className="border-y-2 border-slate-900">
+              <th className="text-left py-3 font-black uppercase text-xs">Item Description</th>
+              <th className="text-center py-3 font-black uppercase text-xs">Qty</th>
+              <th className="text-right py-3 font-black uppercase text-xs">Rate</th>
+              <th className="text-right py-3 font-black uppercase text-xs">Total</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200">
+            {viewingSale?.items.map((item, idx) => (
+              <tr key={idx}>
+                <td className="py-3 font-bold">{item.name}</td>
+                <td className="py-3 text-center font-bold">{item.quantity}</td>
+                <td className="py-3 text-right font-bold">₹{item.price}</td>
+                <td className="py-3 text-right font-bold">₹{item.price * item.quantity}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="space-y-2 text-right border-t-2 border-slate-900 pt-6">
+          <div className="flex justify-between items-center text-sm font-bold">
+            <span>Subtotal</span>
+            <span>₹{viewingSale?.subtotalAmount.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center text-sm font-bold">
+            <span>Discount</span>
+            <span>-₹{viewingSale?.discountAmount.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between items-center pt-2 border-t border-slate-100">
+            <span className="text-lg font-black uppercase tracking-tight">Grand Total</span>
+            <span className="text-3xl font-black">₹{viewingSale?.totalAmount.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div className="mt-16 text-center space-y-4">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+            Duplicate Copy • Generated from Cloud Archive
+          </p>
+          <p className="text-sm font-bold">Thank you for shopping at Super 9+!</p>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto space-y-10 print:hidden">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-6">
@@ -276,24 +347,21 @@ export default function DashboardPage() {
               <Button 
                 variant="outline" 
                 className="h-16 rounded-2xl bg-slate-50 border-none font-black uppercase text-xs gap-3 hover:bg-slate-100"
-                onClick={() => handlePrint('normal')}
+                onClick={() => handlePrintAction('normal')}
               >
                 <Printer className="h-5 w-5 text-primary" /> Normal Desktop Print
               </Button>
               <Button 
                 variant="outline" 
                 className="h-16 rounded-2xl bg-slate-50 border-none font-black uppercase text-xs gap-3 hover:bg-slate-100"
-                onClick={() => handlePrint('thermal')}
+                onClick={() => handlePrintAction('thermal')}
               >
                 <Printer className="h-5 w-5 text-accent" /> Thermal Printer (58/80mm)
               </Button>
               <Button 
                 variant="outline" 
                 className="h-16 rounded-2xl bg-slate-50 border-none font-black uppercase text-xs gap-3 hover:bg-slate-100"
-                onClick={() => {
-                  toast({ title: "Downloading PDF", description: "Generating file for download." });
-                  window.print();
-                }}
+                onClick={() => handlePrintAction('pdf')}
               >
                 <FileDown className="h-5 w-5 text-slate-400" /> Save as PDF
               </Button>
@@ -310,51 +378,6 @@ export default function DashboardPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* PRINT-ONLY VIEW (DASHBOARD) */}
-      <div className="hidden print:block p-8 bg-white text-slate-900">
-        <div className="text-center space-y-2 border-b-2 border-slate-900 pb-6 mb-6">
-          <h2 className="text-3xl font-black uppercase tracking-tighter">Super 9+ Supermarket</h2>
-          <p className="text-sm font-bold">Historical Digital Receipt</p>
-        </div>
-        <div className="space-y-4 mb-6">
-          <div className="flex justify-between text-sm font-bold">
-            <span>Bill ID: {Date.now()}</span>
-            <span>Date: {viewingSale?.timestamp?.seconds ? format(new Date(viewingSale.timestamp.seconds * 1000), 'dd/MM/yyyy') : ''}</span>
-          </div>
-          <div className="flex justify-between text-sm font-bold">
-            <span>Customer: {viewingSale?.customerId || 'Guest'}</span>
-            <span>Mode: {viewingSale?.paymentMode}</span>
-          </div>
-        </div>
-        <table className="w-full text-sm border-collapse mb-8">
-          <thead>
-            <tr className="border-y-2 border-slate-900">
-              <th className="text-left py-2 font-black">ITEM</th>
-              <th className="text-center py-2 font-black">QTY</th>
-              <th className="text-right py-2 font-black">RATE</th>
-              <th className="text-right py-2 font-black">TOTAL</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-200">
-            {viewingSale?.items.map((item, idx) => (
-              <tr key={idx}>
-                <td className="py-2 font-bold">{item.name}</td>
-                <td className="py-2 text-center font-bold">{item.quantity}</td>
-                <td className="py-2 text-right font-bold">₹{item.price}</td>
-                <td className="py-2 text-right font-bold">₹{item.price * item.quantity}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div className="space-y-2 text-right border-t-2 border-slate-900 pt-6">
-          <div className="text-sm font-bold">Subtotal: ₹{viewingSale?.subtotalAmount}</div>
-          <div className="text-2xl font-black uppercase">Grand Total: ₹{viewingSale?.totalAmount}</div>
-        </div>
-        <div className="mt-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">
-          Duplicate Copy • Verified by Cloud Ledger
-        </div>
-      </div>
     </div>
   );
 }
