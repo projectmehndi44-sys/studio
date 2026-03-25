@@ -113,6 +113,11 @@ export default function POSPage() {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
+      // Alt + Space shortcut for Cash Flow dialog
+      if (e.altKey && e.code === 'Space') {
+        e.preventDefault();
+        setIsCashDialogOpen(true);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);

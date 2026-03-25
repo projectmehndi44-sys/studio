@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { Smartphone, Printer, Save, Download, User, Check, CreditCard, Banknote, Wallet } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,8 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
   const [name, setName] = useState('');
   const [paymentMode, setPaymentMode] = useState<'Cash' | 'UPI' | 'Credit'>('Cash');
   const [isPrinterDialogOpen, setIsPrinterDialogOpen] = useState(false);
+  
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const subtotal = useMemo(() => {
     return items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -46,12 +48,18 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
     });
   }, [items, subtotal, paymentMode, phone, name, onComplete]);
 
-  // Global Ctrl + Enter listener for finishing the bill
+  // Global keyboard shortcuts
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // Ctrl + Enter: Confirm & Sync Bill
       if (e.ctrlKey && e.key === 'Enter') {
         e.preventDefault();
         handleLedgerSync();
+      }
+      // Shift + Enter: Focus Customer Name
+      if (e.shiftKey && e.key === 'Enter') {
+        e.preventDefault();
+        nameInputRef.current?.focus();
       }
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
@@ -80,9 +88,10 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
                 <Input
+                  ref={nameInputRef}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Customer Name"
+                  placeholder="Customer Name (Shift+Enter)"
                   className="pl-12 h-12 text-sm font-bold bg-slate-50 border-none rounded-xl focus-visible:ring-primary/20"
                 />
               </div>
