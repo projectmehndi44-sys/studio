@@ -1,13 +1,14 @@
 
 "use client";
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, KeyboardEvent } from 'react';
 import { Search, Scan, Plus, PackagePlus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Product } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface ProductSearchProps {
   products: Product[] | null;
@@ -19,6 +20,7 @@ interface ProductSearchProps {
 
 export function ProductSearch({ products, onProductSelect, onScanClick, onAddNewProduct, inputRef }: ProductSearchProps) {
   const [query, setQuery] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(-1);
 
   const filteredProducts = useMemo(() => {
     if (!query || !products) return [];
@@ -44,6 +46,10 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
     }
   }, [query]);
 
+  useEffect(() => {
+    setSelectedIndex(-1);
+  }, [query]);
+
   const handleQuickAdd = () => {
     if (quickPrice) {
       const quickItem: Product = {
@@ -63,6 +69,12 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
   const handleSearchSubmit = () => {
     if (quickPrice) {
       handleQuickAdd();
+      return;
+    }
+
+    if (selectedIndex >= 0 && selectedIndex < filteredProducts.length) {
+      onProductSelect(filteredProducts[selectedIndex]);
+      setQuery('');
       return;
     }
 
@@ -87,6 +99,19 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
     }
   };
 
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev < filteredProducts.length - 1 ? prev + 1 : prev));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedIndex(prev => (prev > -1 ? prev - 1 : prev));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSearchSubmit();
+    }
+  };
+
   const showAddPrompt = query.length > 2 && filteredProducts.length === 0 && !quickPrice;
 
   return (
@@ -98,11 +123,7 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                handleSearchSubmit();
-              }
-            }}
+            onKeyDown={handleKeyDown}
             placeholder="[Alt+F] Search or type price..."
             className="pl-12 h-14 bg-white border border-slate-100 focus-visible:ring-2 focus-visible:ring-primary/20 text-lg font-bold rounded-2xl shadow-sm"
             autoFocus
@@ -118,6 +139,7 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
         ) : (
           <button
             onClick={onScanClick}
+            tabIndex={-1}
             className="h-14 w-14 flex items-center justify-center rounded-2xl bg-white border border-slate-100 text-slate-500 hover:bg-slate-50 transition-all active:scale-90 shadow-sm"
           >
             <Scan className="h-6 w-6" />
@@ -128,17 +150,20 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
       {(filteredProducts.length > 0 || showAddPrompt) && !quickPrice && (
         <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-white border rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2">
           <ScrollArea className="max-h-[350px]">
-            {filteredProducts.map((p) => (
+            {filteredProducts.map((p, index) => (
               <button
                 key={p.id}
                 onClick={() => {
                   onProductSelect(p);
                   setQuery('');
                 }}
-                className="w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors border-b last:border-none group"
+                className={cn(
+                  "w-full flex items-center justify-between p-4 hover:bg-slate-50 transition-colors border-b last:border-none group outline-none",
+                  selectedIndex === index && "bg-primary/5 border-l-4 border-l-primary"
+                )}
               >
                 <div className="text-left">
-                  <p className="font-bold text-base text-slate-900 group-hover:text-primary transition-colors">{p.name}</p>
+                  <p className={cn("font-bold text-base text-slate-900 transition-colors", selectedIndex === index && "text-primary")}>{p.name}</p>
                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
                     ₹{p.price} • {p.category}
                   </p>
@@ -161,7 +186,7 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
                   onAddNewProduct(query);
                   setQuery('');
                 }}
-                className="w-full flex items-center gap-4 p-5 hover:bg-primary/5 transition-colors group"
+                className="w-full flex items-center gap-4 p-5 hover:bg-primary/5 transition-colors group outline-none"
               >
                 <div className="bg-primary/10 p-4 rounded-xl group-hover:bg-primary group-hover:text-white transition-all shadow-sm">
                   <PackagePlus className="h-6 w-6 text-primary group-hover:text-white" />

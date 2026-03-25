@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -45,6 +46,13 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
     handleLedgerSync();
   };
 
+  const handleModeKeyDown = (e: React.KeyboardEvent, mode: 'Cash' | 'UPI' | 'Credit') => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setPaymentMode(mode);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-white p-8 overflow-hidden">
       <ScrollArea className="flex-1">
@@ -87,8 +95,9 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
                   <button
                     key={m.id}
                     onClick={() => setPaymentMode(m.id as any)}
+                    onKeyDown={(e) => handleModeKeyDown(e, m.id as any)}
                     className={cn(
-                      "flex items-center justify-between p-4 rounded-2xl transition-all border-2",
+                      "flex items-center justify-between p-4 rounded-2xl transition-all border-2 outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
                       isActive 
                         ? 'bg-secondary text-white border-secondary shadow-lg' 
                         : 'bg-white text-slate-500 border-slate-50 hover:border-slate-200'
@@ -126,7 +135,7 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
             disabled={items.length === 0}
             onClick={handleLedgerSync}
           >
-            CONFIRM & SYNC BILL
+            CONFIRM & SYNC BILL (ALT+S)
           </Button>
           
           <div className="grid grid-cols-2 gap-3">
@@ -158,7 +167,7 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
           <div className="grid grid-cols-2 gap-4 py-6">
             <button
               onClick={executePrint}
-              className="flex flex-col items-center justify-center h-40 bg-slate-50 rounded-[32px] hover:bg-secondary/5 hover:text-secondary transition-all group border-2 border-transparent hover:border-secondary/10"
+              className="flex flex-col items-center justify-center h-40 bg-slate-50 rounded-[32px] hover:bg-secondary/5 hover:text-secondary transition-all group border-2 border-transparent hover:border-secondary/10 outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
             >
               <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Printer className="h-6 w-6 text-slate-400 group-hover:text-secondary" />
@@ -167,7 +176,7 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
             </button>
             <button
               onClick={executePrint}
-              className="flex flex-col items-center justify-center h-40 bg-slate-50 rounded-[32px] hover:bg-primary/5 hover:text-primary transition-all group border-2 border-transparent hover:border-primary/10"
+              className="flex flex-col items-center justify-center h-40 bg-slate-50 rounded-[32px] hover:bg-primary/5 hover:text-primary transition-all group border-2 border-transparent hover:border-primary/10 outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Printer className="h-6 w-6 text-slate-400 group-hover:text-primary" />
