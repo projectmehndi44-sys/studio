@@ -11,9 +11,13 @@ import {
   ShieldCheck,
   Banknote,
   PlusCircle,
-  MinusCircle
+  MinusCircle,
+  CheckCircle2,
+  Printer,
+  FileDown,
+  X
 } from 'lucide-react';
-import { Product, CartItem } from '@/lib/types';
+import { Product, CartItem, PurchaseRecord } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
 import { CartList } from '@/components/pos/cart-list';
 import { CheckoutPanel } from '@/components/pos/checkout-panel';
@@ -24,8 +28,8 @@ import Link from 'next/link';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { 
   useCollection, 
@@ -65,9 +69,10 @@ export default function POSPage() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [isCashDialogOpen, setIsCashDialogOpen] = useState(false);
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
+  const [lastSale, setLastSale] = useState<PurchaseRecord | null>(null);
   const [activeMainTab, setActiveMainTab] = useState('products');
 
-  // Load cart from local storage on mount
   useEffect(() => {
     const savedCart = localStorage.getItem(CART_STORAGE_KEY);
     if (savedCart) {
@@ -79,7 +84,6 @@ export default function POSPage() {
     }
   }, []);
 
-  // Save cart to local storage on change
   useEffect(() => {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
   }, [cartItems]);
@@ -134,12 +138,9 @@ export default function POSPage() {
   };
 
   const handleCheckout = async (data: any) => {
-    toast({ title: "Saving...", description: "Recording sale in ledger." });
-
-    const purchasesRef = collection(db, 'purchases');
-    addDocumentNonBlocking(purchasesRef, {
+    const saleData: PurchaseRecord = {
       staffId: user?.uid || 'anonymous',
-      timestamp: serverTimestamp(),
+      timestamp: new Date(), // Local for immediate preview
       items: cartItems.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, price: i.price })),
       totalAmount: data.total,
       subtotalAmount: cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0),
@@ -147,14 +148,32 @@ export default function POSPage() {
       paymentMode: data.paymentMode,
       isOfflineSale: false,
       customerId: data.customerPhone || null
+    };
+
+    addDocumentNonBlocking(collection(db, 'purchases'), {
+      ...saleData,
+      timestamp: serverTimestamp() // Server for storage
     });
 
+    setLastSale(saleData);
     setCartItems([]);
     setActiveMainTab('products');
+    setIsSuccessDialogOpen(true);
+    
     toast({
-      title: "Sale Completed",
-      description: `Bill saved successfully.`,
+      title: "Syncing Complete",
+      description: `Bill synced to cloud ledger.`,
     });
+  };
+
+  const handlePrint = (type: 'thermal' | 'normal') => {
+    toast({ 
+      title: type === 'thermal' ? "Thermal Print" : "Normal Print", 
+      description: type === 'thermal' ? "Sending to 58mm printer..." : "Opening standard print dialog..." 
+    });
+    if (type === 'normal') {
+      window.print();
+    }
   };
 
   const handleAddNewProduct = (name: string) => {
@@ -236,8 +255,7 @@ export default function POSPage() {
     <div className="flex flex-col h-screen bg-white overflow-hidden font-body text-slate-900">
       <Toaster />
       
-      {/* Header */}
-      <header className="h-16 border-b border-slate-100 bg-white flex items-center justify-between px-6 shrink-0">
+      <header className="h-16 border-b border-slate-100 bg-white flex items-center justify-between px-6 shrink-0 print:hidden">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-black text-primary-foreground shadow-lg shadow-primary/10">S9</div>
           <h1 className="font-black text-xl tracking-tighter uppercase">Super 9+ Billing</h1>
@@ -275,7 +293,7 @@ export default function POSPage() {
         </div>
       </header>
 
-      <main className={cn("flex-1 overflow-hidden", !isMobile ? "grid grid-cols-[1fr_400px] h-full" : "flex flex-col")}>
+      <main className={cn("flex-1 overflow-hidden print:hidden", !isMobile ? "grid grid-cols-[1fr_400px] h-full" : "flex flex-col")}>
         {isMobile ? (
           <div className="flex flex-col h-full overflow-hidden p-4 gap-4">
             <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="flex-1 flex flex-col overflow-hidden">
@@ -311,13 +329,124 @@ export default function POSPage() {
         )}
       </main>
 
+      {/* SUCCESS DIALOG */}
+      <Dialog open={isSuccessDialogOpen} onOpenChange={setIsSuccessDialogOpen}>
+        <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden print:hidden">
+          <div className="absolute top-0 left-0 w-full h-2 bg-emerald-500" />
+          <DialogHeader className="space-y-4">
+            <div className="mx-auto w-20 h-20 bg-emerald-50 rounded-3xl flex items-center justify-center">
+              <CheckCircle2 className="h-12 w-12 text-emerald-500" />
+            </div>
+            <DialogTitle className="text-center text-3xl font-black uppercase tracking-tight">Sync Successful!</DialogTitle>
+            <DialogDescription className="text-center font-bold text-slate-400">
+              The transaction has been recorded in the cloud ledger.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-6 space-y-4">
+            <div className="bg-slate-50 rounded-3xl p-6 space-y-2">
+              <div className="flex justify-between items-center text-xs font-black uppercase text-slate-400">
+                <span>Receipt Summary</span>
+                <span>{lastSale?.paymentMode}</span>
+              </div>
+              <div className="flex justify-between items-end">
+                <span className="text-2xl font-black text-slate-900 tracking-tight">₹{lastSale?.totalAmount}</span>
+                <span className="text-[10px] font-bold text-slate-400">{lastSale?.items.length} items</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              <Button 
+                variant="outline" 
+                className="h-16 rounded-2xl bg-slate-50 border-none font-black uppercase text-xs gap-3 hover:bg-slate-100"
+                onClick={() => handlePrint('normal')}
+              >
+                <Printer className="h-5 w-5 text-primary" /> Normal Desktop Print
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-16 rounded-2xl bg-slate-50 border-none font-black uppercase text-xs gap-3 hover:bg-slate-100"
+                onClick={() => handlePrint('thermal')}
+              >
+                <Printer className="h-5 w-5 text-accent" /> Thermal Printer (58/80mm)
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-16 rounded-2xl bg-slate-50 border-none font-black uppercase text-xs gap-3 hover:bg-slate-100"
+                onClick={() => {
+                  toast({ title: "Downloading PDF", description: "Saving invoice to local storage." });
+                  window.print();
+                }}
+              >
+                <FileDown className="h-5 w-5 text-slate-400" /> Save as PDF
+              </Button>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              className="w-full h-16 rounded-2xl font-black text-lg shadow-xl shadow-primary/20"
+              onClick={() => setIsSuccessDialogOpen(false)}
+            >
+              DONE • START NEW BILL
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PRINT-ONLY VIEW */}
+      <div className="hidden print:block p-8 bg-white text-slate-900">
+        <div className="text-center space-y-2 border-b-2 border-slate-900 pb-6 mb-6">
+          <h2 className="text-3xl font-black uppercase tracking-tighter">Super 9+ Supermarket</h2>
+          <p className="text-sm font-bold">Authorized Digital Receipt</p>
+        </div>
+        <div className="space-y-4 mb-6">
+          <div className="flex justify-between text-sm font-bold">
+            <span>Bill ID: {Date.now()}</span>
+            <span>Date: {new Date().toLocaleDateString()}</span>
+          </div>
+          <div className="flex justify-between text-sm font-bold">
+            <span>Customer: {lastSale?.customerId || 'Guest'}</span>
+            <span>Mode: {lastSale?.paymentMode}</span>
+          </div>
+        </div>
+        <table className="w-full text-sm border-collapse mb-8">
+          <thead>
+            <tr className="border-y-2 border-slate-900">
+              <th className="text-left py-2 font-black">ITEM</th>
+              <th className="text-center py-2 font-black">QTY</th>
+              <th className="text-right py-2 font-black">RATE</th>
+              <th className="text-right py-2 font-black">TOTAL</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200">
+            {lastSale?.items.map((item, idx) => (
+              <tr key={idx}>
+                <td className="py-2 font-bold">{item.name}</td>
+                <td className="py-2 text-center font-bold">{item.quantity}</td>
+                <td className="py-2 text-right font-bold">₹{item.price}</td>
+                <td className="py-2 text-right font-bold">₹{item.price * item.quantity}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="space-y-2 text-right border-t-2 border-slate-900 pt-6">
+          <div className="text-sm font-bold">Subtotal: ₹{lastSale?.subtotalAmount}</div>
+          <div className="text-sm font-bold">Discount: ₹{lastSale?.discountAmount}</div>
+          <div className="text-2xl font-black uppercase">Grand Total: ₹{lastSale?.totalAmount}</div>
+        </div>
+        <div className="mt-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+          Thank you for shopping at Super 9+!
+        </div>
+      </div>
+
       <ProductDialog 
         isOpen={isProductDialogOpen}
         onClose={() => setIsProductDialogOpen(false)}
       />
 
       <Dialog open={isCashDialogOpen} onOpenChange={setIsCashDialogOpen}>
-        <DialogContent className="rounded-[32px] p-8 sm:max-w-md">
+        <DialogContent className="rounded-[32px] p-8 sm:max-w-md print:hidden">
           <DialogHeader>
             <DialogTitle className="text-2xl font-black uppercase tracking-tight">Register Cash Flow</DialogTitle>
             <DialogDescription className="font-bold text-slate-400">

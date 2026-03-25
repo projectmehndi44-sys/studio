@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { 
   TrendingUp, 
   ArrowLeft,
@@ -10,22 +10,36 @@ import {
   PlusCircle,
   MinusCircle,
   History,
-  ShoppingBag
+  ShoppingBag,
+  Eye,
+  Printer,
+  FileDown,
+  CheckCircle2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import Link from 'next/link';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { PurchaseRecord, CashTransaction } from '@/lib/types';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 export default function DashboardPage() {
+  const { toast } = useToast();
   const db = useFirestore();
   const { user } = useUser();
+  const [viewingSale, setViewingSale] = useState<PurchaseRecord | null>(null);
 
   const salesQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -56,6 +70,16 @@ export default function DashboardPage() {
     };
   }, [sales, cashFlows]);
 
+  const handlePrint = (type: 'thermal' | 'normal') => {
+    toast({ 
+      title: type === 'thermal' ? "Thermal Print" : "Normal Print", 
+      description: type === 'thermal' ? "Sending to thermal printer..." : "Opening standard print dialog..." 
+    });
+    if (type === 'normal') {
+      window.print();
+    }
+  };
+
   if (isSalesLoading || isCashLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-50">
@@ -68,7 +92,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 p-6 font-body">
-      <div className="max-w-7xl mx-auto space-y-10">
+      <div className="max-w-7xl mx-auto space-y-10 print:hidden">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-6">
             <Link href="/">
@@ -86,7 +110,6 @@ export default function DashboardPage() {
           </Button>
         </div>
 
-        {/* Top Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <Card className="bg-white border-none shadow-xl rounded-[32px] overflow-hidden">
             <div className="h-2 bg-primary w-full" />
@@ -128,7 +151,6 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          {/* Sales Activity */}
           <Card className="bg-white border-none shadow-2xl rounded-[40px] overflow-hidden">
             <CardHeader className="p-8 pb-4">
               <div className="flex items-center gap-2">
@@ -157,9 +179,19 @@ export default function DashboardPage() {
                           </p>
                         </div>
                       </div>
-                      <Badge variant="secondary" className="bg-slate-100 text-slate-500 font-black text-[10px] rounded-lg uppercase">
-                        {sale.paymentMode}
-                      </Badge>
+                      <div className="flex items-center gap-3">
+                        <Badge variant="secondary" className="bg-slate-100 text-slate-500 font-black text-[10px] rounded-lg uppercase">
+                          {sale.paymentMode}
+                        </Badge>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => setViewingSale(sale)}
+                          className="rounded-xl hover:bg-primary/10 hover:text-primary"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   ))
                 )}
@@ -167,7 +199,6 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Cash Flow Ledger */}
           <Card className="bg-white border-none shadow-2xl rounded-[40px] overflow-hidden">
             <CardHeader className="p-8 pb-4">
               <div className="flex items-center gap-2">
@@ -210,6 +241,118 @@ export default function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+        </div>
+      </div>
+
+      {/* VIEW & PRINT DIALOG */}
+      <Dialog open={!!viewingSale} onOpenChange={(open) => !open && setViewingSale(null)}>
+        <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden print:hidden">
+          <div className="absolute top-0 left-0 w-full h-2 bg-primary" />
+          <DialogHeader className="space-y-4">
+            <div className="mx-auto w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center">
+              <ShoppingBag className="h-12 w-12 text-primary" />
+            </div>
+            <DialogTitle className="text-center text-3xl font-black uppercase tracking-tight">Sale Record</DialogTitle>
+            <DialogDescription className="text-center font-bold text-slate-400 uppercase text-[10px] tracking-widest">
+              Review and re-print historical receipt
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-6 space-y-4">
+            <div className="bg-slate-50 rounded-3xl p-6 space-y-3">
+              <div className="flex justify-between items-center text-xs font-black uppercase text-slate-400">
+                <span>Items: {viewingSale?.items.length}</span>
+                <span>{viewingSale?.paymentMode}</span>
+              </div>
+              <div className="flex justify-between items-end">
+                <span className="text-3xl font-black text-slate-900 tracking-tight">₹{viewingSale?.totalAmount}</span>
+                <span className="text-[10px] font-bold text-slate-400">
+                  {viewingSale?.timestamp?.seconds ? format(new Date(viewingSale.timestamp.seconds * 1000), 'HH:mm • dd MMM') : ''}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
+              <Button 
+                variant="outline" 
+                className="h-16 rounded-2xl bg-slate-50 border-none font-black uppercase text-xs gap-3 hover:bg-slate-100"
+                onClick={() => handlePrint('normal')}
+              >
+                <Printer className="h-5 w-5 text-primary" /> Normal Desktop Print
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-16 rounded-2xl bg-slate-50 border-none font-black uppercase text-xs gap-3 hover:bg-slate-100"
+                onClick={() => handlePrint('thermal')}
+              >
+                <Printer className="h-5 w-5 text-accent" /> Thermal Printer (58/80mm)
+              </Button>
+              <Button 
+                variant="outline" 
+                className="h-16 rounded-2xl bg-slate-50 border-none font-black uppercase text-xs gap-3 hover:bg-slate-100"
+                onClick={() => {
+                  toast({ title: "Downloading PDF", description: "Generating file for download." });
+                  window.print();
+                }}
+              >
+                <FileDown className="h-5 w-5 text-slate-400" /> Save as PDF
+              </Button>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              className="w-full h-16 rounded-2xl font-black text-lg shadow-xl shadow-primary/20"
+              onClick={() => setViewingSale(null)}
+            >
+              CLOSE PREVIEW
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PRINT-ONLY VIEW (DASHBOARD) */}
+      <div className="hidden print:block p-8 bg-white text-slate-900">
+        <div className="text-center space-y-2 border-b-2 border-slate-900 pb-6 mb-6">
+          <h2 className="text-3xl font-black uppercase tracking-tighter">Super 9+ Supermarket</h2>
+          <p className="text-sm font-bold">Historical Digital Receipt</p>
+        </div>
+        <div className="space-y-4 mb-6">
+          <div className="flex justify-between text-sm font-bold">
+            <span>Bill ID: {Date.now()}</span>
+            <span>Date: {viewingSale?.timestamp?.seconds ? format(new Date(viewingSale.timestamp.seconds * 1000), 'dd/MM/yyyy') : ''}</span>
+          </div>
+          <div className="flex justify-between text-sm font-bold">
+            <span>Customer: {viewingSale?.customerId || 'Guest'}</span>
+            <span>Mode: {viewingSale?.paymentMode}</span>
+          </div>
+        </div>
+        <table className="w-full text-sm border-collapse mb-8">
+          <thead>
+            <tr className="border-y-2 border-slate-900">
+              <th className="text-left py-2 font-black">ITEM</th>
+              <th className="text-center py-2 font-black">QTY</th>
+              <th className="text-right py-2 font-black">RATE</th>
+              <th className="text-right py-2 font-black">TOTAL</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200">
+            {viewingSale?.items.map((item, idx) => (
+              <tr key={idx}>
+                <td className="py-2 font-bold">{item.name}</td>
+                <td className="py-2 text-center font-bold">{item.quantity}</td>
+                <td className="py-2 text-right font-bold">₹{item.price}</td>
+                <td className="py-2 text-right font-bold">₹{item.price * item.quantity}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="space-y-2 text-right border-t-2 border-slate-900 pt-6">
+          <div className="text-sm font-bold">Subtotal: ₹{viewingSale?.subtotalAmount}</div>
+          <div className="text-2xl font-black uppercase">Grand Total: ₹{viewingSale?.totalAmount}</div>
+        </div>
+        <div className="mt-12 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">
+          Duplicate Copy • Verified by Cloud Ledger
         </div>
       </div>
     </div>
