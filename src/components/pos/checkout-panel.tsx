@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -135,7 +134,7 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
             disabled={items.length === 0}
             onClick={handleLedgerSync}
           >
-            CONFIRM & SYNC BILL (ALT+S)
+            CONFIRM & SYNC BILL (CTRL+ENTER)
           </Button>
           
           <div className="grid grid-cols-2 gap-3">

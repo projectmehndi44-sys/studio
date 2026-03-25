@@ -85,9 +85,9 @@ export default function POSPage() {
   const settingsRef = useMemoFirebase(() => doc(db, 'settings', 'config'), [db]);
   const { data: shopSettings } = useDoc(settingsRef);
 
-  const shopName = "Krishna's SUPER 9+";
-  const shopAddress = "Hoolungooree, Mariani";
-  const shopGSTIN = shopSettings?.gstin || "07AABCU1234F1Z5";
+  const shopName = shopSettings?.shopName || "Krishna's SUPER 9+";
+  const shopAddress = shopSettings?.address || "Hoolungooree, Mariani";
+  const shopGSTIN = shopSettings?.gstin || "";
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -96,8 +96,8 @@ export default function POSPage() {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
-      // Alt + S for Confirm & Sync
-      if (e.altKey && e.key === 's') {
+      // Ctrl + Enter for Confirm & Sync
+      if (e.ctrlKey && e.key === 'Enter') {
         e.preventDefault();
         if (cartItems.length > 0) {
           const total = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
@@ -379,6 +379,10 @@ export default function POSPage() {
              <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
                 <Keyboard className="h-3.5 w-3.5" />
                 <span className="text-[9px] font-bold uppercase tracking-wider">Alt+F: Search</span>
+             </div>
+             <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
+                <Keyboard className="h-3.5 w-3.5" />
+                <span className="text-[9px] font-bold uppercase tracking-wider">Ctrl+Enter: Sync</span>
              </div>
           </div>
 
