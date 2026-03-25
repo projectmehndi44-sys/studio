@@ -2,16 +2,14 @@
 "use client";
 
 import { useState, useMemo } from 'react';
-import { User, CreditCard, Wallet, Smartphone, Printer, Ticket, Share2 } from 'lucide-react';
+import { User, Smartphone, Printer, Share2, Save } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { MOCK_CUSTOMERS, MOCK_COUPONS } from '@/lib/mock-data';
-import { Badge } from '@/components/ui/badge';
-import { CartItem, Coupon } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { CartItem } from '@/lib/types';
 
 interface CheckoutPanelProps {
   items: CartItem[];
@@ -19,7 +17,6 @@ interface CheckoutPanelProps {
     total: number;
     paymentMode: string;
     customerPhone: string;
-    discount: number;
   }) => void;
 }
 
@@ -27,125 +24,69 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
   const { toast } = useToast();
   const [phone, setPhone] = useState('');
   const [paymentMode, setPaymentMode] = useState<'Cash' | 'UPI' | 'Credit'>('Cash');
-  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
-
-  const customer = useMemo(() => {
-    return MOCK_CUSTOMERS.find(c => c.phone === phone);
-  }, [phone]);
 
   const subtotal = useMemo(() => {
     return items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   }, [items]);
 
-  const discount = useMemo(() => {
-    if (!appliedCoupon) return 0;
-    if (subtotal < appliedCoupon.minBill) return 0;
-    
-    let d = appliedCoupon.type === 'flat' 
-      ? appliedCoupon.value 
-      : (subtotal * appliedCoupon.value) / 100;
-      
-    if (appliedCoupon.maxDiscount) {
-      d = Math.min(d, appliedCoupon.maxDiscount);
-    }
-    return d;
-  }, [subtotal, appliedCoupon]);
+  const handlePrint = () => {
+    if (items.length === 0) return;
+    window.print();
+    toast({ title: "Printing...", description: "Sending bill to default printer." });
+  };
 
-  const total = subtotal - discount;
-
-  const handleApplyBestCoupon = () => {
-    const validCoupons = MOCK_COUPONS.filter(c => subtotal >= c.minBill);
-    if (validCoupons.length === 0) {
-      toast({ title: "No valid coupons", description: "Cart value too low.", variant: "destructive" });
+  const handleShare = () => {
+    if (!phone) {
+      toast({ title: "Phone Required", description: "Enter customer phone to share receipt.", variant: "destructive" });
       return;
     }
-    const best = validCoupons.sort((a, b) => {
-      const da = a.type === 'flat' ? a.value : (subtotal * a.value) / 100;
-      const db = b.type === 'flat' ? b.value : (subtotal * b.value) / 100;
-      return db - da;
-    })[0];
-    setAppliedCoupon(best);
-    toast({ title: "Coupon Applied", description: `${best.code} added to bill.` });
+    toast({ title: "Sharing...", description: "Digital receipt sent to " + phone });
   };
 
   return (
-    <div className="flex flex-col h-full bg-white p-6 sm:p-8 rounded-[40px] border border-slate-200 shadow-xl overflow-hidden">
+    <div className="flex flex-col h-full bg-white rounded-[40px] border border-slate-100 shadow-2xl p-6 sm:p-8 overflow-hidden">
       <ScrollArea className="flex-1">
         <div className="space-y-8 pb-4">
-          {/* Customer Info */}
+          {/* Customer Profile Section */}
           <div className="space-y-4">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Customer Profile</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Customer Profile</label>
             <div className="relative">
               <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
               <Input
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="Phone (WhatsApp)"
+                placeholder="Mobile (WhatsApp)"
                 className="pl-12 h-16 text-xl font-bold bg-slate-50 border-none rounded-2xl focus-visible:ring-primary"
               />
             </div>
-            {customer && (
-              <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 flex items-center justify-between animate-in slide-in-from-top-2">
-                <div className="flex items-center gap-4">
-                  <div className="bg-primary h-12 w-12 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-                    <User className="h-6 w-6 text-primary-foreground" />
-                  </div>
-                  <div>
-                    <p className="font-black text-slate-900">{customer.name}</p>
-                    <p className="text-xs font-bold text-primary">Member • {customer.points} Points</p>
-                  </div>
+            {phone.length >= 10 && (
+              <div className="bg-primary/5 border border-primary/10 rounded-2xl p-4 flex items-center gap-4 animate-in slide-in-from-top-2">
+                <div className="bg-primary h-10 w-10 rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+                  <User className="h-5 w-5 text-primary-foreground" />
                 </div>
-                <Badge className="bg-primary text-primary-foreground text-[10px] font-black rounded-lg">PRO</Badge>
+                <div className="flex-1">
+                  <p className="font-black text-sm text-slate-900 leading-none">Customer Identified</p>
+                  <p className="text-[10px] font-bold text-primary mt-1 uppercase tracking-wider">Syncing Profile</p>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Discounts */}
+          {/* Settlement Method */}
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Offers & Savings</label>
-              <Button variant="link" size="sm" onClick={handleApplyBestCoupon} className="text-primary p-0 h-auto font-black text-xs uppercase tracking-wider">
-                Find Best Coupon
-              </Button>
-            </div>
-            {appliedCoupon ? (
-              <div className="flex items-center justify-between bg-accent/5 border border-accent/10 p-4 rounded-2xl">
-                <div className="flex items-center gap-3">
-                  <Ticket className="h-5 w-5 text-accent" />
-                  <div>
-                    <span className="font-black text-slate-900 uppercase tracking-tight">{appliedCoupon.code}</span>
-                    <p className="text-[10px] font-bold text-accent">Discount Applied Successfully</p>
-                  </div>
-                </div>
-                <button onClick={() => setAppliedCoupon(null)} className="text-xs font-black text-slate-400 hover:text-destructive transition-colors">REMOVE</button>
-              </div>
-            ) : (
-              <div className="border-2 border-dashed border-slate-100 p-4 rounded-2xl text-center">
-                <p className="text-xs font-bold text-slate-300">No coupon applied</p>
-              </div>
-            )}
-          </div>
-
-          {/* Payment Mode */}
-          <div className="space-y-4">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Settlement Method</label>
+            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Payment Mode</label>
             <div className="grid grid-cols-3 gap-3">
-              {[
-                { id: 'Cash', icon: Wallet },
-                { id: 'UPI', icon: Smartphone },
-                { id: 'Credit', icon: CreditCard }
-              ].map((m) => (
+              {(['Cash', 'UPI', 'Credit'] as const).map((m) => (
                 <Button
-                  key={m.id}
-                  variant={paymentMode === m.id ? 'default' : 'outline'}
+                  key={m}
+                  variant={paymentMode === m ? 'default' : 'outline'}
                   className={cn(
-                    "h-24 flex-col gap-2 rounded-2xl transition-all border-none",
-                    paymentMode === m.id ? 'bg-primary shadow-xl shadow-primary/20 scale-[1.05]' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                    "h-20 flex-col gap-1 rounded-2xl border-none transition-all",
+                    paymentMode === m ? 'bg-primary shadow-xl shadow-primary/20 scale-[1.02]' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
                   )}
-                  onClick={() => setPaymentMode(m.id as any)}
+                  onClick={() => setPaymentMode(m)}
                 >
-                  <m.icon className={cn("h-7 w-7", paymentMode === m.id ? "text-primary-foreground" : "text-slate-300")} />
-                  <span className="font-black text-xs uppercase tracking-widest">{m.id}</span>
+                  <span className="font-black text-xs uppercase tracking-widest">{m}</span>
                 </Button>
               ))}
             </div>
@@ -153,45 +94,40 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
         </div>
       </ScrollArea>
 
-      {/* Totals & Submit */}
+      {/* Totals & Quick Actions */}
       <div className="mt-6 pt-6 border-t border-slate-100 space-y-6">
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm font-bold text-slate-400">
-            <span>Gross Total</span>
-            <span>₹{subtotal.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-sm font-black text-accent">
-            <span>Net Savings</span>
-            <span>- ₹{discount.toFixed(2)}</span>
-          </div>
-          <Separator className="bg-slate-50 h-[2px]" />
-          <div className="flex justify-between items-end pt-2">
-            <span className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">Total Payable</span>
-            <span className="text-4xl font-black text-primary tracking-tighter">₹{total.toFixed(0)}</span>
-          </div>
+        <div className="flex justify-between items-end">
+          <span className="text-xs font-black uppercase tracking-widest text-slate-400">Total Bill</span>
+          <span className="text-5xl font-black text-primary tracking-tighter">₹{subtotal.toFixed(0)}</span>
         </div>
 
-        <div className="flex gap-3">
+        <div className="space-y-3">
           <Button 
-            className="flex-1 h-20 text-xl font-black rounded-3xl shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="w-full h-20 text-xl font-black rounded-3xl shadow-2xl shadow-primary/20 transition-all active:scale-95"
             disabled={items.length === 0}
-            onClick={() => onComplete({ total, paymentMode, customerPhone: phone, discount })}
+            onClick={() => onComplete({ total: subtotal, paymentMode, customerPhone: phone })}
           >
-            <Printer className="h-7 w-7 mr-3" /> PRINT BILL
+            <Save className="h-6 w-6 mr-3" /> SAVE BILL
           </Button>
-          <Button 
-            variant="outline"
-            className="h-20 w-20 bg-slate-50 border-none rounded-3xl hover:bg-primary hover:text-white transition-all group"
-            onClick={() => {
-              if (phone) {
-                toast({ title: "Sharing...", description: "Digital receipt being generated." });
-              } else {
-                toast({ title: "Missing Phone", description: "Add a phone number to share.", variant: "destructive" });
-              }
-            }}
-          >
-            <Share2 className="h-8 w-8 text-slate-300 group-hover:text-white transition-colors" />
-          </Button>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <Button 
+              variant="outline"
+              className="h-16 bg-slate-50 border-none rounded-2xl hover:bg-slate-100 font-black uppercase text-xs tracking-widest gap-2"
+              onClick={handlePrint}
+              disabled={items.length === 0}
+            >
+              <Printer className="h-5 w-5" /> Print
+            </Button>
+            <Button 
+              variant="outline"
+              className="h-16 bg-slate-50 border-none rounded-2xl hover:bg-slate-100 font-black uppercase text-xs tracking-widest gap-2"
+              onClick={handleShare}
+              disabled={items.length === 0}
+            >
+              <Share2 className="h-5 w-5" /> Share
+            </Button>
+          </div>
         </div>
       </div>
     </div>

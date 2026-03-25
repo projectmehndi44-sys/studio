@@ -1,34 +1,24 @@
 
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { 
   ShoppingBag, 
   LayoutDashboard, 
-  ReceiptText,
-  Camera,
-  LogOut,
-  Bell,
-  Search,
-  X,
-  LogIn,
-  ShieldCheck,
-  PackageSearch,
   Menu,
-  Printer,
-  Share2
+  LogOut,
+  PackageSearch,
+  LogIn,
+  ShieldCheck
 } from 'lucide-react';
 import { Product, CartItem } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
-import { QuickTapGrid } from '@/components/pos/quick-tap-grid';
 import { CartList } from '@/components/pos/cart-list';
 import { CheckoutPanel } from '@/components/pos/checkout-panel';
-import { AdminPinDialog } from '@/components/admin/admin-pin-dialog';
 import { ProductDialog } from '@/components/pos/product-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import Link from 'next/link';
-import { generatePersonalizedDigitalReceiptAndReviewRequest } from '@/ai/flows/personalized-digital-receipt-and-review-request';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -54,12 +44,7 @@ export default function POSPage() {
   const { user, isUserLoading } = useUser();
   
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [initialNewName, setInitialNewName] = useState('');
-  const [pendingTransaction, setPendingTransaction] = useState<any>(null);
-  const [isScanning, setIsScanning] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState('products');
 
   // Load cart from local storage on mount
@@ -84,18 +69,10 @@ export default function POSPage() {
     return collection(db, 'products');
   }, [db, user]);
 
-  const { data, isLoading: isProductsLoading } = useCollection<Product>(productsQuery);
+  const { data } = useCollection<Product>(productsQuery);
   const productsData = data ?? [];
 
-  const cartTotalItems = useMemo(() => 
-    cartItems.reduce((acc, item) => acc + item.quantity, 0),
-    [cartItems]
-  );
-
-  const cartTotalPrice = useMemo(() =>
-    cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0),
-    [cartItems]
-  );
+  const cartTotalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   const handleProductSelect = useCallback((product: Product) => {
     setCartItems(prev => {
@@ -110,9 +87,9 @@ export default function POSPage() {
       return [...prev, { ...product, quantity: 1 }];
     });
     toast({
-      title: "Added to cart",
-      description: `${product.name} added.`,
-      duration: 1000,
+      title: "Added",
+      description: `${product.name} added to cart.`,
+      duration: 800,
     });
   }, [toast]);
 
@@ -137,191 +114,110 @@ export default function POSPage() {
   };
 
   const handleCheckout = async (data: any) => {
-    processFinalSale(data);
-  };
+    toast({ title: "Saving...", description: "Recording sale in ledger." });
 
-  const processFinalSale = async (data: any) => {
-    toast({
-      title: "Syncing...",
-      description: "Saving transaction to cloud.",
+    const purchasesRef = collection(db, 'purchases');
+    addDocumentNonBlocking(purchasesRef, {
+      staffId: user?.uid || 'anonymous',
+      timestamp: serverTimestamp(),
+      items: cartItems.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, price: i.price })),
+      totalAmount: data.total,
+      subtotalAmount: cartItems.reduce((acc, i) => acc + (i.price * i.quantity), 0),
+      discountAmount: data.discount || 0,
+      paymentMode: data.paymentMode,
+      isOfflineSale: false,
+      customerId: data.customerPhone || null
     });
 
-    try {
-      const purchasesRef = collection(db, 'purchases');
-      addDocumentNonBlocking(purchasesRef, {
-        staffId: user?.uid || 'anonymous',
-        timestamp: serverTimestamp(),
-        items: cartItems.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, price: i.price })),
-        totalAmount: data.total,
-        subtotalAmount: cartTotalPrice,
-        discountAmount: data.discount,
-        paymentMode: data.paymentMode,
-        isOfflineSale: false,
-        customerId: data.customerPhone || null
-      });
-
-      if (data.customerPhone) {
-        generatePersonalizedDigitalReceiptAndReviewRequest({
-          customerName: "Valued Customer",
-          orderId: `ORD-${Date.now()}`,
-          orderItems: cartItems.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
-          orderTotal: data.total,
-          pdfReceiptLink: "https://super9pos.com/receipt/123",
-          reviewLink: "https://g.page/krishnas-super-9/review"
-        });
-        toast({ title: "WhatsApp Sent", description: "Digital receipt shared." });
-      }
-
-      setCartItems([]);
-      setPendingTransaction(null);
-      setActiveMainTab('products');
-      
-      toast({
-        title: "Sale Completed",
-        description: `Total Amount: ₹${data.total.toFixed(2)}`,
-      });
-
-    } catch (error) {
-      toast({ title: "Checkout Error", description: "Something went wrong.", variant: "destructive" });
-    }
+    setCartItems([]);
+    setActiveMainTab('products');
+    toast({
+      title: "Sale Completed",
+      description: `Bill saved successfully.`,
+    });
   };
 
-  const handleStaffLogin = () => {
-    initiateAnonymousSignIn(auth);
-  };
-
-  const handleSignOut = () => {
-    auth.signOut();
-    toast({ title: "Logged Out", description: "Staff session ended." });
-  };
-
-  const handleAddNewProduct = (initialName: string, isSilent = false) => {
-    if (isSilent) {
-      addDocumentNonBlocking(collection(db, 'products'), {
-        name: initialName,
-        price: 0,
-        costPrice: 0,
-        barcode: '',
-        category: 'General',
-        stock: null,
-        isPopular: false,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
-      return;
-    }
+  const handleAddNewProduct = (name: string) => {
+    // Automatic direct add
+    const newId = `prod-${Date.now()}`;
+    const newProd: Product = {
+      id: newId,
+      name,
+      price: 0,
+      costPrice: 0,
+      barcode: '',
+      category: 'General',
+      isPopular: false
+    };
     
-    setInitialNewName(initialName);
-    setEditingProduct(null);
-    setIsProductDialogOpen(true);
+    // Add to Firestore catalog
+    addDocumentNonBlocking(collection(db, 'products'), {
+      ...newProd,
+      isActive: true,
+      createdAt: new Date().toISOString()
+    });
+
+    // Add to current cart
+    handleProductSelect(newProd);
   };
 
   if (isUserLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 bg-primary rounded-3xl animate-bounce flex items-center justify-center font-black text-2xl text-primary-foreground shadow-2xl shadow-primary/20">
-            S9
-          </div>
-          <p className="text-slate-400 font-black animate-pulse uppercase tracking-widest text-xs">Initializing Terminal</p>
-        </div>
+      <div className="h-screen flex items-center justify-center bg-white font-body">
+        <p className="text-slate-400 font-black animate-pulse uppercase tracking-widest text-xs">Loading Terminal...</p>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="h-screen flex items-center justify-center bg-slate-50 p-6">
-        <div className="max-w-md w-full bg-white rounded-[48px] shadow-2xl border border-slate-100 p-12 text-center space-y-8 animate-in zoom-in-95 duration-500">
+      <div className="h-screen flex items-center justify-center bg-slate-50 p-6 font-body">
+        <div className="max-w-md w-full bg-white rounded-[48px] shadow-2xl p-12 text-center space-y-8 animate-in zoom-in-95 duration-500">
           <div className="mx-auto w-24 h-24 bg-primary/10 rounded-[32px] flex items-center justify-center">
             <ShieldCheck className="h-12 w-12 text-primary" />
           </div>
           <div className="space-y-2">
             <h1 className="text-4xl font-black tracking-tight text-slate-900">SUPER 9+ POS</h1>
-            <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">Billing Terminal v2.0</p>
+            <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">Authorized Staff Only</p>
           </div>
           <Button 
-            onClick={handleStaffLogin}
-            className="w-full h-20 text-xl font-black rounded-3xl shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            onClick={() => initiateAnonymousSignIn(auth)}
+            className="w-full h-20 text-xl font-black rounded-3xl shadow-xl shadow-primary/20 transition-all active:scale-95"
           >
-            <LogIn className="mr-3 h-6 w-6" /> CLOCK IN
+            CLOCK IN
           </Button>
-          <p className="text-xs text-slate-400 font-medium">Authorized Personnel Only • Encrypted Session</p>
         </div>
       </div>
     );
   }
 
-  const productArea = (
-    <div className="flex flex-col h-full gap-4 overflow-hidden">
-      <ProductSearch 
-        products={productsData}
-        onProductSelect={handleProductSelect} 
-        onScanClick={() => setIsScanning(!isScanning)} 
-        onAddNewProduct={handleAddNewProduct}
-      />
-      
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
-        <QuickTapGrid products={productsData} onProductSelect={handleProductSelect} showAll />
-      </div>
-    </div>
-  );
-
   return (
     <div className="flex flex-col h-screen bg-white overflow-hidden font-body text-slate-900">
       <Toaster />
       
-      {/* Top Navigation Bar */}
-      <header className="h-16 border-b border-slate-100 bg-white flex items-center justify-between px-4 sm:px-8 shrink-0">
+      {/* Simplified Header */}
+      <header className="h-16 border-b border-slate-100 bg-white flex items-center justify-between px-6 shrink-0">
         <div className="flex items-center gap-4">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-black text-primary-foreground shadow-lg shadow-primary/10">
-            S9
-          </div>
-          <h1 className="font-black text-xl tracking-tighter text-slate-900 uppercase">Super 9+</h1>
+          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-black text-primary-foreground shadow-lg shadow-primary/10">S9</div>
+          <h1 className="font-black text-xl tracking-tighter uppercase">Super 9+ Billing</h1>
         </div>
         
         <div className="flex items-center gap-2">
-          <div className="hidden sm:flex items-center gap-1 mr-4">
-            <Link href="/">
-              <Button variant="ghost" size="sm" className="font-black text-xs uppercase tracking-widest text-primary">
-                Billing
-              </Button>
-            </Link>
-            <Link href="/dashboard">
-              <Button variant="ghost" size="sm" className="font-black text-xs uppercase tracking-widest text-slate-400 hover:text-primary">
-                Ledger
-              </Button>
-            </Link>
-            <Button onClick={() => setIsProductDialogOpen(true)} variant="ghost" size="sm" className="font-black text-xs uppercase tracking-widest text-slate-400 hover:text-primary">
-              Master
-            </Button>
-          </div>
-
+          <Link href="/dashboard" className="hidden sm:block">
+            <Button variant="ghost" size="sm" className="font-black text-xs uppercase tracking-widest text-slate-400 hover:text-primary">Ledger</Button>
+          </Link>
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-xl">
-                <Menu className="h-6 w-6 text-slate-600" />
-              </Button>
+              <Button variant="ghost" size="icon" className="rounded-xl"><Menu className="h-6 w-6 text-slate-600" /></Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] p-6 space-y-8">
-              <SheetHeader>
-                <SheetTitle className="text-left font-black uppercase tracking-tighter text-2xl">Menu</SheetTitle>
-              </SheetHeader>
-              <nav className="flex flex-col gap-4">
-                <Link href="/" className="flex items-center gap-4 p-4 bg-primary/10 text-primary rounded-2xl font-black uppercase text-sm">
-                  <ShoppingBag className="h-5 w-5" /> Billing Terminal
-                </Link>
-                <Link href="/dashboard" className="flex items-center gap-4 p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-black uppercase text-sm transition-colors">
-                  <LayoutDashboard className="h-5 w-5" /> Business Ledger
-                </Link>
-                <button onClick={() => { setIsProductDialogOpen(true); }} className="flex items-center gap-4 p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-black uppercase text-sm transition-colors w-full text-left">
-                  <PackageSearch className="h-5 w-5" /> Product Master
-                </button>
-                <div className="pt-8 mt-auto">
-                  <Button onClick={handleSignOut} variant="destructive" className="w-full h-14 font-black rounded-2xl gap-2">
-                    <LogOut className="h-5 w-5" /> CLOCK OUT
-                  </Button>
+            <SheetContent side="right" className="w-[300px] p-6 space-y-6">
+              <SheetHeader><SheetTitle className="text-left font-black uppercase tracking-tighter text-2xl">Terminal Menu</SheetTitle></SheetHeader>
+              <nav className="flex flex-col gap-3">
+                <Link href="/" className="flex items-center gap-4 p-4 bg-primary/10 text-primary rounded-2xl font-black uppercase text-sm"><ShoppingBag className="h-5 w-5" /> Billing</Link>
+                <Link href="/dashboard" className="flex items-center gap-4 p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-black uppercase text-sm transition-colors"><LayoutDashboard className="h-5 w-5" /> Reports</Link>
+                <button onClick={() => setIsProductDialogOpen(true)} className="flex items-center gap-4 p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-black uppercase text-sm transition-colors w-full text-left"><PackageSearch className="h-5 w-5" /> Item Master</button>
+                <div className="pt-6 mt-6 border-t border-slate-100">
+                  <Button onClick={() => auth.signOut()} variant="destructive" className="w-full h-14 font-black rounded-2xl gap-2"><LogOut className="h-5 w-5" /> LOG OUT</Button>
                 </div>
               </nav>
             </SheetContent>
@@ -329,110 +225,47 @@ export default function POSPage() {
         </div>
       </header>
 
-      <main className={cn(
-        "flex-1 overflow-hidden",
-        !isMobile ? "grid grid-cols-[1fr_400px] h-full" : "flex flex-col"
-      )}>
+      <main className={cn("flex-1 overflow-hidden", !isMobile ? "grid grid-cols-[1fr_400px] h-full" : "flex flex-col")}>
         {isMobile ? (
           <div className="flex flex-col h-full overflow-hidden p-4 gap-4">
             <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="flex-1 flex flex-col overflow-hidden">
-              <TabsList className="grid w-full grid-cols-3 bg-slate-100 rounded-[16px] p-1 mb-4">
-                <TabsTrigger value="products" className="font-black text-xs uppercase rounded-[12px]">Catalog</TabsTrigger>
-                <TabsTrigger value="cart" className="font-black text-xs uppercase rounded-[12px] relative">
-                  Cart
-                  {cartTotalItems > 0 && (
-                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 rounded-full bg-destructive text-white border-2 border-white text-[9px] font-black">
-                      {cartTotalItems}
-                    </Badge>
-                  )}
+              <TabsList className="grid w-full grid-cols-2 bg-slate-100 rounded-[16px] p-1 mb-4">
+                <TabsTrigger value="products" className="font-black text-xs uppercase rounded-[12px]">Search Items</TabsTrigger>
+                <TabsTrigger value="checkout" className="font-black text-xs uppercase rounded-[12px]" disabled={cartItems.length === 0}>
+                  Checkout ({cartTotalItems})
                 </TabsTrigger>
-                <TabsTrigger value="checkout" className="font-black text-xs uppercase rounded-[12px]" disabled={cartItems.length === 0}>Finish</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="products" className="flex-1 overflow-hidden mt-0">
-                {productArea}
-              </TabsContent>
-              
-              <TabsContent value="cart" className="flex-1 overflow-hidden mt-0">
-                <CartList 
-                  items={cartItems} 
-                  onUpdateQuantity={updateQuantity} 
-                  onUpdatePrice={updatePrice}
-                  onRemoveItem={removeItem} 
-                />
+              <TabsContent value="products" className="flex-1 overflow-hidden mt-0 flex flex-col gap-4">
+                <ProductSearch products={productsData} onProductSelect={handleProductSelect} onScanClick={() => {}} onAddNewProduct={handleAddNewProduct} />
+                <CartList items={cartItems} onUpdateQuantity={updateQuantity} onUpdatePrice={updatePrice} onRemoveItem={removeItem} />
               </TabsContent>
               
               <TabsContent value="checkout" className="flex-1 overflow-hidden mt-0">
-                <CheckoutPanel 
-                  items={cartItems} 
-                  onComplete={handleCheckout} 
-                />
+                <CheckoutPanel items={cartItems} onComplete={handleCheckout} />
               </TabsContent>
             </Tabs>
           </div>
         ) : (
           <>
-            {/* Desktop: Product Selection Area */}
-            <div className="p-8 overflow-hidden border-r border-slate-100 bg-slate-50/30">
-              {productArea}
+            {/* Desktop View: Search & Cart on Left, Checkout on Right */}
+            <div className="flex flex-col h-full p-8 overflow-hidden gap-6 bg-slate-50/30 border-r">
+              <ProductSearch products={productsData} onProductSelect={handleProductSelect} onScanClick={() => {}} onAddNewProduct={handleAddNewProduct} />
+              <div className="flex-1 overflow-hidden">
+                <CartList items={cartItems} onUpdateQuantity={updateQuantity} onUpdatePrice={updatePrice} onRemoveItem={removeItem} />
+              </div>
             </div>
-
-            {/* Desktop: Cart & Checkout Panel Area */}
-            <div className="flex flex-col h-full bg-white overflow-hidden">
-               <div className="flex-1 p-8 overflow-hidden flex flex-col gap-8">
-                 <div className="flex-1 overflow-hidden">
-                   <CartList 
-                    items={cartItems} 
-                    onUpdateQuantity={updateQuantity} 
-                    onUpdatePrice={updatePrice}
-                    onRemoveItem={removeItem} 
-                  />
-                 </div>
-                 <div className="shrink-0">
-                    <CheckoutPanel 
-                      items={cartItems} 
-                      onComplete={handleCheckout} 
-                    />
-                 </div>
-               </div>
+            <div className="p-8 bg-white overflow-hidden">
+              <CheckoutPanel items={cartItems} onComplete={handleCheckout} />
             </div>
           </>
         )}
       </main>
 
-      <AdminPinDialog 
-        isOpen={isAdminDialogOpen} 
-        onClose={() => setIsAdminDialogOpen(false)} 
-        onSuccess={() => {
-          setIsAdminDialogOpen(false);
-          processFinalSale(pendingTransaction);
-        }}
-        requiredFor="Authorize discount exceeding 10%"
-      />
-
       <ProductDialog 
         isOpen={isProductDialogOpen}
-        onClose={() => {
-          setIsProductDialogOpen(false);
-          setEditingProduct(null);
-          setInitialNewName('');
-        }}
-        product={editingProduct}
-        initialName={initialNewName}
+        onClose={() => setIsProductDialogOpen(false)}
       />
-
-      {isScanning && (
-        <div className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-8 animate-in fade-in">
-          <button onClick={() => setIsScanning(false)} className="absolute top-10 right-10 text-white p-4 transition-transform hover:scale-110 active:scale-90">
-             <X className="h-12 w-12" />
-          </button>
-          <div className="w-full max-w-2xl aspect-[4/3] bg-white/5 border-4 border-dashed border-primary rounded-[64px] flex flex-col items-center justify-center text-center">
-            <Camera className="h-32 w-32 text-primary mb-8 animate-pulse" />
-            <h2 className="text-4xl font-black text-white mb-3 tracking-tight">SCANNING...</h2>
-            <p className="text-xl text-slate-400 font-medium">Place barcode within the frame</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
