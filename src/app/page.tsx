@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { 
   ShoppingBag, 
   LayoutDashboard, 
@@ -35,6 +35,8 @@ import { cn } from '@/lib/utils';
 import { useCollection, useFirestore, useUser, useMemoFirebase, addDocumentNonBlocking, initiateAnonymousSignIn, useAuth } from '@/firebase';
 import { collection, serverTimestamp } from 'firebase/firestore';
 
+const CART_STORAGE_KEY = 'super9_pos_current_cart';
+
 export default function POSPage() {
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -50,6 +52,23 @@ export default function POSPage() {
   const [pendingTransaction, setPendingTransaction] = useState<any>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState('products');
+
+  // Load cart from local storage on mount
+  useEffect(() => {
+    const savedCart = localStorage.getItem(CART_STORAGE_KEY);
+    if (savedCart) {
+      try {
+        setCartItems(JSON.parse(savedCart));
+      } catch (e) {
+        console.error("Failed to load saved cart", e);
+      }
+    }
+  }, []);
+
+  // Save cart to local storage on change
+  useEffect(() => {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
+  }, [cartItems]);
 
   const productsQuery = useMemoFirebase(() => {
     if (!user) return null;

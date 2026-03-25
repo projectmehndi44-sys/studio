@@ -27,10 +27,21 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
     ).slice(0, 10);
   }, [query, products]);
 
-  // Check if query is a numeric value (Calculator Mode)
+  // Check if query is a numeric value or a simple math expression (Calculator Mode)
   const quickPrice = useMemo(() => {
-    const price = parseFloat(query);
-    return isNaN(price) || price <= 0 ? null : price;
+    try {
+      // Basic support for arithmetic like "100+20"
+      if (query.includes('+')) {
+        const parts = query.split('+').map(p => parseFloat(p));
+        if (parts.every(p => !isNaN(p))) {
+          return parts.reduce((a, b) => a + b, 0);
+        }
+      }
+      const price = parseFloat(query);
+      return isNaN(price) || price <= 0 ? null : price;
+    } catch (e) {
+      return null;
+    }
   }, [query]);
 
   const handleQuickAdd = () => {
