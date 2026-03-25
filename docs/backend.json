@@ -37,6 +37,7 @@
       "properties": {
         "id": { "type": "string" },
         "staffId": { "type": "string" },
+        "staffName": { "type": "string" },
         "timestamp": { "type": "string", "format": "date-time" },
         "totalAmount": { "type": "number" },
         "paymentMode": { "type": "string" },
@@ -51,12 +52,13 @@
         "type": { "type": "string", "enum": ["IN", "OUT"] },
         "amount": { "type": "number" },
         "reason": { "type": "string" },
+        "staffName": { "type": "string" },
         "timestamp": { "type": "string", "format": "date-time" }
       }
     }
   },
   "auth": {
-    "providers": ["password", "anonymous"]
+    "providers": ["phone", "anonymous"]
   },
   "firestore": {
     "structure": [

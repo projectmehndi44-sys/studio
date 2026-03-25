@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   name: string;
@@ -39,6 +40,7 @@ export interface Customer {
 export interface PurchaseRecord {
   id?: string;
   staffId: string;
+  staffName: string;
   timestamp: any;
   items: {
     id: string;
@@ -62,4 +64,5 @@ export interface CashTransaction {
   reason: string;
   timestamp: any;
   staffId: string;
+  staffName: string;
 }

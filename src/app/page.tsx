@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -40,7 +39,6 @@ import {
   useUser, 
   useMemoFirebase, 
   addDocumentNonBlocking, 
-  initiateAnonymousSignIn, 
   useAuth,
   useDoc,
   setDocumentNonBlocking,
@@ -63,6 +61,8 @@ import {
 } from "@/components/ui/dialog";
 import { AdminPinDialog } from '@/components/admin/admin-pin-dialog';
 import { format } from 'date-fns';
+import { PhoneAuthGate } from '@/components/auth/phone-auth-gate';
+import { getStaffName } from '@/lib/staff';
 
 const CART_STORAGE_KEY = 'super9_pos_current_cart';
 
@@ -83,6 +83,8 @@ export default function POSPage() {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const staffName = getStaffName(user?.phoneNumber || null);
+
   // Shop Settings Hook - Gate behind user auth to avoid permission errors
   const settingsRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -97,12 +99,10 @@ export default function POSPage() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Alt + F for Search Focus
       if (e.altKey && e.key === 'f') {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
-      // Ctrl + Enter for Confirm & Sync
       if (e.ctrlKey && e.key === 'Enter') {
         e.preventDefault();
         if (cartItems.length > 0) {
@@ -110,12 +110,10 @@ export default function POSPage() {
           handleCheckout({ total, paymentMode: 'Cash' });
         }
       }
-      // Alt + C for Cash Flow
       if (e.altKey && e.key === 'c') {
         e.preventDefault();
         setIsCashDialogOpen(true);
       }
-      // Alt + I for Inventory
       if (e.altKey && e.key === 'i') {
         e.preventDefault();
         window.location.href = '/inventory';
@@ -187,6 +185,7 @@ export default function POSPage() {
   const handleCheckout = async (data: any) => {
     const saleData: PurchaseRecord = {
       staffId: user?.uid || 'anonymous',
+      staffName: staffName,
       timestamp: new Date(),
       items: cartItems.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, price: i.price })),
       totalAmount: data.total,
@@ -245,6 +244,7 @@ export default function POSPage() {
 
     addDocumentNonBlocking(collection(db, 'cashTransactions'), {
       staffId: user?.uid || 'anonymous',
+      staffName: staffName,
       timestamp: serverTimestamp(),
       amount,
       type,
@@ -254,7 +254,7 @@ export default function POSPage() {
     setIsCashDialogOpen(false);
     toast({
       title: `Cash ${type} Recorded`,
-      description: `₹${amount} synced to ledger.`,
+      description: `₹${amount} synced to ledger by ${staffName}.`,
     });
   };
 
@@ -308,27 +308,7 @@ export default function POSPage() {
   }
 
   if (!user) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-slate-50 p-6">
-        <div className="max-w-md w-full bg-white rounded-[40px] shadow-2xl p-12 text-center space-y-8 animate-in zoom-in-95 duration-500">
-          <div className="mx-auto w-20 h-20 bg-secondary/5 rounded-[32px] flex items-center justify-center">
-            <ShieldCheck className="h-10 w-10 text-secondary" />
-          </div>
-          <div className="space-y-2">
-            <p className="text-primary font-bold text-[10px] uppercase tracking-[0.3em]">Authorized Entry</p>
-            <h1 className="text-5xl font-black tracking-tighter text-secondary leading-none uppercase">KRISHNA'S</h1>
-            <h2 className="text-3xl font-black tracking-tighter text-primary leading-none uppercase">SUPER 9+</h2>
-            <p className="text-slate-400 font-medium text-sm mt-4">Terminal v3.0</p>
-          </div>
-          <Button 
-            onClick={() => initiateAnonymousSignIn(auth)}
-            className="w-full h-16 text-lg font-bold rounded-2xl shadow-xl transition-all active:scale-95 bg-secondary hover:bg-secondary/95 text-white"
-          >
-            START SESSION
-          </Button>
-        </div>
-      </div>
-    );
+    return <PhoneAuthGate />;
   }
 
   return (
@@ -338,7 +318,7 @@ export default function POSPage() {
       {/* PROFESSIONAL PRINT-ONLY RECEIPT */}
       <div className="hidden print-only p-8 bg-white text-slate-900 min-h-screen font-receipt">
         <div className="text-center space-y-1 border-b-2 border-slate-900 pb-4 mb-4">
-          <p className="text-lg font-bold text-slate-600 uppercase">KRISHNA&apos;S</p>
+          <p className="text-lg font-bold text-slate-600 uppercase tracking-widest">K R I S H N A &apos; S</p>
           <h2 className="text-4xl font-black uppercase tracking-tight">SUPER 9+</h2>
           <p className="text-sm font-bold mt-2">{shopAddress}</p>
           {shopGSTIN && <p className="text-[10px] font-bold">GSTIN: {shopGSTIN}</p>}
@@ -353,7 +333,7 @@ export default function POSPage() {
           <div className="space-y-0.5 text-right">
             <p className="font-bold">Cust: {lastSale?.customerName || lastSale?.customerId || 'Guest'}</p>
             <p className="font-bold">Mode: {lastSale?.paymentMode || 'Cash'}</p>
-            <p className="font-bold">Staff: #{user.uid.slice(0, 5)}</p>
+            <p className="font-bold">Staff: {staffName}</p>
           </div>
         </div>
 
@@ -404,20 +384,13 @@ export default function POSPage() {
            <div>
               <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Billing Desk</h2>
            </div>
+           <div className="hidden md:flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-lg">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{staffName}</span>
+           </div>
         </div>
         
         <div className="flex items-center gap-6">
-          <div className="hidden lg:flex items-center gap-4 text-slate-400">
-             <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                <Keyboard className="h-3.5 w-3.5" />
-                <span className="text-[9px] font-bold uppercase tracking-wider">Alt+F: Search</span>
-             </div>
-             <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                <Keyboard className="h-3.5 w-3.5" />
-                <span className="text-[9px] font-bold uppercase tracking-wider">Alt+S: Sync</span>
-             </div>
-          </div>
-
           <Button 
             variant="outline" 
             size="sm" 
@@ -462,6 +435,10 @@ export default function POSPage() {
                   <ChevronRight className="h-4 w-4" />
                 </button>
                 <div className="pt-8 mt-4 border-t border-slate-100">
+                  <div className="mb-4 text-center">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Session</p>
+                    <p className="text-xs font-black text-secondary uppercase">{staffName}</p>
+                  </div>
                   <Button onClick={() => auth.signOut()} variant="destructive" className="w-full h-14 font-bold rounded-2xl gap-3 text-xs uppercase tracking-widest shadow-lg shadow-destructive/10">
                     <LogOut className="h-5 w-5" /> EXIT TERMINAL
                   </Button>
@@ -520,6 +497,7 @@ export default function POSPage() {
         )}
       </main>
 
+      {/* SUCCESS DIALOG AND OTHER MODALS */}
       <Dialog open={isSuccessDialogOpen} onOpenChange={setIsSuccessDialogOpen}>
         <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden print:hidden">
           <div className="absolute top-0 left-0 w-full h-2 bg-emerald-500" />
@@ -534,7 +512,7 @@ export default function POSPage() {
             <div className="bg-slate-50 rounded-[28px] p-8 space-y-4">
               <div className="flex justify-between items-center text-[10px] font-bold uppercase text-slate-400 tracking-widest">
                 <span>INVOICE DETAILS</span>
-                <span>{lastSale?.paymentMode}</span>
+                <span>{staffName}</span>
               </div>
               <div className="flex justify-between items-end border-t border-slate-100 pt-4">
                 <span className="text-5xl font-black text-slate-900 tracking-tighter leading-none">₹{lastSale?.totalAmount}</span>
@@ -543,18 +521,10 @@ export default function POSPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-               <Button 
-                 variant="outline" 
-                 className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2 hover:bg-secondary hover:text-white transition-all"
-                 onClick={handlePrintAction}
-               >
+               <Button variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2 hover:bg-secondary hover:text-white transition-all" onClick={handlePrintAction}>
                  <Printer className="h-4 w-4" /> Print
                </Button>
-               <Button 
-                 variant="outline" 
-                 className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2 hover:bg-secondary hover:text-white transition-all"
-                 onClick={handlePrintAction}
-               >
+               <Button variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2 hover:bg-secondary hover:text-white transition-all" onClick={handlePrintAction}>
                  <Download className="h-4 w-4" /> PDF
                </Button>
             </div>
@@ -574,6 +544,7 @@ export default function POSPage() {
         </DialogContent>
       </Dialog>
 
+      {/* CASH TRANSACTION DIALOG */}
       <Dialog open={isCashDialogOpen} onOpenChange={setIsCashDialogOpen}>
         <DialogContent className="rounded-[32px] p-10 sm:max-w-md print:hidden border-none shadow-2xl">
           <DialogHeader>
@@ -605,6 +576,7 @@ export default function POSPage() {
                 <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Reference</Label>
                 <Input name="reason" placeholder="Vendor, Float etc." className="h-14 font-bold bg-slate-50 border-none rounded-2xl px-6 text-sm" />
               </div>
+              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Acting Staff: {staffName}</p>
             </div>
             <DialogFooter className="gap-3">
               <Button type="submit" className="w-full rounded-2xl font-black h-14 text-xs uppercase bg-secondary text-white">Commit Adjust</Button>

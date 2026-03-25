@@ -20,7 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, initiateAnonymousSignIn, useAuth } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, useAuth } from '@/firebase';
 import { collection, query, orderBy, limit, where, Timestamp, doc } from 'firebase/firestore';
 import { PurchaseRecord, CashTransaction } from '@/lib/types';
 import { format, startOfToday, startOfMonth, startOfYesterday, subDays } from 'date-fns';
@@ -47,6 +47,8 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Bar, BarChart, XAxis } from "recharts";
+import { PhoneAuthGate } from '@/components/auth/phone-auth-gate';
+import { getStaffName } from '@/lib/staff';
 
 type DateFilter = 'today' | 'yesterday' | 'month' | 'last7' | 'all';
 
@@ -55,8 +57,10 @@ export default function DashboardPage() {
   const auth = useAuth();
   const { user, isUserLoading: isAuthLoading } = useUser();
   const [viewingSale, setViewingSale] = useState<PurchaseRecord | null>(null);
-  const [dateFilter, setDateFilter] = useState<DateFilter>('today');
+  const [dateFilter, setDateFilter] = useState('today' as DateFilter);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const staffName = getStaffName(user?.phoneNumber || null);
 
   // Shop Settings Hook - Gate behind user auth
   const settingsRef = useMemoFirebase(() => {
@@ -108,7 +112,8 @@ export default function DashboardPage() {
     return sales.filter(s => 
       s.id?.toLowerCase().includes(lowerQuery) || 
       s.customerId?.toLowerCase().includes(lowerQuery) ||
-      s.customerName?.toLowerCase().includes(lowerQuery)
+      s.customerName?.toLowerCase().includes(lowerQuery) ||
+      s.staffName?.toLowerCase().includes(lowerQuery)
     );
   }, [sales, searchQuery]);
 
@@ -161,27 +166,7 @@ export default function DashboardPage() {
   }
 
   if (!user) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-slate-50 p-6">
-        <div className="max-w-md w-full bg-white rounded-[40px] shadow-2xl p-12 text-center space-y-8 animate-in zoom-in-95 duration-500">
-          <div className="mx-auto w-20 h-20 bg-secondary/5 rounded-[32px] flex items-center justify-center">
-            <ShieldCheck className="h-10 w-10 text-secondary" />
-          </div>
-          <div className="space-y-2">
-            <p className="text-primary font-bold text-[10px] uppercase tracking-[0.3em]">Authorized Entry</p>
-            <h1 className="text-5xl font-black tracking-tighter text-secondary leading-none uppercase">KRISHNA'S</h1>
-            <h2 className="text-3xl font-black tracking-tighter text-primary leading-none uppercase">SUPER 9+</h2>
-            <p className="text-slate-400 font-medium text-sm mt-4">Ledger Access</p>
-          </div>
-          <Button 
-            onClick={() => initiateAnonymousSignIn(auth)}
-            className="w-full h-16 text-lg font-bold rounded-2xl shadow-xl transition-all active:scale-95 bg-secondary hover:bg-secondary/95 text-white"
-          >
-            START SESSION
-          </Button>
-        </div>
-      </div>
-    );
+    return <PhoneAuthGate />;
   }
 
   return (
@@ -189,7 +174,7 @@ export default function DashboardPage() {
       {/* PROFESSIONAL PRINT-ONLY RECEIPT */}
       <div className="hidden print-only p-8 bg-white text-slate-900 font-receipt">
         <div className="text-center space-y-1 border-b-2 border-slate-900 pb-4 mb-4">
-          <p className="text-lg font-bold text-slate-600 uppercase">KRISHNA&apos;S</p>
+          <p className="text-lg font-bold text-slate-600 uppercase">K R I S H N A &apos; S</p>
           <h2 className="text-4xl font-black uppercase tracking-tight">SUPER 9+</h2>
           <p className="text-sm font-bold mt-2">{shopAddress}</p>
           {shopSettings?.gstin && <p className="text-[10px] font-bold">GSTIN: {shopSettings?.gstin}</p>}
@@ -202,7 +187,7 @@ export default function DashboardPage() {
           </div>
           <div className="space-y-1 text-right">
             <p className="font-bold">Cust: {viewingSale?.customerId || viewingSale?.customerName || 'Walk-in'}</p>
-            <p className="font-bold">Mode: {viewingSale?.paymentMode || 'Cash'}</p>
+            <p className="font-bold">Staff: {viewingSale?.staffName || 'Admin'}</p>
           </div>
         </div>
 
@@ -254,6 +239,10 @@ export default function DashboardPage() {
             </div>
             <div>
               <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Business Ledger</h2>
+            </div>
+            <div className="hidden lg:flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl shadow-sm border border-slate-100">
+               <span className="h-2 w-2 rounded-full bg-primary" />
+               <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{staffName}</span>
             </div>
           </div>
           
@@ -371,6 +360,7 @@ export default function DashboardPage() {
                                <div>
                                  <p className="font-bold text-sm text-slate-900 tracking-tight">₹{cf.amount.toLocaleString()}</p>
                                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{cf.reason}</p>
+                                 <p className="text-[7px] font-black text-primary uppercase tracking-[0.2em]">{cf.staffName || 'System'}</p>
                                </div>
                              </div>
                              <p className="text-[9px] font-bold text-slate-300 uppercase">
@@ -412,7 +402,7 @@ export default function DashboardPage() {
                        <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14 pl-8">Timestamp</TableHead>
                        <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14">Bill ID</TableHead>
                        <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14">Customer</TableHead>
-                       <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14">Items</TableHead>
+                       <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14">Staff</TableHead>
                        <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14 text-right">Amount</TableHead>
                        <TableHead className="font-bold text-[10px] uppercase tracking-widest h-14 text-right pr-8">Actions</TableHead>
                      </TableRow>
@@ -439,8 +429,8 @@ export default function DashboardPage() {
                              <p className="text-[10px] font-bold text-primary uppercase tracking-widest mt-0.5">{sale.customerId || 'No Mobile'}</p>
                            </TableCell>
                            <TableCell>
-                             <Badge variant="outline" className="rounded-lg font-bold text-[10px] border-slate-100 text-slate-500">
-                               {sale.items.length} Units
+                             <Badge variant="outline" className="rounded-lg font-bold text-[9px] border-slate-100 text-slate-500 uppercase">
+                               {sale.staffName || 'System'}
                              </Badge>
                            </TableCell>
                            <TableCell className="text-right">
@@ -486,9 +476,9 @@ export default function DashboardPage() {
                    <span className="text-4xl font-black text-slate-900 tracking-tighter">₹{viewingSale?.totalAmount.toLocaleString()}</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase block tracking-widest">Issued On</span>
-                  <span className="text-xs font-bold text-slate-900">
-                    {viewingSale?.timestamp?.seconds ? format(new Date(viewingSale.timestamp.seconds * 1000), 'HH:mm • dd MMM') : ''}
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block tracking-widest">Served By</span>
+                  <span className="text-xs font-bold text-secondary uppercase">
+                    {viewingSale?.staffName || 'System'}
                   </span>
                 </div>
               </div>
