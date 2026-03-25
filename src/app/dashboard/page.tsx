@@ -58,7 +58,9 @@ export default function DashboardPage() {
 
   const settingsRef = useMemoFirebase(() => doc(db, 'settings', 'config'), [db]);
   const { data: shopSettings } = useDoc(settingsRef);
-  const shopName = shopSettings?.shopName || "Krishna's SUPER 9+";
+  
+  const shopName = "Krishna's SUPER 9+";
+  const shopAddress = "Hoolungooree, Mariani";
 
   const getFilterDate = (filter: DateFilter) => {
     switch (filter) {
@@ -164,12 +166,13 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 font-body">
-      {/* PRINT-ONLY RECEIPT */}
+      {/* PROFESSIONAL PRINT-ONLY RECEIPT */}
       <div className="hidden print-only p-8 bg-white text-slate-900 font-receipt">
         <div className="text-center space-y-1 border-b-2 border-slate-900 pb-4 mb-4">
-          <p className="text-[10px] font-bold tracking-[0.3em] text-slate-500">KRISHNA'S</p>
-          <h2 className="text-3xl font-bold uppercase tracking-tight">{shopName}</h2>
-          <p className="text-xs font-medium">{shopSettings?.address} • GSTIN: {shopSettings?.gstin}</p>
+          <p className="text-lg font-bold tracking-[0.6em] text-slate-600 uppercase">K R I S H N A &apos; S</p>
+          <h2 className="text-4xl font-black uppercase tracking-tight">SUPER 9+</h2>
+          <p className="text-sm font-bold mt-2">{shopAddress}</p>
+          {shopSettings?.gstin && <p className="text-[10px] font-bold">GSTIN: {shopSettings?.gstin}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
@@ -212,18 +215,18 @@ export default function DashboardPage() {
 
       <div className="max-w-7xl mx-auto space-y-8 print:hidden">
         <header className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-6">
             <Link href="/">
               <Button variant="outline" size="icon" className="h-11 w-11 rounded-2xl bg-white border-none shadow-sm hover:scale-105 active:scale-95 transition-all">
                 <ArrowLeft className="h-5 w-5 text-secondary" />
               </Button>
             </Link>
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <p className="text-[10px] font-bold text-primary tracking-[0.2em] uppercase">Krishna's</p>
-                <div className="h-px w-8 bg-slate-200" />
-              </div>
-              <h1 className="text-3xl font-bold text-secondary tracking-tight uppercase leading-none">SUPER 9+ Ledger</h1>
+            <div className="flex flex-col border-r pr-8 border-slate-200">
+              <p className="text-[8px] font-black text-slate-400 tracking-[0.4em] uppercase leading-none mb-1">KRISHNA&apos;S</p>
+              <h1 className="text-lg font-black tracking-tight uppercase leading-none text-secondary">SUPER 9+</h1>
+            </div>
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Business Ledger</h2>
             </div>
           </div>
           

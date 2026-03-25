@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -86,8 +85,8 @@ export default function POSPage() {
   const settingsRef = useMemoFirebase(() => doc(db, 'settings', 'config'), [db]);
   const { data: shopSettings } = useDoc(settingsRef);
 
-  const shopName = shopSettings?.shopName || "Krishna's SUPER 9+";
-  const shopAddress = shopSettings?.address || "Main Market, New Delhi";
+  const shopName = "Krishna's SUPER 9+";
+  const shopAddress = "Hoolungooree, Mariani";
   const shopGSTIN = shopSettings?.gstin || "07AABCU1234F1Z5";
 
   useEffect(() => {
@@ -100,7 +99,6 @@ export default function POSPage() {
       // Alt + S for Confirm & Sync
       if (e.altKey && e.key === 's') {
         e.preventDefault();
-        // Trigger sync if items exist
         if (cartItems.length > 0) {
           const total = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
           handleCheckout({ total, paymentMode: 'Cash' });
@@ -157,7 +155,6 @@ export default function POSPage() {
       }
       return [...prev, { ...product, quantity: 1 }];
     });
-    // Auto-focus search after adding
     setTimeout(() => searchInputRef.current?.focus(), 50);
   }, []);
 
@@ -287,8 +284,9 @@ export default function POSPage() {
           </div>
           <div className="space-y-2">
             <p className="text-primary font-bold text-[10px] uppercase tracking-[0.3em]">Authorized Entry</p>
-            <h1 className="text-5xl font-black tracking-tighter text-secondary leading-none">SUPER 9+</h1>
-            <p className="text-slate-400 font-medium text-sm mt-4">Krishna's POS Terminal v2.6</p>
+            <h1 className="text-5xl font-black tracking-tighter text-secondary leading-none">KRISHNA'S</h1>
+            <h2 className="text-3xl font-black tracking-tighter text-primary leading-none">SUPER 9+</h2>
+            <p className="text-slate-400 font-medium text-sm mt-4">Terminal v2.8</p>
           </div>
           <Button 
             onClick={() => initiateAnonymousSignIn(auth)}
@@ -308,9 +306,10 @@ export default function POSPage() {
       {/* PROFESSIONAL PRINT-ONLY RECEIPT */}
       <div className="hidden print-only p-8 bg-white text-slate-900 min-h-screen font-receipt">
         <div className="text-center space-y-1 border-b-2 border-slate-900 pb-4 mb-4">
-          <p className="text-[10px] font-bold tracking-[0.2em] text-slate-500 uppercase">Krishna's</p>
-          <h2 className="text-3xl font-black uppercase tracking-tight">{shopName}</h2>
-          <p className="text-[10px] font-bold">{shopAddress} • GSTIN: {shopGSTIN}</p>
+          <p className="text-lg font-bold tracking-[0.6em] text-slate-600 uppercase">K R I S H N A &apos; S</p>
+          <h2 className="text-4xl font-black uppercase tracking-tight">SUPER 9+</h2>
+          <p className="text-sm font-bold mt-2">{shopAddress}</p>
+          {shopGSTIN && <p className="text-[10px] font-bold">GSTIN: {shopGSTIN}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-2 mb-4 text-xs">
@@ -360,16 +359,18 @@ export default function POSPage() {
           <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">
             Computer Generated Invoice • No Exchange without Bill
           </p>
-          <p className="text-xs font-bold">Thank you for shopping at SUPER 9+!</p>
+          <p className="text-xs font-bold">Thank you for shopping at Krishna&apos;s SUPER 9+!</p>
         </div>
       </div>
 
       <header className="h-16 border-b border-slate-100 bg-white flex items-center justify-between px-8 shrink-0 print:hidden z-10">
-        <div className="flex items-center gap-4">
-           <div className="h-10 w-10 bg-secondary rounded-xl flex items-center justify-center font-black text-white text-xs">S9</div>
-           <div className="flex flex-col">
-              <p className="text-[9px] font-bold text-primary tracking-[0.2em] uppercase leading-none mb-0.5">Krishna's</p>
-              <h1 className="text-xl font-black tracking-tight uppercase leading-none text-secondary">SUPER 9+</h1>
+        <div className="flex items-center gap-6">
+           <div className="flex flex-col border-r pr-6 border-slate-100">
+              <p className="text-[8px] font-black text-slate-400 tracking-[0.4em] uppercase leading-none mb-1">KRISHNA&apos;S</p>
+              <h1 className="text-lg font-black tracking-tight uppercase leading-none text-secondary">SUPER 9+</h1>
+           </div>
+           <div>
+              <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-primary">Billing Desk</h2>
            </div>
         </div>
         
@@ -378,10 +379,6 @@ export default function POSPage() {
              <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
                 <Keyboard className="h-3.5 w-3.5" />
                 <span className="text-[9px] font-bold uppercase tracking-wider">Alt+F: Search</span>
-             </div>
-             <div className="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-100">
-                <Keyboard className="h-3.5 w-3.5" />
-                <span className="text-[9px] font-bold uppercase tracking-wider">Alt+S: Sync</span>
              </div>
           </div>
 
@@ -407,7 +404,7 @@ export default function POSPage() {
             </SheetTrigger>
             <SheetContent side="right" className="w-[340px] p-8 space-y-8 border-none shadow-2xl rounded-l-[40px]">
               <SheetHeader>
-                <SheetTitle className="text-left font-black uppercase tracking-tight text-2xl text-secondary">Terminal Menu</SheetTitle>
+                <SheetTitle className="text-left font-black uppercase tracking-tight text-2xl text-secondary">Menu</SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col gap-3">
                 <Link href="/" className="flex items-center justify-between p-4 bg-secondary/5 text-secondary rounded-2xl font-bold uppercase text-xs">
