@@ -113,15 +113,10 @@ export default function POSPage() {
         e.preventDefault();
         searchInputRef.current?.focus();
       }
-      
-      if (e.ctrlKey && e.key === 'Enter') {
-        e.preventDefault();
-        // Trigger checkout handled by CheckoutPanel if possible
-      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [cartItems]);
+  }, []);
 
   useEffect(() => {
     const savedCart = localStorage.getItem(CART_STORAGE_KEY);

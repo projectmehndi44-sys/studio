@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Smartphone, Printer, Save, Download, User, Check, CreditCard, Banknote, Wallet } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -36,9 +36,27 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
     return items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   }, [items]);
 
-  const handleLedgerSync = () => {
-    onComplete({ total: subtotal, paymentMode, customerPhone: phone, customerName: name });
-  };
+  const handleLedgerSync = useCallback(() => {
+    if (items.length === 0) return;
+    onComplete({ 
+      total: subtotal, 
+      paymentMode, 
+      customerPhone: phone, 
+      customerName: name 
+    });
+  }, [items, subtotal, paymentMode, phone, name, onComplete]);
+
+  // Global Ctrl + Enter listener for finishing the bill
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        handleLedgerSync();
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [handleLedgerSync]);
 
   const executePrint = () => {
     setIsPrinterDialogOpen(false);
