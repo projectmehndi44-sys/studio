@@ -13,7 +13,8 @@ import {
   Search,
   X,
   LogIn,
-  ShieldCheck
+  ShieldCheck,
+  PackageSearch
 } from 'lucide-react';
 import { Product, CartItem } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
@@ -21,6 +22,7 @@ import { QuickTapGrid } from '@/components/pos/quick-tap-grid';
 import { CartList } from '@/components/pos/cart-list';
 import { CheckoutPanel } from '@/components/pos/checkout-panel';
 import { AdminPinDialog } from '@/components/admin/admin-pin-dialog';
+import { ProductDialog } from '@/components/pos/product-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import Link from 'next/link';
@@ -42,6 +44,9 @@ export default function POSPage() {
   
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isAdminDialogOpen, setIsAdminDialogOpen] = useState(false);
+  const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [initialNewName, setInitialNewName] = useState('');
   const [pendingTransaction, setPendingTransaction] = useState<any>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState('products');
@@ -171,6 +176,12 @@ export default function POSPage() {
     toast({ title: "Logged Out", description: "Staff session ended." });
   };
 
+  const handleAddNewProduct = (initialName: string) => {
+    setInitialNewName(initialName);
+    setEditingProduct(null);
+    setIsProductDialogOpen(true);
+  };
+
   if (isUserLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-white">
@@ -219,7 +230,7 @@ export default function POSPage() {
       )}
       <Link href="/" className="p-4 bg-primary text-primary-foreground rounded-2xl shadow-lg shadow-primary/20 transition-all hover:scale-110 active:scale-95"><ShoppingBag className="h-7 w-7" /></Link>
       <Link href="/dashboard" className="p-4 text-slate-300 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all hover:scale-110 active:scale-95"><LayoutDashboard className="h-7 w-7" /></Link>
-      <button className="p-4 text-slate-300 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all hover:scale-110 active:scale-95"><ReceiptText className="h-7 w-7" /></button>
+      <button onClick={() => setIsProductDialogOpen(true)} className="p-4 text-slate-300 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all hover:scale-110 active:scale-95"><PackageSearch className="h-7 w-7" /></button>
       {!isMobile && (
         <>
           <button className="p-4 text-slate-300 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all hover:scale-110 active:scale-95"><Bell className="h-7 w-7" /></button>
@@ -237,6 +248,7 @@ export default function POSPage() {
         products={productsData}
         onProductSelect={handleProductSelect} 
         onScanClick={() => setIsScanning(!isScanning)} 
+        onAddNewProduct={handleAddNewProduct}
       />
       
       <Tabs defaultValue="popular" className="flex-1 flex flex-col overflow-hidden">
@@ -358,6 +370,17 @@ export default function POSPage() {
           processFinalSale(pendingTransaction);
         }}
         requiredFor="Authorize discount exceeding 10%"
+      />
+
+      <ProductDialog 
+        isOpen={isProductDialogOpen}
+        onClose={() => {
+          setIsProductDialogOpen(false);
+          setEditingProduct(null);
+          setInitialNewName('');
+        }}
+        product={editingProduct}
+        initialName={initialNewName}
       />
 
       {isScanning && (
