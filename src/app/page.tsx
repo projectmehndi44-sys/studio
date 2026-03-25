@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -22,7 +23,6 @@ import { Product, CartItem, PurchaseRecord } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
 import { CartList } from '@/components/pos/cart-list';
 import { CheckoutPanel } from '@/components/pos/checkout-panel';
-import { ProductDialog } from '@/components/pos/product-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import Link from 'next/link';
@@ -41,7 +41,6 @@ import {
   initiateAnonymousSignIn, 
   useAuth,
   useDoc,
-  updateDocumentNonBlocking,
   setDocumentNonBlocking
 } from '@/firebase';
 import { collection, serverTimestamp, doc } from 'firebase/firestore';
@@ -55,7 +54,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -72,7 +70,6 @@ export default function POSPage() {
   const { user, isUserLoading } = useUser();
   
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
   const [isCashDialogOpen, setIsCashDialogOpen] = useState(false);
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -103,11 +100,6 @@ export default function POSPage() {
           const total = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
           handleCheckout({ total, paymentMode: 'Cash' });
         }
-      }
-      // Alt + I for Inventory
-      if (e.altKey && e.key === 'i') {
-        e.preventDefault();
-        setIsProductDialogOpen(true);
       }
       // Alt + C for Cash Flow
       if (e.altKey && e.key === 'c') {
@@ -284,9 +276,9 @@ export default function POSPage() {
           </div>
           <div className="space-y-2">
             <p className="text-primary font-bold text-[10px] uppercase tracking-[0.3em]">Authorized Entry</p>
-            <h1 className="text-5xl font-black tracking-tighter text-secondary leading-none">KRISHNA'S</h1>
-            <h2 className="text-3xl font-black tracking-tighter text-primary leading-none">SUPER 9+</h2>
-            <p className="text-slate-400 font-medium text-sm mt-4">Terminal v2.8</p>
+            <h1 className="text-5xl font-black tracking-tighter text-secondary leading-none uppercase">KRISHNA'S</h1>
+            <h2 className="text-3xl font-black tracking-tighter text-primary leading-none uppercase">SUPER 9+</h2>
+            <p className="text-slate-400 font-medium text-sm mt-4">Terminal v3.0</p>
           </div>
           <Button 
             onClick={() => initiateAnonymousSignIn(auth)}
@@ -359,7 +351,7 @@ export default function POSPage() {
           <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">
             Computer Generated Invoice • No Exchange without Bill
           </p>
-          <p className="text-xs font-bold">Thank you for shopping at Krishna&apos;s SUPER 9+!</p>
+          <p className="text-xs font-bold">Thank you for shopping at Krishna&apos;s Super 9+!</p>
         </div>
       </div>
 
@@ -417,12 +409,12 @@ export default function POSPage() {
                   </div>
                   <ChevronRight className="h-4 w-4" />
                 </Link>
-                <button onClick={() => setIsProductDialogOpen(true)} className="flex items-center justify-between p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-bold uppercase text-xs transition-all w-full text-left">
+                <Link href="/inventory" className="flex items-center justify-between p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-bold uppercase text-xs transition-all w-full text-left">
                   <div className="flex items-center gap-3">
                     <PackageSearch className="h-5 w-5" /> Stock Master
                   </div>
                   <ChevronRight className="h-4 w-4" />
-                </button>
+                </Link>
                 <button onClick={() => setIsSettingsOpen(true)} className="flex items-center justify-between p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-bold uppercase text-xs transition-all w-full text-left">
                   <div className="flex items-center gap-3">
                     <Settings className="h-5 w-5" /> Shop Profile
@@ -541,11 +533,6 @@ export default function POSPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <ProductDialog 
-        isOpen={isProductDialogOpen}
-        onClose={() => setIsProductDialogOpen(false)}
-      />
 
       <Dialog open={isCashDialogOpen} onOpenChange={setIsCashDialogOpen}>
         <DialogContent className="rounded-[32px] p-10 sm:max-w-md print:hidden border-none shadow-2xl">

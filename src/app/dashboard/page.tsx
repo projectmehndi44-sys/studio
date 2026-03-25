@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState } from 'react';
@@ -59,8 +60,7 @@ export default function DashboardPage() {
   const settingsRef = useMemoFirebase(() => doc(db, 'settings', 'config'), [db]);
   const { data: shopSettings } = useDoc(settingsRef);
   
-  const shopName = "Krishna's SUPER 9+";
-  const shopAddress = "Hoolungooree, Mariani";
+  const shopAddress = shopSettings?.address || "Hoolungooree, Mariani";
 
   const getFilterDate = (filter: DateFilter) => {
     switch (filter) {
@@ -210,6 +210,13 @@ export default function DashboardPage() {
             <span className="text-sm font-bold uppercase">Grand Total</span>
             <span className="text-2xl font-bold">₹{viewingSale?.totalAmount.toFixed(2)}</span>
           </div>
+        </div>
+        
+        <div className="mt-8 text-center space-y-2">
+          <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400">
+            Computer Generated Invoice • No Exchange without Bill
+          </p>
+          <p className="text-xs font-bold">Thank you for shopping at Krishna&apos;s Super 9+!</p>
         </div>
       </div>
 
