@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState } from 'react';
@@ -12,10 +13,9 @@ import {
   Search,
   Download,
   Filter,
-  ArrowRight,
   Printer
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -45,7 +45,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Bar, BarChart, XAxis, YAxis, ResponsiveContainer } from "recharts";
+import { Bar, BarChart, XAxis } from "recharts";
 
 type DateFilter = 'today' | 'yesterday' | 'month' | 'last7' | 'all';
 
@@ -74,29 +74,19 @@ export default function DashboardPage() {
   const salesQuery = useMemoFirebase(() => {
     if (!user) return null;
     const filterDate = getFilterDate(dateFilter);
-    if (filterDate) {
-      return query(
-        collection(db, 'purchases'), 
-        where('timestamp', '>=', Timestamp.fromDate(filterDate)),
-        orderBy('timestamp', 'desc'),
-        limit(200)
-      );
-    }
-    return query(collection(db, 'purchases'), orderBy('timestamp', 'desc'), limit(200));
+    const q = filterDate 
+      ? query(collection(db, 'purchases'), where('timestamp', '>=', Timestamp.fromDate(filterDate)), orderBy('timestamp', 'desc'), limit(500))
+      : query(collection(db, 'purchases'), orderBy('timestamp', 'desc'), limit(500));
+    return q;
   }, [db, user, dateFilter]);
 
   const cashQuery = useMemoFirebase(() => {
     if (!user) return null;
     const filterDate = getFilterDate(dateFilter);
-    if (filterDate) {
-      return query(
-        collection(db, 'cashTransactions'), 
-        where('timestamp', '>=', Timestamp.fromDate(filterDate)),
-        orderBy('timestamp', 'desc'),
-        limit(100)
-      );
-    }
-    return query(collection(db, 'cashTransactions'), orderBy('timestamp', 'desc'), limit(100));
+    const q = filterDate 
+      ? query(collection(db, 'cashTransactions'), where('timestamp', '>=', Timestamp.fromDate(filterDate)), orderBy('timestamp', 'desc'), limit(200))
+      : query(collection(db, 'cashTransactions'), orderBy('timestamp', 'desc'), limit(200));
+    return q;
   }, [db, user, dateFilter]);
 
   const { data: salesData, isLoading: isSalesLoading } = useCollection<PurchaseRecord>(salesQuery);

@@ -5,13 +5,9 @@ import { useState, useMemo } from 'react';
 import { 
   ArrowLeft,
   Search,
-  Plus,
   Edit,
   Filter,
   PackagePlus,
-  ChevronRight,
-  TrendingDown,
-  TrendingUp,
   Package
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -249,7 +245,7 @@ export default function InventoryPage() {
                    {filteredProducts.length === 0 ? (
                      <TableRow>
                        <TableCell colSpan={6} className="h-60 text-center text-slate-300 font-bold uppercase text-[10px] tracking-widest">
-                         No stock found in this category
+                         No stock found
                        </TableCell>
                      </TableRow>
                    ) : (
@@ -260,7 +256,7 @@ export default function InventoryPage() {
                            <TableCell className="pl-8">
                              <p className="font-bold text-slate-900 text-sm">{p.name}</p>
                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                               Created: {p.createdAt ? format(new Date(p.createdAt), 'dd MMM yyyy') : '--'}
+                               Updated: {p.updatedAt ? format(new Date(p.updatedAt), 'dd MMM yyyy') : '--'}
                              </p>
                            </TableCell>
                            <TableCell>
