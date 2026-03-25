@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState } from 'react';
@@ -16,7 +17,8 @@ import {
   Calendar as CalendarIcon,
   ChevronDown,
   FileText,
-  BarChart3
+  BarChart3,
+  ShieldAlert
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,7 +67,7 @@ import {
 } from "@/components/ui/chart";
 import { Bar, BarChart, XAxis } from "recharts";
 import { PhoneAuthGate } from '@/components/auth/phone-auth-gate';
-import { getStaffName } from '@/lib/staff';
+import { isStaffAdmin } from '@/lib/staff';
 import {
   Select,
   SelectContent,
@@ -95,23 +97,25 @@ export default function DashboardPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>(getMonth(new Date()).toString());
   const [selectedYear, setSelectedYear] = useState<string>(getYear(new Date()).toString());
 
+  const isAdmin = useMemo(() => isStaffAdmin(user?.phoneNumber || null), [user]);
+
   const settingsRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !isAdmin) return null;
     return doc(db, 'settings', 'config');
-  }, [db, user]);
+  }, [db, user, isAdmin]);
   
   const { data: shopSettings } = useDoc(settingsRef);
   const shopAddress = shopSettings?.address || "Hoolungooree, Mariani";
 
   const salesQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !isAdmin) return null;
     return query(collection(db, 'purchases'), orderBy('timestamp', 'desc'), limit(5000));
-  }, [db, user]);
+  }, [db, user, isAdmin]);
 
   const cashQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !isAdmin) return null;
     return query(collection(db, 'cashTransactions'), orderBy('timestamp', 'desc'), limit(1000));
-  }, [db, user]);
+  }, [db, user, isAdmin]);
 
   const { data: rawSales, isLoading: isSalesLoading } = useCollection<PurchaseRecord>(salesQuery);
   const { data: rawCash, isLoading: isCashLoading } = useCollection<CashTransaction>(cashQuery);
@@ -211,6 +215,32 @@ export default function DashboardPage() {
 
   if (!user) {
     return <PhoneAuthGate />;
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-50 p-8 text-center">
+        <div className="max-w-md space-y-6 animate-in fade-in zoom-in-95 duration-500">
+          <div className="mx-auto w-24 h-24 bg-primary/5 rounded-[40px] flex items-center justify-center">
+            <ShieldAlert className="h-12 w-12 text-primary" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-black uppercase tracking-tight text-secondary">Access Restricted</h1>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+              Authorized Entry Only
+            </p>
+          </div>
+          <p className="text-sm font-medium text-slate-500 leading-relaxed px-4">
+            The Business Ledger is locked to Admin and Owner accounts only. Please return to the Billing Desk to continue operations.
+          </p>
+          <Link href="/">
+            <Button className="h-14 px-8 rounded-2xl font-black text-xs uppercase tracking-[0.2em] bg-secondary text-white shadow-xl">
+              Back to Billing Desk
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   const { filteredSales, filteredCash, stats } = processedData;

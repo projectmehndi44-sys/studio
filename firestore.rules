@@ -1,10 +1,10 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
      * @description Checks if the user is authenticated and is a part of the authorized staff list.
-     * Authorized Numbers: Admin (+916000861935), Owner (+919613993713), Geeta Churi (+919181540323), Muskan Das (+918822081421).
      */
     function isAuthorizedStaff() {
       let staffNumbers = [
@@ -17,7 +17,7 @@ service cloud.firestore {
     }
 
     /**
-     * @description Standard admin check for destructive operations.
+     * @description Checks if the user is specifically the Admin or Owner.
      */
     function isAdmin() {
       return request.auth != null && (
@@ -27,23 +27,31 @@ service cloud.firestore {
     }
 
     match /products/{productId} {
-      allow read, create, update: if isAuthorizedStaff();
-      allow delete: if isAdmin();
+      // All staff can read products to bill them
+      allow read: if isAuthorizedStaff();
+      // Only Admin/Owner can manage the Stock Master
+      allow create, update, delete: if isAdmin();
     }
 
     match /settings/config {
-      allow read, create, update: if isAuthorizedStaff();
-      allow delete: if isAdmin();
+      // Only Admin/Owner can see or change shop profile
+      allow read, write: if isAdmin();
     }
 
     match /purchases/{purchaseId} {
-      allow read, create: if isAuthorizedStaff();
-      allow delete: if isAdmin();
+      // All staff can create bills
+      allow create: if isAuthorizedStaff();
+      // Only Admin/Owner can read the sales ledger
+      allow read: if isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     match /cashTransactions/{transactionId} {
-      allow read, create: if isAuthorizedStaff();
-      allow delete: if isAdmin();
+      // All staff can log cash in/out
+      allow create: if isAuthorizedStaff();
+      // Only Admin/Owner can see cash logs in the ledger
+      allow read: if isAdmin();
+      allow update, delete: if isAdmin();
     }
 
     match /{path=**} {

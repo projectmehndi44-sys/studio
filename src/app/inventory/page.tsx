@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -7,7 +8,8 @@ import {
   Edit,
   Filter,
   PackagePlus,
-  Package
+  Package,
+  ShieldAlert
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,6 +40,8 @@ import {
 } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
+import { PhoneAuthGate } from '@/components/auth/phone-auth-gate';
+import { isStaffAdmin } from '@/lib/staff';
 
 const CATEGORIES = [
   'Garments',
@@ -56,7 +60,7 @@ const CATEGORIES = [
 export default function InventoryPage() {
   const { toast } = useToast();
   const db = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,10 +76,12 @@ export default function InventoryPage() {
     isPopular: false
   });
 
+  const isAdmin = useMemo(() => isStaffAdmin(user?.phoneNumber || null), [user]);
+
   const productsQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !isAdmin) return null;
     return collection(db, 'products');
-  }, [db, user]);
+  }, [db, user, isAdmin]);
 
   const { data: productsData, isLoading } = useCollection<Product>(productsQuery);
   const products = productsData || [];
@@ -153,11 +159,41 @@ export default function InventoryPage() {
     return { label: 'Stable', variant: 'outline' as const };
   };
 
-  if (isLoading) {
+  if (isUserLoading || isLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center font-bold animate-pulse text-slate-400 text-[10px] uppercase tracking-[0.2em]">
           Syncing Item Master...
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <PhoneAuthGate />;
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-slate-50 p-8 text-center">
+        <div className="max-w-md space-y-6 animate-in fade-in zoom-in-95 duration-500">
+          <div className="mx-auto w-24 h-24 bg-primary/5 rounded-[40px] flex items-center justify-center">
+            <ShieldAlert className="h-12 w-12 text-primary" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-black uppercase tracking-tight text-secondary">Access Restricted</h1>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+              Authorized Entry Only
+            </p>
+          </div>
+          <p className="text-sm font-medium text-slate-500 leading-relaxed px-4">
+            The Stock Master is locked to Admin and Owner accounts only. Please return to the Billing Desk to continue operations.
+          </p>
+          <Link href="/">
+            <Button className="h-14 px-8 rounded-2xl font-black text-xs uppercase tracking-[0.2em] bg-secondary text-white shadow-xl">
+              Back to Billing Desk
+            </Button>
+          </Link>
         </div>
       </div>
     );

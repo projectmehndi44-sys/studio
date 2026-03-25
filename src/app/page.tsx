@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { 
   ShoppingBag, 
   LayoutDashboard, 
@@ -65,7 +66,7 @@ import { AdminPinDialog } from '@/components/admin/admin-pin-dialog';
 import { BarcodeScanner } from '@/components/pos/barcode-scanner';
 import { format } from 'date-fns';
 import { PhoneAuthGate } from '@/components/auth/phone-auth-gate';
-import { getStaffName } from '@/lib/staff';
+import { getStaffName, isStaffAdmin } from '@/lib/staff';
 
 const CART_STORAGE_KEY = 'super9_pos_current_cart';
 
@@ -94,6 +95,7 @@ export default function POSPage() {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const staffName = getStaffName(user?.phoneNumber || null);
+  const isAdmin = useMemo(() => isStaffAdmin(user?.phoneNumber || null), [user]);
 
   const settingsRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -231,6 +233,15 @@ export default function POSPage() {
   };
 
   const handleAddNewProduct = (name: string) => {
+    if (!isAdmin) {
+      toast({
+        variant: "destructive",
+        title: "Access Restricted",
+        description: "Only Admin/Owner can add new items to catalog."
+      });
+      return;
+    }
+
     const newId = `prod-${Date.now()}`;
     const newProd: Product = {
       id: newId,
@@ -429,11 +440,14 @@ export default function POSPage() {
             <Banknote className="h-4 w-4" /> Cash Flow
           </Button>
           
-          <Link href="/dashboard">
-            <Button variant="ghost" size="sm" className="h-10 px-4 rounded-xl font-bold text-[10px] uppercase tracking-wider text-slate-500 hover:text-secondary gap-2">
-              <LayoutDashboard className="h-4 w-4" /> Ledger
-            </Button>
-          </Link>
+          {isAdmin && (
+            <Link href="/dashboard">
+              <Button variant="ghost" size="sm" className="h-10 px-4 rounded-xl font-bold text-[10px] uppercase tracking-wider text-slate-500 hover:text-secondary gap-2">
+                <LayoutDashboard className="h-4 w-4" /> Ledger
+              </Button>
+            </Link>
+          )}
+
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-50 transition-all">
@@ -451,18 +465,24 @@ export default function POSPage() {
                   </div>
                   <ChevronRight className="h-4 w-4" />
                 </Link>
-                <Link href="/inventory" className="flex items-center justify-between p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-bold uppercase text-xs transition-all w-full text-left">
-                  <div className="flex items-center gap-3">
-                    <PackageSearch className="h-5 w-5" /> Stock Master
-                  </div>
-                  <ChevronRight className="h-4 w-4" />
-                </Link>
-                <button onClick={() => setIsSettingsOpen(true)} className="flex items-center justify-between p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-bold uppercase text-xs transition-all w-full text-left">
-                  <div className="flex items-center gap-3">
-                    <Settings className="h-5 w-5" /> Shop Profile
-                  </div>
-                  <ChevronRight className="h-4 w-4" />
-                </button>
+                
+                {isAdmin && (
+                  <>
+                    <Link href="/inventory" className="flex items-center justify-between p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-bold uppercase text-xs transition-all w-full text-left">
+                      <div className="flex items-center gap-3">
+                        <PackageSearch className="h-5 w-5" /> Stock Master
+                      </div>
+                      <ChevronRight className="h-4 w-4" />
+                    </Link>
+                    <button onClick={() => setIsSettingsOpen(true)} className="flex items-center justify-between p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-bold uppercase text-xs transition-all w-full text-left">
+                      <div className="flex items-center gap-3">
+                        <Settings className="h-5 w-5" /> Shop Profile
+                      </div>
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </>
+                )}
+
                 <div className="pt-8 mt-4 border-t border-slate-100">
                   <div className="mb-4 text-center">
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Active Session</p>
@@ -719,7 +739,7 @@ export default function POSPage() {
                        onCheckedChange={(checked) => setPurgeOptions(prev => ({ ...prev, inventory: !!checked }))}
                      />
                      <label htmlFor="purge-inventory" className="text-[11px] font-bold uppercase text-slate-600 cursor-pointer">
-                       Item Master (Stock/Products)
+                       Item Master (Stock)
                      </label>
                    </div>
                    <div className="flex items-center space-x-3 bg-white/50 p-3 rounded-xl">
@@ -729,7 +749,7 @@ export default function POSPage() {
                        onCheckedChange={(checked) => setPurgeOptions(prev => ({ ...prev, sales: !!checked }))}
                      />
                      <label htmlFor="purge-sales" className="text-[11px] font-bold uppercase text-slate-600 cursor-pointer">
-                       Sales Archive (Bills/History)
+                       Sales Archive (Bills)
                      </label>
                    </div>
                    <div className="flex items-center space-x-3 bg-white/50 p-3 rounded-xl">
@@ -739,7 +759,7 @@ export default function POSPage() {
                        onCheckedChange={(checked) => setPurgeOptions(prev => ({ ...prev, cash: !!checked }))}
                      />
                      <label htmlFor="purge-cash" className="text-[11px] font-bold uppercase text-slate-600 cursor-pointer">
-                       Cash Logs (Manual Flows)
+                       Cash Logs (Register)
                      </label>
                    </div>
                  </div>
