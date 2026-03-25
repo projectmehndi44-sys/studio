@@ -33,6 +33,7 @@ import { collection, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Search, Edit, PackagePlus, Filter, X } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { format } from 'date-fns';
 
 const CATEGORIES = [
   'Garments',
