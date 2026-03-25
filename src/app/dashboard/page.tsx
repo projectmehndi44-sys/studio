@@ -260,16 +260,16 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 font-body">
       {/* HIGH-FIDELITY PRINT RECEIPT (LEDGER ARCHIVE) */}
-      <div className="hidden print-only p-4 bg-white text-slate-900 font-receipt min-h-screen text-[10pt] leading-tight">
+      <div className="hidden print-only p-4 bg-white text-slate-900 font-receipt min-h-screen text-[10pt] leading-normal">
         {isReportOpen ? (
-          <div className="space-y-4">
-             <div className="text-center border-b-2 border-slate-900 pb-2 mb-4">
+          <div className="space-y-6">
+             <div className="text-center border-b-2 border-slate-900 pb-3 mb-6">
                 <p className="text-[12pt] font-bold uppercase">BUSINESS AUDIT REPORT</p>
                 <h1 className="text-[14pt] font-black uppercase">KRISHNA'S SUPER 9+</h1>
-                <p className="text-[10pt] font-bold mt-1">Period: {getReportPeriodLabel()}</p>
+                <p className="text-[10pt] font-bold mt-2">Period: {getReportPeriodLabel()}</p>
              </div>
              
-             <div className="grid grid-cols-2 gap-4 border-b border-slate-900 pb-2">
+             <div className="grid grid-cols-2 gap-6 border-b border-slate-900 pb-4">
                 <div>
                    <p className="font-bold">TOTAL REVENUE</p>
                    <p className="text-[14pt] font-black">₹{stats.sales.toLocaleString()}</p>
@@ -280,65 +280,65 @@ export default function DashboardPage() {
                 </div>
              </div>
 
-             <div className="py-2">
-                <p className="font-black border-b border-slate-400 mb-1">PAYMENT SETTLEMENT BREAKDOWN</p>
+             <div className="py-4">
+                <p className="font-black border-b border-slate-400 mb-2">PAYMENT SETTLEMENT BREAKDOWN</p>
                 {Object.entries(stats.paymentModes).map(([mode, amount]: any) => (
-                   <div key={mode} className="flex justify-between items-center py-0.5">
+                   <div key={mode} className="flex justify-between items-center py-1">
                       <span className="font-bold uppercase">{mode}</span>
                       <span className="font-bold">₹{amount.toLocaleString()}</span>
                    </div>
                 ))}
              </div>
 
-             <div className="py-2 border-t border-slate-900">
+             <div className="py-4 border-t border-slate-900 mt-8">
                 <p className="font-black mb-1">AUDIT TIMESTAMP: {format(new Date(), 'dd/MM/yyyy HH:mm:ss')}</p>
                 <p className="text-[8pt]">This is a computer-generated summary of cloud transactions for Krishna's Super 9+.</p>
              </div>
           </div>
         ) : (
           <>
-            <div className="text-center space-y-0 border-b border-slate-900 pb-1 mb-1">
+            <div className="text-center space-y-1 border-b border-slate-900 pb-2 mb-2">
               <p className="text-[10pt] font-bold uppercase tracking-tight">KRISHNA'S</p>
-              <h2 className="text-[10pt] font-black uppercase tracking-tight leading-none">SUPER 9+</h2>
-              <p className="text-[8pt] font-bold mt-0.5">{shopAddress}</p>
+              <h2 className="text-[10pt] font-black uppercase tracking-tight">SUPER 9+</h2>
+              <p className="text-[8pt] font-bold mt-1">{shopAddress}</p>
               {shopSettings?.gstin && <p className="text-[8pt] font-bold">GSTIN: {shopSettings?.gstin}</p>}
             </div>
 
-            <div className="grid grid-cols-2 gap-1 mb-1 text-[8pt] leading-none">
-              <div className="space-y-0">
+            <div className="grid grid-cols-2 gap-2 mb-2 text-[8pt] leading-normal">
+              <div className="space-y-0.5">
                 <p className="font-bold">Bill ID: #{viewingSale?.id?.slice(-8) || 'ARCHIVE'}</p>
                 <p className="font-bold">DateTime: {getFormattedDateTime(viewingSale?.timestamp)}</p>
               </div>
-              <div className="space-y-0 text-right">
+              <div className="space-y-0.5 text-right">
                 <p className="font-bold">Cust: {viewingSale?.customerName || 'Walk-in'}</p>
                 <p className="font-bold">Mob: {viewingSale?.customerId || 'N/A'}</p>
                 <p className="font-bold">Staff: {viewingSale?.staffName || 'System'}</p>
               </div>
             </div>
 
-            <table className="w-full text-[8pt] border-collapse mb-1">
+            <table className="w-full text-[8pt] border-collapse mb-2">
               <thead>
                 <tr className="border-y border-slate-900">
-                  <th className="text-left py-0.5 font-bold uppercase">Item</th>
-                  <th className="text-right py-0.5 font-bold uppercase">Price</th>
-                  <th className="text-center py-0.5 font-bold uppercase">Qty</th>
-                  <th className="text-right py-0.5 font-bold uppercase">Total</th>
+                  <th className="text-left py-1 font-bold uppercase">Item</th>
+                  <th className="text-right py-1 font-bold uppercase">Price</th>
+                  <th className="text-center py-1 font-bold uppercase">Qty</th>
+                  <th className="text-right py-1 font-bold uppercase">Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {viewingSale?.items.map((item, idx) => (
                   <tr key={idx}>
-                    <td className="py-0.5">{item.name}</td>
-                    <td className="py-0.5 text-right">₹{item.price.toFixed(0)}</td>
-                    <td className="py-0.5 text-center">{item.quantity}</td>
-                    <td className="py-0.5 text-right">₹{(item.price * item.quantity).toFixed(0)}</td>
+                    <td className="py-1.5">{item.name}</td>
+                    <td className="py-1.5 text-right">₹{item.price.toFixed(0)}</td>
+                    <td className="py-1.5 text-center">{item.quantity}</td>
+                    <td className="py-1.5 text-right">₹{(item.price * item.quantity).toFixed(0)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
-            <div className="space-y-0 text-right border-t border-slate-900 pt-1">
-              <div className="flex justify-between items-center pt-0.5 border-t border-slate-400">
+            <div className="space-y-1 text-right border-t border-slate-900 pt-2">
+              <div className="flex justify-between items-center pt-1 border-t border-slate-400">
                 <span className="text-[9pt] font-bold uppercase">Grand Total</span>
                 <span className="text-[10pt] font-bold">₹{viewingSale?.totalAmount.toFixed(0)}</span>
               </div>
@@ -658,8 +658,8 @@ export default function DashboardPage() {
           </DialogHeader>
 
           <div className="py-2 space-y-4">
-            <div className="bg-slate-50 rounded-[24px] p-6 space-y-2 font-receipt border border-slate-200 leading-tight">
-              <div className="flex flex-col border-b border-slate-100 pb-1 space-y-0.5">
+            <div className="bg-slate-50 rounded-[24px] p-6 space-y-3 font-receipt border border-slate-200 leading-normal">
+              <div className="flex flex-col border-b border-slate-100 pb-2 space-y-1">
                  <div className="flex justify-between items-center text-[8pt] font-bold">
                     <span className="text-slate-400 uppercase">Customer</span>
                     <span className="text-secondary">{viewingSale?.customerName || 'Walk-in'}</span>
@@ -678,28 +678,28 @@ export default function DashboardPage() {
                 <table className="w-full text-[8pt]">
                   <thead>
                     <tr className="border-b border-slate-200">
-                      <th className="text-left font-bold py-1 uppercase">Item</th>
-                      <th className="text-right font-bold py-1 uppercase">Price</th>
-                      <th className="text-center font-bold py-1 uppercase">Qty</th>
-                      <th className="text-right font-bold py-1 uppercase">Total</th>
+                      <th className="text-left font-bold py-2 uppercase">Item</th>
+                      <th className="text-right font-bold py-2 uppercase">Price</th>
+                      <th className="text-center font-bold py-2 uppercase">Qty</th>
+                      <th className="text-right font-bold py-2 uppercase">Total</th>
                     </tr>
                   </thead>
                   <tbody>
                     {viewingSale?.items.map((item, idx) => (
                       <tr key={idx}>
-                        <td className="py-0.5">{item.name}</td>
-                        <td className="py-0.5 text-right">₹{item.price.toFixed(0)}</td>
-                        <td className="py-0.5 text-center">{item.quantity}</td>
-                        <td className="py-0.5 text-right">₹{(item.price * item.quantity).toFixed(0)}</td>
+                        <td className="py-1.5">{item.name}</td>
+                        <td className="py-1.5 text-right">₹{item.price.toFixed(0)}</td>
+                        <td className="py-1.5 text-center">{item.quantity}</td>
+                        <td className="py-1.5 text-right">₹{(item.price * item.quantity).toFixed(0)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
 
-              <div className="flex justify-between items-end pt-2">
+              <div className="flex justify-between items-end pt-3">
                 <div className="flex flex-col">
-                   <span className="text-[8pt] font-bold text-slate-400 uppercase tracking-widest mb-0.5">Final Amount</span>
+                   <span className="text-[8pt] font-bold text-slate-400 uppercase tracking-widest mb-1">Final Amount</span>
                    <span className="text-3xl font-black text-slate-900 tracking-tighter">₹{viewingSale?.totalAmount.toFixed(0)}</span>
                 </div>
                 <div className="text-right">
@@ -742,11 +742,11 @@ export default function DashboardPage() {
           <div className="py-6 space-y-8">
             <div className="grid grid-cols-2 gap-6">
                <div className="bg-slate-50 p-6 rounded-[28px] border border-slate-100">
-                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Period Total</p>
+                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Period Total</p>
                   <p className="text-3xl font-black text-secondary tracking-tighter">₹{stats.sales.toLocaleString()}</p>
                </div>
                <div className="bg-slate-50 p-6 rounded-[28px] border border-slate-100">
-                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-1">Invoices</p>
+                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-2">Invoices</p>
                   <p className="text-3xl font-black text-secondary tracking-tighter">{stats.transactions}</p>
                </div>
             </div>

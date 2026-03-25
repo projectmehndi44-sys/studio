@@ -354,21 +354,21 @@ export default function POSPage() {
       <Toaster />
       
       {/* HIGH-FIDELITY PRINT RECEIPT */}
-      <div className="hidden print-only p-4 bg-white text-slate-900 min-h-screen font-receipt text-[10pt] leading-tight">
-        <div className="text-center space-y-0 border-b border-slate-900 pb-1 mb-1">
+      <div className="hidden print-only p-4 bg-white text-slate-900 min-h-screen font-receipt text-[10pt] leading-normal">
+        <div className="text-center border-b border-slate-900 pb-2 mb-2">
           <p className="text-[10pt] font-bold uppercase tracking-tight">KRISHNA'S</p>
-          <h2 className="text-[10pt] font-black uppercase tracking-tight leading-none">SUPER 9+</h2>
-          <p className="text-[8pt] font-bold mt-0.5">{shopAddress}</p>
+          <h2 className="text-[10pt] font-black uppercase tracking-tight">SUPER 9+</h2>
+          <p className="text-[8pt] font-bold mt-1">{shopAddress}</p>
           {shopGSTIN && <p className="text-[8pt] font-bold">GSTIN: {shopGSTIN}</p>}
         </div>
 
-        <div className="grid grid-cols-2 gap-1 mb-1 text-[8pt] leading-none">
-          <div className="space-y-0">
+        <div className="grid grid-cols-2 gap-2 mb-2 text-[8pt] leading-normal">
+          <div className="space-y-0.5">
             <p className="font-bold">Bill ID: #{Date.now().toString().slice(-8)}</p>
             <p className="font-bold">Date: {format(new Date(), 'dd/MM/yyyy')}</p>
             <p className="font-bold">Time: {format(new Date(), 'HH:mm')}</p>
           </div>
-          <div className="space-y-0 text-right">
+          <div className="space-y-0.5 text-right">
             <p className="font-bold">Cust: {lastSale?.customerName || 'Walk-in'}</p>
             <p className="font-bold">Mob: {lastSale?.customerId || 'No Mobile'}</p>
             <p className="font-bold">Staff: {lastSale?.staffName || staffName}</p>
@@ -376,39 +376,39 @@ export default function POSPage() {
           </div>
         </div>
 
-        <table className="w-full text-[8pt] border-collapse mb-1">
+        <table className="w-full text-[8pt] border-collapse mb-2">
           <thead>
             <tr className="border-y border-slate-900">
-              <th className="text-left py-0.5 font-bold uppercase">Item</th>
-              <th className="text-right py-0.5 font-bold uppercase">Price</th>
-              <th className="text-center py-0.5 font-bold uppercase">Qty</th>
-              <th className="text-right py-0.5 font-bold uppercase">Total</th>
+              <th className="text-left py-1 font-bold uppercase">Item</th>
+              <th className="text-right py-1 font-bold uppercase">Price</th>
+              <th className="text-center py-1 font-bold uppercase">Qty</th>
+              <th className="text-right py-1 font-bold uppercase">Total</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {lastSale?.items.map((item, idx) => (
               <tr key={idx}>
-                <td className="py-0.5">{item.name}</td>
-                <td className="py-0.5 text-right">₹{item.price.toFixed(0)}</td>
-                <td className="py-0.5 text-center">{item.quantity}</td>
-                <td className="py-0.5 text-right">₹{(item.price * item.quantity).toFixed(0)}</td>
+                <td className="py-1.5">{item.name}</td>
+                <td className="py-1.5 text-right">₹{item.price.toFixed(0)}</td>
+                <td className="py-1.5 text-center">{item.quantity}</td>
+                <td className="py-1.5 text-right">₹{(item.price * item.quantity).toFixed(0)}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        <div className="space-y-0 text-right border-t border-slate-900 pt-1">
+        <div className="space-y-1 text-right border-t border-slate-900 pt-2">
           <div className="flex justify-between items-center text-[8pt]">
             <span>Subtotal</span>
             <span>₹{lastSale?.subtotalAmount.toFixed(0)}</span>
           </div>
-          <div className="flex justify-between items-center pt-0.5 border-t border-slate-400">
+          <div className="flex justify-between items-center pt-1 border-t border-slate-400">
             <span className="text-[9pt] font-bold uppercase">Grand Total</span>
             <span className="text-[10pt] font-bold">₹{lastSale?.totalAmount.toFixed(0)}</span>
           </div>
         </div>
 
-        <div className="mt-2 text-center space-y-0.5">
+        <div className="mt-4 text-center space-y-1">
           <p className="text-[6pt] font-bold uppercase tracking-widest text-slate-400">
             Computer Generated Invoice • No Exchange without Bill
           </p>
@@ -585,12 +585,12 @@ export default function POSPage() {
           </DialogHeader>
 
           <div className="py-4 space-y-4">
-            <div className="bg-slate-50 rounded-[28px] p-6 space-y-2 font-receipt border border-slate-200 text-[9pt] leading-tight">
+            <div className="bg-slate-50 rounded-[28px] p-6 space-y-3 font-receipt border border-slate-200 text-[9pt] leading-normal">
               <div className="flex justify-between items-center text-[8pt] font-bold uppercase text-slate-400 tracking-widest">
                 <span>INVOICE DETAILS</span>
                 <span>{lastSale?.staffName || staffName}</span>
               </div>
-              <div className="flex flex-col border-y border-slate-100 py-1 space-y-0.5">
+              <div className="flex flex-col border-y border-slate-100 py-2 space-y-1">
                  <div className="flex justify-between text-[8pt] font-bold">
                     <span className="text-slate-400">CUSTOMER</span>
                     <span className="text-secondary">{lastSale?.customerName || 'Walk-in'}</span>
@@ -609,26 +609,26 @@ export default function POSPage() {
                 <table className="w-full text-[8pt]">
                   <thead>
                     <tr className="border-b border-slate-200">
-                      <th className="text-left font-bold py-1 uppercase">Item</th>
-                      <th className="text-right font-bold py-1 uppercase">Price</th>
-                      <th className="text-center font-bold py-1 uppercase">Qty</th>
-                      <th className="text-right font-bold py-1 uppercase">Total</th>
+                      <th className="text-left font-bold py-2 uppercase">Item</th>
+                      <th className="text-right font-bold py-2 uppercase">Price</th>
+                      <th className="text-center font-bold py-2 uppercase">Qty</th>
+                      <th className="text-right font-bold py-2 uppercase">Total</th>
                     </tr>
                   </thead>
                   <tbody>
                     {lastSale?.items.map((item, idx) => (
                       <tr key={idx}>
-                        <td className="py-0.5">{item.name}</td>
-                        <td className="py-0.5 text-right">₹{item.price.toFixed(0)}</td>
-                        <td className="py-0.5 text-center">{item.quantity}</td>
-                        <td className="py-0.5 text-right">₹{(item.price * item.quantity).toFixed(0)}</td>
+                        <td className="py-1.5">{item.name}</td>
+                        <td className="py-1.5 text-right">₹{item.price.toFixed(0)}</td>
+                        <td className="py-1.5 text-center">{item.quantity}</td>
+                        <td className="py-1.5 text-right">₹{(item.price * item.quantity).toFixed(0)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
 
-              <div className="flex justify-between items-end pt-2">
+              <div className="flex justify-between items-end pt-3">
                 <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">₹{lastSale?.totalAmount.toFixed(0)}</span>
                 <span className="text-[8pt] font-black text-emerald-500 uppercase tracking-widest">{lastSale?.items.length} Items</span>
               </div>
