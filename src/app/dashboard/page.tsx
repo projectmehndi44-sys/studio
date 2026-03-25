@@ -9,7 +9,8 @@ import {
   Banknote,
   PlusCircle,
   MinusCircle,
-  History
+  History,
+  ShoppingBag
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebas
 import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { PurchaseRecord, CashTransaction } from '@/lib/types';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 export default function DashboardPage() {
   const db = useFirestore();
