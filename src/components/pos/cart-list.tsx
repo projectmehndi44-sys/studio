@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Trash2, Plus, Minus, ShoppingBag, Edit2, Check } from 'lucide-react';
@@ -95,7 +94,7 @@ export function CartList({ items, onUpdateQuantity, onUpdatePrice, onRemoveItem 
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 rounded-lg hover:bg-white"
-                    onClick={() => updateQuantity(item.id, -1)}
+                    onClick={() => onUpdateQuantity(item.id, -1)}
                   >
                     <Minus className="h-3 w-3" />
                   </Button>
@@ -106,7 +105,7 @@ export function CartList({ items, onUpdateQuantity, onUpdatePrice, onRemoveItem 
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 rounded-lg hover:bg-white"
-                    onClick={() => updateQuantity(item.id, 1)}
+                    onClick={() => onUpdateQuantity(item.id, 1)}
                   >
                     <Plus className="h-3 w-3" />
                   </Button>
