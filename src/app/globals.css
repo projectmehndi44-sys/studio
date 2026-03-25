@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -43,17 +42,18 @@
   }
 }
 
-/* Custom styles for POS tablet feel */
+/* Responsive Grid for POS */
 .pos-grid-container {
   display: grid;
-  grid-template-columns: 400px 1fr;
-  height: 100vh;
+  grid-template-columns: 1fr;
+  height: calc(100vh - 80px); /* Account for bottom/top nav on mobile */
   overflow: hidden;
 }
 
-@media (max-width: 1024px) {
+@media (min-width: 1024px) {
   .pos-grid-container {
-    grid-template-columns: 350px 1fr;
+    grid-template-columns: 400px 1fr;
+    height: 100vh;
   }
 }
 
@@ -65,4 +65,11 @@
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
   @apply bg-muted rounded-full;
+}
+
+/* Prevent zoom on mobile inputs */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
 }

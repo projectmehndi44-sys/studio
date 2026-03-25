@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -10,6 +9,7 @@ import { MOCK_CUSTOMERS, MOCK_COUPONS } from '@/lib/mock-data';
 import { Badge } from '@/components/ui/badge';
 import { CartItem, Coupon } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface CheckoutPanelProps {
   items: CartItem[];
@@ -66,104 +66,106 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-card p-6 rounded-xl border border-border shadow-2xl">
-      <div className="space-y-6 flex-1">
-        {/* Customer Info */}
-        <div className="space-y-3">
-          <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Customer Details</label>
-          <div className="relative">
-            <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-            <Input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Enter Phone Number"
-              className="pl-10 h-14 text-xl font-medium bg-secondary/50"
-            />
-          </div>
-          {customer && (
-            <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-center justify-between animate-fade-in">
-              <div className="flex items-center gap-3">
-                <div className="bg-primary rounded-full p-2">
-                  <User className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <div>
-                  <p className="font-bold text-foreground">{customer.name}</p>
-                  <p className="text-xs text-muted-foreground">Points: {customer.points}</p>
-                </div>
-              </div>
-              <Badge className="bg-primary text-primary-foreground">Member</Badge>
+    <div className="flex flex-col h-full bg-card p-4 sm:p-6 rounded-xl border border-border shadow-2xl overflow-hidden">
+      <ScrollArea className="flex-1">
+        <div className="space-y-6 pb-4">
+          {/* Customer Info */}
+          <div className="space-y-3">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Customer Details</label>
+            <div className="relative">
+              <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Phone Number"
+                className="pl-10 h-12 text-lg font-medium bg-secondary/50"
+              />
             </div>
-          )}
-        </div>
-
-        {/* Coupons */}
-        <div className="space-y-3">
-          <div className="flex justify-between items-center">
-            <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Discounts</label>
-            <Button variant="link" size="sm" onClick={handleApplyBestCoupon} className="text-primary p-0 h-auto font-bold">
-              <Ticket className="h-4 w-4 mr-1" /> Apply Best
-            </Button>
-          </div>
-          {appliedCoupon ? (
-            <div className="flex items-center justify-between bg-accent/20 border border-accent/30 p-3 rounded-lg">
-              <div className="flex items-center gap-2">
-                <Ticket className="h-5 w-5 text-accent" />
-                <span className="font-bold">{appliedCoupon.code} Applied</span>
+            {customer && (
+              <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 flex items-center justify-between animate-fade-in">
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary rounded-full p-2">
+                    <User className="h-4 w-4 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm text-foreground">{customer.name}</p>
+                    <p className="text-[10px] text-muted-foreground">Points: {customer.points}</p>
+                  </div>
+                </div>
+                <Badge className="bg-primary text-primary-foreground text-[10px] h-5">Member</Badge>
               </div>
-              <button onClick={() => setAppliedCoupon(null)} className="text-sm text-muted-foreground underline">Remove</button>
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground italic">No coupon applied</p>
-          )}
-        </div>
+            )}
+          </div>
 
-        {/* Payment Mode */}
-        <div className="space-y-3">
-          <label className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Payment Mode</label>
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { id: 'Cash', icon: Wallet },
-              { id: 'UPI', icon: Smartphone },
-              { id: 'Credit', icon: CreditCard }
-            ].map((m) => (
-              <Button
-                key={m.id}
-                variant={paymentMode === m.id ? 'default' : 'outline'}
-                className={`h-20 flex-col gap-2 rounded-xl transition-all ${paymentMode === m.id ? 'bg-primary ring-2 ring-primary/20 scale-105' : 'bg-transparent'}`}
-                onClick={() => setPaymentMode(m.id as any)}
-              >
-                <m.icon className="h-6 w-6" />
-                <span className="font-bold">{m.id}</span>
+          {/* Coupons */}
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Discounts</label>
+              <Button variant="link" size="sm" onClick={handleApplyBestCoupon} className="text-primary p-0 h-auto font-bold text-xs">
+                <Ticket className="h-3 w-3 mr-1" /> Apply Best
               </Button>
-            ))}
+            </div>
+            {appliedCoupon ? (
+              <div className="flex items-center justify-between bg-accent/20 border border-accent/30 p-3 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Ticket className="h-4 w-4 text-accent" />
+                  <span className="font-bold text-sm">{appliedCoupon.code} Applied</span>
+                </div>
+                <button onClick={() => setAppliedCoupon(null)} className="text-[10px] text-muted-foreground underline">Remove</button>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">No coupon applied</p>
+            )}
+          </div>
+
+          {/* Payment Mode */}
+          <div className="space-y-3">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Payment Mode</label>
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: 'Cash', icon: Wallet },
+                { id: 'UPI', icon: Smartphone },
+                { id: 'Credit', icon: CreditCard }
+              ].map((m) => (
+                <Button
+                  key={m.id}
+                  variant={paymentMode === m.id ? 'default' : 'outline'}
+                  className={`h-16 flex-col gap-1 rounded-xl transition-all p-1 ${paymentMode === m.id ? 'bg-primary ring-2 ring-primary/20 scale-[1.02]' : 'bg-transparent'}`}
+                  onClick={() => setPaymentMode(m.id as any)}
+                >
+                  <m.icon className="h-5 w-5" />
+                  <span className="font-bold text-xs">{m.id}</span>
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      </ScrollArea>
 
       {/* Totals & Submit */}
-      <div className="mt-6 pt-6 border-t space-y-4">
-        <div className="space-y-2">
-          <div className="flex justify-between text-muted-foreground">
+      <div className="mt-4 pt-4 border-t space-y-4 bg-card">
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-xs text-muted-foreground">
             <span>Subtotal</span>
             <span>₹{subtotal.toFixed(2)}</span>
           </div>
-          <div className="flex justify-between text-accent font-medium">
+          <div className="flex justify-between text-xs text-accent font-medium">
             <span>Discount</span>
             <span>- ₹{discount.toFixed(2)}</span>
           </div>
           <Separator className="bg-border/50" />
-          <div className="flex justify-between items-end pt-2">
-            <span className="text-xl font-bold">Payable</span>
-            <span className="text-4xl font-black text-primary">₹{total.toFixed(2)}</span>
+          <div className="flex justify-between items-end pt-1">
+            <span className="text-sm font-bold uppercase tracking-wider">Payable</span>
+            <span className="text-3xl font-black text-primary">₹{total.toFixed(2)}</span>
           </div>
         </div>
 
         <Button 
-          className="w-full h-20 text-2xl font-black rounded-2xl shadow-xl shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-[0.98]"
+          className="w-full h-16 sm:h-20 text-xl sm:text-2xl font-black rounded-2xl shadow-xl shadow-primary/10 hover:shadow-primary/20 transition-all active:scale-[0.98]"
           disabled={items.length === 0}
           onClick={() => onComplete({ total, paymentMode, customerPhone: phone, discount })}
         >
-          <Printer className="h-8 w-8 mr-3" /> PRINT & CLOSE
+          <Printer className="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3" /> PRINT & CLOSE
         </Button>
       </div>
     </div>
