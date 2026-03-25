@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
@@ -14,7 +15,9 @@ import {
   X,
   LogIn,
   ShieldCheck,
-  PackageSearch
+  PackageSearch,
+  Menu,
+  MoreVertical
 } from 'lucide-react';
 import { Product, CartItem } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
@@ -34,6 +37,13 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useCollection, useFirestore, useUser, useMemoFirebase, addDocumentNonBlocking, initiateAnonymousSignIn, useAuth } from '@/firebase';
 import { collection, serverTimestamp } from 'firebase/firestore';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const CART_STORAGE_KEY = 'super9_pos_current_cart';
 
@@ -197,7 +207,6 @@ export default function POSPage() {
 
   const handleAddNewProduct = (initialName: string, isSilent = false) => {
     if (isSilent) {
-      // Automatic background creation
       addDocumentNonBlocking(collection(db, 'products'), {
         name: initialName,
         price: 0,
@@ -254,32 +263,8 @@ export default function POSPage() {
     );
   }
 
-  const sidebarContent = (
-    <nav className={cn(
-      "flex gap-4",
-      isMobile ? "flex-row justify-around w-full px-4 py-2 bg-white border-t border-slate-100 shadow-[0_-4px_12px_rgba(0,0,0,0.03)]" : "flex-col items-center py-8 gap-8 w-24 border-r border-slate-100 bg-white"
-    )}>
-      {!isMobile && (
-        <div className="w-14 h-14 bg-primary rounded-[20px] flex items-center justify-center font-black text-2xl text-primary-foreground shadow-xl shadow-primary/20 mb-4 transition-transform hover:scale-105">
-          S9
-        </div>
-      )}
-      <Link href="/" className="p-4 bg-primary text-primary-foreground rounded-2xl shadow-lg shadow-primary/20 transition-all hover:scale-110 active:scale-95"><ShoppingBag className="h-7 w-7" /></Link>
-      <Link href="/dashboard" className="p-4 text-slate-300 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all hover:scale-110 active:scale-95"><LayoutDashboard className="h-7 w-7" /></Link>
-      <button onClick={() => setIsProductDialogOpen(true)} className="p-4 text-slate-300 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all hover:scale-110 active:scale-95"><PackageSearch className="h-7 w-7" /></button>
-      {!isMobile && (
-        <>
-          <button className="p-4 text-slate-300 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all hover:scale-110 active:scale-95"><Bell className="h-7 w-7" /></button>
-          <div className="flex-1" />
-          <button className="p-4 text-slate-300 hover:text-primary hover:bg-slate-50 rounded-2xl transition-all hover:scale-110 active:scale-95"><Settings className="h-7 w-7" /></button>
-          <button onClick={handleSignOut} className="p-4 text-destructive/40 hover:text-destructive hover:bg-destructive/5 rounded-2xl transition-all hover:scale-110 active:scale-95"><LogOut className="h-7 w-7" /></button>
-        </>
-      )}
-    </nav>
-  );
-
   const productArea = (
-    <div className="flex flex-col h-full gap-6 overflow-hidden">
+    <div className="flex flex-col h-full gap-4 overflow-hidden">
       <ProductSearch 
         products={productsData}
         onProductSelect={handleProductSelect} 
@@ -288,12 +273,12 @@ export default function POSPage() {
       />
       
       <Tabs defaultValue="popular" className="flex-1 flex flex-col overflow-hidden">
-        <TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1.5 rounded-[24px] mb-4">
-          <TabsTrigger value="popular" className="font-black text-sm uppercase tracking-widest flex items-center gap-2 rounded-[18px] py-3 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
-            <Star className="h-4 w-4" /> Top Sellers
+        <TabsList className="grid w-full grid-cols-2 bg-slate-100 p-1 rounded-[16px] mb-2">
+          <TabsTrigger value="popular" className="font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 rounded-[12px] py-2 data-[state=active]:bg-white data-[state=active]:text-primary">
+            <Star className="h-3 w-3" /> Top Sellers
           </TabsTrigger>
-          <TabsTrigger value="search" className="font-black text-sm uppercase tracking-widest flex items-center gap-2 rounded-[18px] py-3 data-[state=active]:bg-white data-[state=active]:text-primary data-[state=active]:shadow-sm">
-            <Search className="h-4 w-4" /> All Items
+          <TabsTrigger value="search" className="font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 rounded-[12px] py-2 data-[state=active]:bg-white data-[state=active]:text-primary">
+            <Search className="h-3 w-3" /> All Items
           </TabsTrigger>
         </TabsList>
         <TabsContent value="popular" className="flex-1 overflow-y-auto custom-scrollbar mt-0">
@@ -307,46 +292,92 @@ export default function POSPage() {
   );
 
   return (
-    <div className={cn(
-      "flex h-screen bg-white overflow-hidden font-body text-slate-900",
-      isMobile ? "flex-col" : "flex-row"
-    )}>
+    <div className="flex flex-col h-screen bg-white overflow-hidden font-body text-slate-900">
       <Toaster />
       
-      {!isMobile && sidebarContent}
+      {/* Top Navigation Bar (Replacing Sidebar) */}
+      <header className="h-16 border-b border-slate-100 bg-white flex items-center justify-between px-4 sm:px-8 shrink-0">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-black text-primary-foreground shadow-lg shadow-primary/10">
+            S9
+          </div>
+          <h1 className="font-black text-xl tracking-tighter text-slate-900 uppercase">Super 9+</h1>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {!isMobile && (
+            <div className="flex items-center gap-1 mr-4">
+              <Link href="/">
+                <Button variant="ghost" size="sm" className="font-black text-xs uppercase tracking-widest text-primary">
+                  <ShoppingBag className="h-4 w-4 mr-2" /> Billing
+                </Button>
+              </Link>
+              <Link href="/dashboard">
+                <Button variant="ghost" size="sm" className="font-black text-xs uppercase tracking-widest text-slate-400 hover:text-primary">
+                  <LayoutDashboard className="h-4 w-4 mr-2" /> Ledger
+                </Button>
+              </Link>
+              <Button onClick={() => setIsProductDialogOpen(true)} variant="ghost" size="sm" className="font-black text-xs uppercase tracking-widest text-slate-400 hover:text-primary">
+                <PackageSearch className="h-4 w-4 mr-2" /> Master
+              </Button>
+            </div>
+          )}
+
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-xl">
+                <Menu className="h-6 w-6 text-slate-600" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[300px] p-6 space-y-8">
+              <SheetHeader>
+                <SheetTitle className="text-left font-black uppercase tracking-tighter text-2xl">Menu</SheetTitle>
+              </SheetHeader>
+              <nav className="flex flex-col gap-4">
+                <Link href="/" className="flex items-center gap-4 p-4 bg-primary/10 text-primary rounded-2xl font-black uppercase text-sm">
+                  <ShoppingBag className="h-5 w-5" /> Billing Terminal
+                </Link>
+                <Link href="/dashboard" className="flex items-center gap-4 p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-black uppercase text-sm transition-colors">
+                  <LayoutDashboard className="h-5 w-5" /> Business Ledger
+                </Link>
+                <button onClick={() => { setIsProductDialogOpen(true); }} className="flex items-center gap-4 p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-black uppercase text-sm transition-colors w-full text-left">
+                  <PackageSearch className="h-5 w-5" /> Product Master
+                </button>
+                <button className="flex items-center gap-4 p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-black uppercase text-sm transition-colors w-full text-left">
+                  <Bell className="h-5 w-5" /> Notifications
+                </button>
+                <button className="flex items-center gap-4 p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-black uppercase text-sm transition-colors w-full text-left">
+                  <Settings className="h-5 w-5" /> Settings
+                </button>
+                <div className="pt-8 mt-auto">
+                  <Button onClick={handleSignOut} variant="destructive" className="w-full h-14 font-black rounded-2xl gap-2">
+                    <LogOut className="h-5 w-5" /> CLOCK OUT
+                  </Button>
+                </div>
+              </nav>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </header>
 
       <main className={cn(
-        "flex-1 p-4 lg:p-8 gap-8",
-        !isMobile ? "pos-grid-container" : "flex flex-col h-full overflow-hidden"
+        "flex-1 overflow-hidden",
+        !isMobile ? "grid grid-cols-[1fr_400px] h-full" : "flex flex-col"
       )}>
         {isMobile ? (
-          <div className="flex flex-col h-full overflow-hidden">
-            <div className="flex items-center justify-between mb-6 px-2">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center font-black text-primary-foreground shadow-lg shadow-primary/20">
-                  S9
-                </div>
-                <h1 className="font-black text-2xl tracking-tighter text-slate-900 uppercase">Super 9+</h1>
-              </div>
-              {cartTotalPrice > 0 && (
-                <div className="text-primary font-black text-2xl animate-in fade-in slide-in-from-right-4">
-                  ₹{cartTotalPrice.toFixed(0)}
-                </div>
-              )}
-            </div>
-
+          <div className="flex flex-col h-full overflow-hidden p-4 gap-4">
             <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="flex-1 flex flex-col overflow-hidden">
-              <TabsList className="grid w-full grid-cols-3 bg-slate-100 rounded-[20px] mb-6 p-1">
-                <TabsTrigger value="products" className="font-black text-xs uppercase rounded-[16px]">Bill</TabsTrigger>
-                <TabsTrigger value="cart" className="font-black text-xs uppercase rounded-[16px] relative">
+              <TabsList className="grid w-full grid-cols-3 bg-slate-100 rounded-[16px] p-1 mb-4">
+                <TabsTrigger value="products" className="font-black text-xs uppercase rounded-[12px]">Catalog</TabsTrigger>
+                <TabsTrigger value="cart" className="font-black text-xs uppercase rounded-[12px] relative">
                   Cart
                   {cartTotalItems > 0 && (
-                    <Badge className="absolute -top-2 -right-2 h-6 w-6 flex items-center justify-center p-0 rounded-full bg-destructive text-white border-2 border-white text-[10px] font-black">
+                    <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 rounded-full bg-destructive text-white border-2 border-white text-[9px] font-black">
                       {cartTotalItems}
                     </Badge>
                   )}
                 </TabsTrigger>
-                <TabsTrigger value="checkout" className="font-black text-xs uppercase rounded-[16px]" disabled={cartItems.length === 0}>Pay</TabsTrigger>
+                <TabsTrigger value="checkout" className="font-black text-xs uppercase rounded-[12px]" disabled={cartItems.length === 0}>Finish</TabsTrigger>
               </TabsList>
               
               <TabsContent value="products" className="flex-1 overflow-hidden mt-0">
@@ -372,31 +403,33 @@ export default function POSPage() {
           </div>
         ) : (
           <>
-            <div className="flex flex-col h-full overflow-hidden">
-              <CartList 
-                items={cartItems} 
-                onUpdateQuantity={updateQuantity} 
-                onUpdatePrice={updatePrice}
-                onRemoveItem={removeItem} 
-              />
+            {/* Desktop: Product Selection Area */}
+            <div className="p-8 overflow-hidden border-r border-slate-100 bg-slate-50/30">
+              {productArea}
             </div>
 
-            <div className="flex flex-col lg:flex-row h-full gap-8 overflow-hidden">
-              <div className="flex-1 overflow-hidden">
-                {productArea}
-              </div>
-              <div className="w-full lg:w-[460px] h-full flex flex-col">
-                <CheckoutPanel 
-                  items={cartItems} 
-                  onComplete={handleCheckout} 
-                />
-              </div>
+            {/* Desktop: Cart & Checkout Panel Area */}
+            <div className="flex flex-col h-full bg-white overflow-hidden">
+               <div className="flex-1 p-8 overflow-hidden flex flex-col gap-8">
+                 <div className="flex-1 overflow-hidden">
+                   <CartList 
+                    items={cartItems} 
+                    onUpdateQuantity={updateQuantity} 
+                    onUpdatePrice={updatePrice}
+                    onRemoveItem={removeItem} 
+                  />
+                 </div>
+                 <div className="shrink-0">
+                    <CheckoutPanel 
+                      items={cartItems} 
+                      onComplete={handleCheckout} 
+                    />
+                 </div>
+               </div>
             </div>
           </>
         )}
       </main>
-
-      {isMobile && sidebarContent}
 
       <AdminPinDialog 
         isOpen={isAdminDialogOpen} 
