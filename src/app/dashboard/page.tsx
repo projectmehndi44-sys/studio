@@ -66,7 +66,7 @@ export default function DashboardPage() {
     switch (filter) {
       case 'today': return startOfToday();
       case 'yesterday': return startOfYesterday();
-      case 'month': return startOfMonth(new Date());
+      case 'month': return startOfOfMonth(new Date());
       case 'last7': return subDays(new Date(), 7);
       default: return null;
     }
