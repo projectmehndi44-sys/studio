@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   name: string;
@@ -49,4 +50,13 @@ export interface PurchaseRecord {
   paymentMode: string;
   isOfflineSale: boolean;
   customerId: string | null;
+}
+
+export interface CashTransaction {
+  id?: string;
+  type: 'IN' | 'OUT';
+  amount: number;
+  reason: string;
+  timestamp: any;
+  staffId: string;
 }

@@ -8,8 +8,10 @@ import {
   Menu,
   LogOut,
   PackageSearch,
-  LogIn,
-  ShieldCheck
+  ShieldCheck,
+  Banknote,
+  PlusCircle,
+  MinusCircle
 } from 'lucide-react';
 import { Product, CartItem } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
@@ -21,10 +23,19 @@ import { Toaster } from '@/components/ui/toaster';
 import Link from 'next/link';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { useCollection, useFirestore, useUser, useMemoFirebase, addDocumentNonBlocking, initiateAnonymousSignIn, useAuth } from '@/firebase';
+import { 
+  useCollection, 
+  useFirestore, 
+  useUser, 
+  useMemoFirebase, 
+  addDocumentNonBlocking, 
+  initiateAnonymousSignIn, 
+  useAuth 
+} from '@/firebase';
 import { collection, serverTimestamp } from 'firebase/firestore';
 import {
   Sheet,
@@ -33,6 +44,14 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 const CART_STORAGE_KEY = 'super9_pos_current_cart';
 
@@ -45,6 +64,7 @@ export default function POSPage() {
   
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
+  const [isCashDialogOpen, setIsCashDialogOpen] = useState(false);
   const [activeMainTab, setActiveMainTab] = useState('products');
 
   // Load cart from local storage on mount
@@ -105,7 +125,7 @@ export default function POSPage() {
 
   const updatePrice = (id: string, newPrice: number) => {
     setCartItems(prev => prev.map(item => 
-      item.id === id ? { ...item, price: newPrice } : item
+      item.id === id ? { ...item, price: newPrice, isCustomPrice: true } : item
     ));
   };
 
@@ -138,7 +158,6 @@ export default function POSPage() {
   };
 
   const handleAddNewProduct = (name: string) => {
-    // Automatic direct add
     const newId = `prod-${Date.now()}`;
     const newProd: Product = {
       id: newId,
@@ -150,15 +169,37 @@ export default function POSPage() {
       isPopular: false
     };
     
-    // Add to Firestore catalog
     addDocumentNonBlocking(collection(db, 'products'), {
       ...newProd,
       isActive: true,
       createdAt: new Date().toISOString()
     });
 
-    // Add to current cart
     handleProductSelect(newProd);
+  };
+
+  const handleCashTransaction = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const amount = parseFloat(formData.get('amount') as string);
+    const type = formData.get('type') as 'IN' | 'OUT';
+    const reason = formData.get('reason') as string;
+
+    if (isNaN(amount) || amount <= 0) return;
+
+    addDocumentNonBlocking(collection(db, 'cashTransactions'), {
+      staffId: user?.uid || 'anonymous',
+      timestamp: serverTimestamp(),
+      amount,
+      type,
+      reason: reason || (type === 'IN' ? 'Drawer Float' : 'Misc Withdrawal'),
+    });
+
+    setIsCashDialogOpen(false);
+    toast({
+      title: `Cash ${type} Recorded`,
+      description: `₹${amount} synced to ledger.`,
+    });
   };
 
   if (isUserLoading) {
@@ -195,7 +236,7 @@ export default function POSPage() {
     <div className="flex flex-col h-screen bg-white overflow-hidden font-body text-slate-900">
       <Toaster />
       
-      {/* Simplified Header */}
+      {/* Header */}
       <header className="h-16 border-b border-slate-100 bg-white flex items-center justify-between px-6 shrink-0">
         <div className="flex items-center gap-4">
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center font-black text-primary-foreground shadow-lg shadow-primary/10">S9</div>
@@ -203,6 +244,15 @@ export default function POSPage() {
         </div>
         
         <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setIsCashDialogOpen(true)}
+            className="rounded-xl font-black text-[10px] uppercase gap-2 bg-emerald-50 text-emerald-600 border-none shadow-sm hover:bg-emerald-100"
+          >
+            <Banknote className="h-4 w-4" /> Cash Flow
+          </Button>
+          
           <Link href="/dashboard" className="hidden sm:block">
             <Button variant="ghost" size="sm" className="font-black text-xs uppercase tracking-widest text-slate-400 hover:text-primary">Ledger</Button>
           </Link>
@@ -248,7 +298,6 @@ export default function POSPage() {
           </div>
         ) : (
           <>
-            {/* Desktop View: Search & Cart on Left, Checkout on Right */}
             <div className="flex flex-col h-full p-8 overflow-hidden gap-6 bg-slate-50/30 border-r">
               <ProductSearch products={productsData} onProductSelect={handleProductSelect} onScanClick={() => {}} onAddNewProduct={handleAddNewProduct} />
               <div className="flex-1 overflow-hidden">
@@ -266,6 +315,51 @@ export default function POSPage() {
         isOpen={isProductDialogOpen}
         onClose={() => setIsProductDialogOpen(false)}
       />
+
+      <Dialog open={isCashDialogOpen} onOpenChange={setIsCashDialogOpen}>
+        <DialogContent className="rounded-[32px] p-8 sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black uppercase tracking-tight">Register Cash Flow</DialogTitle>
+            <DialogDescription className="font-bold text-slate-400">
+              Record manual cash movements without a bill.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCashTransaction} className="space-y-6 py-4">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="relative">
+                  <input type="radio" id="cash-in" name="type" value="IN" defaultChecked className="peer hidden" />
+                  <label htmlFor="cash-in" className="flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-50 border border-transparent peer-checked:border-emerald-500 peer-checked:bg-emerald-50 transition-all cursor-pointer">
+                    <PlusCircle className="h-6 w-6 text-emerald-500 mb-1" />
+                    <span className="font-black text-[10px] uppercase">Cash In</span>
+                  </label>
+                </div>
+                <div className="relative">
+                  <input type="radio" id="cash-out" name="type" value="OUT" className="peer hidden" />
+                  <label htmlFor="cash-out" className="flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-50 border border-transparent peer-checked:border-destructive peer-checked:bg-destructive/5 transition-all cursor-pointer">
+                    <MinusCircle className="h-6 w-6 text-destructive mb-1" />
+                    <span className="font-black text-[10px] uppercase">Cash Out</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Amount (₹)</Label>
+                <Input name="amount" type="number" required placeholder="0.00" className="h-14 text-2xl font-black bg-slate-50 border-none rounded-2xl" />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Reason / Reference</Label>
+                <Input name="reason" placeholder="e.g. Tea Expense, Supplier, Float" className="h-12 font-bold bg-slate-50 border-none rounded-xl" />
+              </div>
+            </div>
+            <DialogFooter className="gap-3 sm:justify-between">
+              <Button type="button" variant="ghost" onClick={() => setIsCashDialogOpen(false)} className="rounded-xl font-bold">Cancel</Button>
+              <Button type="submit" className="rounded-xl font-black px-8">Confirm Sync</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

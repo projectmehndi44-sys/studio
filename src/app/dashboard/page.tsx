@@ -1,28 +1,15 @@
+
 "use client";
 
 import { useMemo } from 'react';
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  Cell
-} from 'recharts';
-import { 
   TrendingUp, 
-  Package, 
-  AlertTriangle, 
   ArrowLeft,
-  DollarSign,
-  Users,
-  Clock,
-  ExternalLink,
-  Download
+  Download,
+  Banknote,
+  PlusCircle,
+  MinusCircle,
+  History
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,7 +18,7 @@ import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
-import { PurchaseRecord } from '@/lib/types';
+import { PurchaseRecord, CashTransaction } from '@/lib/types';
 import { format } from 'date-fns';
 
 export default function DashboardPage() {
@@ -43,41 +30,31 @@ export default function DashboardPage() {
     return query(collection(db, 'purchases'), orderBy('timestamp', 'desc'), limit(50));
   }, [db, user]);
 
-  const { data, isLoading } = useCollection<PurchaseRecord>(salesQuery);
-  const sales = data ?? [];
+  const cashQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return query(collection(db, 'cashTransactions'), orderBy('timestamp', 'desc'), limit(20));
+  }, [db, user]);
+
+  const { data: salesData, isLoading: isSalesLoading } = useCollection<PurchaseRecord>(salesQuery);
+  const { data: cashData, isLoading: isCashLoading } = useCollection<CashTransaction>(cashQuery);
+
+  const sales = salesData ?? [];
+  const cashFlows = cashData ?? [];
 
   const stats = useMemo(() => {
-    const totalRevenue = sales.reduce((acc, sale) => acc + (sale.totalAmount || 0), 0);
-    const totalDiscount = sales.reduce((acc, sale) => acc + (sale.discountAmount || 0), 0);
-    const totalCustomers = new Set(sales.map(s => s.customerId).filter(Boolean)).size;
+    const totalSales = sales.reduce((acc, sale) => acc + (sale.totalAmount || 0), 0);
+    const totalIn = cashFlows.filter(c => c.type === 'IN').reduce((acc, c) => acc + c.amount, 0);
+    const totalOut = cashFlows.filter(c => c.type === 'OUT').reduce((acc, c) => acc + c.amount, 0);
     
     return {
-      revenue: totalRevenue,
-      discount: totalDiscount,
-      customers: totalCustomers || sales.length,
-      avgTicket: sales.length ? totalRevenue / sales.length : 0
+      sales: totalSales,
+      cashInHand: totalSales + totalIn - totalOut,
+      netCashFlow: totalIn - totalOut,
+      transactions: sales.length + cashFlows.length
     };
-  }, [sales]);
+  }, [sales, cashFlows]);
 
-  // Mock data for charts
-  const HEATMAP_DATA = [
-    { hour: '8 AM', sales: 12 },
-    { hour: '10 AM', sales: 34 },
-    { hour: '12 PM', sales: 56 },
-    { hour: '2 PM', sales: 42 },
-    { hour: '4 PM', sales: 88 },
-    { hour: '6 PM', sales: 112 },
-    { hour: '8 PM', sales: 95 },
-    { hour: '10 PM', sales: 22 },
-  ];
-
-  const DEAD_STOCK = [
-    { name: 'Imported Biscuits', days: 68, value: 4500 },
-    { name: 'Specialty Detergent', days: 62, value: 2100 },
-    { name: 'Organic Honey', days: 61, value: 1800 },
-  ];
-
-  if (isLoading) {
+  if (isSalesLoading || isCashLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-50">
         <div className="text-center font-black animate-pulse text-slate-400">
@@ -102,14 +79,9 @@ export default function DashboardPage() {
               <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-1">Real-time Performance Reports</p>
             </div>
           </div>
-          <div className="flex gap-4">
-            <Button variant="outline" className="gap-2 bg-white rounded-2xl border-none shadow-sm font-black text-xs uppercase py-6 px-6">
-              <Download className="h-4 w-4" /> Export CSV
-            </Button>
-            <Button className="bg-primary text-primary-foreground font-black text-xs uppercase rounded-2xl py-6 px-8 shadow-xl shadow-primary/20">
-              Update Catalog
-            </Button>
-          </div>
+          <Button variant="outline" className="gap-2 bg-white rounded-2xl border-none shadow-sm font-black text-xs uppercase py-6 px-6">
+            <Download className="h-4 w-4" /> Export CSV
+          </Button>
         </div>
 
         {/* Top Stats */}
@@ -117,8 +89,8 @@ export default function DashboardPage() {
           <Card className="bg-white border-none shadow-xl rounded-[32px] overflow-hidden">
             <div className="h-2 bg-primary w-full" />
             <CardContent className="pt-8">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Sales</p>
-              <h3 className="text-4xl font-black mt-2 text-slate-900 tracking-tight">₹{stats.revenue.toLocaleString()}</h3>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Revenue from Sales</p>
+              <h3 className="text-4xl font-black mt-2 text-slate-900 tracking-tight">₹{stats.sales.toLocaleString()}</h3>
               <div className="flex items-center gap-2 text-emerald-500 text-xs font-black mt-4">
                 <TrendingUp className="h-4 w-4" /> LIVE SYNC
               </div>
@@ -128,41 +100,46 @@ export default function DashboardPage() {
           <Card className="bg-white border-none shadow-xl rounded-[32px] overflow-hidden">
              <div className="h-2 bg-accent w-full" />
             <CardContent className="pt-8">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Savings</p>
-              <h3 className="text-4xl font-black mt-2 text-accent tracking-tight">₹{stats.discount.toLocaleString()}</h3>
-              <p className="text-xs font-bold text-slate-300 mt-4 uppercase tracking-tighter">Coupons & Loyalty</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Cash in Drawer</p>
+              <h3 className="text-4xl font-black mt-2 text-accent tracking-tight">₹{stats.cashInHand.toLocaleString()}</h3>
+              <p className="text-xs font-bold text-slate-300 mt-4 uppercase tracking-tighter">Adjusted for manual flow</p>
             </CardContent>
           </Card>
 
           <Card className="bg-white border-none shadow-xl rounded-[32px]">
             <CardContent className="pt-8">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Transactions</p>
-              <h3 className="text-4xl font-black mt-2 text-slate-900 tracking-tight">{sales.length}</h3>
-              <p className="text-xs font-bold text-slate-300 mt-4 uppercase tracking-tighter">Last 50 Entries</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Manual Adjustment</p>
+              <h3 className={cn("text-4xl font-black mt-2 tracking-tight", stats.netCashFlow >= 0 ? "text-emerald-500" : "text-destructive")}>
+                {stats.netCashFlow >= 0 ? '+' : ''}₹{stats.netCashFlow.toLocaleString()}
+              </h3>
+              <p className="text-xs font-bold text-slate-300 mt-4 uppercase tracking-tighter">In/Out Entries</p>
             </CardContent>
           </Card>
 
           <Card className="bg-white border-none shadow-xl rounded-[32px]">
             <CardContent className="pt-8">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Avg Bill Value</p>
-              <h3 className="text-4xl font-black mt-2 text-slate-900 tracking-tight">₹{Math.round(stats.avgTicket)}</h3>
-              <p className="text-xs font-bold text-slate-300 mt-4 uppercase tracking-tighter">Per Customer</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Activity Count</p>
+              <h3 className="text-4xl font-black mt-2 text-slate-900 tracking-tight">{stats.transactions}</h3>
+              <p className="text-xs font-bold text-slate-300 mt-4 uppercase tracking-tighter">Syncing Recent Entries</p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          {/* Sales History */}
-          <Card className="lg:col-span-2 bg-white border-none shadow-2xl rounded-[40px] overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          {/* Sales Activity */}
+          <Card className="bg-white border-none shadow-2xl rounded-[40px] overflow-hidden">
             <CardHeader className="p-8 pb-4">
-              <CardTitle className="text-2xl font-black text-slate-900 uppercase tracking-tight">Sales Activity</CardTitle>
-              <CardDescription className="font-bold text-slate-400 uppercase text-[10px] tracking-widest">Recent ledger entries synced from terminal</CardDescription>
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5 text-primary" />
+                <CardTitle className="text-2xl font-black text-slate-900 uppercase tracking-tight">Sales activity</CardTitle>
+              </div>
+              <CardDescription className="font-bold text-slate-400 uppercase text-[10px] tracking-widest">Synced customer receipts</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-slate-50">
                 {sales.length === 0 ? (
                   <div className="p-12 text-center text-slate-400 font-bold uppercase text-xs tracking-widest">
-                    No transactions found
+                    No sales recorded
                   </div>
                 ) : (
                   sales.map((sale) => (
@@ -178,11 +155,9 @@ export default function DashboardPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <Badge variant="secondary" className="bg-slate-100 text-slate-500 font-black text-[10px] rounded-lg">
-                          {sale.paymentMode}
-                        </Badge>
-                      </div>
+                      <Badge variant="secondary" className="bg-slate-100 text-slate-500 font-black text-[10px] rounded-lg uppercase">
+                        {sale.paymentMode}
+                      </Badge>
                     </div>
                   ))
                 )}
@@ -190,40 +165,49 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          {/* Business Insights */}
-          <div className="space-y-10">
-            <Card className="bg-white border-none shadow-2xl rounded-[40px] overflow-hidden">
-              <CardHeader className="p-8">
-                <CardTitle className="text-2xl font-black text-slate-900 uppercase tracking-tight">Dead Stock</CardTitle>
-                <CardDescription className="font-bold text-slate-400 uppercase text-[10px] tracking-widest">Unsold items requiring action</CardDescription>
-              </CardHeader>
-              <CardContent className="p-8 pt-0">
-                <div className="space-y-8">
-                  {DEAD_STOCK.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between group">
-                      <div className="space-y-1">
-                        <p className="font-black text-slate-900 tracking-tight">{item.name}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Idle: {item.days} days</p>
+          {/* Cash Flow Ledger */}
+          <Card className="bg-white border-none shadow-2xl rounded-[40px] overflow-hidden">
+            <CardHeader className="p-8 pb-4">
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5 text-accent" />
+                <CardTitle className="text-2xl font-black text-slate-900 uppercase tracking-tight">Manual adjustments</CardTitle>
+              </div>
+              <CardDescription className="font-bold text-slate-400 uppercase text-[10px] tracking-widest">Non-receipt cash flow (In/Out)</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-slate-50">
+                {cashFlows.length === 0 ? (
+                  <div className="p-12 text-center text-slate-400 font-bold uppercase text-xs tracking-widest">
+                    No manual flow recorded
+                  </div>
+                ) : (
+                  cashFlows.map((cf) => (
+                    <div key={cf.id} className="p-6 hover:bg-slate-50 transition-colors flex items-center justify-between group">
+                      <div className="flex items-center gap-4">
+                        <div className={cn(
+                          "h-12 w-12 rounded-2xl flex items-center justify-center",
+                          cf.type === 'IN' ? "bg-emerald-50 text-emerald-500" : "bg-destructive/5 text-destructive"
+                        )}>
+                          {cf.type === 'IN' ? <PlusCircle className="h-6 w-6" /> : <MinusCircle className="h-6 w-6" />}
+                        </div>
+                        <div>
+                          <p className="font-black text-slate-900 tracking-tight">
+                            {cf.type === 'IN' ? '+' : '-'}₹{cf.amount}
+                          </p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            {cf.reason}
+                          </p>
+                        </div>
                       </div>
-                      <Button variant="outline" size="sm" className="rounded-xl font-black text-[10px] uppercase border-accent text-accent hover:bg-accent hover:text-white py-4 px-4">
-                        Liquidate
-                      </Button>
+                      <p className="text-[10px] font-black text-slate-300 uppercase">
+                        {cf.timestamp?.seconds ? format(new Date(cf.timestamp.seconds * 1000), 'HH:mm • dd MMM') : 'Recent'}
+                      </p>
                     </div>
-                  ))}
-                </div>
-                <Separator className="my-10 bg-slate-50" />
-                <div className="bg-primary/5 p-6 rounded-[24px] border border-primary/10">
-                  <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">AI Strategy</p>
-                  <p className="text-sm font-bold leading-relaxed text-slate-600">
-                    Push <span className="text-primary font-black underline underline-offset-4 decoration-primary/30">Bulk Bundles</span> for Imported Biscuits to your regular dairy customers tonight.
-                  </p>
-                  <Button variant="link" size="sm" className="p-0 h-auto mt-6 text-primary font-black uppercase text-xs tracking-widest">
-                    Run Automation <ExternalLink className="h-3 w-3 ml-2" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

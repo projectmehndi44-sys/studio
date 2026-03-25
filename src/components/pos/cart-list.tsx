@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Trash2, Plus, Minus, ShoppingBag, Edit2, Check } from 'lucide-react';
