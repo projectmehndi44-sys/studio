@@ -176,7 +176,24 @@ export default function POSPage() {
     toast({ title: "Logged Out", description: "Staff session ended." });
   };
 
-  const handleAddNewProduct = (initialName: string) => {
+  const handleAddNewProduct = (initialName: string, isSilent = false) => {
+    if (isSilent) {
+      // Automatic background creation
+      addDocumentNonBlocking(collection(db, 'products'), {
+        name: initialName,
+        price: 0,
+        costPrice: 0,
+        barcode: '',
+        category: 'General',
+        stock: null,
+        isPopular: false,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      return;
+    }
+    
     setInitialNewName(initialName);
     setEditingProduct(null);
     setIsProductDialogOpen(true);

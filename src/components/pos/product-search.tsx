@@ -12,7 +12,7 @@ interface ProductSearchProps {
   products: Product[] | null;
   onProductSelect: (product: Product) => void;
   onScanClick: () => void;
-  onAddNewProduct: (initialName: string) => void;
+  onAddNewProduct: (initialName: string, isSilent?: boolean) => void;
 }
 
 export function ProductSearch({ products, onProductSelect, onScanClick, onAddNewProduct }: ProductSearchProps) {
@@ -49,6 +49,35 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
     }
   };
 
+  const handleSearchSubmit = () => {
+    if (quickPrice) {
+      handleQuickAdd();
+      return;
+    }
+
+    if (query.trim().length > 1) {
+      if (filteredProducts.length > 0) {
+        // Add the first matching product
+        onProductSelect(filteredProducts[0]);
+        setQuery('');
+      } else {
+        // AUTOMATIC ADD: If no match found, create it automatically
+        const autoItem: Product = {
+          id: `auto-${Date.now()}`,
+          name: query.trim(),
+          barcode: '',
+          price: 0,
+          costPrice: 0,
+          category: 'General',
+          isPopular: false
+        };
+        onProductSelect(autoItem);
+        onAddNewProduct(query.trim(), true); // Silent background creation
+        setQuery('');
+      }
+    }
+  };
+
   const showAddPrompt = query.length > 2 && filteredProducts.length === 0 && !quickPrice;
 
   return (
@@ -59,7 +88,11 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && quickPrice && handleQuickAdd()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSearchSubmit();
+              }
+            }}
             placeholder="Search items or type price..."
             className="pl-10 h-14 bg-white border-slate-200 focus-visible:ring-2 focus-visible:ring-primary text-xl font-bold rounded-2xl shadow-sm"
           />
