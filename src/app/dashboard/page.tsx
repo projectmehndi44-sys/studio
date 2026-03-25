@@ -5,7 +5,6 @@ import {
   TrendingUp, 
   ArrowLeft,
   Download,
-  Banknote,
   PlusCircle,
   MinusCircle,
   History,
@@ -13,15 +12,16 @@ import {
   Eye,
   Printer,
   FileDown,
-  CheckCircle2
+  Calendar,
+  Filter
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit, where, Timestamp } from 'firebase/firestore';
 import { PurchaseRecord, CashTransaction } from '@/lib/types';
-import { format } from 'date-fns';
+import { format, startOfToday, startOfMonth, startOfYesterday, subDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
@@ -34,21 +34,52 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
+type DateFilter = 'today' | 'yesterday' | 'month' | 'last7' | 'all';
+
 export default function DashboardPage() {
   const { toast } = useToast();
   const db = useFirestore();
   const { user } = useUser();
   const [viewingSale, setViewingSale] = useState<PurchaseRecord | null>(null);
+  const [dateFilter, setDateFilter] = useState<DateFilter>('today');
+
+  const getFilterDate = (filter: DateFilter) => {
+    switch (filter) {
+      case 'today': return startOfToday();
+      case 'yesterday': return startOfYesterday();
+      case 'month': return startOfMonth(new Date());
+      case 'last7': return subDays(new Date(), 7);
+      default: return null;
+    }
+  };
 
   const salesQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(db, 'purchases'), orderBy('timestamp', 'desc'), limit(50));
-  }, [db, user]);
+    const filterDate = getFilterDate(dateFilter);
+    if (filterDate) {
+      return query(
+        collection(db, 'purchases'), 
+        where('timestamp', '>=', Timestamp.fromDate(filterDate)),
+        orderBy('timestamp', 'desc'),
+        limit(100)
+      );
+    }
+    return query(collection(db, 'purchases'), orderBy('timestamp', 'desc'), limit(100));
+  }, [db, user, dateFilter]);
 
   const cashQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return query(collection(db, 'cashTransactions'), orderBy('timestamp', 'desc'), limit(20));
-  }, [db, user]);
+    const filterDate = getFilterDate(dateFilter);
+    if (filterDate) {
+      return query(
+        collection(db, 'cashTransactions'), 
+        where('timestamp', '>=', Timestamp.fromDate(filterDate)),
+        orderBy('timestamp', 'desc'),
+        limit(50)
+      );
+    }
+    return query(collection(db, 'cashTransactions'), orderBy('timestamp', 'desc'), limit(50));
+  }, [db, user, dateFilter]);
 
   const { data: salesData, isLoading: isSalesLoading } = useCollection<PurchaseRecord>(salesQuery);
   const { data: cashData, isLoading: isCashLoading } = useCollection<CashTransaction>(cashQuery);
@@ -69,198 +100,188 @@ export default function DashboardPage() {
     };
   }, [sales, cashFlows]);
 
-  const handlePrintAction = (type: 'thermal' | 'normal' | 'pdf') => {
-    if (type === 'pdf') {
-      toast({ title: "Generating PDF", description: "Saving digital invoice..." });
-    } else {
-      toast({ 
-        title: type === 'thermal' ? "Thermal Printing" : "Desktop Printing", 
-        description: `Formatting for ${type} output...` 
-      });
-    }
-    // Browser print dialog handles layout via @media print in globals.css
+  const handlePrintAction = () => {
     window.print();
   };
 
   if (isSalesLoading || isCashLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center font-black animate-pulse text-slate-400">
-          SYNCING BUSINESS LEDGER...
+        <div className="text-center font-black animate-pulse text-slate-400 text-2xl uppercase tracking-widest">
+          Syncing Cloud Ledger...
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 font-body">
-      {/* PROFESSIONAL PRINT-ONLY RECEIPT (HISTORICAL) */}
-      <div className="hidden print-only p-8 bg-white text-slate-900 min-h-screen">
-        <div className="text-center space-y-2 border-b-2 border-slate-900 pb-6 mb-6">
-          <h2 className="text-3xl font-black uppercase tracking-tighter">Super 9+ Supermarket</h2>
-          <p className="text-sm font-bold">Historical Digital Receipt</p>
-          <p className="text-xs font-medium">Main Market, New Delhi • GSTIN: 07AABCU1234F1Z5</p>
+    <div className="min-h-screen bg-slate-50 p-8 font-body">
+      {/* PRINT-ONLY RECEIPT */}
+      <div className="hidden print-only p-12 bg-white text-slate-900 font-receipt">
+        <div className="text-center space-y-2 border-b-2 border-slate-900 pb-8 mb-8">
+           <p className="text-[10px] font-black tracking-[0.4em] text-slate-500">KRISHNA'S</p>
+          <h2 className="text-5xl font-black uppercase tracking-tighter">Super 9+ Supermarket</h2>
+          <p className="text-lg font-bold">Historical Digital Copy</p>
+          <p className="text-sm font-medium">Main Market, New Delhi • GSTIN: 07AABCU1234F1Z5</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
-          <div className="space-y-1">
-            <p className="font-bold">Bill ID: <span className="font-medium">#{viewingSale?.id || Date.now()}</span></p>
-            <p className="font-bold">Date: <span className="font-medium">
-              {viewingSale?.timestamp?.seconds ? format(new Date(viewingSale.timestamp.seconds * 1000), 'dd/MM/yyyy') : format(new Date(), 'dd/MM/yyyy')}
-            </span></p>
-            <p className="font-bold">Time: <span className="font-medium">
-              {viewingSale?.timestamp?.seconds ? format(new Date(viewingSale.timestamp.seconds * 1000), 'HH:mm:ss') : format(new Date(), 'HH:mm:ss')}
-            </span></p>
+        <div className="grid grid-cols-2 gap-8 mb-10 text-lg">
+          <div className="space-y-2">
+            <p className="font-bold">Bill ID: #{viewingSale?.id || 'ARCHIVE'}</p>
+            <p className="font-bold">Date: {viewingSale?.timestamp?.seconds ? format(new Date(viewingSale.timestamp.seconds * 1000), 'dd/MM/yyyy') : '--'}</p>
           </div>
-          <div className="space-y-1 text-right">
-            <p className="font-bold">Customer: <span className="font-medium">{viewingSale?.customerId || 'Walk-in Guest'}</span></p>
-            <p className="font-bold">Mode: <span className="font-medium">{viewingSale?.paymentMode || 'Cash'}</span></p>
-            <p className="font-bold">Status: <span className="font-medium">Duplicate Copy</span></p>
+          <div className="space-y-2 text-right">
+            <p className="font-bold">Cust: {viewingSale?.customerId || 'Walk-in'}</p>
+            <p className="font-bold">Mode: {viewingSale?.paymentMode || 'Cash'}</p>
           </div>
         </div>
 
-        <table className="w-full text-sm border-collapse mb-8">
+        <table className="w-full text-lg border-collapse mb-10">
           <thead>
             <tr className="border-y-2 border-slate-900">
-              <th className="text-left py-3 font-black uppercase text-xs">Item Description</th>
-              <th className="text-center py-3 font-black uppercase text-xs">Qty</th>
-              <th className="text-right py-3 font-black uppercase text-xs">Rate</th>
-              <th className="text-right py-3 font-black uppercase text-xs">Total</th>
+              <th className="text-left py-4 font-black uppercase">Item</th>
+              <th className="text-center py-4 font-black uppercase">Qty</th>
+              <th className="text-right py-4 font-black uppercase">Total</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200">
             {viewingSale?.items.map((item, idx) => (
               <tr key={idx}>
-                <td className="py-3 font-bold">{item.name}</td>
-                <td className="py-3 text-center font-bold">{item.quantity}</td>
-                <td className="py-3 text-right font-bold">₹{item.price}</td>
-                <td className="py-3 text-right font-bold">₹{item.price * item.quantity}</td>
+                <td className="py-4 font-bold">{item.name}</td>
+                <td className="py-4 text-center font-bold">{item.quantity}</td>
+                <td className="py-4 text-right font-bold">₹{item.price * item.quantity}</td>
               </tr>
             ))}
           </tbody>
         </table>
 
-        <div className="space-y-2 text-right border-t-2 border-slate-900 pt-6">
-          <div className="flex justify-between items-center text-sm font-bold">
-            <span>Subtotal</span>
-            <span>₹{viewingSale?.subtotalAmount.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between items-center text-sm font-bold">
-            <span>Discount</span>
-            <span>-₹{viewingSale?.discountAmount.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-            <span className="text-lg font-black uppercase tracking-tight">Grand Total</span>
-            <span className="text-3xl font-black">₹{viewingSale?.totalAmount.toFixed(2)}</span>
+        <div className="space-y-3 text-right border-t-2 border-slate-900 pt-8">
+          <div className="flex justify-between items-center pt-4">
+            <span className="text-2xl font-black uppercase tracking-tight">Grand Total</span>
+            <span className="text-5xl font-black">₹{viewingSale?.totalAmount.toFixed(2)}</span>
           </div>
         </div>
 
-        <div className="mt-16 text-center space-y-4">
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-            Duplicate Copy • Generated from Cloud Archive
-          </p>
-          <p className="text-sm font-bold">Thank you for shopping at Super 9+!</p>
+        <div className="mt-20 text-center">
+          <p className="text-sm font-bold">Thank you for shopping at Krishna's Super 9+!</p>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto space-y-10 print:hidden">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-6">
+      <div className="max-w-7xl mx-auto space-y-12 print:hidden">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="flex items-center gap-8">
             <Link href="/">
-              <Button variant="ghost" size="icon" className="rounded-full bg-white shadow-sm hover:scale-110 active:scale-90 transition-all">
-                <ArrowLeft className="h-6 w-6 text-slate-900" />
+              <Button variant="ghost" size="icon" className="h-16 w-16 rounded-[24px] bg-white shadow-xl hover:scale-110 active:scale-90 transition-all">
+                <ArrowLeft className="h-8 w-8 text-secondary" />
               </Button>
             </Link>
-            <div>
-              <h1 className="text-4xl font-black text-slate-900 tracking-tighter">BUSINESS LEDGER</h1>
-              <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-1">Real-time Performance Reports</p>
+            <div className="flex flex-col">
+              <p className="text-xs font-black text-secondary tracking-[0.4em] leading-none mb-2">KRISHNA'S</p>
+              <h1 className="text-5xl font-black text-primary tracking-tighter uppercase leading-none">Super9<span className="text-secondary">+</span> Ledger</h1>
             </div>
           </div>
-          <Button variant="outline" className="gap-2 bg-white rounded-2xl border-none shadow-sm font-black text-xs uppercase py-6 px-6">
-            <Download className="h-4 w-4" /> Export CSV
-          </Button>
+          
+          <div className="flex items-center gap-4 bg-white p-2 rounded-[32px] shadow-xl">
+             {(['today', 'yesterday', 'month', 'all'] as const).map((filter) => (
+               <Button
+                 key={filter}
+                 variant={dateFilter === filter ? 'default' : 'ghost'}
+                 onClick={() => setDateFilter(filter)}
+                 className={cn(
+                   "h-14 px-8 rounded-[24px] font-black uppercase text-xs tracking-widest transition-all",
+                   dateFilter === filter ? "bg-secondary shadow-lg shadow-secondary/20" : "text-slate-400"
+                 )}
+               >
+                 {filter}
+               </Button>
+             ))}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          <Card className="bg-white border-none shadow-xl rounded-[32px] overflow-hidden">
-            <div className="h-2 bg-primary w-full" />
-            <CardContent className="pt-8">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Revenue from Sales</p>
-              <h3 className="text-4xl font-black mt-2 text-slate-900 tracking-tight">₹{stats.sales.toLocaleString()}</h3>
-              <div className="flex items-center gap-2 text-emerald-500 text-xs font-black mt-4">
-                <TrendingUp className="h-4 w-4" /> LIVE SYNC
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+          <Card className="bg-white border-none shadow-2xl rounded-[48px] overflow-hidden group hover:scale-[1.02] transition-transform">
+            <div className="h-3 bg-primary w-full" />
+            <CardContent className="pt-10 p-10">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Total Sales</p>
+              <h3 className="text-5xl font-black mt-3 text-slate-900 tracking-tighter">₹{stats.sales.toLocaleString()}</h3>
+              <div className="flex items-center gap-2 text-emerald-500 text-xs font-black mt-6">
+                <TrendingUp className="h-5 w-5" /> SYNCED
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-none shadow-xl rounded-[32px] overflow-hidden">
-             <div className="h-2 bg-accent w-full" />
-            <CardContent className="pt-8">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Cash in Drawer</p>
-              <h3 className="text-4xl font-black mt-2 text-accent tracking-tight">₹{stats.cashInHand.toLocaleString()}</h3>
-              <p className="text-xs font-bold text-slate-300 mt-4 uppercase tracking-tighter">Adjusted for manual flow</p>
+          <Card className="bg-white border-none shadow-2xl rounded-[48px] overflow-hidden group hover:scale-[1.02] transition-transform">
+             <div className="h-3 bg-secondary w-full" />
+            <CardContent className="pt-10 p-10">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Cash in Drawer</p>
+              <h3 className="text-5xl font-black mt-3 text-secondary tracking-tighter">₹{stats.cashInHand.toLocaleString()}</h3>
+              <p className="text-xs font-bold text-slate-300 mt-6 uppercase tracking-widest">Adjusted for In/Out</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-none shadow-xl rounded-[32px]">
-            <CardContent className="pt-8">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Manual Adjustment</p>
-              <h3 className={cn("text-4xl font-black mt-2 tracking-tight", stats.netCashFlow >= 0 ? "text-emerald-500" : "text-destructive")}>
+          <Card className="bg-white border-none shadow-2xl rounded-[48px] group hover:scale-[1.02] transition-transform">
+            <CardContent className="pt-10 p-10">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Manual Flow</p>
+              <h3 className={cn("text-5xl font-black mt-3 tracking-tighter", stats.netCashFlow >= 0 ? "text-emerald-500" : "text-destructive")}>
                 {stats.netCashFlow >= 0 ? '+' : ''}₹{stats.netCashFlow.toLocaleString()}
               </h3>
-              <p className="text-xs font-bold text-slate-300 mt-4 uppercase tracking-tighter">In/Out Entries</p>
+              <p className="text-xs font-bold text-slate-300 mt-6 uppercase tracking-widest">Drawer Adjustments</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-none shadow-xl rounded-[32px]">
-            <CardContent className="pt-8">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Activity Count</p>
-              <h3 className="text-4xl font-black mt-2 text-slate-900 tracking-tight">{stats.transactions}</h3>
-              <p className="text-xs font-bold text-slate-300 mt-4 uppercase tracking-tighter">Syncing Recent Entries</p>
+          <Card className="bg-white border-none shadow-2xl rounded-[48px] group hover:scale-[1.02] transition-transform">
+            <CardContent className="pt-10 p-10">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Order Count</p>
+              <h3 className="text-5xl font-black mt-3 text-slate-900 tracking-tighter">{sales.length}</h3>
+              <p className="text-xs font-bold text-slate-300 mt-6 uppercase tracking-widest">Transactions Period</p>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          <Card className="bg-white border-none shadow-2xl rounded-[40px] overflow-hidden">
-            <CardHeader className="p-8 pb-4">
-              <div className="flex items-center gap-2">
-                <ShoppingBag className="h-5 w-5 text-primary" />
-                <CardTitle className="text-2xl font-black text-slate-900 uppercase tracking-tight">Sales activity</CardTitle>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          <Card className="bg-white border-none shadow-2xl rounded-[56px] overflow-hidden">
+            <CardHeader className="p-10 pb-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-primary/10 p-4 rounded-[20px]">
+                  <ShoppingBag className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-3xl font-black text-slate-900 uppercase tracking-tight">Recent Sales</CardTitle>
+                  <CardDescription className="font-bold text-slate-400 uppercase text-xs tracking-[0.2em] mt-1">Transaction History</CardDescription>
+                </div>
               </div>
-              <CardDescription className="font-bold text-slate-400 uppercase text-[10px] tracking-widest">Synced customer receipts</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-slate-50">
                 {sales.length === 0 ? (
-                  <div className="p-12 text-center text-slate-400 font-bold uppercase text-xs tracking-widest">
-                    No sales recorded
+                  <div className="p-16 text-center text-slate-400 font-bold uppercase text-sm tracking-widest">
+                    No sales for this period
                   </div>
                 ) : (
                   sales.map((sale) => (
-                    <div key={sale.id} className="p-6 hover:bg-slate-50 transition-colors flex items-center justify-between group">
-                      <div className="flex items-center gap-4">
-                        <div className="bg-slate-100 h-12 w-12 rounded-2xl flex items-center justify-center font-black text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                    <div key={sale.id} className="p-8 hover:bg-slate-50/80 transition-all flex items-center justify-between group">
+                      <div className="flex items-center gap-6">
+                        <div className="bg-white shadow-md h-16 w-16 rounded-[24px] flex items-center justify-center font-black text-slate-400 group-hover:bg-primary group-hover:text-white transition-all text-xl">
                           {sale.paymentMode?.[0] || '₹'}
                         </div>
                         <div>
-                          <p className="font-black text-slate-900 tracking-tight">₹{sale.totalAmount}</p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                            {sale.timestamp?.seconds ? format(new Date(sale.timestamp.seconds * 1000), 'HH:mm • dd MMM') : 'Processing...'}
+                          <p className="font-black text-2xl text-slate-900 tracking-tighter">₹{sale.totalAmount.toLocaleString()}</p>
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
+                            {sale.timestamp?.seconds ? format(new Date(sale.timestamp.seconds * 1000), 'HH:mm • dd MMM') : 'Syncing...'}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <Badge variant="secondary" className="bg-slate-100 text-slate-500 font-black text-[10px] rounded-lg uppercase">
+                      <div className="flex items-center gap-4">
+                        <Badge variant="secondary" className="bg-slate-100 text-slate-500 font-black text-xs rounded-xl uppercase h-10 px-4">
                           {sale.paymentMode}
                         </Badge>
                         <Button 
                           variant="ghost" 
                           size="icon" 
                           onClick={() => setViewingSale(sale)}
-                          className="rounded-xl hover:bg-primary/10 hover:text-primary"
+                          className="h-14 w-14 rounded-2xl hover:bg-primary/10 hover:text-primary transition-colors"
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-6 w-6" />
                         </Button>
                       </div>
                     </div>
@@ -270,41 +291,45 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white border-none shadow-2xl rounded-[40px] overflow-hidden">
-            <CardHeader className="p-8 pb-4">
-              <div className="flex items-center gap-2">
-                <History className="h-5 w-5 text-accent" />
-                <CardTitle className="text-2xl font-black text-slate-900 uppercase tracking-tight">Manual adjustments</CardTitle>
+          <Card className="bg-white border-none shadow-2xl rounded-[56px] overflow-hidden">
+            <CardHeader className="p-10 pb-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-secondary/10 p-4 rounded-[20px]">
+                  <History className="h-8 w-8 text-secondary" />
+                </div>
+                <div>
+                  <CardTitle className="text-3xl font-black text-slate-900 uppercase tracking-tight">Manual Flow</CardTitle>
+                  <CardDescription className="font-bold text-slate-400 uppercase text-xs tracking-[0.2em] mt-1">Drawer Adjustments</CardDescription>
+                </div>
               </div>
-              <CardDescription className="font-bold text-slate-400 uppercase text-[10px] tracking-widest">Non-receipt cash flow (In/Out)</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-slate-50">
                 {cashFlows.length === 0 ? (
-                  <div className="p-12 text-center text-slate-400 font-bold uppercase text-xs tracking-widest">
-                    No manual flow recorded
+                  <div className="p-16 text-center text-slate-400 font-bold uppercase text-sm tracking-widest">
+                    No adjustments recorded
                   </div>
                 ) : (
                   cashFlows.map((cf) => (
-                    <div key={cf.id} className="p-6 hover:bg-slate-50 transition-colors flex items-center justify-between group">
-                      <div className="flex items-center gap-4">
+                    <div key={cf.id} className="p-8 hover:bg-slate-50/80 transition-all flex items-center justify-between group">
+                      <div className="flex items-center gap-6">
                         <div className={cn(
-                          "h-12 w-12 rounded-2xl flex items-center justify-center",
+                          "h-16 w-16 rounded-[24px] flex items-center justify-center shadow-sm",
                           cf.type === 'IN' ? "bg-emerald-50 text-emerald-500" : "bg-destructive/5 text-destructive"
                         )}>
-                          {cf.type === 'IN' ? <PlusCircle className="h-6 w-6" /> : <MinusCircle className="h-6 w-6" />}
+                          {cf.type === 'IN' ? <PlusCircle className="h-8 w-8" /> : <MinusCircle className="h-8 w-8" />}
                         </div>
                         <div>
-                          <p className="font-black text-slate-900 tracking-tight">
-                            {cf.type === 'IN' ? '+' : '-'}₹{cf.amount}
+                          <p className="font-black text-2xl text-slate-900 tracking-tighter">
+                            {cf.type === 'IN' ? '+' : '-'}₹{cf.amount.toLocaleString()}
                           </p>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
                             {cf.reason}
                           </p>
                         </div>
                       </div>
-                      <p className="text-[10px] font-black text-slate-300 uppercase">
-                        {cf.timestamp?.seconds ? format(new Date(cf.timestamp.seconds * 1000), 'HH:mm • dd MMM') : 'Recent'}
+                      <p className="text-xs font-black text-slate-300 uppercase tracking-widest">
+                        {cf.timestamp?.seconds ? format(new Date(cf.timestamp.seconds * 1000), 'HH:mm') : 'Now'}
                       </p>
                     </div>
                   ))
@@ -317,60 +342,57 @@ export default function DashboardPage() {
 
       {/* VIEW & PRINT DIALOG */}
       <Dialog open={!!viewingSale} onOpenChange={(open) => !open && setViewingSale(null)}>
-        <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden print:hidden">
-          <div className="absolute top-0 left-0 w-full h-2 bg-primary" />
-          <DialogHeader className="space-y-4">
-            <div className="mx-auto w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center">
-              <ShoppingBag className="h-12 w-12 text-primary" />
+        <DialogContent className="sm:max-w-md rounded-[48px] p-12 border-none shadow-2xl overflow-hidden print:hidden">
+          <div className="absolute top-0 left-0 w-full h-3 bg-primary" />
+          <DialogHeader className="space-y-6">
+            <div className="mx-auto w-24 h-24 bg-primary/10 rounded-[32px] flex items-center justify-center">
+              <ShoppingBag className="h-14 w-14 text-primary" />
             </div>
-            <DialogTitle className="text-center text-3xl font-black uppercase tracking-tight">Sale Record</DialogTitle>
-            <DialogDescription className="text-center font-bold text-slate-400 uppercase text-[10px] tracking-widest">
-              Review and re-print historical receipt
-            </DialogDescription>
+            <DialogTitle className="text-center text-4xl font-black uppercase tracking-tight">Bill Record</DialogTitle>
           </DialogHeader>
 
-          <div className="py-6 space-y-4">
-            <div className="bg-slate-50 rounded-3xl p-6 space-y-3">
-              <div className="flex justify-between items-center text-xs font-black uppercase text-slate-400">
+          <div className="py-8 space-y-6">
+            <div className="bg-slate-50 rounded-[32px] p-8 space-y-4">
+              <div className="flex justify-between items-center text-xs font-black uppercase text-slate-400 tracking-widest">
                 <span>Items: {viewingSale?.items.length}</span>
                 <span>{viewingSale?.paymentMode}</span>
               </div>
               <div className="flex justify-between items-end">
-                <span className="text-3xl font-black text-slate-900 tracking-tight">₹{viewingSale?.totalAmount}</span>
-                <span className="text-[10px] font-bold text-slate-400">
+                <span className="text-5xl font-black text-slate-900 tracking-tighter">₹{viewingSale?.totalAmount.toLocaleString()}</span>
+                <span className="text-sm font-bold text-slate-400">
                   {viewingSale?.timestamp?.seconds ? format(new Date(viewingSale.timestamp.seconds * 1000), 'HH:mm • dd MMM') : ''}
                 </span>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-1 gap-4">
               <Button 
                 variant="outline" 
-                className="h-16 rounded-2xl bg-slate-50 border-none font-black uppercase text-xs gap-3 hover:bg-slate-100"
-                onClick={() => handlePrintAction('normal')}
+                className="h-20 rounded-3xl bg-slate-50 border-none font-black uppercase text-sm gap-4 hover:bg-slate-100"
+                onClick={handlePrintAction}
               >
-                <Printer className="h-5 w-5 text-primary" /> Normal Desktop Print
+                <Printer className="h-7 w-7 text-primary" /> Normal Desktop Print
               </Button>
               <Button 
                 variant="outline" 
-                className="h-16 rounded-2xl bg-slate-50 border-none font-black uppercase text-xs gap-3 hover:bg-slate-100"
-                onClick={() => handlePrintAction('thermal')}
+                className="h-20 rounded-3xl bg-slate-50 border-none font-black uppercase text-sm gap-4 hover:bg-slate-100"
+                onClick={handlePrintAction}
               >
-                <Printer className="h-5 w-5 text-accent" /> Thermal Printer (58/80mm)
+                <Printer className="h-7 w-7 text-secondary" /> Thermal Printer (58/80mm)
               </Button>
               <Button 
                 variant="outline" 
-                className="h-16 rounded-2xl bg-slate-50 border-none font-black uppercase text-xs gap-3 hover:bg-slate-100"
-                onClick={() => handlePrintAction('pdf')}
+                className="h-20 rounded-3xl bg-slate-50 border-none font-black uppercase text-sm gap-4 hover:bg-slate-100"
+                onClick={handlePrintAction}
               >
-                <FileDown className="h-5 w-5 text-slate-400" /> Save as PDF
+                <FileDown className="h-7 w-7 text-slate-400" /> Save as Digital Copy
               </Button>
             </div>
           </div>
 
           <DialogFooter>
             <Button 
-              className="w-full h-16 rounded-2xl font-black text-lg shadow-xl shadow-primary/20"
+              className="w-full h-20 rounded-3xl font-black text-xl shadow-xl shadow-primary/20 bg-secondary"
               onClick={() => setViewingSale(null)}
             >
               CLOSE PREVIEW

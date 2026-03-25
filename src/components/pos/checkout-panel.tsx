@@ -1,11 +1,9 @@
-
 "use client";
 
 import { useState, useMemo } from 'react';
-import { User, Smartphone, Printer, Save, FileDown, Check, Monitor, Bluetooth, Usb } from 'lucide-react';
+import { Smartphone, Printer, Save, FileDown, Monitor, Bluetooth, Usb } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -44,13 +42,7 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
 
   const handleSavePDF = () => {
     if (items.length === 0) return;
-    toast({ title: "Syncing & Saving", description: "Updating ledger and generating PDF..." });
-    // Trigger ledger sync
     handleLedgerSync();
-    // Trigger browser print/save dialog
-    setTimeout(() => {
-      window.print();
-    }, 500);
   };
 
   const handlePrintClick = () => {
@@ -60,59 +52,44 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
 
   const executePrint = (type: 'normal' | 'thermal') => {
     setIsPrinterDialogOpen(false);
-    toast({ 
-      title: type === 'normal' ? "Printing Document" : "Thermal Print Initiated", 
-      description: `Syncing bill to ledger and connecting to ${type} printer...` 
-    });
-    
-    // Always sync ledger first
     handleLedgerSync();
-
-    if (type === 'normal') {
-      setTimeout(() => window.print(), 500);
-    } else {
-      // Mock Thermal Printer Connection (USB/BT)
-      toast({
-        title: "Thermal Output",
-        description: "58mm receipt sent to Thermal Printer via Bluetooth/USB.",
-        duration: 3000,
-      });
-    }
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-[40px] border border-slate-100 shadow-2xl p-6 sm:p-8 overflow-hidden">
+    <div className="flex flex-col h-full bg-white rounded-[48px] border-2 border-slate-50 shadow-2xl p-10 overflow-hidden">
       <ScrollArea className="flex-1">
-        <div className="space-y-8 pb-4">
+        <div className="space-y-10 pb-6">
           {/* Customer Profile Section */}
           <div className="space-y-4">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Customer Profile</label>
+            <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Customer Profile</label>
             <div className="relative">
-              <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300" />
+              <Smartphone className="absolute left-6 top-1/2 -translate-y-1/2 h-6 w-6 text-slate-300" />
               <Input
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="Mobile (WhatsApp)"
-                className="pl-12 h-16 text-xl font-bold bg-slate-50 border-none rounded-2xl focus-visible:ring-primary"
+                placeholder="Mobile Number (WhatsApp)"
+                className="pl-16 h-20 text-2xl font-black bg-slate-50 border-none rounded-[24px] focus-visible:ring-primary shadow-inner"
               />
             </div>
           </div>
 
           {/* Settlement Method */}
           <div className="space-y-4">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Payment Mode</label>
-            <div className="grid grid-cols-3 gap-3">
+            <label className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Payment Mode</label>
+            <div className="grid grid-cols-3 gap-4">
               {(['Cash', 'UPI', 'Credit'] as const).map((m) => (
                 <Button
                   key={m}
                   variant={paymentMode === m ? 'default' : 'outline'}
                   className={cn(
-                    "h-20 flex-col gap-1 rounded-2xl border-none transition-all",
-                    paymentMode === m ? 'bg-primary shadow-xl shadow-primary/20 scale-[1.02]' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                    "h-24 flex-col gap-2 rounded-3xl border-none transition-all",
+                    paymentMode === m 
+                      ? 'bg-secondary text-white shadow-xl shadow-secondary/20 scale-[1.05]' 
+                      : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
                   )}
                   onClick={() => setPaymentMode(m)}
                 >
-                  <span className="font-black text-xs uppercase tracking-widest">{m}</span>
+                  <span className="font-black text-sm uppercase tracking-widest">{m}</span>
                 </Button>
               ))}
             </div>
@@ -121,37 +98,37 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
       </ScrollArea>
 
       {/* Totals & Quick Actions */}
-      <div className="mt-6 pt-6 border-t border-slate-100 space-y-6">
+      <div className="mt-8 pt-10 border-t-4 border-slate-50 space-y-8">
         <div className="flex justify-between items-end">
-          <span className="text-xs font-black uppercase tracking-widest text-slate-400">Total Bill</span>
-          <span className="text-5xl font-black text-primary tracking-tighter">₹{subtotal.toFixed(0)}</span>
+          <span className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Grand Total</span>
+          <span className="text-7xl font-black text-primary tracking-tighter leading-none">₹{subtotal.toLocaleString()}</span>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           <Button 
-            className="w-full h-20 text-xl font-black rounded-3xl shadow-2xl shadow-primary/20 transition-all active:scale-95"
+            className="w-full h-24 text-3xl font-black rounded-[32px] shadow-2xl shadow-primary/30 transition-all active:scale-95 bg-primary hover:bg-primary/90"
             disabled={items.length === 0}
             onClick={handleLedgerSync}
           >
-            <Save className="h-6 w-6 mr-3" /> CONFIRM & SYNC
+            <Save className="h-8 w-8 mr-4" /> CONFIRM & SYNC
           </Button>
           
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <Button 
               variant="outline"
-              className="h-16 bg-slate-50 border-none rounded-2xl hover:bg-slate-100 font-black uppercase text-xs tracking-widest gap-2"
+              className="h-20 bg-slate-50 border-none rounded-[24px] hover:bg-slate-100 font-black uppercase text-xs tracking-[0.2em] gap-3"
               onClick={handlePrintClick}
               disabled={items.length === 0}
             >
-              <Printer className="h-5 w-5" /> Print
+              <Printer className="h-6 w-6" /> PRINT RECEIPT
             </Button>
             <Button 
               variant="outline"
-              className="h-16 bg-slate-50 border-none rounded-2xl hover:bg-slate-100 font-black uppercase text-xs tracking-widest gap-2"
+              className="h-20 bg-slate-50 border-none rounded-[24px] hover:bg-slate-100 font-black uppercase text-xs tracking-[0.2em] gap-3"
               onClick={handleSavePDF}
               disabled={items.length === 0}
             >
-              <FileDown className="h-5 w-5" /> Save PDF
+              <FileDown className="h-6 w-6" /> SAVE DIGITAL
             </Button>
           </div>
         </div>
@@ -159,34 +136,31 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
 
       {/* Printer Selection Dialog */}
       <Dialog open={isPrinterDialogOpen} onOpenChange={setIsPrinterDialogOpen}>
-        <DialogContent className="sm:max-w-md rounded-[32px] p-8">
+        <DialogContent className="sm:max-w-md rounded-[48px] p-12 border-none shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-black uppercase tracking-tight">Select Printer</DialogTitle>
-            <DialogDescription className="font-bold text-slate-400">
-              Choose output format for current bill sync.
-            </DialogDescription>
+            <DialogTitle className="text-4xl font-black uppercase tracking-tight text-secondary">Printer Setup</DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-2 gap-6 py-8">
             <button
               onClick={() => executePrint('normal')}
-              className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-3xl hover:bg-primary/10 hover:text-primary transition-all group"
+              className="flex flex-col items-center justify-center h-44 bg-slate-50 rounded-[32px] hover:bg-primary/10 hover:text-primary transition-all group"
             >
-              <Monitor className="h-10 w-10 mb-3 text-slate-400 group-hover:text-primary" />
-              <span className="font-black text-xs uppercase">Normal / PDF</span>
+              <Monitor className="h-12 w-12 mb-4 text-slate-400 group-hover:text-primary" />
+              <span className="font-black text-xs uppercase tracking-widest">Normal Desktop</span>
             </button>
             <button
               onClick={() => executePrint('thermal')}
-              className="flex flex-col items-center justify-center p-6 bg-slate-50 rounded-3xl hover:bg-primary/10 hover:text-primary transition-all group"
+              className="flex flex-col items-center justify-center h-44 bg-slate-50 rounded-[32px] hover:bg-secondary/10 hover:text-secondary transition-all group"
             >
-              <div className="flex gap-1 mb-3">
-                <Bluetooth className="h-6 w-6 text-slate-400 group-hover:text-primary" />
-                <Usb className="h-6 w-6 text-slate-400 group-hover:text-primary" />
+              <div className="flex gap-2 mb-4">
+                <Bluetooth className="h-8 w-8 text-slate-400 group-hover:text-secondary" />
+                <Usb className="h-8 w-8 text-slate-400 group-hover:text-secondary" />
               </div>
-              <span className="font-black text-xs uppercase">Thermal (USB/BT)</span>
+              <span className="font-black text-xs uppercase tracking-widest">Thermal (USB/BT)</span>
             </button>
           </div>
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsPrinterDialogOpen(false)} className="font-bold">Cancel</Button>
+            <Button variant="ghost" onClick={() => setIsPrinterDialogOpen(false)} className="font-bold h-16 w-full rounded-2xl">Cancel</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
