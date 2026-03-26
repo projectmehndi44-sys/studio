@@ -21,7 +21,8 @@ import {
   Wifi,
   Zap,
   FastForward,
-  AlertTriangle
+  AlertTriangle,
+  Clock
 } from 'lucide-react';
 import { Product, CartItem, PurchaseRecord } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
@@ -116,20 +117,6 @@ export default function POSPage() {
     if (!productsData) return 0;
     return productsData.filter(p => typeof p.stock === 'number' && p.stock < 10 && p.stock >= 0).length;
   }, [productsData]);
-
-  const salesQuery = useMemoFirebase(() => collection(db, 'purchases'), [db]);
-  const { data: salesData } = useCollection(salesQuery);
-  const todaySales = useMemo(() => {
-    if (!salesData) return 0;
-    const startOfToday = new Date();
-    startOfToday.setHours(0,0,0,0);
-    return salesData
-      .filter(s => {
-        const ts = s.timestamp?.seconds ? new Date(s.timestamp.seconds * 1000) : null;
-        return ts && ts >= startOfToday;
-      })
-      .reduce((acc, s) => acc + (s.totalAmount || 0), 0);
-  }, [salesData]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -279,16 +266,16 @@ export default function POSPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-left space-y-2">
-              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Today's Revenue</p>
-              <p className="text-4xl font-black tracking-tighter">₹{todaySales.toLocaleString()}</p>
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Active Staff</p>
+              <p className="text-4xl font-black tracking-tighter truncate">{staffName}</p>
             </div>
             <div className={cn("bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-left space-y-2", lowStockCount > 0 && "border-primary/50")}>
               <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{lowStockCount > 0 ? 'Stock Alerts' : 'System Status'}</p>
               <p className={cn("text-4xl font-black tracking-tighter", lowStockCount > 0 && "text-primary")}>{lowStockCount > 0 ? `${lowStockCount} Low` : 'Active'}</p>
             </div>
             <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-left space-y-2">
-              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Active Staff</p>
-              <p className="text-4xl font-black tracking-tighter truncate">{staffName}</p>
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Session Status</p>
+              <p className="text-4xl font-black tracking-tighter">SECURED</p>
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">

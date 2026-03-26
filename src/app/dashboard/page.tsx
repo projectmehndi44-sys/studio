@@ -41,6 +41,7 @@ import {
 } from 'date-fns';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -71,6 +72,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AdminPinDialog } from '@/components/admin/admin-pin-dialog';
 
 type DateFilter = 'today' | 'yesterday' | 'month' | 'last7' | 'all';
 
@@ -80,6 +82,7 @@ const MONTHS = [
 ];
 
 export default function DashboardPage() {
+  const router = useRouter();
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
   const [viewingSale, setViewingSale] = useState<PurchaseRecord | null>(null);
@@ -88,6 +91,7 @@ export default function DashboardPage() {
   const [printType, setPrintType] = useState<'normal' | 'thermal'>('normal');
   const [dateFilter, setDateFilter] = useState<DateFilter>('today');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAuthorized, setIsAuthorized] = useState(false);
   
   const [selectedMonth, setSelectedMonth] = useState<string>(getMonth(new Date()).toString());
   const [selectedYear, setSelectedYear] = useState<string>(getYear(new Date()).toString());
@@ -187,6 +191,17 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-black uppercase text-secondary">Ledger Restricted</h1>
         <Link href="/"><Button className="mt-6 rounded-2xl h-14 px-8 bg-secondary text-white">Back to Terminal</Button></Link>
       </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <AdminPinDialog 
+        isOpen={true} 
+        onClose={() => router.push('/')} 
+        onSuccess={() => setIsAuthorized(true)} 
+        requiredFor="Access Business Ledger & Revenue Data" 
+      />
     );
   }
 
