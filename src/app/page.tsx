@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
@@ -490,6 +489,12 @@ export default function POSPage() {
     );
   }
 
+  const getFormattedDateTime = (timestamp: any) => {
+    if (!timestamp) return format(new Date(), 'dd/MM/yyyy HH:mm');
+    if (timestamp.seconds) return format(new Date(timestamp.seconds * 1000), 'dd/MM/yyyy HH:mm');
+    return format(new Date(timestamp), 'dd/MM/yyyy HH:mm');
+  };
+
   return (
     <div className="flex flex-col h-screen bg-slate-50/50 overflow-hidden text-slate-900 font-body">
       <Toaster />
@@ -509,8 +514,7 @@ export default function POSPage() {
         <div className="grid grid-cols-2 gap-2 mb-2 text-[8pt] leading-normal">
           <div className="space-y-0.5">
             <p className="font-bold">Bill ID: #{lastSale?.id?.slice(-8) || Date.now().toString().slice(-8)}</p>
-            <p className="font-bold">Date: {format(new Date(), 'dd/MM/yyyy')}</p>
-            <p className="font-bold">Time: {format(new Date(), 'HH:mm')}</p>
+            <p className="font-bold">DateTime: {getFormattedDateTime(lastSale?.timestamp)}</p>
           </div>
           <div className="space-y-0.5 text-right">
             <p className="font-bold">Cust: {lastSale?.customerName || 'Walk-in'}</p>
@@ -543,7 +547,7 @@ export default function POSPage() {
 
         <div className="space-y-1 text-right border-t border-slate-900 pt-2">
           <div className="flex justify-between items-center text-[8pt]">
-            <span>Subtotal</span>
+            <span className="font-bold uppercase">Subtotal</span>
             <span>₹{lastSale?.subtotalAmount.toFixed(0)}</span>
           </div>
           <div className="flex justify-between items-center pt-2 border-t border-slate-400">
@@ -759,33 +763,29 @@ export default function POSPage() {
       </Dialog>
 
       <Dialog open={isSuccessDialogOpen} onOpenChange={setIsSuccessDialogOpen}>
-        <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden print:hidden">
+        <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden print:hidden text-[9pt]">
           <div className="absolute top-0 left-0 w-full h-2 bg-emerald-500" />
           <DialogHeader className="space-y-4">
             <div className="mx-auto w-20 h-20 bg-emerald-50 rounded-[32px] flex items-center justify-center">
               <CheckCircle2 className="h-12 w-12 text-emerald-500" />
             </div>
-            <DialogTitle className="text-center text-3xl font-black uppercase tracking-tight text-secondary leading-none">Bill Synced</DialogTitle>
+            <DialogTitle className="text-center text-2xl font-black uppercase tracking-tight text-secondary leading-none">Bill Synced</DialogTitle>
           </DialogHeader>
 
           <div className="py-4 space-y-4">
-            <div className="bg-slate-50 rounded-[28px] p-6 space-y-3 font-receipt border border-slate-200 text-[10pt] leading-normal">
-              <div className="flex justify-between items-center text-[8pt] font-bold uppercase text-slate-400 tracking-widest mb-2">
-                <span>INVOICE DETAILS</span>
-                <span>{lastSale?.staffName || staffName}</span>
-              </div>
-              <div className="flex flex-col border-y border-slate-100 py-3 space-y-2">
-                 <div className="flex justify-between text-[8pt] font-bold">
-                    <span className="text-slate-400">CUSTOMER</span>
+            <div className="bg-slate-50 rounded-[28px] p-6 space-y-3 font-receipt border border-slate-200 leading-normal">
+              <div className="flex flex-col border-b border-slate-100 pb-2 space-y-2">
+                 <div className="flex justify-between items-center text-[8pt] font-bold">
+                    <span className="text-slate-400 uppercase">Customer</span>
                     <span className="text-secondary">{lastSale?.customerName || 'Walk-in'}</span>
                  </div>
-                 <div className="flex justify-between text-[8pt] font-bold">
-                    <span className="text-slate-400">MOBILE</span>
-                    <span className="text-secondary">{lastSale?.customerId || 'N/A'}</span>
+                 <div className="flex justify-between items-center text-[8pt] font-bold">
+                    <span className="text-slate-400 uppercase">Identity</span>
+                    <span className="text-secondary">{lastSale?.customerId || 'No Mobile'}</span>
                  </div>
-                 <div className="flex justify-between text-[8pt] font-bold">
-                    <span className="text-slate-400">DATE/TIME</span>
-                    <span className="text-secondary">{format(new Date(), 'dd/MM/yyyy HH:mm')}</span>
+                 <div className="flex justify-between items-center text-[8pt] font-bold">
+                    <span className="text-slate-400 uppercase">DateTime</span>
+                    <span className="text-secondary">{getFormattedDateTime(lastSale?.timestamp)}</span>
                  </div>
               </div>
               
@@ -813,8 +813,16 @@ export default function POSPage() {
               </div>
 
               <div className="flex justify-between items-end pt-4">
-                <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">₹{lastSale?.totalAmount.toFixed(0)}</span>
-                <span className="text-[9pt] font-black text-emerald-500 uppercase tracking-widest">{lastSale?.items.length} Items</span>
+                <div className="flex flex-col">
+                   <span className="text-[8pt] font-bold text-slate-400 uppercase tracking-widest mb-1">Final Amount</span>
+                   <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">₹{lastSale?.totalAmount.toFixed(0)}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[7pt] font-bold text-slate-400 uppercase block tracking-widest">Served By</span>
+                  <span className="text-[8pt] font-bold text-emerald-500 uppercase">
+                    {lastSale?.staffName || staffName}
+                  </span>
+                </div>
               </div>
             </div>
 

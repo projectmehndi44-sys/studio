@@ -106,7 +106,9 @@ export default function DashboardPage() {
   }, [db, user, isAdmin]);
   
   const { data: shopSettings } = useDoc(settingsRef);
+  const shopName = shopSettings?.shopName || "KRISHNA'S SUPER 9+";
   const shopAddress = shopSettings?.address || "Hoolungooree, Mariani";
+  const shopGSTIN = shopSettings?.gstin || "";
 
   const salesQuery = useMemoFirebase(() => {
     if (!user || !isAdmin) return null;
@@ -273,7 +275,7 @@ export default function DashboardPage() {
           <div className="space-y-6">
              <div className="text-center border-b-2 border-slate-900 pb-3 mb-6">
                 <p className="text-[12pt] font-bold uppercase">BUSINESS AUDIT REPORT</p>
-                <h1 className="text-[14pt] font-black uppercase">KRISHNA'S SUPER 9+</h1>
+                <h1 className="text-[14pt] font-black uppercase">{shopName}</h1>
                 <p className="text-[10pt] font-bold mt-2">Period: {getReportPeriodLabel()}</p>
              </div>
              
@@ -300,16 +302,16 @@ export default function DashboardPage() {
 
              <div className="py-4 border-t border-slate-900 mt-8">
                 <p className="font-black mb-1">AUDIT TIMESTAMP: {format(new Date(), 'dd/MM/yyyy HH:mm:ss')}</p>
-                <p className="text-[8pt]">This is a computer-generated summary of cloud transactions for Krishna's Super 9+.</p>
+                <p className="text-[8pt]">This is a computer-generated summary of cloud transactions for {shopName}.</p>
              </div>
           </div>
         ) : (
           <>
-            <div className="text-center space-y-1 border-b border-slate-900 pb-2 mb-2">
+            <div className="text-center border-b border-slate-900 pb-2 mb-2">
               <p className="text-[10pt] font-bold uppercase tracking-tight">KRISHNA'S</p>
               <h2 className="text-[10pt] font-black uppercase tracking-tight">SUPER 9+</h2>
               <p className="text-[8pt] font-bold mt-1">{shopAddress}</p>
-              {shopSettings?.gstin && <p className="text-[8pt] font-bold">GSTIN: {shopSettings?.gstin}</p>}
+              {shopGSTIN && <p className="text-[8pt] font-bold">GSTIN: {shopGSTIN}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-2 mb-2 text-[8pt] leading-normal">
@@ -321,6 +323,7 @@ export default function DashboardPage() {
                 <p className="font-bold">Cust: {viewingSale?.customerName || 'Walk-in'}</p>
                 <p className="font-bold">Mob: {viewingSale?.customerId || 'N/A'}</p>
                 <p className="font-bold">Staff: {viewingSale?.staffName || 'System'}</p>
+                <p className="font-bold">Mode: {viewingSale?.paymentMode || 'Cash'}</p>
               </div>
             </div>
 
@@ -346,10 +349,21 @@ export default function DashboardPage() {
             </table>
 
             <div className="space-y-1 text-right border-t border-slate-900 pt-2">
+              <div className="flex justify-between items-center text-[8pt]">
+                <span className="font-bold uppercase">Subtotal</span>
+                <span>₹{viewingSale?.subtotalAmount?.toFixed(0) || viewingSale?.totalAmount?.toFixed(0)}</span>
+              </div>
               <div className="flex justify-between items-center pt-2 border-t border-slate-400">
                 <span className="text-[10pt] font-bold uppercase">Grand Total</span>
                 <span className="text-[10pt] font-bold">₹{viewingSale?.totalAmount.toFixed(0)}</span>
               </div>
+            </div>
+
+            <div className="mt-4 text-center space-y-1">
+              <p className="text-[7pt] font-bold uppercase tracking-widest text-slate-400">
+                Computer Generated Invoice • No Exchange without Bill
+              </p>
+              <p className="text-[9pt] font-bold">Thank you for shopping at Krishna's Super 9+!</p>
             </div>
           </>
         )}
