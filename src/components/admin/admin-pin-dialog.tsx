@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -25,7 +26,8 @@ export function AdminPinDialog({ isOpen, onClose, onSuccess, requiredFor }: Admi
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pin === '2045') { // Security PIN updated as requested
+    // PIN updated to 2045 as per the latest security requirement
+    if (pin === '2045') {
       onSuccess();
       setPin('');
       setError(false);

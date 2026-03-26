@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState } from 'react';
@@ -57,36 +58,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import { Bar, BarChart, XAxis } from "recharts";
 import { PhoneAuthGate } from '@/components/auth/phone-auth-gate';
 import { isStaffAdmin } from '@/lib/staff';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { AdminPinDialog } from '@/components/admin/admin-pin-dialog';
 
 type DateFilter = 'today' | 'yesterday' | 'month' | 'last7' | 'all';
-
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December"
-];
 
 export default function DashboardPage() {
   const router = useRouter();
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
   const [viewingSale, setViewingSale] = useState<PurchaseRecord | null>(null);
-  const [isReportOpen, setIsReportOpen] = useState(false);
   const [isPrinterSelectionOpen, setIsPrinterSelectionOpen] = useState(false);
   const [printType, setPrintType] = useState<'normal' | 'thermal'>('normal');
   const [dateFilter, setDateFilter] = useState<DateFilter>('today');
@@ -104,18 +86,17 @@ export default function DashboardPage() {
   }, [db, user, isAdmin]);
   
   const { data: shopSettings } = useDoc(settingsRef);
-  const shopName = shopSettings?.shopName || "KRISHNA'S SUPER 9+";
   const shopAddress = shopSettings?.address || "Hoolungooree, Mariani";
 
   const salesQuery = useMemoFirebase(() => {
-    if (!user || !isAdmin) return null;
+    if (!user || !isAdmin || !isAuthorized) return null;
     return query(collection(db, 'purchases'), orderBy('timestamp', 'desc'), limit(1000));
-  }, [db, user, isAdmin]);
+  }, [db, user, isAdmin, isAuthorized]);
 
   const cashQuery = useMemoFirebase(() => {
-    if (!user || !isAdmin) return null;
+    if (!user || !isAdmin || !isAuthorized) return null;
     return query(collection(db, 'cashTransactions'), orderBy('timestamp', 'desc'), limit(500));
-  }, [db, user, isAdmin]);
+  }, [db, user, isAdmin, isAuthorized]);
 
   const { data: rawSales, isLoading: isSalesLoading } = useCollection<PurchaseRecord>(salesQuery);
   const { data: rawCash, isLoading: isCashLoading } = useCollection<CashTransaction>(cashQuery);
@@ -157,20 +138,13 @@ export default function DashboardPage() {
     const totalIn = filteredCash.filter(c => c.type === 'IN').reduce((acc, c) => acc + c.amount, 0);
     const totalOut = filteredCash.filter(c => c.type === 'OUT').reduce((acc, c) => acc + c.amount, 0);
 
-    const paymentModes = filteredSales.reduce((acc: any, s) => {
-      const mode = s.paymentMode || 'Cash';
-      acc[mode] = (acc[mode] || 0) + s.totalAmount;
-      return acc;
-    }, {});
-
     return {
       filteredSales,
       filteredCash,
       stats: {
         sales: totalSales,
         cashInHand: totalSales + totalIn - totalOut,
-        transactions: filteredSales.length,
-        paymentModes
+        transactions: filteredSales.length
       }
     };
   }, [rawSales, rawCash, dateFilter, searchQuery, selectedMonth, selectedYear]);
@@ -194,6 +168,7 @@ export default function DashboardPage() {
     );
   }
 
+  // Final PIN authorization check
   if (!isAuthorized) {
     return (
       <AdminPinDialog 
@@ -288,7 +263,6 @@ export default function DashboardPage() {
                  </Button>
                ))}
             </div>
-            <Button onClick={() => setIsReportOpen(true)} className="h-11 px-6 rounded-2xl font-black text-[10px] uppercase bg-primary text-white shadow-lg shadow-primary/10 gap-2"><FileText className="h-4 w-4" /> AUDIT REPORT</Button>
           </div>
         </header>
 
@@ -389,7 +363,6 @@ export default function DashboardPage() {
             <DialogTitle className="text-center text-xl font-bold uppercase tracking-tight text-secondary">Receipt Archive</DialogTitle>
           </DialogHeader>
           <div className="py-2 space-y-4">
-            {/* UNIFIED DESIGN */}
             <div className="bg-slate-50 rounded-[24px] p-6 space-y-3 font-receipt border border-slate-200 leading-normal">
               <div className="flex flex-col border-b border-slate-100 pb-2 space-y-2">
                  <div className="flex justify-between items-center text-[8pt] font-bold">
@@ -427,10 +400,6 @@ export default function DashboardPage() {
                 <div className="flex flex-col">
                    <span className="text-[8pt] font-bold text-slate-400 uppercase tracking-widest mb-1">Final Amount</span>
                    <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">₹{viewingSale?.totalAmount.toFixed(0)}</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-[7pt] font-bold text-slate-400 uppercase block tracking-widest">Served By</span>
-                  <span className="text-[8pt] font-bold text-secondary uppercase">{viewingSale?.staffName || 'System'}</span>
                 </div>
               </div>
             </div>
