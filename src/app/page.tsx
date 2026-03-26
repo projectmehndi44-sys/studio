@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
@@ -18,7 +19,13 @@ import {
   ChevronRight,
   Trash2,
   AlertTriangle,
-  ScanLine
+  ScanLine,
+  Monitor,
+  Clock,
+  Battery,
+  Wifi,
+  Package,
+  ArrowRight
 } from 'lucide-react';
 import { Product, CartItem, PurchaseRecord } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
@@ -33,6 +40,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { 
   useCollection, 
@@ -45,7 +53,7 @@ import {
   setDocumentNonBlocking,
   deleteDocumentNonBlocking
 } from '@/firebase';
-import { collection, serverTimestamp, doc, getDocs, query } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import {
   Sheet,
   SheetContent,
@@ -85,6 +93,8 @@ export default function POSPage() {
   const [printType, setPrintType] = useState<'normal' | 'thermal'>('normal');
   const [lastSale, setLastSale] = useState<PurchaseRecord | null>(null);
   const [activeMainTab, setActiveMainTab] = useState('products');
+  const [currentTime, setCurrentTime] = useState(new Date());
+  const [launcherActive, setLauncherActive] = useState(false);
 
   const [purgeOptions, setPurgeOptions] = useState({
     inventory: false,
@@ -107,6 +117,40 @@ export default function POSPage() {
   const shopName = shopSettings?.shopName || "KRISHNA'S SUPER 9+";
   const shopAddress = shopSettings?.address || "Hoolungooree, Mariani";
   const shopGSTIN = shopSettings?.gstin || "";
+  const isLauncherEnabled = !!shopSettings?.launcherMode;
+
+  // Real-time stats for Launcher Dashboard
+  const salesQuery = useMemoFirebase(() => collection(db, 'purchases'), [db]);
+  const { data: salesData } = useCollection(salesQuery);
+  const todaySales = useMemo(() => {
+    if (!salesData) return 0;
+    const startOfToday = new Date();
+    startOfToday.setHours(0,0,0,0);
+    return salesData
+      .filter(s => s.timestamp?.seconds && new Date(s.timestamp.seconds * 1000) >= startOfToday)
+      .reduce((acc, s) => acc + (s.totalAmount || 0), 0);
+  }, [salesData]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const toggleFullscreen = async (enable: boolean) => {
+    try {
+      if (enable) {
+        if (!document.fullscreenElement) {
+          await document.documentElement.requestFullscreen();
+        }
+      } else {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen();
+        }
+      }
+    } catch (e) {
+      console.warn("Fullscreen toggle failed", e);
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -353,6 +397,99 @@ export default function POSPage() {
     return <PhoneAuthGate />;
   }
 
+  // LAUNCHER MODE DASHBOARD
+  if (isLauncherEnabled && !launcherActive) {
+    return (
+      <div className="h-screen bg-slate-900 flex flex-col items-center justify-center p-8 text-white relative overflow-hidden font-body">
+        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1557683316-973673baf926')] bg-cover opacity-10" />
+        <div className="z-10 text-center space-y-12 max-w-4xl w-full animate-in fade-in zoom-in-95 duration-700">
+          <div className="space-y-4">
+            <h1 className="text-8xl font-black tracking-tighter uppercase leading-none">{format(currentTime, 'HH:mm')}</h1>
+            <p className="text-2xl font-bold text-primary uppercase tracking-[0.3em]">{format(currentTime, 'EEEE, dd MMMM')}</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-left space-y-2">
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Today's Revenue</p>
+              <p className="text-4xl font-black tracking-tighter">₹{todaySales.toLocaleString()}</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-left space-y-2">
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Active System</p>
+              <p className="text-4xl font-black tracking-tighter">SUPER 9+</p>
+            </div>
+            <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-left space-y-2">
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Staff Duty</p>
+              <p className="text-4xl font-black tracking-tighter truncate">{staffName}</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <button 
+              onClick={() => { setLauncherActive(true); toggleFullscreen(true); }}
+              className="group bg-primary p-10 rounded-[48px] flex flex-col items-center justify-center gap-4 transition-all hover:scale-105 active:scale-95 shadow-2xl shadow-primary/20"
+            >
+              <ShoppingBag className="h-12 w-12 text-white" />
+              <span className="font-black uppercase text-xs tracking-widest">Terminal</span>
+            </button>
+            {isAdmin && (
+              <Link href="/dashboard" className="group bg-white/5 p-10 rounded-[48px] flex flex-col items-center justify-center gap-4 transition-all hover:bg-white/10 hover:scale-105 active:scale-95 border border-white/10">
+                <LayoutDashboard className="h-12 w-12 text-white" />
+                <span className="font-black uppercase text-xs tracking-widest">Ledger</span>
+              </Link>
+            )}
+            {isAdmin && (
+              <Link href="/inventory" className="group bg-white/5 p-10 rounded-[48px] flex flex-col items-center justify-center gap-4 transition-all hover:bg-white/10 hover:scale-105 active:scale-95 border border-white/10">
+                <PackageSearch className="h-12 w-12 text-white" />
+                <span className="font-black uppercase text-xs tracking-widest">Inventory</span>
+              </Link>
+            )}
+            <button 
+              onClick={() => setIsSettingsOpen(true)}
+              className="group bg-white/5 p-10 rounded-[48px] flex flex-col items-center justify-center gap-4 transition-all hover:bg-white/10 hover:scale-105 active:scale-95 border border-white/10"
+            >
+              <Settings className="h-12 w-12 text-white" />
+              <span className="font-black uppercase text-xs tracking-widest">System</span>
+            </button>
+          </div>
+
+          <div className="pt-12 flex items-center justify-center gap-12 text-white/40">
+            <div className="flex items-center gap-2">
+              <Wifi className="h-4 w-4" /> <span className="text-[10px] font-bold uppercase">Connected</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Battery className="h-4 w-4" /> <span className="text-[10px] font-bold uppercase">Normal</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Monitor className="h-4 w-4" /> <span className="text-[10px] font-bold uppercase">Launch Mode Enabled</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Global Dialogs in Launcher Mode */}
+        <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+          <DialogContent className="rounded-[48px] p-12 sm:max-w-md bg-slate-900 text-white border-white/10 shadow-3xl">
+            <DialogHeader>
+              <DialogTitle className="text-3xl font-black uppercase tracking-tight text-white">System Settings</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-8 py-8">
+               <div className="flex items-center justify-between bg-white/5 p-6 rounded-[32px] border border-white/10">
+                  <div className="space-y-1">
+                    <p className="font-black uppercase text-xs tracking-widest">Launch Mode</p>
+                    <p className="text-[10px] font-bold text-slate-400">App acts as the operating system</p>
+                  </div>
+                  <Switch 
+                    checked={isLauncherEnabled} 
+                    onCheckedChange={(val) => setDocumentNonBlocking(doc(db, 'settings', 'config'), { launcherMode: val }, { merge: true })}
+                  />
+               </div>
+               <Button onClick={() => auth.signOut()} variant="destructive" className="w-full h-16 rounded-[24px] font-black uppercase text-xs tracking-[0.2em]">Shutdown System</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-screen bg-slate-50/50 overflow-hidden text-slate-900 font-body">
       <Toaster />
@@ -425,6 +562,11 @@ export default function POSPage() {
 
       <header className="h-16 border-b border-slate-100 bg-white flex items-center justify-between px-8 shrink-0 print:hidden z-10">
         <div className="flex items-center gap-6">
+           {isLauncherEnabled && (
+             <Button variant="ghost" onClick={() => { setLauncherActive(false); toggleFullscreen(false); }} className="h-10 w-10 p-0 rounded-xl bg-slate-50 text-secondary">
+               <Monitor className="h-5 w-5" />
+             </Button>
+           )}
            <div className="flex items-center gap-2">
               <span className="text-[12px] font-bold text-slate-400 uppercase tracking-[0.1em]">KRISHNA'S</span>
               <span className="text-lg font-black tracking-tight uppercase text-secondary">SUPER 9+</span>
@@ -433,13 +575,16 @@ export default function POSPage() {
            <div>
               <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Billing Desk</h2>
            </div>
-           <div className="hidden md:flex items-center gap-2 bg-slate-50 px-3 py-1 rounded-lg">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">{staffName}</span>
-           </div>
         </div>
         
         <div className="flex items-center gap-6">
+          <div className="hidden lg:flex items-center gap-4 mr-4">
+             <div className="text-right">
+                <p className="text-[10px] font-black uppercase tracking-widest text-secondary">{format(currentTime, 'HH:mm')}</p>
+                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{format(currentTime, 'EEE, dd MMM')}</p>
+             </div>
+          </div>
+
           <Button 
             variant="outline" 
             size="sm" 
@@ -624,7 +769,7 @@ export default function POSPage() {
           </DialogHeader>
 
           <div className="py-4 space-y-4">
-            <div className="bg-slate-50 rounded-[28px] p-6 space-y-3 font-receipt border border-slate-200 text-[9pt] leading-normal">
+            <div className="bg-slate-50 rounded-[28px] p-6 space-y-3 font-receipt border border-slate-200 text-[10pt] leading-normal">
               <div className="flex justify-between items-center text-[8pt] font-bold uppercase text-slate-400 tracking-widest mb-2">
                 <span>INVOICE DETAILS</span>
                 <span>{lastSale?.staffName || staffName}</span>
@@ -764,6 +909,18 @@ export default function POSPage() {
                     </div>
                   </div>
                </div>
+               
+               <div className="flex items-center justify-between bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                  <div className="space-y-1">
+                    <p className="font-bold text-xs uppercase text-secondary">Launcher Mode</p>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Act as Tablet OS Dashboard</p>
+                  </div>
+                  <Switch 
+                    checked={isLauncherEnabled} 
+                    onCheckedChange={(val) => setDocumentNonBlocking(doc(db, 'settings', 'config'), { launcherMode: val }, { merge: true })}
+                  />
+               </div>
+
                <Button type="submit" className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest bg-secondary text-white">SAVE PROFILE</Button>
             </form>
              

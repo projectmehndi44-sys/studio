@@ -28,7 +28,8 @@
         "shopName": { "type": "string" },
         "address": { "type": "string" },
         "gstin": { "type": "string" },
-        "phone": { "type": "string" }
+        "phone": { "type": "string" },
+        "launcherMode": { "type": "boolean" }
       }
     },
     "Purchase": {
