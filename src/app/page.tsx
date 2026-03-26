@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
@@ -25,7 +26,8 @@ import {
   Wifi,
   Package,
   ArrowRight,
-  Zap
+  Zap,
+  FastForward
 } from 'lucide-react';
 import { Product, CartItem, PurchaseRecord } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
@@ -144,10 +146,14 @@ export default function POSPage() {
     return productsData.filter(p => typeof p.stock === 'number' && p.stock < 10 && p.stock >= 0).length;
   }, [productsData]);
 
+  // AUTO-FOCUS ENGINE: Focus on mount
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    if (!isUserLoading && user && !launcherActive) {
+      searchInputRef.current?.focus();
+    }
     return () => clearInterval(timer);
-  }, []);
+  }, [isUserLoading, user, launcherActive]);
 
   const toggleFullscreen = async (enable: boolean) => {
     try {
@@ -196,6 +202,7 @@ export default function POSPage() {
   }, [cartItems]);
 
   const cartTotalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const cartTotalPrice = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
   const handleProductSelect = useCallback((product: Product) => {
     setCartItems(prev => {
@@ -209,6 +216,7 @@ export default function POSPage() {
       }
       return [...prev, { ...product, quantity: 1 }];
     });
+    // AUTO-FOCUS ENGINE: Refocus after selection
     setTimeout(() => searchInputRef.current?.focus(), 50);
   }, []);
 
@@ -218,7 +226,6 @@ export default function POSPage() {
     const product = productsData.find(p => p.barcode === barcode);
     if (product) {
       handleProductSelect(product);
-      // Removed setIsScannerOpen(false) for Continuous Scanning
       toast({
         title: "Added",
         description: `${product.name} (Scan OK)`,
@@ -289,6 +296,16 @@ export default function POSPage() {
     setCartItems([]);
     setActiveMainTab('products');
     setIsSuccessDialogOpen(true);
+  };
+
+  const handleFastPay = () => {
+    if (cartItems.length === 0) return;
+    handleCheckout({
+      total: cartTotalPrice,
+      paymentMode: 'Cash',
+      customerPhone: null,
+      customerName: 'Walk-in (Fast Pay)'
+    });
   };
 
   const handlePrintRequest = (type: 'normal' | 'thermal') => {
@@ -584,9 +601,9 @@ export default function POSPage() {
       <header className="h-16 border-b border-slate-100 bg-white flex items-center justify-between px-8 shrink-0 print:hidden z-10">
         <div className="flex items-center gap-6">
            {isLauncherEnabled && (
-             <Button variant="ghost" onClick={() => { setLauncherActive(false); toggleFullscreen(false); }} className="h-10 w-10 p-0 rounded-xl bg-slate-50 text-secondary">
+             <button onClick={() => { setLauncherActive(false); toggleFullscreen(false); }} className="h-10 w-10 p-0 rounded-xl bg-slate-50 text-secondary flex items-center justify-center hover:bg-slate-100 transition-colors">
                <Monitor className="h-5 w-5" />
-             </Button>
+             </button>
            )}
            <div className="flex items-center gap-2">
               <span className="text-[12px] font-bold text-slate-400 uppercase tracking-[0.1em]">KRISHNA'S</span>
@@ -678,13 +695,23 @@ export default function POSPage() {
           <>
             <div className="flex flex-col h-full p-8 overflow-hidden gap-8 bg-white/40 border-r border-slate-100">
               <div className="grid grid-cols-1 gap-6">
-                <ProductSearch 
-                  inputRef={searchInputRef}
-                  products={productsData || []} 
-                  onProductSelect={handleProductSelect} 
-                  onScanClick={() => setIsScannerOpen(true)} 
-                  onAddNewProduct={handleAddNewProduct} 
-                />
+                <div className="flex items-center gap-4">
+                  <ProductSearch 
+                    inputRef={searchInputRef}
+                    products={productsData || []} 
+                    onProductSelect={handleProductSelect} 
+                    onScanClick={() => setIsScannerOpen(true)} 
+                    onAddNewProduct={handleAddNewProduct} 
+                  />
+                  {/* FAST-PAY EXPRESS BUTTON */}
+                  <Button 
+                    disabled={cartItems.length === 0}
+                    onClick={handleFastPay}
+                    className="h-14 px-8 rounded-2xl font-black text-xs uppercase tracking-widest bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl shadow-emerald-500/10 gap-2 shrink-0 animate-in fade-in zoom-in-95"
+                  >
+                    <FastForward className="h-5 w-5" /> EXACT CASH
+                  </Button>
+                </div>
                 <div className="h-[200px] shrink-0">
                   <div className="flex items-center gap-2 mb-3">
                     <Zap className="h-4 w-4 text-primary fill-primary" />
@@ -712,13 +739,22 @@ export default function POSPage() {
               </TabsList>
               
               <TabsContent value="products" className="flex-1 overflow-hidden mt-0 flex flex-col gap-4">
-                <ProductSearch 
-                  inputRef={searchInputRef}
-                  products={productsData || []} 
-                  onProductSelect={handleProductSelect} 
-                  onScanClick={() => setIsScannerOpen(true)} 
-                  onAddNewProduct={handleAddNewProduct} 
-                />
+                <div className="flex items-center gap-2">
+                  <ProductSearch 
+                    inputRef={searchInputRef}
+                    products={productsData || []} 
+                    onProductSelect={handleProductSelect} 
+                    onScanClick={() => setIsScannerOpen(true)} 
+                    onAddNewProduct={handleAddNewProduct} 
+                  />
+                  <Button 
+                    disabled={cartItems.length === 0}
+                    onClick={handleFastPay}
+                    className="h-14 w-14 p-0 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shrink-0"
+                  >
+                    <FastForward className="h-6 w-6" />
+                  </Button>
+                </div>
                 <QuickTapGrid products={productsData || []} onProductSelect={handleProductSelect} />
                 <CartList items={cartItems} onUpdateQuantity={updateQuantity} onUpdatePrice={updatePrice} onRemoveItem={removeItem} />
               </TabsContent>
@@ -731,6 +767,7 @@ export default function POSPage() {
         )}
       </main>
 
+      {/* PRINTER SELECTION DIALOG */}
       <Dialog open={isPrinterSelectionOpen} onOpenChange={setIsPrinterSelectionOpen}>
         <DialogContent className="sm:max-w-md rounded-[32px] p-10 border-none shadow-2xl">
           <DialogHeader>
@@ -762,6 +799,7 @@ export default function POSPage() {
         </DialogContent>
       </Dialog>
 
+      {/* SCANNER DIALOG */}
       <Dialog open={isScannerOpen} onOpenChange={setIsScannerOpen}>
         <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden print:hidden">
           <div className="absolute top-0 left-0 w-full h-2 bg-primary" />
@@ -788,7 +826,14 @@ export default function POSPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isSuccessDialogOpen} onOpenChange={setIsSuccessDialogOpen}>
+      {/* SUCCESS DIALOG */}
+      <Dialog open={isSuccessDialogOpen} onOpenChange={(val) => {
+        setIsSuccessDialogOpen(val);
+        if (!val) {
+          // AUTO-FOCUS ENGINE: Refocus when success dialog closes
+          setTimeout(() => searchInputRef.current?.focus(), 100);
+        }
+      }}>
         <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden print:hidden text-[9pt]">
           <div className="absolute top-0 left-0 w-full h-2 bg-emerald-500" />
           <DialogHeader className="space-y-4">
@@ -856,7 +901,7 @@ export default function POSPage() {
                <Button variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2 hover:bg-secondary hover:text-white transition-all" onClick={() => setIsPrinterSelectionOpen(true)}>
                  <Printer className="h-4 w-4" /> Print
                </Button>
-               <Button variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2 hover:bg-secondary hover:text-white transition-all" onClick={() => {}}>
+               <Button variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2 hover:bg-secondary hover:text-white transition-all">
                  <Download className="h-4 w-4" /> PDF
                </Button>
             </div>
@@ -876,6 +921,7 @@ export default function POSPage() {
         </DialogContent>
       </Dialog>
 
+      {/* CASH FLOW DIALOG */}
       <Dialog open={isCashDialogOpen} onOpenChange={setIsCashDialogOpen}>
         <DialogContent className="rounded-[32px] p-10 sm:max-w-md print:hidden border-none shadow-2xl">
           <DialogHeader>
@@ -915,6 +961,7 @@ export default function POSPage() {
         </DialogContent>
       </Dialog>
 
+      {/* SHOP PROFILE DIALOG */}
       <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
         <DialogContent className="rounded-[32px] p-10 sm:max-w-md border-none shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
           <DialogHeader>
