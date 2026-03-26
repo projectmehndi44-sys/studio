@@ -91,16 +91,7 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
       } else if (quickPrice) {
         handleQuickAdd();
       } else {
-        const autoItem: Product = {
-          id: `auto-${Date.now()}`,
-          name: query.trim(),
-          barcode: '',
-          price: 0,
-          costPrice: 0,
-          category: 'General',
-          isPopular: false
-        };
-        onProductSelect(autoItem);
+        // Ghost Enrollment trigger
         onAddNewProduct(query.trim(), true);
         setQuery('');
       }
@@ -132,7 +123,7 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="[Ctrl+Space] Search Item or Price (e.g. 50)..."
+            placeholder="[Enter] Search Item or Price..."
             className="pl-12 h-14 bg-white border border-slate-100 focus-visible:ring-2 focus-visible:ring-primary/20 text-lg font-bold rounded-2xl shadow-sm"
             autoFocus
           />
@@ -141,7 +132,7 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
         <button
           onClick={onScanClick}
           tabIndex={-1}
-          className="h-14 w-14 flex items-center justify-center rounded-2xl bg-white border border-slate-100 text-slate-500 hover:bg-slate-50 transition-all active:scale-90 shadow-sm"
+          className="h-14 w-14 flex items-center justify-center rounded-2xl bg-white border border-slate-100 text-slate-500 hover:bg-slate-50 transition-all shadow-sm"
         >
           <Scan className="h-6 w-6" />
         </button>
