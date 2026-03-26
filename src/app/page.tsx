@@ -50,7 +50,8 @@ import {
   useAuth,
   useDoc,
   setDocumentNonBlocking,
-  deleteDocumentNonBlocking
+  deleteDocumentNonBlocking,
+  updateDocumentNonBlocking
 } from '@/firebase';
 import { collection, serverTimestamp, doc, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import {
@@ -130,6 +131,18 @@ export default function POSPage() {
       .reduce((acc, s) => acc + (s.totalAmount || 0), 0);
   }, [salesData]);
 
+  const productsQuery = useMemoFirebase(() => {
+    if (!user) return null;
+    return collection(db, 'products');
+  }, [db, user]);
+
+  const { data: productsData } = useCollection<Product>(productsQuery);
+
+  const lowStockCount = useMemo(() => {
+    if (!productsData) return 0;
+    return productsData.filter(p => typeof p.stock === 'number' && p.stock < 10 && p.stock >= 0).length;
+  }, [productsData]);
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
@@ -180,13 +193,6 @@ export default function POSPage() {
   useEffect(() => {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
   }, [cartItems]);
-
-  const productsQuery = useMemoFirebase(() => {
-    if (!user) return null;
-    return collection(db, 'products');
-  }, [db, user]);
-
-  const { data: productsData } = useCollection<Product>(productsQuery);
 
   const cartTotalItems = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -246,7 +252,9 @@ export default function POSPage() {
   };
 
   const handleCheckout = async (data: any) => {
+    const saleId = `sale-${Date.now()}`;
     const saleData: PurchaseRecord = {
+      id: saleId,
       staffId: user?.uid || 'anonymous',
       staffName: staffName,
       timestamp: new Date(),
@@ -260,9 +268,22 @@ export default function POSPage() {
       customerName: data.customerName || null
     };
 
+    // Commit Sale to Firestore
     addDocumentNonBlocking(collection(db, 'purchases'), {
       ...saleData,
       timestamp: serverTimestamp()
+    });
+
+    // Inventory Deduction Logic
+    cartItems.forEach(item => {
+      const sourceProduct = productsData?.find(p => p.id === item.id);
+      if (sourceProduct && typeof sourceProduct.stock === 'number') {
+        const remainingStock = sourceProduct.stock - item.quantity;
+        updateDocumentNonBlocking(doc(db, 'products', item.id), {
+          stock: remainingStock,
+          updatedAt: new Date().toISOString()
+        });
+      }
     });
 
     setLastSale(saleData);
@@ -412,9 +433,16 @@ export default function POSPage() {
               <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Today's Revenue</p>
               <p className="text-4xl font-black tracking-tighter">₹{todaySales.toLocaleString()}</p>
             </div>
-            <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-left space-y-2">
-              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Active System</p>
-              <p className="text-4xl font-black tracking-tighter">SUPER 9+</p>
+            <div className={cn(
+              "bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-left space-y-2",
+              lowStockCount > 0 ? "border-primary/50" : ""
+            )}>
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+                {lowStockCount > 0 ? 'Stock Alerts' : 'Active System'}
+              </p>
+              <p className={cn("text-4xl font-black tracking-tighter", lowStockCount > 0 ? "text-primary" : "")}>
+                {lowStockCount > 0 ? `${lowStockCount} Low` : 'SUPER 9+'}
+              </p>
             </div>
             <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-left space-y-2">
               <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Staff Duty</p>
@@ -548,7 +576,7 @@ export default function POSPage() {
         <div className="space-y-1 text-right border-t border-slate-900 pt-2">
           <div className="flex justify-between items-center text-[8pt]">
             <span className="font-bold uppercase">Subtotal</span>
-            <span>₹{lastSale?.subtotalAmount.toFixed(0)}</span>
+            <span>₹{lastSale?.subtotalAmount?.toFixed(0) || lastSale?.totalAmount?.toFixed(0)}</span>
           </div>
           <div className="flex justify-between items-center pt-2 border-t border-slate-400">
             <span className="text-[10pt] font-bold uppercase">Grand Total</span>
