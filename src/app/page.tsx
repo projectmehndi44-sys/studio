@@ -369,6 +369,14 @@ export default function POSPage() {
            </div>
            <div className="h-4 w-px bg-slate-200 mx-2" />
            <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Billing Desk</h2>
+           
+           {/* REAL-TIME TOP TOTAL DISPLAY */}
+           {cartItems.length > 0 && (
+             <div className="ml-4 flex items-center gap-3 bg-primary/5 px-5 py-2.5 rounded-2xl animate-in fade-in zoom-in duration-300 border border-primary/10">
+               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Bill</span>
+               <span className="text-2xl font-black text-primary tracking-tighter">₹{cartTotalPrice.toLocaleString()}</span>
+             </div>
+           )}
         </div>
         <div className="flex items-center gap-6">
           <Button variant="ghost" size="sm" className="h-10 px-4 rounded-xl font-bold text-[10px] uppercase text-slate-500 gap-2">
