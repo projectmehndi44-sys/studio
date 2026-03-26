@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
@@ -17,7 +16,6 @@ import {
   Download,
   Settings,
   ChevronRight,
-  Keyboard,
   Trash2,
   AlertTriangle,
   ScanLine
@@ -83,6 +81,8 @@ export default function POSPage() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isPinDialogOpen, setIsPinDialogOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isPrinterSelectionOpen, setIsPrinterSelectionOpen] = useState(false);
+  const [printType, setPrintType] = useState<'normal' | 'thermal'>('normal');
   const [lastSale, setLastSale] = useState<PurchaseRecord | null>(null);
   const [activeMainTab, setActiveMainTab] = useState('products');
 
@@ -228,8 +228,12 @@ export default function POSPage() {
     setIsSuccessDialogOpen(true);
   };
 
-  const handlePrintAction = () => {
-    window.print();
+  const handlePrintRequest = (type: 'normal' | 'thermal') => {
+    setPrintType(type);
+    setIsPrinterSelectionOpen(false);
+    setTimeout(() => {
+      window.print();
+    }, 100);
   };
 
   const handleAddNewProduct = (name: string) => {
@@ -354,7 +358,10 @@ export default function POSPage() {
       <Toaster />
       
       {/* HIGH-FIDELITY PRINT RECEIPT */}
-      <div className="hidden print-only p-4 bg-white text-slate-900 min-h-screen font-receipt text-[10pt] leading-normal">
+      <div className={cn(
+        "hidden print-only p-4 bg-white text-slate-900 min-h-screen font-receipt text-[10pt] leading-normal",
+        printType === 'thermal' ? 'print-thermal' : 'print-normal'
+      )}>
         <div className="text-center border-b border-slate-900 pb-2 mb-2">
           <p className="text-[10pt] font-bold uppercase tracking-tight">KRISHNA'S</p>
           <h2 className="text-[10pt] font-black uppercase tracking-tight">SUPER 9+</h2>
@@ -364,7 +371,7 @@ export default function POSPage() {
 
         <div className="grid grid-cols-2 gap-2 mb-2 text-[8pt] leading-normal">
           <div className="space-y-0.5">
-            <p className="font-bold">Bill ID: #{Date.now().toString().slice(-8)}</p>
+            <p className="font-bold">Bill ID: #{lastSale?.id?.slice(-8) || Date.now().toString().slice(-8)}</p>
             <p className="font-bold">Date: {format(new Date(), 'dd/MM/yyyy')}</p>
             <p className="font-bold">Time: {format(new Date(), 'HH:mm')}</p>
           </div>
@@ -376,22 +383,22 @@ export default function POSPage() {
           </div>
         </div>
 
-        <table className="w-full text-[8pt] border-collapse mb-2">
+        <table className="w-full text-[8pt] border-collapse mb-2 leading-normal">
           <thead>
             <tr className="border-y border-slate-900">
-              <th className="text-left py-1 font-bold uppercase">Item</th>
-              <th className="text-right py-1 font-bold uppercase">Price</th>
-              <th className="text-center py-1 font-bold uppercase">Qty</th>
-              <th className="text-right py-1 font-bold uppercase">Total</th>
+              <th className="text-left py-2 font-bold uppercase">Item</th>
+              <th className="text-right py-2 font-bold uppercase">Price</th>
+              <th className="text-center py-2 font-bold uppercase">Qty</th>
+              <th className="text-right py-2 font-bold uppercase">Total</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {lastSale?.items.map((item, idx) => (
               <tr key={idx}>
-                <td className="py-1.5">{item.name}</td>
-                <td className="py-1.5 text-right">₹{item.price.toFixed(0)}</td>
-                <td className="py-1.5 text-center">{item.quantity}</td>
-                <td className="py-1.5 text-right">₹{(item.price * item.quantity).toFixed(0)}</td>
+                <td className="py-2">{item.name}</td>
+                <td className="py-2 text-right">₹{item.price.toFixed(0)}</td>
+                <td className="py-2 text-center">{item.quantity}</td>
+                <td className="py-2 text-right">₹{(item.price * item.quantity).toFixed(0)}</td>
               </tr>
             ))}
           </tbody>
@@ -402,17 +409,17 @@ export default function POSPage() {
             <span>Subtotal</span>
             <span>₹{lastSale?.subtotalAmount.toFixed(0)}</span>
           </div>
-          <div className="flex justify-between items-center pt-1 border-t border-slate-400">
-            <span className="text-[9pt] font-bold uppercase">Grand Total</span>
+          <div className="flex justify-between items-center pt-2 border-t border-slate-400">
+            <span className="text-[10pt] font-bold uppercase">Grand Total</span>
             <span className="text-[10pt] font-bold">₹{lastSale?.totalAmount.toFixed(0)}</span>
           </div>
         </div>
 
         <div className="mt-4 text-center space-y-1">
-          <p className="text-[6pt] font-bold uppercase tracking-widest text-slate-400">
+          <p className="text-[7pt] font-bold uppercase tracking-widest text-slate-400">
             Computer Generated Invoice • No Exchange without Bill
           </p>
-          <p className="text-[8pt] font-bold">Thank you for shopping at Krishna's Super 9+!</p>
+          <p className="text-[9pt] font-bold">Thank you for shopping at Krishna's Super 9+!</p>
         </div>
       </div>
 
@@ -548,6 +555,38 @@ export default function POSPage() {
         )}
       </main>
 
+      {/* PRINTER SELECTION DIALOG */}
+      <Dialog open={isPrinterSelectionOpen} onOpenChange={setIsPrinterSelectionOpen}>
+        <DialogContent className="sm:max-w-md rounded-[32px] p-10 border-none shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black uppercase tracking-tight text-secondary">Output Device</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-6">
+            <button
+              onClick={() => handlePrintRequest('normal')}
+              className="flex flex-col items-center justify-center h-40 bg-slate-50 rounded-[32px] hover:bg-secondary/5 hover:text-secondary transition-all group border-2 border-transparent hover:border-secondary/10 outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
+            >
+              <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Printer className="h-6 w-6 text-slate-400 group-hover:text-secondary" />
+              </div>
+              <span className="font-bold text-[10px] uppercase tracking-widest">Normal (A4/Desk)</span>
+            </button>
+            <button
+              onClick={() => handlePrintRequest('thermal')}
+              className="flex flex-col items-center justify-center h-40 bg-slate-50 rounded-[32px] hover:bg-primary/5 hover:text-primary transition-all group border-2 border-transparent hover:border-primary/10 outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Printer className="h-6 w-6 text-slate-400 group-hover:text-primary" />
+              </div>
+              <span className="font-bold text-[10px] uppercase tracking-widest">Thermal (58/80mm)</span>
+            </button>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsPrinterSelectionOpen(false)} className="font-bold h-12 w-full rounded-xl uppercase text-[10px] tracking-widest">Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isScannerOpen} onOpenChange={setIsScannerOpen}>
         <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden print:hidden">
           <div className="absolute top-0 left-0 w-full h-2 bg-primary" />
@@ -586,11 +625,11 @@ export default function POSPage() {
 
           <div className="py-4 space-y-4">
             <div className="bg-slate-50 rounded-[28px] p-6 space-y-3 font-receipt border border-slate-200 text-[9pt] leading-normal">
-              <div className="flex justify-between items-center text-[8pt] font-bold uppercase text-slate-400 tracking-widest">
+              <div className="flex justify-between items-center text-[8pt] font-bold uppercase text-slate-400 tracking-widest mb-2">
                 <span>INVOICE DETAILS</span>
                 <span>{lastSale?.staffName || staffName}</span>
               </div>
-              <div className="flex flex-col border-y border-slate-100 py-2 space-y-1">
+              <div className="flex flex-col border-y border-slate-100 py-3 space-y-2">
                  <div className="flex justify-between text-[8pt] font-bold">
                     <span className="text-slate-400">CUSTOMER</span>
                     <span className="text-secondary">{lastSale?.customerName || 'Walk-in'}</span>
@@ -605,8 +644,8 @@ export default function POSPage() {
                  </div>
               </div>
               
-              <div className="py-2 border-b border-slate-100">
-                <table className="w-full text-[8pt]">
+              <div className="py-3 border-b border-slate-100">
+                <table className="w-full text-[8pt] leading-normal">
                   <thead>
                     <tr className="border-b border-slate-200">
                       <th className="text-left font-bold py-2 uppercase">Item</th>
@@ -618,27 +657,27 @@ export default function POSPage() {
                   <tbody>
                     {lastSale?.items.map((item, idx) => (
                       <tr key={idx}>
-                        <td className="py-1.5">{item.name}</td>
-                        <td className="py-1.5 text-right">₹{item.price.toFixed(0)}</td>
-                        <td className="py-1.5 text-center">{item.quantity}</td>
-                        <td className="py-1.5 text-right">₹{(item.price * item.quantity).toFixed(0)}</td>
+                        <td className="py-2">{item.name}</td>
+                        <td className="py-2 text-right">₹{item.price.toFixed(0)}</td>
+                        <td className="py-2 text-center">{item.quantity}</td>
+                        <td className="py-2 text-right">₹{(item.price * item.quantity).toFixed(0)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
 
-              <div className="flex justify-between items-end pt-3">
+              <div className="flex justify-between items-end pt-4">
                 <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">₹{lastSale?.totalAmount.toFixed(0)}</span>
-                <span className="text-[8pt] font-black text-emerald-500 uppercase tracking-widest">{lastSale?.items.length} Items</span>
+                <span className="text-[9pt] font-black text-emerald-500 uppercase tracking-widest">{lastSale?.items.length} Items</span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-               <Button variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2 hover:bg-secondary hover:text-white transition-all" onClick={handlePrintAction}>
+               <Button variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2 hover:bg-secondary hover:text-white transition-all" onClick={() => setIsPrinterSelectionOpen(true)}>
                  <Printer className="h-4 w-4" /> Print
                </Button>
-               <Button variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2 hover:bg-secondary hover:text-white transition-all" onClick={handlePrintAction}>
+               <Button variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2 hover:bg-secondary hover:text-white transition-all" onClick={() => {}}>
                  <Download className="h-4 w-4" /> PDF
                </Button>
             </div>

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo, useState } from 'react';
@@ -90,6 +89,8 @@ export default function DashboardPage() {
   const { user, isUserLoading: isAuthLoading } = useUser();
   const [viewingSale, setViewingSale] = useState<PurchaseRecord | null>(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [isPrinterSelectionOpen, setIsPrinterSelectionOpen] = useState(false);
+  const [printType, setPrintType] = useState<'normal' | 'thermal'>('normal');
   const [dateFilter, setDateFilter] = useState<DateFilter>('today');
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -199,8 +200,12 @@ export default function DashboardPage() {
     return last7Days;
   }, [rawSales]);
 
-  const handlePrintAction = () => {
-    window.print();
+  const handlePrintRequest = (type: 'normal' | 'thermal') => {
+    setPrintType(type);
+    setIsPrinterSelectionOpen(false);
+    setTimeout(() => {
+      window.print();
+    }, 100);
   };
 
   if (isAuthLoading) {
@@ -260,7 +265,10 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 font-body">
       {/* HIGH-FIDELITY PRINT RECEIPT (LEDGER ARCHIVE) */}
-      <div className="hidden print-only p-4 bg-white text-slate-900 font-receipt min-h-screen text-[10pt] leading-normal">
+      <div className={cn(
+        "hidden print-only p-4 bg-white text-slate-900 font-receipt min-h-screen text-[10pt] leading-normal",
+        printType === 'thermal' ? 'print-thermal' : 'print-normal'
+      )}>
         {isReportOpen ? (
           <div className="space-y-6">
              <div className="text-center border-b-2 border-slate-900 pb-3 mb-6">
@@ -316,30 +324,30 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <table className="w-full text-[8pt] border-collapse mb-2">
+            <table className="w-full text-[8pt] border-collapse mb-2 leading-normal">
               <thead>
                 <tr className="border-y border-slate-900">
-                  <th className="text-left py-1 font-bold uppercase">Item</th>
-                  <th className="text-right py-1 font-bold uppercase">Price</th>
-                  <th className="text-center py-1 font-bold uppercase">Qty</th>
-                  <th className="text-right py-1 font-bold uppercase">Total</th>
+                  <th className="text-left py-2 font-bold uppercase">Item</th>
+                  <th className="text-right py-2 font-bold uppercase">Price</th>
+                  <th className="text-center py-2 font-bold uppercase">Qty</th>
+                  <th className="text-right py-2 font-bold uppercase">Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {viewingSale?.items.map((item, idx) => (
                   <tr key={idx}>
-                    <td className="py-1.5">{item.name}</td>
-                    <td className="py-1.5 text-right">₹{item.price.toFixed(0)}</td>
-                    <td className="py-1.5 text-center">{item.quantity}</td>
-                    <td className="py-1.5 text-right">₹{(item.price * item.quantity).toFixed(0)}</td>
+                    <td className="py-2">{item.name}</td>
+                    <td className="py-2 text-right">₹{item.price.toFixed(0)}</td>
+                    <td className="py-2 text-center">{item.quantity}</td>
+                    <td className="py-2 text-right">₹{(item.price * item.quantity).toFixed(0)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
 
             <div className="space-y-1 text-right border-t border-slate-900 pt-2">
-              <div className="flex justify-between items-center pt-1 border-t border-slate-400">
-                <span className="text-[9pt] font-bold uppercase">Grand Total</span>
+              <div className="flex justify-between items-center pt-2 border-t border-slate-400">
+                <span className="text-[10pt] font-bold uppercase">Grand Total</span>
                 <span className="text-[10pt] font-bold">₹{viewingSale?.totalAmount.toFixed(0)}</span>
               </div>
             </div>
@@ -409,7 +417,7 @@ export default function DashboardPage() {
             )}
 
             <Button 
-              onClick={() => setIsReportOpen(true)}
+              onClick={() => { setIsReportOpen(true); }}
               className="h-11 px-6 rounded-2xl font-black text-[10px] uppercase tracking-widest bg-primary hover:bg-primary/95 text-white shadow-lg shadow-primary/10 gap-2"
             >
               <FileText className="h-4 w-4" /> Generate Audit
@@ -659,7 +667,7 @@ export default function DashboardPage() {
 
           <div className="py-2 space-y-4">
             <div className="bg-slate-50 rounded-[24px] p-6 space-y-3 font-receipt border border-slate-200 leading-normal">
-              <div className="flex flex-col border-b border-slate-100 pb-2 space-y-1">
+              <div className="flex flex-col border-b border-slate-100 pb-2 space-y-2">
                  <div className="flex justify-between items-center text-[8pt] font-bold">
                     <span className="text-slate-400 uppercase">Customer</span>
                     <span className="text-secondary">{viewingSale?.customerName || 'Walk-in'}</span>
@@ -674,8 +682,8 @@ export default function DashboardPage() {
                  </div>
               </div>
 
-              <div className="py-2 border-b border-slate-100">
-                <table className="w-full text-[8pt]">
+              <div className="py-3 border-b border-slate-100">
+                <table className="w-full text-[8pt] leading-normal">
                   <thead>
                     <tr className="border-b border-slate-200">
                       <th className="text-left font-bold py-2 uppercase">Item</th>
@@ -687,20 +695,20 @@ export default function DashboardPage() {
                   <tbody>
                     {viewingSale?.items.map((item, idx) => (
                       <tr key={idx}>
-                        <td className="py-1.5">{item.name}</td>
-                        <td className="py-1.5 text-right">₹{item.price.toFixed(0)}</td>
-                        <td className="py-1.5 text-center">{item.quantity}</td>
-                        <td className="py-1.5 text-right">₹{(item.price * item.quantity).toFixed(0)}</td>
+                        <td className="py-2">{item.name}</td>
+                        <td className="py-2 text-right">₹{item.price.toFixed(0)}</td>
+                        <td className="py-2 text-center">{item.quantity}</td>
+                        <td className="py-2 text-right">₹{(item.price * item.quantity).toFixed(0)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
 
-              <div className="flex justify-between items-end pt-3">
+              <div className="flex justify-between items-end pt-4">
                 <div className="flex flex-col">
                    <span className="text-[8pt] font-bold text-slate-400 uppercase tracking-widest mb-1">Final Amount</span>
-                   <span className="text-3xl font-black text-slate-900 tracking-tighter">₹{viewingSale?.totalAmount.toFixed(0)}</span>
+                   <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">₹{viewingSale?.totalAmount.toFixed(0)}</span>
                 </div>
                 <div className="text-right">
                   <span className="text-[7pt] font-bold text-slate-400 uppercase block tracking-widest">Served By</span>
@@ -712,10 +720,10 @@ export default function DashboardPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-               <Button onClick={handlePrintAction} variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2">
+               <Button onClick={() => setIsPrinterSelectionOpen(true)} variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2 hover:bg-secondary hover:text-white transition-all">
                  <Printer className="h-4 w-4" /> Print
                </Button>
-               <Button onClick={handlePrintAction} variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2">
+               <Button variant="outline" className="h-14 rounded-2xl bg-white border-slate-100 font-bold uppercase text-[10px] gap-2 hover:bg-secondary hover:text-white transition-all">
                  <Download className="h-4 w-4" /> PDF
                </Button>
             </div>
@@ -725,6 +733,38 @@ export default function DashboardPage() {
             <Button className="w-full h-14 rounded-2xl font-bold text-sm bg-secondary text-white" onClick={() => setViewingSale(null)}>
               CLOSE AUDIT
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PRINTER SELECTION DIALOG */}
+      <Dialog open={isPrinterSelectionOpen} onOpenChange={setIsPrinterSelectionOpen}>
+        <DialogContent className="sm:max-w-md rounded-[32px] p-10 border-none shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black uppercase tracking-tight text-secondary">Output Device</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4 py-6">
+            <button
+              onClick={() => handlePrintRequest('normal')}
+              className="flex flex-col items-center justify-center h-40 bg-slate-50 rounded-[32px] hover:bg-secondary/5 hover:text-secondary transition-all group border-2 border-transparent hover:border-secondary/10 outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
+            >
+              <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Printer className="h-6 w-6 text-slate-400 group-hover:text-secondary" />
+              </div>
+              <span className="font-bold text-[10px] uppercase tracking-widest">Normal (A4/Desk)</span>
+            </button>
+            <button
+              onClick={() => handlePrintRequest('thermal')}
+              className="flex flex-col items-center justify-center h-40 bg-slate-50 rounded-[32px] hover:bg-primary/5 hover:text-primary transition-all group border-2 border-transparent hover:border-primary/10 outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Printer className="h-6 w-6 text-slate-400 group-hover:text-primary" />
+              </div>
+              <span className="font-bold text-[10px] uppercase tracking-widest">Thermal (58/80mm)</span>
+            </button>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsPrinterSelectionOpen(false)} className="font-bold h-12 w-full rounded-xl uppercase text-[10px] tracking-widest">Cancel</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -771,7 +811,7 @@ export default function DashboardPage() {
             <Button variant="outline" className="h-14 rounded-2xl font-bold uppercase text-[10px] tracking-widest bg-white border-slate-100" onClick={() => setIsReportOpen(false)}>
               Cancel
             </Button>
-            <Button className="h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-secondary text-white gap-2 shadow-xl" onClick={handlePrintAction}>
+            <Button className="h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-secondary text-white gap-2 shadow-xl" onClick={() => setIsPrinterSelectionOpen(true)}>
               <Printer className="h-4 w-4" /> Print Audit
             </Button>
           </DialogFooter>

@@ -51,10 +51,27 @@
     position: absolute;
     left: 0;
     top: 0;
-    width: 100%;
     display: block !important;
     font-family: 'Courier New', Courier, monospace !important;
+    background: white !important;
+    color: black !important;
   }
+  
+  /* Thermal Printer Optimization */
+  .print-thermal {
+    width: 80mm !important;
+    padding: 2mm !important;
+    font-size: 8pt !important;
+  }
+  
+  /* Desktop Printer Optimization */
+  .print-normal {
+    width: 100% !important;
+    max-width: 210mm; /* A4 width */
+    padding: 10mm !important;
+    font-size: 10pt !important;
+  }
+
   @page {
     margin: 0;
   }
