@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useRef } from 'react';
@@ -31,11 +30,21 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Product } from '@/lib/types';
 import * as XLSX from 'xlsx';
+import { cn } from '@/lib/utils';
 
 interface BulkImportDialogProps {
   isOpen: boolean;
@@ -159,11 +168,7 @@ export function BulkImportDialog({ isOpen, onClose, existingProducts }: BulkImpo
       }
     });
 
-    toast({ 
-      title: "Import Complete", 
-      description: `Committing ${added} new and ${updated} updated items to cloud.` 
-    });
-    
+    toast({ title: "Import Successful", description: `Enrolled ${added} new items and refreshed ${updated} existing records.` });
     setIsProcessing(false);
     onClose();
     setImportData([]);
@@ -176,12 +181,8 @@ export function BulkImportDialog({ isOpen, onClose, existingProducts }: BulkImpo
         <div className="absolute top-0 left-0 w-full h-2 bg-primary" />
         <DialogHeader className="p-10 border-b bg-slate-50/50 flex flex-row items-center justify-between shrink-0">
           <div>
-            <DialogTitle className="text-2xl font-black uppercase tracking-tight text-secondary">
-              Bulk Stock Importer
-            </DialogTitle>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-              Enroll items via Spreadsheet or Clipboard
-            </p>
+            <DialogTitle className="text-2xl font-black uppercase tracking-tight text-secondary">Bulk Importer</DialogTitle>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Excel, CSV, or Text Paste Supported</p>
           </div>
           <Button variant="ghost" onClick={onClose} className="rounded-2xl h-12 w-12 p-0"><X className="h-6 w-6" /></Button>
         </DialogHeader>
@@ -190,104 +191,51 @@ export function BulkImportDialog({ isOpen, onClose, existingProducts }: BulkImpo
           <Tabs defaultValue="paste" className="flex-1 flex flex-col overflow-hidden">
             <div className="px-10 pt-8 flex items-center justify-between shrink-0">
               <TabsList className="bg-slate-100 p-1 rounded-2xl h-14">
-                <TabsTrigger value="paste" className="rounded-xl px-8 font-bold text-[10px] uppercase gap-2">
-                  <ClipboardPaste className="h-4 w-4" /> Paste Text
-                </TabsTrigger>
-                <TabsTrigger value="file" className="rounded-xl px-8 font-bold text-[10px] uppercase gap-2">
-                  <FileUp className="h-4 w-4" /> File Upload
-                </TabsTrigger>
+                <TabsTrigger value="paste" className="rounded-xl px-8 font-bold text-[10px] uppercase gap-2"><ClipboardPaste className="h-4 w-4" /> Pasteboard</TabsTrigger>
+                <TabsTrigger value="file" className="rounded-xl px-8 font-bold text-[10px] uppercase gap-2"><FileUp className="h-4 w-4" /> File Upload</TabsTrigger>
               </TabsList>
-
               {importData.length > 0 && (
-                <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-2">
-                   <p className="text-[10px] font-black uppercase text-slate-400">Duplicate Handle:</p>
+                <div className="flex items-center gap-3 animate-in fade-in">
+                   <p className="text-[10px] font-black uppercase text-slate-400">Handle Duplicates:</p>
                    <Select value={importMode} onValueChange={(v: any) => setImportMode(v)}>
-                     <SelectTrigger className="h-10 w-32 border-none bg-slate-50 rounded-xl font-bold text-[9px] uppercase">
-                       <SelectValue />
-                     </SelectTrigger>
-                     <SelectContent className="rounded-xl">
-                       <SelectItem value="skip" className="text-[9px] font-bold uppercase">Skip Existing</SelectItem>
-                       <SelectItem value="update" className="text-[9px] font-bold uppercase">Overwrite All</SelectItem>
-                     </SelectContent>
+                     <SelectTrigger className="h-10 w-32 border-none bg-slate-50 rounded-xl font-bold text-[9px] uppercase"><SelectValue /></SelectTrigger>
+                     <SelectContent className="rounded-xl"><SelectItem value="skip">Skip New</SelectItem><SelectItem value="update">Overwrite</SelectItem></SelectContent>
                    </Select>
                 </div>
               )}
             </div>
 
             <TabsContent value="paste" className="flex-1 overflow-hidden p-10 flex flex-col gap-6">
-              <div className="flex-1 flex flex-col gap-4">
-                <Label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Paste rows (Name, Price, Qty, Category)</Label>
-                <Textarea 
-                  value={pasteText}
-                  onChange={(e) => setPasteText(e.target.value)}
-                  placeholder="Amul Milk, 28, 50, Dairy&#10;Maggi, 14, 100, Staples&#10;Coca Cola, 40, 24, Beverages"
-                  className="flex-1 bg-slate-50 border-none rounded-2xl p-6 font-mono text-xs leading-relaxed focus-visible:ring-primary/20"
-                />
-              </div>
-              <Button onClick={handlePasteProcess} className="h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-secondary text-white shadow-xl">
-                Parse Clipboard Data
-              </Button>
+              <Textarea 
+                value={pasteText}
+                onChange={(e) => setPasteText(e.target.value)}
+                placeholder="Format: Item Name, Price, Qty (opt), Category&#10;Amul Milk, 28, 50, Dairy&#10;Maggi, 14, 100, Staples"
+                className="flex-1 bg-slate-50 border-none rounded-2xl p-6 font-mono text-xs focus-visible:ring-primary/20"
+              />
+              <Button onClick={handlePasteProcess} className="h-14 rounded-2xl font-black uppercase text-[10px] bg-secondary text-white shadow-xl">Process Pasteboard</Button>
             </TabsContent>
 
-            <TabsContent value="file" className="flex-1 overflow-hidden p-10">
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                className="h-full border-4 border-dashed border-slate-100 rounded-[40px] flex flex-col items-center justify-center gap-6 cursor-pointer hover:bg-slate-50 transition-all group"
-              >
-                <div className="h-24 w-24 bg-slate-50 rounded-[32px] flex items-center justify-center group-hover:scale-110 transition-transform shadow-sm">
-                  <FileText className="h-10 w-10 text-slate-300" />
-                </div>
-                <div className="text-center space-y-2">
-                  <h4 className="text-sm font-black text-secondary uppercase tracking-tight">Select Master File</h4>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Excel (.xlsx) or CSV (.csv)</p>
-                </div>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  onChange={handleFileUpload} 
-                  className="hidden" 
-                  accept=".xlsx, .xls, .csv" 
-                />
+            <TabsContent value="file" className="flex-1 overflow-hidden p-10 flex flex-col items-center justify-center gap-6">
+              <div onClick={() => fileInputRef.current?.click()} className="w-full max-w-lg aspect-video border-4 border-dashed border-slate-100 rounded-[40px] flex flex-col items-center justify-center gap-6 cursor-pointer hover:bg-slate-50 transition-all group">
+                <FileText className="h-12 w-12 text-slate-300 group-hover:scale-110 transition-transform" />
+                <div className="text-center"><h4 className="text-sm font-black text-secondary uppercase">Select Spreadsheet</h4><p className="text-[10px] font-bold text-slate-400 uppercase mt-1">Excel (.xlsx) or CSV</p></div>
+                <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".xlsx, .xls, .csv" />
               </div>
             </TabsContent>
           </Tabs>
 
           {importData.length > 0 && (
-            <div className="px-10 pb-10 flex-1 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-4">
-              <div className="flex items-center gap-3 mb-4">
-                <TableIcon className="h-4 w-4 text-primary" />
-                <h3 className="text-[10px] font-black uppercase text-secondary tracking-widest">Pre-Flight Audit ({importData.length} items)</h3>
-              </div>
-              <div className="flex-1 border border-slate-100 rounded-[28px] overflow-hidden flex flex-col min-h-0">
-                <ScrollArea className="flex-1">
+            <div className="px-10 pb-10 flex-1 flex flex-col overflow-hidden animate-in slide-in-from-bottom-4">
+              <div className="flex items-center gap-3 mb-4"><TableIcon className="h-4 w-4 text-primary" /><h3 className="text-[10px] font-black uppercase text-secondary">Audit Preview ({importData.length} items)</h3></div>
+              <div className="flex-1 border border-slate-100 rounded-[28px] overflow-hidden">
+                <ScrollArea className="h-full">
                   <Table>
-                    <TableHeader className="bg-slate-50 sticky top-0 z-20">
-                      <TableRow className="border-none">
-                        <TableHead className="text-[9px] font-black uppercase h-10 pl-6">Label</TableHead>
-                        <TableHead className="text-[9px] font-black uppercase h-10">Price</TableHead>
-                        <TableHead className="text-[9px] font-black uppercase h-10">Qty</TableHead>
-                        <TableHead className="text-[9px] font-black uppercase h-10">Category</TableHead>
-                        <TableHead className="text-[9px] font-black uppercase h-10 text-right pr-6">Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
+                    <TableHeader className="bg-slate-50 sticky top-0"><TableRow className="border-none"><TableHead className="text-[9px] font-black uppercase h-10">Item</TableHead><TableHead className="text-[9px] font-black uppercase h-10">Price</TableHead><TableHead className="text-[9px] font-black uppercase h-10 text-right">Status</TableHead></TableRow></TableHeader>
                     <TableBody>
                       {importData.map((item, idx) => (
                         <TableRow key={idx} className={cn("border-slate-50", !item.isValid && "bg-primary/5")}>
-                          <TableCell className="pl-6 font-bold text-xs">{item.name}</TableCell>
-                          <TableCell className="font-bold text-xs">₹{item.price}</TableCell>
-                          <TableCell className="font-bold text-xs">{item.stock ?? '--'}</TableCell>
-                          <TableCell className="font-bold text-[10px] uppercase text-slate-400">{item.category}</TableCell>
-                          <TableCell className="text-right pr-6">
-                            {item.isValid ? (
-                              item.existingId ? (
-                                <Badge variant="secondary" className="bg-secondary text-white text-[8px] uppercase">Exists</Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-emerald-500 border-emerald-100 text-[8px] uppercase">New</Badge>
-                              )
-                            ) : (
-                              <Badge variant="destructive" className="text-[8px] uppercase">{item.error}</Badge>
-                            )}
-                          </TableCell>
+                          <TableCell className="font-bold text-xs">{item.name}</TableCell><TableCell className="font-bold text-xs">₹{item.price}</TableCell>
+                          <TableCell className="text-right">{item.isValid ? <Badge variant="outline" className="text-[8px] uppercase">{item.existingId ? 'Update' : 'New'}</Badge> : <Badge variant="destructive" className="text-[8px] uppercase">{item.error}</Badge>}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -300,23 +248,11 @@ export function BulkImportDialog({ isOpen, onClose, existingProducts }: BulkImpo
 
         <DialogFooter className="p-10 bg-slate-50/50 border-t shrink-0">
           <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-4 text-slate-400">
-               <AlertCircle className="h-4 w-4" />
-               <p className="text-[9px] font-bold uppercase tracking-widest max-w-[300px] leading-tight">
-                 Invalid rows (highlighted) will be automatically skipped during sync.
-               </p>
-            </div>
+            <p className="text-[9px] font-bold uppercase text-slate-400 max-w-[300px]">Rows highlighted in red will be skipped during synchronization.</p>
             <div className="flex gap-4">
-              <Button variant="ghost" onClick={() => setImportData([])} className="h-14 px-8 rounded-2xl font-bold text-[10px] uppercase text-slate-400">
-                Clear All
-              </Button>
-              <Button 
-                disabled={isProcessing || importData.length === 0}
-                onClick={handleCommit}
-                className="h-14 px-10 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-xl gap-2"
-              >
-                {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                Synchronize Cloud Ledger
+              <Button variant="ghost" onClick={() => setImportData([])} className="h-14 px-8 rounded-2xl font-bold uppercase text-[10px] text-slate-400">Clear</Button>
+              <Button disabled={isProcessing || importData.length === 0} onClick={handleCommit} className="h-14 px-10 rounded-2xl font-black uppercase text-[10px] bg-primary text-white shadow-xl gap-2">
+                {isProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />} Synchronize Ledger
               </Button>
             </div>
           </div>

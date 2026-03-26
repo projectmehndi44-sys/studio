@@ -41,7 +41,6 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
   const [paymentMode, setPaymentMode] = useState<'Cash' | 'UPI' | 'Credit'>('Cash');
-  const [isPrinterDialogOpen, setIsPrinterDialogOpen] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -65,35 +64,17 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
     });
   };
 
-  // Global keyboard shortcuts
+  // Keyboard Shortcuts
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // Ctrl + Enter: Trigger Confirmation before Sync
       if (e.ctrlKey && e.key === 'Enter') {
         e.preventDefault();
         requestLedgerSync();
-      }
-      // Shift + Enter: Focus Customer Name
-      if (e.shiftKey && e.key === 'Enter') {
-        e.preventDefault();
-        nameInputRef.current?.focus();
       }
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [requestLedgerSync]);
-
-  const executePrint = () => {
-    setIsPrinterDialogOpen(false);
-    requestLedgerSync();
-  };
-
-  const handleModeKeyDown = (e: React.KeyboardEvent, mode: 'Cash' | 'UPI' | 'Credit') => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      setPaymentMode(mode);
-    }
-  };
 
   return (
     <div className="flex flex-col h-full bg-white p-8 overflow-hidden">
@@ -108,7 +89,7 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
                   ref={nameInputRef}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Customer Name (Shift+Enter)"
+                  placeholder="Customer Name"
                   className="pl-12 h-12 text-sm font-bold bg-slate-50 border-none rounded-xl focus-visible:ring-primary/20"
                 />
               </div>
@@ -117,7 +98,7 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
                 <Input
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Mobile (WhatsApp)"
+                  placeholder="WhatsApp Mobile"
                   className="pl-12 h-12 text-sm font-bold bg-slate-50 border-none rounded-xl focus-visible:ring-primary/20"
                 />
               </div>
@@ -128,9 +109,9 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
             <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Settlement Method</label>
             <div className="grid grid-cols-1 gap-2">
               {[
-                { id: 'Cash', icon: Banknote, color: 'emerald' },
-                { id: 'UPI', icon: Wallet, color: 'blue' },
-                { id: 'Credit', icon: CreditCard, color: 'orange' }
+                { id: 'Cash', icon: Banknote },
+                { id: 'UPI', icon: Wallet },
+                { id: 'Credit', icon: CreditCard }
               ].map((m) => {
                 const Icon = m.icon;
                 const isActive = paymentMode === m.id;
@@ -138,9 +119,8 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
                   <button
                     key={m.id}
                     onClick={() => setPaymentMode(m.id as any)}
-                    onKeyDown={(e) => handleModeKeyDown(e, m.id as any)}
                     className={cn(
-                      "flex items-center justify-between p-4 rounded-2xl transition-all border-2 outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                      "flex items-center justify-between p-4 rounded-2xl transition-all border-2",
                       isActive 
                         ? 'bg-secondary text-white border-secondary shadow-lg' 
                         : 'bg-white text-slate-500 border-slate-50 hover:border-slate-200'
@@ -174,7 +154,7 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
 
         <div className="space-y-3">
           <Button 
-            className="w-full h-16 text-xs font-black rounded-2xl shadow-2xl shadow-primary/20 transition-all active:scale-95 bg-primary hover:bg-primary/95 text-white uppercase tracking-[0.2em]"
+            className="w-full h-16 text-xs font-black rounded-2xl shadow-2xl transition-all active:scale-95 bg-primary hover:bg-primary/95 text-white uppercase tracking-[0.2em]"
             disabled={items.length === 0}
             onClick={requestLedgerSync}
           >
@@ -182,94 +162,33 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
           </Button>
           
           <div className="grid grid-cols-2 gap-3">
-            <Button 
-              variant="outline"
-              className="h-12 bg-slate-50 border-none rounded-xl hover:bg-slate-100 font-bold uppercase text-[9px] tracking-widest gap-2 text-slate-600"
-              onClick={() => setIsPrinterDialogOpen(true)}
-              disabled={items.length === 0}
-            >
+            <Button variant="outline" className="h-12 bg-slate-50 border-none rounded-xl font-bold uppercase text-[9px] tracking-widest gap-2 text-slate-600" onClick={requestLedgerSync} disabled={items.length === 0}>
               <Printer className="h-4 w-4" /> Print
             </Button>
-            <Button 
-              variant="outline"
-              className="h-12 bg-slate-50 border-none rounded-xl hover:bg-slate-100 font-bold uppercase text-[9px] tracking-widest gap-2 text-slate-600"
-              onClick={requestLedgerSync}
-              disabled={items.length === 0}
-            >
-              <Download className="h-4 w-4" /> Digital PDF
+            <Button variant="outline" className="h-12 bg-slate-50 border-none rounded-xl font-bold uppercase text-[9px] tracking-widest gap-2 text-slate-600" onClick={requestLedgerSync} disabled={items.length === 0}>
+              <Download className="h-4 w-4" /> PDF
             </Button>
           </div>
         </div>
       </div>
 
-      {/* SYNC CONFIRMATION DIALOG */}
+      {/* CONFIRMATION DIALOG */}
       <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
-        <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden print:hidden">
+        <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden text-center">
           <div className="absolute top-0 left-0 w-full h-2 bg-primary" />
           <DialogHeader className="space-y-4">
             <div className="mx-auto w-16 h-16 bg-primary/5 rounded-[24px] flex items-center justify-center">
               <AlertTriangle className="h-8 w-8 text-primary" />
             </div>
-            <DialogTitle className="text-center text-xl font-black uppercase tracking-tight text-secondary leading-none">
-              Sync Bill to Ledger?
-            </DialogTitle>
+            <DialogTitle className="text-center text-xl font-black uppercase text-secondary">Sync Bill to Ledger?</DialogTitle>
           </DialogHeader>
-
-          <div className="text-center py-4 space-y-2">
-            <p className="text-sm font-bold text-slate-500 leading-relaxed">
-              Are you sure you want to finalize this bill for <span className="text-secondary font-black">₹{subtotal.toLocaleString()}</span>?
-            </p>
-            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
-              This will commit the transaction to the cloud archive.
-            </p>
+          <div className="py-4 space-y-2">
+            <p className="text-sm font-bold text-slate-500">Are you ready to commit this bill for <span className="text-secondary font-black">₹{subtotal.toLocaleString()}</span>?</p>
+            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Stock levels will be adjusted automatically.</p>
           </div>
-
           <DialogFooter className="grid grid-cols-2 gap-4">
-            <Button 
-              variant="outline" 
-              className="h-14 rounded-2xl font-bold uppercase text-[10px] tracking-widest bg-white border-slate-100 hover:bg-slate-50"
-              onClick={() => setIsConfirmDialogOpen(false)}
-            >
-              No, Cancel
-            </Button>
-            <Button 
-              className="h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-xl shadow-primary/10"
-              onClick={handleFinalConfirm}
-            >
-              Yes, Sync Now
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* PRINTER SELECTION DIALOG */}
-      <Dialog open={isPrinterDialogOpen} onOpenChange={setIsPrinterDialogOpen}>
-        <DialogContent className="sm:max-w-md rounded-[32px] p-10 border-none shadow-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-black uppercase tracking-tight text-secondary">Output Device</DialogTitle>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-6">
-            <button
-              onClick={executePrint}
-              className="flex flex-col items-center justify-center h-40 bg-slate-50 rounded-[32px] hover:bg-secondary/5 hover:text-secondary transition-all group border-2 border-transparent hover:border-secondary/10 outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
-            >
-              <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Printer className="h-6 w-6 text-slate-400 group-hover:text-secondary" />
-              </div>
-              <span className="font-bold text-[10px] uppercase tracking-widest">Normal (A4/Desk)</span>
-            </button>
-            <button
-              onClick={executePrint}
-              className="flex flex-col items-center justify-center h-40 bg-slate-50 rounded-[32px] hover:bg-primary/5 hover:text-primary transition-all group border-2 border-transparent hover:border-primary/10 outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            >
-              <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Printer className="h-6 w-6 text-slate-400 group-hover:text-primary" />
-              </div>
-              <span className="font-bold text-[10px] uppercase tracking-widest">Thermal (58/80mm)</span>
-            </button>
-          </div>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setIsPrinterDialogOpen(false)} className="font-bold h-12 w-full rounded-xl uppercase text-[10px] tracking-widest">Cancel</Button>
+            <Button variant="outline" className="h-14 rounded-2xl font-bold uppercase text-[10px] tracking-widest border-slate-100" onClick={() => setIsConfirmDialogOpen(false)}>No, Back</Button>
+            <Button className="h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-xl" onClick={handleFinalConfirm}>Yes, Sync Now</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
