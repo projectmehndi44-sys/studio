@@ -24,12 +24,14 @@ import {
   Battery,
   Wifi,
   Package,
-  ArrowRight
+  ArrowRight,
+  Zap
 } from 'lucide-react';
 import { Product, CartItem, PurchaseRecord } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
 import { CartList } from '@/components/pos/cart-list';
 import { CheckoutPanel } from '@/components/pos/checkout-panel';
+import { QuickTapGrid } from '@/components/pos/quick-tap-grid';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import Link from 'next/link';
@@ -119,7 +121,6 @@ export default function POSPage() {
   const shopGSTIN = shopSettings?.gstin || "";
   const isLauncherEnabled = !!shopSettings?.launcherMode;
 
-  // Real-time stats for Launcher Dashboard
   const salesQuery = useMemoFirebase(() => collection(db, 'purchases'), [db]);
   const { data: salesData } = useCollection(salesQuery);
   const todaySales = useMemo(() => {
@@ -217,16 +218,16 @@ export default function POSPage() {
     const product = productsData.find(p => p.barcode === barcode);
     if (product) {
       handleProductSelect(product);
-      setIsScannerOpen(false);
+      // Removed setIsScannerOpen(false) for Continuous Scanning
       toast({
-        title: "Item Identified",
-        description: `${product.name} added via barcode.`,
+        title: "Added",
+        description: `${product.name} (Scan OK)`,
       });
     } else {
       toast({
         variant: "destructive",
-        title: "Unknown Barcode",
-        description: `Code: ${barcode} is not in Item Master.`,
+        title: "Unknown",
+        description: `Code: ${barcode}`,
       });
     }
   };
@@ -268,13 +269,11 @@ export default function POSPage() {
       customerName: data.customerName || null
     };
 
-    // Commit Sale to Firestore
     addDocumentNonBlocking(collection(db, 'purchases'), {
       ...saleData,
       timestamp: serverTimestamp()
     });
 
-    // Inventory Deduction Logic
     cartItems.forEach(item => {
       const sourceProduct = productsData?.find(p => p.id === item.id);
       if (sourceProduct && typeof sourceProduct.stock === 'number') {
@@ -351,7 +350,7 @@ export default function POSPage() {
     setIsCashDialogOpen(false);
     toast({
       title: `Cash ${type} Recorded`,
-      description: `₹${amount} synced to ledger by ${staffName}.`,
+      description: `₹${amount} synced to ledger.`,
     });
   };
 
@@ -372,7 +371,7 @@ export default function POSPage() {
 
   const handlePurgeData = async () => {
     if (!purgeOptions.inventory && !purgeOptions.sales && !purgeOptions.cash) {
-      toast({ variant: "destructive", title: "Selection Required", description: "Please select at least one database to purge." });
+      toast({ variant: "destructive", title: "Selection Required", description: "Select at least one database." });
       return;
     }
     setIsPinDialogOpen(true);
@@ -385,8 +384,6 @@ export default function POSPage() {
     if (purgeOptions.sales) collectionsToPurge.push('purchases');
     if (purgeOptions.cash) collectionsToPurge.push('cashTransactions');
     
-    toast({ title: "Purge Initiated", description: "Cleaning selected records from cloud ledger..." });
-
     for (const colName of collectionsToPurge) {
       const q = query(collection(db, colName));
       const snapshot = await getDocs(q);
@@ -396,12 +393,7 @@ export default function POSPage() {
     }
     
     setIsSettingsOpen(false);
-    toast({
-      variant: "destructive",
-      title: "Sync Complete",
-      description: "Selected databases have been wiped from the cloud.",
-    });
-    
+    toast({ variant: "destructive", title: "Sync Complete", description: "Records wiped." });
     setPurgeOptions({ inventory: false, sales: false, cash: false });
   };
 
@@ -417,7 +409,6 @@ export default function POSPage() {
     return <PhoneAuthGate />;
   }
 
-  // LAUNCHER MODE DASHBOARD
   if (isLauncherEnabled && !launcherActive) {
     return (
       <div className="h-screen bg-slate-900 flex flex-col items-center justify-center p-8 text-white relative overflow-hidden font-body">
@@ -492,7 +483,6 @@ export default function POSPage() {
           </div>
         </div>
 
-        {/* Global Dialogs in Launcher Mode */}
         <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
           <DialogContent className="rounded-[48px] p-12 sm:max-w-md bg-slate-900 text-white border-white/10 shadow-3xl">
             <DialogHeader>
@@ -527,7 +517,6 @@ export default function POSPage() {
     <div className="flex flex-col h-screen bg-slate-50/50 overflow-hidden text-slate-900 font-body">
       <Toaster />
       
-      {/* HIGH-FIDELITY PRINT RECEIPT */}
       <div className={cn(
         "hidden print-only p-4 bg-white text-slate-900 min-h-screen font-receipt text-[10pt] leading-normal",
         printType === 'thermal' ? 'print-thermal' : 'print-normal'
@@ -688,13 +677,22 @@ export default function POSPage() {
         {!isMobile ? (
           <>
             <div className="flex flex-col h-full p-8 overflow-hidden gap-8 bg-white/40 border-r border-slate-100">
-              <ProductSearch 
-                inputRef={searchInputRef}
-                products={productsData || []} 
-                onProductSelect={handleProductSelect} 
-                onScanClick={() => setIsScannerOpen(true)} 
-                onAddNewProduct={handleAddNewProduct} 
-              />
+              <div className="grid grid-cols-1 gap-6">
+                <ProductSearch 
+                  inputRef={searchInputRef}
+                  products={productsData || []} 
+                  onProductSelect={handleProductSelect} 
+                  onScanClick={() => setIsScannerOpen(true)} 
+                  onAddNewProduct={handleAddNewProduct} 
+                />
+                <div className="h-[200px] shrink-0">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Zap className="h-4 w-4 text-primary fill-primary" />
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Quick Tap Sellers</h3>
+                  </div>
+                  <QuickTapGrid products={productsData || []} onProductSelect={handleProductSelect} />
+                </div>
+              </div>
               <div className="flex-1 overflow-hidden">
                 <CartList items={cartItems} onUpdateQuantity={updateQuantity} onUpdatePrice={updatePrice} onRemoveItem={removeItem} />
               </div>
@@ -721,6 +719,7 @@ export default function POSPage() {
                   onScanClick={() => setIsScannerOpen(true)} 
                   onAddNewProduct={handleAddNewProduct} 
                 />
+                <QuickTapGrid products={productsData || []} onProductSelect={handleProductSelect} />
                 <CartList items={cartItems} onUpdateQuantity={updateQuantity} onUpdatePrice={updatePrice} onRemoveItem={removeItem} />
               </TabsContent>
               
@@ -732,7 +731,6 @@ export default function POSPage() {
         )}
       </main>
 
-      {/* PRINTER SELECTION DIALOG */}
       <Dialog open={isPrinterSelectionOpen} onOpenChange={setIsPrinterSelectionOpen}>
         <DialogContent className="sm:max-w-md rounded-[32px] p-10 border-none shadow-2xl">
           <DialogHeader>
@@ -741,7 +739,7 @@ export default function POSPage() {
           <div className="grid grid-cols-2 gap-4 py-6">
             <button
               onClick={() => handlePrintRequest('normal')}
-              className="flex flex-col items-center justify-center h-40 bg-slate-50 rounded-[32px] hover:bg-secondary/5 hover:text-secondary transition-all group border-2 border-transparent hover:border-secondary/10 outline-none focus-visible:ring-2 focus-visible:ring-secondary/40"
+              className="flex flex-col items-center justify-center h-40 bg-slate-50 rounded-[32px] hover:bg-secondary/5 hover:text-secondary transition-all group border-2 border-transparent hover:border-secondary/10"
             >
               <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Printer className="h-6 w-6 text-slate-400 group-hover:text-secondary" />
@@ -750,7 +748,7 @@ export default function POSPage() {
             </button>
             <button
               onClick={() => handlePrintRequest('thermal')}
-              className="flex flex-col items-center justify-center h-40 bg-slate-50 rounded-[32px] hover:bg-primary/5 hover:text-primary transition-all group border-2 border-transparent hover:border-primary/10 outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              className="flex flex-col items-center justify-center h-40 bg-slate-50 rounded-[32px] hover:bg-primary/5 hover:text-primary transition-all group border-2 border-transparent hover:border-primary/10"
             >
               <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Printer className="h-6 w-6 text-slate-400 group-hover:text-primary" />
@@ -771,7 +769,7 @@ export default function POSPage() {
             <div className="mx-auto w-16 h-16 bg-primary/5 rounded-[24px] flex items-center justify-center">
               <ScanLine className="h-8 w-8 text-primary" />
             </div>
-            <DialogTitle className="text-center text-xl font-black uppercase tracking-tight text-secondary">Optical Scanner</DialogTitle>
+            <DialogTitle className="text-center text-xl font-black uppercase tracking-tight text-secondary leading-none">Continuous Super Scanner</DialogTitle>
           </DialogHeader>
 
           <div className="py-4">
@@ -780,11 +778,11 @@ export default function POSPage() {
 
           <DialogFooter>
             <Button 
-              variant="ghost"
-              className="w-full h-14 rounded-2xl font-black text-xs uppercase text-slate-400"
+              variant="secondary"
+              className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest"
               onClick={() => setIsScannerOpen(false)}
             >
-              Close Scanner
+              Finish Scanning
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -909,7 +907,6 @@ export default function POSPage() {
                 <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Reference</Label>
                 <Input name="reason" placeholder="Vendor, Float etc." className="h-14 font-bold bg-slate-50 border-none rounded-2xl px-6 text-sm" />
               </div>
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest text-center">Acting Staff: {staffName}</p>
             </div>
             <DialogFooter className="gap-3">
               <Button type="submit" className="w-full rounded-2xl font-black h-14 text-xs uppercase bg-secondary text-white">Commit Adjust</Button>
@@ -959,57 +956,6 @@ export default function POSPage() {
 
                <Button type="submit" className="w-full h-14 rounded-2xl font-black text-xs uppercase tracking-widest bg-secondary text-white">SAVE PROFILE</Button>
             </form>
-             
-             <div className="pt-8 border-t border-slate-100">
-               <div className="bg-primary/5 rounded-2xl p-6 space-y-6">
-                 <div className="flex items-center gap-2 text-primary">
-                    <AlertTriangle className="h-4 w-4" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Purge System Data</span>
-                 </div>
-                 
-                 <div className="space-y-3">
-                   <div className="flex items-center space-x-3 bg-white/50 p-3 rounded-xl">
-                     <Checkbox 
-                       id="purge-inventory" 
-                       checked={purgeOptions.inventory} 
-                       onCheckedChange={(checked) => setPurgeOptions(prev => ({ ...prev, inventory: !!checked }))}
-                     />
-                     <label htmlFor="purge-inventory" className="text-[11px] font-bold uppercase text-slate-600 cursor-pointer">
-                       Item Master (Stock)
-                     </label>
-                   </div>
-                   <div className="flex items-center space-x-3 bg-white/50 p-3 rounded-xl">
-                     <Checkbox 
-                       id="purge-sales" 
-                       checked={purgeOptions.sales} 
-                       onCheckedChange={(checked) => setPurgeOptions(prev => ({ ...prev, sales: !!checked }))}
-                     />
-                     <label htmlFor="purge-sales" className="text-[11px] font-bold uppercase text-slate-600 cursor-pointer">
-                       Sales Archive (Bills)
-                     </label>
-                   </div>
-                   <div className="flex items-center space-x-3 bg-white/50 p-3 rounded-xl">
-                     <Checkbox 
-                       id="purge-cash" 
-                       checked={purgeOptions.cash} 
-                       onCheckedChange={(checked) => setPurgeOptions(prev => ({ ...prev, cash: !!checked }))}
-                     />
-                     <label htmlFor="purge-cash" className="text-[11px] font-bold uppercase text-slate-600 cursor-pointer">
-                       Cash Logs (Register)
-                     </label>
-                   </div>
-                 </div>
-
-                 <Button 
-                   type="button" 
-                   variant="destructive" 
-                   onClick={handlePurgeData}
-                   className="w-full h-12 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-destructive/10 gap-2"
-                 >
-                   <Trash2 className="h-4 w-4" /> Purge Selected
-                 </Button>
-               </div>
-             </div>
           </div>
         </DialogContent>
       </Dialog>

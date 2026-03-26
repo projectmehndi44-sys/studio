@@ -1,74 +1,59 @@
 "use client";
 
-import Image from 'next/image';
 import { Product } from '@/lib/types';
 import { Card } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 interface QuickTapGridProps {
   products: Product[] | null;
   onProductSelect: (product: Product) => void;
-  showAll?: boolean;
 }
 
-export function QuickTapGrid({ products, onProductSelect, showAll = false }: QuickTapGridProps) {
-  const safeProducts = products || [];
-  const items = showAll ? safeProducts : safeProducts.filter(p => p.isPopular);
+export function QuickTapGrid({ products, onProductSelect }: QuickTapGridProps) {
+  const popularItems = (products || []).filter(p => p.isPopular).slice(0, 15);
+
+  if (popularItems.length === 0) {
+    return (
+      <div className="h-full flex items-center justify-center border-2 border-dashed border-slate-100 rounded-[32px] bg-slate-50/30">
+        <p className="text-[9px] font-black uppercase tracking-widest text-slate-300">
+          No Popular Items Marked
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <ScrollArea className="h-full">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-8">
-        {items.map((p) => (
+    <ScrollArea className="w-full h-full pb-4">
+      <div className="flex gap-4 min-w-max pr-8">
+        {popularItems.map((p) => (
           <button
             key={p.id}
             onClick={() => onProductSelect(p)}
-            className="group transition-transform active:scale-95 text-left"
+            className="group active:scale-95 transition-all text-left"
           >
-            <Card className="relative h-44 overflow-hidden bg-white border border-slate-200 group-hover:border-primary transition-all shadow-sm group-hover:shadow-md rounded-2xl">
-              {p.image ? (
-                <div className="relative h-28 w-full">
-                  <Image
-                    src={p.image}
-                    alt={p.name}
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    data-ai-hint="product retail"
-                  />
-                </div>
-              ) : (
-                <div className="h-28 w-full bg-slate-100 flex items-center justify-center text-slate-300">
-                  <span className="font-black text-2xl opacity-20">S9+</span>
-                </div>
-              )}
-              <div className="p-3">
-                <p className="font-black text-sm truncate text-slate-900">{p.name}</p>
-                <div className="flex justify-between items-center mt-1">
-                  <p className="text-primary font-black text-lg">₹{p.price}</p>
-                  {p.stock !== undefined && (
-                    <p className="text-[10px] font-bold text-slate-400">QTY: {p.stock}</p>
-                  )}
-                </div>
+            <Card className="w-36 h-36 p-4 flex flex-col justify-between bg-white border-2 border-slate-50 group-hover:border-primary group-hover:shadow-lg transition-all rounded-[28px] relative overflow-hidden">
+              <div className="absolute -top-4 -right-4 h-12 w-12 bg-primary/5 rounded-full group-hover:bg-primary/10 transition-colors" />
+              
+              <div className="relative z-10">
+                <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest mb-1 truncate">{p.category}</p>
+                <p className="font-black text-sm text-slate-900 leading-tight line-clamp-2">{p.name}</p>
               </div>
-              {p.stock !== undefined && p.stock < 5 && (
-                <div className="absolute top-2 right-2 px-2 py-1 rounded-lg bg-destructive text-[9px] text-white font-black uppercase shadow-lg">
-                  LOW
-                </div>
-              )}
+
+              <div className="relative z-10 mt-auto">
+                <p className="text-xl font-black text-primary tracking-tighter">₹{p.price}</p>
+                {p.stock !== undefined && (
+                  <div className={cn(
+                    "h-1.5 w-12 rounded-full mt-2",
+                    p.stock < 10 ? "bg-primary" : "bg-emerald-400"
+                  )} />
+                )}
+              </div>
             </Card>
           </button>
         ))}
-        
-        {(!products || items.length === 0) && (
-          <div className="col-span-full py-12 text-center text-slate-400">
-            <p className="font-bold">
-              {!products ? "Loading catalog..." : (showAll ? "No items in catalog." : "No top sellers found.")}
-            </p>
-            <p className="text-sm">
-              {!products ? "Please wait while we sync with the cloud." : "Add items via the search bar or mark them as popular."}
-            </p>
-          </div>
-        )}
       </div>
+      <ScrollBar orientation="horizontal" />
     </ScrollArea>
   );
 }
