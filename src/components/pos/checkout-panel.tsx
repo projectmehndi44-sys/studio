@@ -1,7 +1,18 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { Smartphone, Printer, Save, Download, User, Check, CreditCard, Banknote, Wallet } from 'lucide-react';
+import { 
+  Smartphone, 
+  Printer, 
+  Save, 
+  Download, 
+  User, 
+  Check, 
+  CreditCard, 
+  Banknote, 
+  Wallet,
+  AlertTriangle 
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -31,6 +42,7 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
   const [name, setName] = useState('');
   const [paymentMode, setPaymentMode] = useState<'Cash' | 'UPI' | 'Credit'>('Cash');
   const [isPrinterDialogOpen, setIsPrinterDialogOpen] = useState(false);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -38,23 +50,28 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
     return items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   }, [items]);
 
-  const handleLedgerSync = useCallback(() => {
+  const requestLedgerSync = useCallback(() => {
     if (items.length === 0) return;
+    setIsConfirmDialogOpen(true);
+  }, [items]);
+
+  const handleFinalConfirm = () => {
+    setIsConfirmDialogOpen(false);
     onComplete({ 
       total: subtotal, 
       paymentMode, 
       customerPhone: phone, 
       customerName: name 
     });
-  }, [items, subtotal, paymentMode, phone, name, onComplete]);
+  };
 
   // Global keyboard shortcuts
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // Ctrl + Enter: Confirm & Sync Bill
+      // Ctrl + Enter: Trigger Confirmation before Sync
       if (e.ctrlKey && e.key === 'Enter') {
         e.preventDefault();
-        handleLedgerSync();
+        requestLedgerSync();
       }
       // Shift + Enter: Focus Customer Name
       if (e.shiftKey && e.key === 'Enter') {
@@ -64,11 +81,11 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [handleLedgerSync]);
+  }, [requestLedgerSync]);
 
   const executePrint = () => {
     setIsPrinterDialogOpen(false);
-    handleLedgerSync();
+    requestLedgerSync();
   };
 
   const handleModeKeyDown = (e: React.KeyboardEvent, mode: 'Cash' | 'UPI' | 'Credit') => {
@@ -159,7 +176,7 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
           <Button 
             className="w-full h-16 text-xs font-black rounded-2xl shadow-2xl shadow-primary/20 transition-all active:scale-95 bg-primary hover:bg-primary/95 text-white uppercase tracking-[0.2em]"
             disabled={items.length === 0}
-            onClick={handleLedgerSync}
+            onClick={requestLedgerSync}
           >
             CONFIRM & SYNC BILL (CTRL+ENTER)
           </Button>
@@ -176,7 +193,7 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
             <Button 
               variant="outline"
               className="h-12 bg-slate-50 border-none rounded-xl hover:bg-slate-100 font-bold uppercase text-[9px] tracking-widest gap-2 text-slate-600"
-              onClick={handleLedgerSync}
+              onClick={requestLedgerSync}
               disabled={items.length === 0}
             >
               <Download className="h-4 w-4" /> Digital PDF
@@ -185,6 +202,47 @@ export function CheckoutPanel({ items, onComplete }: CheckoutPanelProps) {
         </div>
       </div>
 
+      {/* SYNC CONFIRMATION DIALOG */}
+      <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+        <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden print:hidden">
+          <div className="absolute top-0 left-0 w-full h-2 bg-primary" />
+          <DialogHeader className="space-y-4">
+            <div className="mx-auto w-16 h-16 bg-primary/5 rounded-[24px] flex items-center justify-center">
+              <AlertTriangle className="h-8 w-8 text-primary" />
+            </div>
+            <DialogTitle className="text-center text-xl font-black uppercase tracking-tight text-secondary leading-none">
+              Sync Bill to Ledger?
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="text-center py-4 space-y-2">
+            <p className="text-sm font-bold text-slate-500 leading-relaxed">
+              Are you sure you want to finalize this bill for <span className="text-secondary font-black">₹{subtotal.toLocaleString()}</span>?
+            </p>
+            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">
+              This will commit the transaction to the cloud archive.
+            </p>
+          </div>
+
+          <DialogFooter className="grid grid-cols-2 gap-4">
+            <Button 
+              variant="outline" 
+              className="h-14 rounded-2xl font-bold uppercase text-[10px] tracking-widest bg-white border-slate-100 hover:bg-slate-50"
+              onClick={() => setIsConfirmDialogOpen(false)}
+            >
+              No, Cancel
+            </Button>
+            <Button 
+              className="h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-xl shadow-primary/10"
+              onClick={handleFinalConfirm}
+            >
+              Yes, Sync Now
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* PRINTER SELECTION DIALOG */}
       <Dialog open={isPrinterDialogOpen} onOpenChange={setIsPrinterDialogOpen}>
         <DialogContent className="sm:max-w-md rounded-[32px] p-10 border-none shadow-2xl">
           <DialogHeader>
