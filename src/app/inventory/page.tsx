@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { 
   ArrowLeft,
   Search,
@@ -11,8 +12,9 @@ import {
   ShieldAlert,
   Zap,
   Check,
-  X,
-  Plus
+  FileUp,
+  History,
+  AlertCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,10 +22,16 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useCollection, useFirestore, useUser, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { 
+  useCollection, 
+  useFirestore, 
+  useUser, 
+  useMemoFirebase, 
+  updateDocumentNonBlocking, 
+  addDocumentNonBlocking 
+} from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Product } from '@/lib/types';
-import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import {
@@ -45,6 +53,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { PhoneAuthGate } from '@/components/auth/phone-auth-gate';
 import { isStaffAdmin } from '@/lib/staff';
+import { BulkImportDialog } from '@/components/inventory/bulk-import-dialog';
 
 const CATEGORIES = [
   'Garments',
@@ -65,6 +74,7 @@ export default function InventoryPage() {
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
   const [isEditing, setIsEditing] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
@@ -105,7 +115,6 @@ export default function InventoryPage() {
     e.preventDefault();
     if (!quickEnrollText.trim()) return;
 
-    // Format: Name, Price, Category
     const parts = quickEnrollText.split(',').map(p => p.trim());
     const name = parts[0];
     const price = parseFloat(parts[1]) || 0;
@@ -233,7 +242,7 @@ export default function InventoryPage() {
       <header className="h-20 border-b border-slate-100 bg-white flex items-center justify-between px-8 shrink-0 z-10">
         <div className="flex items-center gap-6">
           <Link href="/">
-            <Button variant="outline" size="icon" className="h-11 w-11 rounded-2xl bg-white border-none shadow-sm"><ArrowLeft className="h-5 w-5 text-secondary" /></Button>
+            <Button variant="outline" size="icon" className="h-11 w-11 rounded-2xl bg-white border-none shadow-sm transition-all hover:scale-110"><ArrowLeft className="h-5 w-5 text-secondary" /></Button>
           </Link>
           <div className="flex items-center gap-2 border-r pr-8 border-slate-200">
             <span className="text-[12px] font-bold text-slate-400 uppercase tracking-[0.2em]">KRISHNA'S</span>
@@ -254,9 +263,21 @@ export default function InventoryPage() {
           </div>
         </form>
 
-        <Button onClick={() => { setSelectedProduct(null); setIsEditing(true); }} className="h-11 px-8 rounded-xl font-bold uppercase text-[10px] bg-primary text-white shadow-lg gap-2">
-          <PackagePlus className="h-4 w-4" /> Create New
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline"
+            onClick={() => setIsBulkImportOpen(true)}
+            className="h-11 px-6 rounded-xl font-bold uppercase text-[10px] bg-white border-slate-200 text-slate-600 shadow-sm gap-2"
+          >
+            <FileUp className="h-4 w-4" /> Bulk Import
+          </Button>
+          <Button 
+            onClick={() => { setSelectedProduct(null); setIsEditing(true); }} 
+            className="h-11 px-8 rounded-xl font-bold uppercase text-[10px] bg-primary text-white shadow-lg gap-2"
+          >
+            <PackagePlus className="h-4 w-4" /> Create New
+          </Button>
+        </div>
       </header>
 
       <main className="flex-1 overflow-hidden p-8 grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
@@ -264,7 +285,7 @@ export default function InventoryPage() {
           <CardHeader className="p-8 border-b bg-slate-50/30 flex flex-col md:flex-row md:items-center justify-between gap-6 shrink-0">
             <div className="flex items-center gap-4">
               <div className="bg-white p-3 rounded-2xl shadow-sm"><Package className="h-5 w-5 text-secondary" /></div>
-              <div><CardTitle className="text-lg font-bold text-secondary uppercase">Global Catalog</CardTitle></div>
+              <div><CardTitle className="text-lg font-bold text-secondary uppercase tracking-tight">Global Catalog</CardTitle></div>
             </div>
             <div className="flex items-center gap-3">
               <div className="relative w-full md:w-[320px]">
@@ -375,8 +396,14 @@ export default function InventoryPage() {
                    <div className="mx-auto w-24 h-24 bg-slate-50 rounded-[40px] flex items-center justify-center"><Package className="h-10 w-10 text-slate-200" /></div>
                    <div className="space-y-2"><h4 className="text-sm font-black text-secondary uppercase">Stock Analysis</h4><p className="text-[10px] font-medium text-slate-400 px-8">Quick Enroll or tap price/stock to edit.</p></div>
                    <div className="grid grid-cols-2 gap-4 px-8">
-                      <div className="bg-slate-50 p-4 rounded-2xl text-left"><p className="text-[8px] font-black uppercase text-slate-400 mb-1">Low Items</p><p className="text-2xl font-black text-secondary">{products.filter(p => p.stock !== undefined && p.stock < 10 && p.stock > 0).length}</p></div>
-                      <div className="bg-slate-50 p-4 rounded-2xl text-left"><p className="text-[8px] font-black uppercase text-slate-400 mb-1">Out Stock</p><p className="text-2xl font-black text-primary">{products.filter(p => p.stock !== undefined && p.stock <= 0).length}</p></div>
+                      <div className="bg-slate-50 p-4 rounded-2xl text-left border border-slate-100"><p className="text-[8px] font-black uppercase text-slate-400 mb-1">Low Items</p><p className="text-2xl font-black text-secondary">{products.filter(p => p.stock !== undefined && p.stock < 10 && p.stock > 0).length}</p></div>
+                      <div className="bg-slate-50 p-4 rounded-2xl text-left border border-slate-100"><p className="text-[8px] font-black uppercase text-slate-400 mb-1">Out Stock</p><p className="text-2xl font-black text-primary">{products.filter(p => p.stock !== undefined && p.stock <= 0).length}</p></div>
+                   </div>
+                   <div className="px-8 pt-4">
+                     <Card className="bg-primary/5 border-primary/10 rounded-2xl p-4 flex items-center gap-3">
+                        <AlertCircle className="h-5 w-5 text-primary" />
+                        <p className="text-[9px] font-bold text-primary uppercase text-left leading-tight">Syncing stock values instantly with cloud ledger</p>
+                     </Card>
                    </div>
                  </div>
                )}
@@ -384,6 +411,12 @@ export default function InventoryPage() {
           </Card>
         </aside>
       </main>
+
+      <BulkImportDialog 
+        isOpen={isBulkImportOpen} 
+        onClose={() => setIsBulkImportOpen(false)} 
+        existingProducts={products}
+      />
     </div>
   );
 }
