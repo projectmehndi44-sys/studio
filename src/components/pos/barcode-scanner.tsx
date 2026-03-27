@@ -15,19 +15,19 @@ interface BarcodeScannerProps {
   isOpen: boolean;
 }
 
-const SCANNER_ID = "super-scanner-stable-container";
-
 export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeScannerProps) {
   const { toast } = useToast();
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [lastScanned, setLastScanned] = useState<string | null>(null);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   
+  // Use a unique ID for each instance to prevent DOM collisions
+  const scannerId = useRef(`scanner-${Math.random().toString(36).slice(2, 9)}`).current;
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
-  const autoScanIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isTransitioningRef = useRef(false);
-  const lastScannedRef = useRef<string | null>(null);
-
+  const autoScanIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Keep stable refs for callbacks to prevent the camera from restarting on every state change
   const onScanSuccessRef = useRef(onScanSuccess);
   const onOcrSuccessRef = useRef(onOcrSuccess);
 
@@ -60,9 +60,9 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   }, []);
 
   const performOcrScan = useCallback(async (isAuto = false) => {
-    if (isAiProcessing || lastScannedRef.current || !html5QrCodeRef.current?.isScanning) return;
+    if (isAiProcessing || !!lastScanned || !html5QrCodeRef.current?.isScanning) return;
 
-    const video = document.querySelector(`#${SCANNER_ID} video`) as HTMLVideoElement;
+    const video = document.querySelector(`#${scannerId} video`) as HTMLVideoElement;
     if (!video || video.readyState !== 4) return;
 
     setIsAiProcessing(true);
@@ -81,9 +81,9 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       if (result && result.price > 0) {
         playBeep();
         const priceLabel = `₹${result.price}`;
-        lastScannedRef.current = priceLabel;
         setLastScanned(priceLabel);
         
+        // Wait for user to see the success before closing
         setTimeout(() => {
           onOcrSuccessRef.current(result.name, result.price);
         }, 1200);
@@ -99,12 +99,11 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
     } finally {
       setIsAiProcessing(false);
     }
-  }, [isAiProcessing, playBeep, toast]);
+  }, [isAiProcessing, lastScanned, playBeep, scannerId, toast]);
 
   useEffect(() => {
     if (!isOpen) {
       setLastScanned(null);
-      lastScannedRef.current = null;
       return;
     }
 
@@ -115,26 +114,21 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       isTransitioningRef.current = true;
 
       try {
-        const container = document.getElementById(SCANNER_ID);
-        if (!container || !isMounted) {
-           isTransitioningRef.current = false;
-           return;
-        }
-
-        if (!html5QrCodeRef.current) {
-          html5QrCodeRef.current = new Html5Qrcode(SCANNER_ID);
-        }
-
-        const scanner = html5QrCodeRef.current;
-        
-        if (scanner.isScanning) {
-          try { await scanner.stop(); } catch(e) {}
-        }
-
+        // Small delay to ensure the DOM is ready and any previous transition is complete
+        await new Promise(r => setTimeout(r, 600));
         if (!isMounted) {
           isTransitioningRef.current = false;
           return;
         }
+
+        const container = document.getElementById(scannerId);
+        if (!container) {
+          isTransitioningRef.current = false;
+          return;
+        }
+
+        const scanner = new Html5Qrcode(scannerId);
+        html5QrCodeRef.current = scanner;
 
         await scanner.start(
           { facingMode: "environment" },
@@ -149,18 +143,16 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
             ]
           },
           (decodedText) => {
-            if (lastScannedRef.current) return;
+            if (isTransitioningRef.current || !!lastScanned) return;
             playBeep();
-            lastScannedRef.current = decodedText;
             setLastScanned(decodedText);
             onScanSuccessRef.current(decodedText);
           },
-          () => {} 
+          () => {} // Silent failures for noise
         );
 
         if (isMounted) {
           setHasCameraPermission(true);
-          if (autoScanIntervalRef.current) clearInterval(autoScanIntervalRef.current);
           autoScanIntervalRef.current = setInterval(() => {
             performOcrScan(true);
           }, 3500);
@@ -174,11 +166,10 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       }
     };
 
-    const timer = setTimeout(startScanner, 800);
+    startScanner();
 
     return () => {
       isMounted = false;
-      clearTimeout(timer);
       if (autoScanIntervalRef.current) {
         clearInterval(autoScanIntervalRef.current);
         autoScanIntervalRef.current = null;
@@ -187,11 +178,14 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       const scanner = html5QrCodeRef.current;
       if (scanner && !isTransitioningRef.current) {
         isTransitioningRef.current = true;
+        
+        // Use an async cleanup that handles the promise properly
         const cleanup = async () => {
           try {
             if (scanner.isScanning) {
               await scanner.stop();
-              scanner.clear(); 
+              // Only clear if we actually stopped successfully
+              try { scanner.clear(); } catch(e) {}
             }
           } catch (err) {
             console.warn("Scanner cleanup suppressed:", err);
@@ -202,12 +196,12 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         cleanup();
       }
     };
-  }, [isOpen, playBeep, performOcrScan]);
+  }, [isOpen, playBeep, performOcrScan, scannerId, lastScanned]);
 
   return (
     <div className="space-y-4 relative">
       <div 
-        id={SCANNER_ID} 
+        id={scannerId} 
         className={cn(
           "w-full aspect-square rounded-[32px] overflow-hidden border-4 bg-slate-900 relative shadow-2xl transition-all duration-500",
           isAiProcessing ? "border-primary/50 scale-[1.01]" : "border-slate-100 scale-100"
