@@ -22,6 +22,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const autoScanIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const scannerId = "barcode-reader-target";
 
   const playBeep = useCallback(() => {
     try {
@@ -49,8 +50,8 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   const performOcrScan = useCallback(async (isAuto = false) => {
     if (isAiProcessing || lastScanned) return;
 
-    // Search for the video element rendered by html5-qrcode
-    const video = document.querySelector('#barcode-reader video') as HTMLVideoElement;
+    // Target the video element injected by the library
+    const video = document.querySelector(`#${scannerId} video`) as HTMLVideoElement;
     if (!video || video.readyState !== 4) return;
 
     setIsAiProcessing(true);
@@ -70,7 +71,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         playBeep();
         setLastScanned(`₹${result.price}`);
         
-        // Brief pause to show the success state before closing
         setTimeout(() => {
           onOcrSuccess(result.name, result.price);
         }, 800);
@@ -86,17 +86,19 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
     } finally {
       setIsAiProcessing(false);
     }
-  }, [isAiProcessing, lastScanned, onOcrSuccess, playBeep, toast]);
+  }, [isAiProcessing, lastScanned, onOcrSuccess, playBeep, toast, scannerId]);
 
   useEffect(() => {
     if (!isOpen) {
-      if (autoScanIntervalRef.current) clearInterval(autoScanIntervalRef.current);
+      if (autoScanIntervalRef.current) {
+        clearInterval(autoScanIntervalRef.current);
+        autoScanIntervalRef.current = null;
+      }
       return;
     }
 
     const startScanner = async () => {
       try {
-        const scannerId = "barcode-reader";
         const scanner = new Html5Qrcode(scannerId);
         html5QrCodeRef.current = scanner;
 
@@ -119,12 +121,11 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
             onScanSuccess(decodedText);
             setTimeout(() => setLastScanned(null), 1000);
           },
-          () => {} // Suppress errors during normal scanning noise
+          () => {} 
         );
 
         setHasCameraPermission(true);
 
-        // Auto-OCR loop: Check for price tags every 2.5 seconds
         autoScanIntervalRef.current = setInterval(() => {
           performOcrScan(true);
         }, 2500);
@@ -138,24 +139,37 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
     startScanner();
 
     return () => {
-      if (autoScanIntervalRef.current) clearInterval(autoScanIntervalRef.current);
+      if (autoScanIntervalRef.current) {
+        clearInterval(autoScanIntervalRef.current);
+        autoScanIntervalRef.current = null;
+      }
+      
       if (html5QrCodeRef.current) {
-        if (html5QrCodeRef.current.isScanning) {
-          html5QrCodeRef.current.stop().catch(err => console.error("Stop error", err));
+        const scanner = html5QrCodeRef.current;
+        if (scanner.isScanning) {
+          scanner.stop()
+            .then(() => {
+              // Only clear after stop is complete to avoid removeChild errors
+              scanner.clear();
+            })
+            .catch(err => console.warn("Clean stop failed", err));
         }
+        html5QrCodeRef.current = null;
       }
     };
-  }, [isOpen, onScanSuccess, playBeep, performOcrScan, lastScanned]);
+  }, [isOpen, onScanSuccess, playBeep, performOcrScan, lastScanned, scannerId]);
 
   return (
     <div className="space-y-4 relative">
       <div 
-        id="barcode-reader" 
         className={cn(
           "w-full aspect-square rounded-[32px] overflow-hidden border-4 bg-slate-900 relative shadow-2xl transition-all duration-500",
           isAiProcessing ? "border-primary/50 scale-[1.02]" : "border-slate-100 scale-100"
         )}
       >
+        {/* Dedicated target for the library to prevent DOM conflicts with React overlays */}
+        <div id={scannerId} className="absolute inset-0 z-0" />
+
         {/* SUCCESS OVERLAY */}
         {lastScanned && (
           <div className="absolute inset-0 z-20 bg-emerald-500/95 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
@@ -179,7 +193,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
 
         {/* SCANNING GUIDES */}
         {!lastScanned && !isAiProcessing && (
-          <div className="absolute inset-0 z-0 pointer-events-none flex flex-col items-center justify-center">
+          <div className="absolute inset-0 z-10 pointer-events-none flex flex-col items-center justify-center">
              <div className="w-72 h-44 border-2 border-dashed border-white/40 rounded-3xl relative">
                 <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-primary/60 shadow-[0_0_20px_rgba(var(--primary),0.8)] animate-bounce" />
              </div>
