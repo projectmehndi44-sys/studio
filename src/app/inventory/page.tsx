@@ -5,20 +5,15 @@ import {
   ArrowLeft,
   Search,
   Edit,
-  Filter,
   PackagePlus,
   Package,
   ShieldAlert,
   Zap,
-  Check,
   FileUp,
-  History,
-  AlertCircle,
   Trash2,
   Download,
   FileDown,
   FileText,
-  Printer,
   ChevronDown
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,6 +36,7 @@ import { collection, doc } from 'firebase/firestore';
 import { Product } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Table,
   TableBody,
@@ -70,13 +66,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { PhoneAuthGate } from '@/components/auth/phone-auth-gate';
 import { isStaffAdmin } from '@/lib/staff';
 import { BulkImportDialog } from '@/components/inventory/bulk-import-dialog';
+import { AdminPinDialog } from '@/components/admin/admin-pin-dialog';
 import * as XLSX from 'xlsx';
 import { format } from 'date-fns';
 
@@ -86,10 +82,12 @@ const CATEGORIES = [
 
 export default function InventoryPage() {
   const { toast } = useToast();
+  const router = useRouter();
   const db = useFirestore();
   const { user, isUserLoading } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
@@ -114,12 +112,11 @@ export default function InventoryPage() {
   const settingsRef = useMemoFirebase(() => doc(db, 'settings', 'config'), [db]);
   const { data: shopSettings } = useDoc(settingsRef);
   const shopName = shopSettings?.shopName || "KRISHNA'S SUPER 9+";
-  const shopAddress = shopSettings?.address || "Hoolungooree, Mariani";
 
   const productsQuery = useMemoFirebase(() => {
-    if (!user || !isAdmin) return null;
+    if (!user || !isAdmin || !isAuthorized) return null;
     return collection(db, 'products');
-  }, [db, user, isAdmin]);
+  }, [db, user, isAdmin, isAuthorized]);
 
   const { data: productsData, isLoading } = useCollection<Product>(productsQuery);
   const products = productsData || [];
@@ -250,16 +247,27 @@ export default function InventoryPage() {
     setTimeout(() => window.print(), 100);
   };
 
-  if (isUserLoading || isLoading) return <div className="h-screen flex items-center justify-center">Syncing Item Master...</div>;
+  if (isUserLoading) return <div className="h-screen flex items-center justify-center">Syncing Item Master...</div>;
   if (!user) return <PhoneAuthGate />;
 
   if (!isAdmin) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center p-8">
+      <div className="h-screen flex flex-col items-center justify-center p-8 bg-slate-50">
         <ShieldAlert className="h-12 w-12 text-primary mb-4" />
-        <h1 className="text-2xl font-black uppercase text-secondary">Access Denied</h1>
-        <Link href="/"><Button className="mt-6 rounded-2xl h-14 bg-secondary text-white">Back to Terminal</Button></Link>
+        <h1 className="text-2xl font-black uppercase text-secondary">Catalog Restricted</h1>
+        <Link href="/"><Button className="mt-6 rounded-2xl h-14 px-8 bg-secondary text-white">Back to Terminal</Button></Link>
       </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <AdminPinDialog 
+        isOpen={true} 
+        onClose={() => router.push('/')} 
+        onSuccess={() => setIsAuthorized(true)} 
+        requiredFor="Access Global Stock Master & SKU Data" 
+      />
     );
   }
 
@@ -267,7 +275,6 @@ export default function InventoryPage() {
     <div className="min-h-screen bg-slate-50/50 flex flex-col font-body">
       <Toaster />
 
-      {/* PRINT-ONLY INVENTORY REPORT */}
       <div className="hidden print-only p-8 bg-white text-slate-900 font-sans min-h-screen">
         <div className="text-center border-b-2 border-slate-900 pb-4 mb-8">
           <h1 className="text-3xl font-black uppercase tracking-tighter">{shopName}</h1>
@@ -302,10 +309,10 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      <header className="h-20 border-b border-slate-100 bg-white flex items-center justify-between px-8 shrink-0 z-20 print:hidden">
+      <header className="h-20 border-b border-slate-100 bg-white flex items-center justify-between px-8 shrink-0 z-20 print:hidden shadow-sm">
         <div className="flex items-center gap-6">
           <Link href="/">
-            <Button variant="outline" size="icon" className="h-11 w-11 rounded-2xl bg-white border-none shadow-sm transition-all hover:scale-110"><ArrowLeft className="h-5 w-5 text-secondary" /></Button>
+            <Button variant="outline" size="icon" className="h-11 w-11 rounded-2xl bg-white border-none shadow-sm"><ArrowLeft className="h-5 w-5 text-secondary" /></Button>
           </Link>
           <div className="flex items-center gap-2">
             <span className="text-[12px] font-bold text-slate-400 uppercase tracking-[0.2em]">KRISHNA'S</span>
@@ -383,7 +390,9 @@ export default function InventoryPage() {
                    </TableRow>
                  </TableHeader>
                  <TableBody>
-                   {filteredProducts.map((p) => (
+                   {isLoading ? (
+                     <TableRow><TableCell colSpan={5} className="h-60 text-center text-slate-400 font-bold uppercase text-[10px] tracking-widest">Syncing Catalog...</TableCell></TableRow>
+                   ) : filteredProducts.map((p) => (
                      <TableRow key={p.id} className="hover:bg-slate-50/50 transition-colors border-slate-50 group">
                        <TableCell className="pl-8">
                          <p className="font-bold text-slate-900 text-sm">{p.name}</p>

@@ -17,7 +17,7 @@ import {
   FastForward,
   UserCircle
 } from 'lucide-react';
-import { Product, CartItem, PurchaseRecord } from '@/lib/types';
+import { Product, CartItem, PurchaseRecord } from '@/types';
 import { ProductSearch } from '@/components/pos/product-search';
 import { CartList } from '@/components/pos/cart-list';
 import { CheckoutPanel } from '@/components/pos/checkout-panel';
@@ -65,6 +65,7 @@ import { SystemSettingsDialog } from '@/components/settings/system-settings-dial
 import { format } from 'date-fns';
 import { PhoneAuthGate } from '@/components/auth/phone-auth-gate';
 import { getStaffName, isStaffAdmin, STAFF_MAPPING } from '@/lib/staff';
+import { AdminPinDialog } from '@/components/admin/admin-pin-dialog';
 
 const CART_STORAGE_KEY = 'super9_pos_current_cart';
 const STAFF_STORAGE_KEY = 'super9_pos_active_staff';
@@ -82,6 +83,8 @@ export default function POSPage() {
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isPrinterSelectionOpen, setIsPrinterSelectionOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isPinDialogOpen, setIsPinDialogOpen] = useState(false);
+  const [isSettingsAuthorized, setIsSettingsAuthorized] = useState(false);
   const [printType, setPrintType] = useState<'normal' | 'thermal'>('normal');
   const [lastSale, setLastSale] = useState<PurchaseRecord | null>(null);
   const [activeMainTab, setActiveMainTab] = useState('products');
@@ -192,7 +195,6 @@ export default function POSPage() {
   };
 
   const handleOcrSuccess = (name: string, price: number) => {
-    // If it's a price tag, we filter items by that price
     setSearchQuery(price.toString());
     setIsScannerOpen(false);
     toast({ title: "Price Tag Scanned", description: `Filtering items priced at ₹${price}` });
@@ -272,6 +274,18 @@ export default function POSPage() {
   const getFormattedDateTime = (ts: any) => {
     const d = ts?.seconds ? new Date(ts.seconds * 1000) : (ts instanceof Date ? ts : new Date());
     return format(d, 'dd/MM/yyyy HH:mm');
+  };
+
+  const handleSettingsClick = () => {
+    if (!isAdmin) {
+      toast({ variant: 'destructive', title: 'Restricted', description: 'System Settings are for Admins only.' });
+      return;
+    }
+    if (isSettingsAuthorized) {
+      setIsSettingsOpen(true);
+    } else {
+      setIsPinDialogOpen(true);
+    }
   };
 
   if (isUserLoading) return <div className="h-screen flex items-center justify-center bg-white"><p className="text-slate-400 font-bold animate-pulse text-[10px] tracking-[0.2em]">BOOTING TERMINAL...</p></div>;
@@ -425,7 +439,7 @@ export default function POSPage() {
           <Button 
             variant="ghost" 
             size="sm" 
-            onClick={() => setIsSettingsOpen(true)}
+            onClick={handleSettingsClick}
             className="h-10 px-4 rounded-xl font-bold text-[10px] uppercase text-slate-500 gap-2"
           >
             <Settings className="h-4 w-4" /> System
@@ -525,6 +539,17 @@ export default function POSPage() {
         isOpen={isSettingsOpen} 
         onClose={() => setIsSettingsOpen(false)} 
         isAdmin={isAdmin}
+      />
+
+      <AdminPinDialog 
+        isOpen={isPinDialogOpen} 
+        onClose={() => setIsPinDialogOpen(false)} 
+        onSuccess={() => {
+          setIsPinDialogOpen(false);
+          setIsSettingsAuthorized(true);
+          setIsSettingsOpen(true);
+        }} 
+        requiredFor="Access System Configuration & Data Storage" 
       />
 
       <Dialog open={isSuccessDialogOpen} onOpenChange={(val) => { setIsSuccessDialogOpen(val); }}>
