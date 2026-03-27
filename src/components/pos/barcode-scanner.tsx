@@ -24,7 +24,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const autoScanIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const isStoppingRef = useRef(false);
+  const isTransitioningRef = useRef(false);
 
   const playBeep = useCallback(() => {
     try {
@@ -50,7 +50,8 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   }, []);
 
   const performOcrScan = useCallback(async (isAuto = false) => {
-    if (isAiProcessing || lastScanned || isStoppingRef.current) return;
+    // Check if we are already processing or if the component is closing
+    if (isAiProcessing || lastScanned || !html5QrCodeRef.current?.isScanning) return;
 
     const video = document.querySelector(`#${SCANNER_ID} video`) as HTMLVideoElement;
     if (!video || video.readyState !== 4) return;
@@ -68,18 +69,17 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       
       const result = await scanPriceTag({ photoDataUri: dataUri });
       
-      if (result && result.price > 0 && !isStoppingRef.current) {
+      if (result && result.price > 0) {
         playBeep();
         setLastScanned(`₹${result.price}`);
         
+        // Wait a moment for the user to see the "Success" UI before triggering the callback
         setTimeout(() => {
-          if (!isStoppingRef.current) {
-            onOcrSuccess(result.name, result.price);
-          }
+          onOcrSuccess(result.name, result.price);
         }, 800);
       }
     } catch (e) {
-      if (!isAuto && !isStoppingRef.current) {
+      if (!isAuto) {
         toast({ 
           variant: 'destructive', 
           title: "Scan Failed", 
@@ -92,27 +92,26 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   }, [isAiProcessing, lastScanned, onOcrSuccess, playBeep, toast]);
 
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    isStoppingRef.current = false;
+    if (!isOpen) return;
 
     const startScanner = async () => {
+      if (isTransitioningRef.current) return;
+      isTransitioningRef.current = true;
+
       try {
-        // Ensure any previous instance is cleaned up
-        if (html5QrCodeRef.current?.isScanning) {
-          await html5QrCodeRef.current.stop();
-          html5QrCodeRef.current.clear();
+        if (!html5QrCodeRef.current) {
+          html5QrCodeRef.current = new Html5Qrcode(SCANNER_ID);
         }
 
-        const scanner = new Html5Qrcode(SCANNER_ID);
-        html5QrCodeRef.current = scanner;
+        const scanner = html5QrCodeRef.current;
+        if (scanner.isScanning) {
+          await scanner.stop();
+        }
 
         await scanner.start(
           { facingMode: "environment" },
           {
-            fps: 25,
+            fps: 20,
             qrbox: { width: 250, height: 180 },
             formatsToSupport: [
               Html5QrcodeSupportedFormats.EAN_13,
@@ -122,59 +121,58 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
             ]
           },
           (decodedText) => {
-            if (lastScanned || isStoppingRef.current) return;
+            if (lastScanned) return;
             playBeep();
             setLastScanned(decodedText);
             onScanSuccess(decodedText);
-            setTimeout(() => setLastScanned(null), 1000);
+            setTimeout(() => setLastScanned(null), 1500);
           },
           () => {} 
         );
 
         setHasCameraPermission(true);
-
+        
+        // Start auto-detection loop for price tags
         autoScanIntervalRef.current = setInterval(() => {
           performOcrScan(true);
-        }, 2500);
+        }, 3000);
 
       } catch (error) {
         console.error('Scanner start error:', error);
         setHasCameraPermission(false);
+      } finally {
+        isTransitioningRef.current = false;
       }
     };
 
-    startScanner();
+    // Small delay to let Dialog animations settle and prevent DOM race conditions
+    const timer = setTimeout(startScanner, 300);
 
     return () => {
-      isStoppingRef.current = true;
+      clearTimeout(timer);
       if (autoScanIntervalRef.current) {
         clearInterval(autoScanIntervalRef.current);
       }
       
       const scanner = html5QrCodeRef.current;
-      if (scanner) {
+      if (scanner && !isTransitioningRef.current) {
+        isTransitioningRef.current = true;
         const cleanup = async () => {
           try {
             if (scanner.isScanning) {
               await scanner.stop();
             }
-            // Use a small timeout to let the library finish its internal DOM cleanup
-            // before React potentially removes the parent node.
-            setTimeout(() => {
-              try {
-                scanner.clear();
-              } catch (e) {
-                // Ignore clear errors if node is already gone
-              }
-            }, 50);
+            scanner.clear();
           } catch (err) {
             console.warn("Scanner cleanup warning:", err);
+          } finally {
+            isTransitioningRef.current = false;
           }
         };
         cleanup();
       }
     };
-  }, [isOpen, onScanSuccess, playBeep, performOcrScan, lastScanned]);
+  }, [isOpen, onScanSuccess, playBeep, performOcrScan]);
 
   return (
     <div className="space-y-4 relative">
