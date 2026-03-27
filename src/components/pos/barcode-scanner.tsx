@@ -151,7 +151,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           setHasCameraPermission(true);
           autoScanIntervalRef.current = setInterval(() => {
             performOcrScan(true);
-          }, 3500);
+          }, 4000);
         }
       } catch (err) {
         console.error("Scanner failed to start:", err);

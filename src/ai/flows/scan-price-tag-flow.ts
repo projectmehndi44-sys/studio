@@ -39,7 +39,7 @@ Your ONLY task is to identify the price located next to a "₹" symbol.
 
 CRITICAL INSTRUCTIONS:
 1. STRICT RUPEE FOCUS: You MUST locate the currency symbol "₹". If you do not see the "₹" symbol in the photo, set the price to 0. This is mandatory.
-2. COLOR/DESIGN BLIND: Do NOT care about the color, shape, or design of the tag. Whether it is brown, red, white, or any other color, it does not matter. Focus only on the characters.
+2. COLOR/DESIGN BLIND: Do NOT care about the color, shape, or design of the tag. Focus only on the characters.
 3. EXTRACT ONLY THE AMOUNT: Look ONLY for the digits immediately following or next to the "₹" symbol. This is the item amount.
 4. DISREGARD EVERYTHING ELSE: Ignore barcodes, shop names, secondary numbers, or any other noise.
 5. ACCURACY: Return ONLY the numeric value found next to the "₹" symbol.
