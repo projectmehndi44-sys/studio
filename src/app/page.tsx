@@ -493,7 +493,7 @@ export default function POSPage() {
                   onScanClick={() => setIsScannerOpen(true)} 
                   onAddNewProduct={handleAddNewProduct}
                   query={searchQuery}
-                  setQuery={setQuery}
+                  setQuery={setSearchQuery}
                 />
                 <Button 
                   disabled={cartItems.length === 0} 
