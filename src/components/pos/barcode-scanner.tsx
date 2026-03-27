@@ -80,7 +80,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         toast({ 
           variant: 'destructive', 
           title: "Scan Failed", 
-          description: "Ensure the tag is well-lit and the digits are clear." 
+          description: "Ensure the tag is well-lit and digits are clear." 
         });
       }
     } finally {
@@ -105,6 +105,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         const scanner = html5QrCodeRef.current;
         if (scanner.isScanning) {
           await scanner.stop();
+          await scanner.clear();
         }
 
         if (!isMounted) return;
@@ -146,7 +147,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       }
     };
 
-    const timer = setTimeout(startScanner, 400);
+    const timer = setTimeout(startScanner, 500);
 
     return () => {
       isMounted = false;
@@ -156,15 +157,21 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       }
       
       const scanner = html5QrCodeRef.current;
-      if (scanner && scanner.isScanning && !isTransitioningRef.current) {
+      if (scanner && !isTransitioningRef.current) {
         isTransitioningRef.current = true;
-        scanner.stop().then(() => {
-          scanner.clear();
-        }).catch((err) => {
-          console.warn("Cleanup error:", err);
-        }).finally(() => {
-          isTransitioningRef.current = false;
-        });
+        const cleanup = async () => {
+          try {
+            if (scanner.isScanning) {
+              await scanner.stop();
+            }
+            await scanner.clear();
+          } catch (err) {
+            console.warn("Cleanup error:", err);
+          } finally {
+            isTransitioningRef.current = false;
+          }
+        };
+        cleanup();
       }
     };
   }, [isOpen, onScanSuccess, playBeep, performOcrScan]);
@@ -236,7 +243,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
          </div>
          <div className="flex items-center gap-2 text-slate-400">
             <Search className="h-3.5 w-3.5" />
-            <p className="text-[10px] font-black uppercase tracking-widest">AI v5.4</p>
+            <p className="text-[10px] font-black uppercase tracking-widest">AI v5.5</p>
          </div>
       </div>
     </div>

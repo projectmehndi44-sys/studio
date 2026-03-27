@@ -38,7 +38,7 @@ const prompt = ai.definePrompt({
 Your task is to identify the price on our shop's specific price tag layout.
 
 CRITICAL INSTRUCTIONS:
-1. IGNORE TAG COLOR: The background color of the tag may vary. Focus ONLY on text and layout.
+1. IGNORE TAG COLOR: The background color of the tag may vary (brown, red, etc.). Focus ONLY on text and layout.
 2. Locate the large currency symbol "₹".
 3. Extract the LARGE numeric digits immediately following the "₹" symbol. This is the item price.
 4. Ignore any other branding text or smaller secondary numbers.
