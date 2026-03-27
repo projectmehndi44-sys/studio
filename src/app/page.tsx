@@ -23,7 +23,8 @@ import {
   Zap,
   FastForward,
   AlertTriangle,
-  Clock
+  Clock,
+  UserCircle
 } from 'lucide-react';
 import { Product, CartItem, PurchaseRecord } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
@@ -66,13 +67,21 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { BarcodeScanner } from '@/components/pos/barcode-scanner';
 import { SystemSettingsDialog } from '@/components/settings/system-settings-dialog';
 import { format } from 'date-fns';
 import { PhoneAuthGate } from '@/components/auth/phone-auth-gate';
-import { getStaffName, isStaffAdmin } from '@/lib/staff';
+import { getStaffName, isStaffAdmin, STAFF_MAPPING } from '@/lib/staff';
 
 const CART_STORAGE_KEY = 'super9_pos_current_cart';
+const STAFF_STORAGE_KEY = 'super9_pos_active_staff';
 
 export default function POSPage() {
   const { toast } = useToast();
@@ -92,10 +101,10 @@ export default function POSPage() {
   const [activeMainTab, setActiveMainTab] = useState('products');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [launcherActive, setLauncherActive] = useState(false);
+  const [activeStaffName, setActiveStaffName] = useState<string>('');
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const staffName = getStaffName(user?.phoneNumber || null);
   const isAdmin = useMemo(() => isStaffAdmin(user?.phoneNumber || null), [user]);
 
   const settingsRef = useMemoFirebase(() => {
@@ -125,6 +134,26 @@ export default function POSPage() {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Staff Persistence Logic
+  useEffect(() => {
+    if (user) {
+      const savedStaff = localStorage.getItem(STAFF_STORAGE_KEY);
+      if (savedStaff && Object.values(STAFF_MAPPING).includes(savedStaff)) {
+        setActiveStaffName(savedStaff);
+      } else {
+        const defaultName = getStaffName(user.phoneNumber);
+        setActiveStaffName(defaultName);
+        localStorage.setItem(STAFF_STORAGE_KEY, defaultName);
+      }
+    }
+  }, [user]);
+
+  const handleStaffChange = (name: string) => {
+    setActiveStaffName(name);
+    localStorage.setItem(STAFF_STORAGE_KEY, name);
+    toast({ title: "Staff Changed", description: `Terminal now active for ${name}` });
+  };
 
   // Auto-Focus Engine
   useEffect(() => {
@@ -195,7 +224,7 @@ export default function POSPage() {
     const saleData: PurchaseRecord = {
       id: saleId,
       staffId: user?.uid || 'anonymous',
-      staffName: staffName,
+      staffName: activeStaffName,
       timestamp: new Date(),
       items: cartItems.map(i => ({ id: i.id, name: i.name, quantity: i.quantity, price: i.price })),
       totalAmount: data.total,
@@ -270,7 +299,7 @@ export default function POSPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-left space-y-2">
               <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Active Staff</p>
-              <p className="text-4xl font-black tracking-tighter truncate">{staffName}</p>
+              <p className="text-4xl font-black tracking-tighter truncate">{activeStaffName}</p>
             </div>
             <div className={cn("bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-left space-y-2", lowStockCount > 0 && "border-primary/50")}>
               <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{lowStockCount > 0 ? 'Stock Alerts' : 'System Status'}</p>
@@ -291,7 +320,7 @@ export default function POSPage() {
             <Link href="/inventory" className="bg-white/5 p-10 rounded-[48px] flex flex-col items-center justify-center gap-4 hover:bg-white/10 border border-white/10">
               <PackageSearch className="h-12 w-12 text-white" /><span className="font-black uppercase text-xs">Inventory</span>
             </Link>
-            <button onClick={() => setLauncherActive(false)} className="bg-white/5 p-10 rounded-[48px] flex flex-col items-center justify-center gap-4 hover:bg-white/10 border border-white/10">
+            <button onClick={() => auth.signOut()} className="bg-white/5 p-10 rounded-[48px] flex flex-col items-center justify-center gap-4 hover:bg-white/10 border border-white/10">
               <LogOut className="h-12 w-12 text-white" /><span className="font-black uppercase text-xs">Sign Out</span>
             </button>
           </div>
@@ -321,7 +350,8 @@ export default function POSPage() {
           </div>
           <div className="space-y-0.5 text-right">
             <p className="font-bold">Cust: {lastSale?.customerName || 'Walk-in'}</p>
-            <p className="font-bold">Staff: {lastSale?.staffName || staffName}</p>
+            {lastSale?.customerId && <p className="font-bold">Phone: {lastSale.customerId}</p>}
+            <p className="font-bold">Staff: {lastSale?.staffName || activeStaffName}</p>
             <p className="font-bold">Mode: {lastSale?.paymentMode || 'Cash'}</p>
           </div>
         </div>
@@ -359,25 +389,42 @@ export default function POSPage() {
         </div>
       </div>
 
-      <header className="h-16 border-b border-slate-100 bg-white flex items-center justify-between px-8 shrink-0 z-10 print:hidden">
+      <header className="h-20 border-b border-slate-100 bg-white flex items-center justify-between px-8 shrink-0 z-20 print:hidden shadow-sm">
         <div className="flex items-center gap-6">
            {isLauncherEnabled && (
              <button onClick={() => { setLauncherActive(false); toggleFullscreen(false); }} className="h-10 w-10 rounded-xl bg-slate-50 text-secondary flex items-center justify-center">
                <Monitor className="h-5 w-5" />
              </button>
            )}
-           <div className="flex items-center gap-2">
-             <span className="text-[12px] font-bold text-slate-400 uppercase tracking-[0.1em]">KRISHNA'S</span>
-             <span className="text-lg font-black tracking-tight uppercase text-secondary">SUPER 9+</span>
+           <div className="flex flex-col">
+             <div className="flex items-center gap-2">
+               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em]">KRISHNA'S</span>
+               <span className="text-base font-black tracking-tight uppercase text-secondary">SUPER 9+</span>
+             </div>
+             <span className="text-[9px] font-black text-emerald-500 uppercase tracking-wider">Active: {activeStaffName}</span>
            </div>
-           <div className="h-4 w-px bg-slate-200 mx-2" />
-           <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Billing Desk</h2>
+           
+           <div className="h-8 w-px bg-slate-100 mx-2" />
+           
+           <div className="flex items-center gap-3">
+             <UserCircle className="h-4 w-4 text-slate-300" />
+             <Select value={activeStaffName} onValueChange={handleStaffChange}>
+               <SelectTrigger className="h-9 w-[160px] bg-slate-50 border-none rounded-xl font-bold text-[9px] uppercase tracking-widest">
+                 <SelectValue placeholder="Staff On Duty" />
+               </SelectTrigger>
+               <SelectContent className="rounded-xl border-none shadow-2xl">
+                 {Object.values(STAFF_MAPPING).map(name => (
+                   <SelectItem key={name} value={name} className="font-bold text-[10px] uppercase">{name}</SelectItem>
+                 ))}
+               </SelectContent>
+             </Select>
+           </div>
            
            {/* REAL-TIME TOP TOTAL DISPLAY */}
            {cartItems.length > 0 && (
-             <div className="ml-4 flex items-center gap-3 bg-primary/5 px-5 py-2.5 rounded-2xl animate-in fade-in zoom-in duration-300 border border-primary/10">
-               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Bill</span>
-               <span className="text-2xl font-black text-primary tracking-tighter">₹{cartTotalPrice.toLocaleString()}</span>
+             <div className="ml-4 flex items-center gap-3 bg-primary/5 px-5 py-2 rounded-2xl animate-in fade-in zoom-in duration-300 border border-primary/10">
+               <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Bill</span>
+               <span className="text-xl font-black text-primary tracking-tighter">₹{cartTotalPrice.toLocaleString()}</span>
              </div>
            )}
         </div>
@@ -502,6 +549,12 @@ export default function POSPage() {
                     <span className="text-slate-400 uppercase">Customer</span>
                     <span className="text-secondary">{lastSale?.customerName || 'Walk-in'}</span>
                  </div>
+                 {lastSale?.customerId && (
+                   <div className="flex justify-between items-center text-[8pt] font-bold">
+                      <span className="text-slate-400 uppercase">Phone</span>
+                      <span className="text-secondary">{lastSale.customerId}</span>
+                   </div>
+                 )}
                  <div className="flex justify-between items-center text-[8pt] font-bold">
                     <span className="text-slate-400 uppercase">DateTime</span>
                     <span className="text-secondary">{getFormattedDateTime(lastSale?.timestamp)}</span>
@@ -536,7 +589,7 @@ export default function POSPage() {
                 </div>
                 <div className="text-right">
                   <span className="text-[7pt] font-bold text-slate-400 uppercase block tracking-widest">Served By</span>
-                  <span className="text-[8pt] font-bold text-emerald-500 uppercase">{lastSale?.staffName || staffName}</span>
+                  <span className="text-[8pt] font-bold text-emerald-500 uppercase">{lastSale?.staffName || activeStaffName}</span>
                 </div>
               </div>
             </div>
