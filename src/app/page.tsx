@@ -351,8 +351,8 @@ export default function POSPage() {
         printType === 'thermal' ? 'print-thermal' : 'print-normal'
       )}>
         <div className="text-center border-b border-slate-900 pb-2 mb-2">
-          <p className="text-[10pt] font-bold uppercase tracking-tight">KRISHNA'S</p>
-          <h2 className="text-[12pt] font-black uppercase tracking-tight">SUPER 9+</h2>
+          <p className="text-[10pt] font-light uppercase tracking-tight">KRISHNA'S</p>
+          <h2 className="text-[14pt] font-black uppercase tracking-tight">SUPER 9+</h2>
           <p className="text-[8pt] font-bold mt-1">{shopAddress}</p>
         </div>
         <div className="grid grid-cols-2 gap-2 mb-2 text-[8pt]">
@@ -394,10 +394,10 @@ export default function POSPage() {
           </div>
         </div>
         <div className="mt-4 text-center space-y-1">
-          <p className="text-[7pt] font-bold uppercase tracking-widest text-slate-400">
+          <p className="text-[6pt] font-bold uppercase tracking-tight text-slate-500 whitespace-nowrap overflow-hidden">
             Computer Generated Invoice • No Exchange without Bill
           </p>
-          <p className="text-[9pt] font-bold">Thank you for shopping at Krishna's Super 9+!</p>
+          <p className="text-[8pt] font-bold whitespace-nowrap overflow-hidden">Thank you for shopping at Krishna's Super 9+!</p>
         </div>
       </div>
 

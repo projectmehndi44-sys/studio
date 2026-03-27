@@ -59,8 +59,8 @@
   
   /* Thermal Printer Optimization (58/80mm) */
   .print-thermal {
-    width: 80mm !important;
-    padding: 2mm !important;
+    width: 58mm !important;
+    padding: 1mm !important;
     font-size: 8pt !important;
   }
   
