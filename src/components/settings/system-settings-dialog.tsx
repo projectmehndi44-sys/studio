@@ -17,7 +17,8 @@ import {
   Trash2, 
   RefreshCw,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  Skull
 } from 'lucide-react';
 import {
   Dialog,
@@ -111,12 +112,10 @@ export function SystemSettingsDialog({ isOpen, onClose, isAdmin }: SystemSetting
     const cutoffDate = subDays(new Date(), days);
     
     try {
-      // Clean Purchases
       const pQuery = query(collection(db, 'purchases'), where('timestamp', '<', Timestamp.fromDate(cutoffDate)));
       const pSnap = await getDocs(pQuery);
       pSnap.docs.forEach(d => deleteDocumentNonBlocking(d.ref));
 
-      // Clean Cash Logs
       const cQuery = query(collection(db, 'cashTransactions'), where('timestamp', '<', Timestamp.fromDate(cutoffDate)));
       const cSnap = await getDocs(cQuery);
       cSnap.docs.forEach(d => deleteDocumentNonBlocking(d.ref));
@@ -129,8 +128,39 @@ export function SystemSettingsDialog({ isOpen, onClose, isAdmin }: SystemSetting
     }
   };
 
+  const purgeAllData = async (type: 'ledger' | 'inventory') => {
+    if (!isAdmin) return;
+    
+    const message = type === 'ledger' 
+      ? "NUCLEAR ACTION: DELETE ALL Sales and Cash Logs? This will wipe your entire history permanently."
+      : "NUCLEAR ACTION: DELETE ALL Products? This will empty your Stock Master completely.";
+    
+    if (!confirm(message)) return;
+
+    setIsCleaning(true);
+    try {
+      if (type === 'ledger') {
+        const pSnap = await getDocs(collection(db, 'purchases'));
+        pSnap.docs.forEach(d => deleteDocumentNonBlocking(d.ref));
+        
+        const cSnap = await getDocs(collection(db, 'cashTransactions'));
+        cSnap.docs.forEach(d => deleteDocumentNonBlocking(d.ref));
+        
+        toast({ title: "Ledger Reset", description: `Purged ${pSnap.size + cSnap.size} records.` });
+      } else {
+        const iSnap = await getDocs(collection(db, 'products'));
+        iSnap.docs.forEach(d => deleteDocumentNonBlocking(d.ref));
+        toast({ title: "Inventory Reset", description: `Wiped ${iSnap.size} products from catalog.` });
+      }
+    } catch (e: any) {
+      toast({ variant: 'destructive', title: "Reset Failed", description: e.message });
+    } finally {
+      setIsCleaning(false);
+    }
+  };
+
   const docCount = (products?.length || 0) + (purchases?.length || 0) + (transactions?.length || 0);
-  const usagePercentage = Math.min(100, (docCount / 50000) * 100); // 50k docs as a safe free-tier limit proxy
+  const usagePercentage = Math.min(100, (docCount / 50000) * 100);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -187,7 +217,7 @@ export function SystemSettingsDialog({ isOpen, onClose, isAdmin }: SystemSetting
             </form>
           </TabsContent>
 
-          <TabsContent value="data" className="p-10 space-y-8 bg-white m-0">
+          <TabsContent value="data" className="p-10 space-y-10 bg-white m-0 h-[500px] overflow-y-auto">
             <div className="space-y-6">
               <div className="bg-slate-50 p-8 rounded-[32px] border border-slate-100 space-y-6">
                 <div className="flex items-center justify-between">
@@ -207,7 +237,7 @@ export function SystemSettingsDialog({ isOpen, onClose, isAdmin }: SystemSetting
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /><h4 className="text-[10px] font-black uppercase tracking-widest text-secondary">History Cleanup Tools</h4></div>
+                <div className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /><h4 className="text-[10px] font-black uppercase tracking-widest text-secondary">Historical Cleanup</h4></div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <Button variant="outline" disabled={isCleaning} onClick={() => cleanOldData(30)} className="h-14 rounded-2xl flex flex-col items-center justify-center border-slate-100 hover:bg-primary/5 hover:border-primary/20 group">
                     <span className="text-[10px] font-black text-secondary group-hover:text-primary uppercase">30 Days</span>
@@ -224,10 +254,34 @@ export function SystemSettingsDialog({ isOpen, onClose, isAdmin }: SystemSetting
                 </div>
               </div>
 
+              <div className="pt-6 border-t border-slate-100">
+                <div className="flex items-center gap-2 mb-4"><Skull className="h-4 w-4 text-primary" /><h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Danger Zone (Reset Terminal)</h4></div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Button 
+                    variant="destructive" 
+                    disabled={isCleaning} 
+                    onClick={() => purgeAllData('ledger')}
+                    className="h-16 rounded-[24px] flex flex-col items-center justify-center gap-1 bg-primary/10 hover:bg-primary text-primary hover:text-white border-none transition-all shadow-sm"
+                  >
+                    <span className="text-[10px] font-black uppercase">Purge Ledger Data</span>
+                    <span className="text-[8px] font-bold uppercase opacity-80">Wipe Sales & Cash Logs</span>
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    disabled={isCleaning} 
+                    onClick={() => purgeAllData('inventory')}
+                    className="h-16 rounded-[24px] flex flex-col items-center justify-center gap-1 bg-primary/10 hover:bg-primary text-primary hover:text-white border-none transition-all shadow-sm"
+                  >
+                    <span className="text-[10px] font-black uppercase">Purge Inventory</span>
+                    <span className="text-[8px] font-bold uppercase opacity-80">Wipe Stock Master</span>
+                  </Button>
+                </div>
+              </div>
+
               <div className="p-6 bg-primary/5 border border-primary/10 rounded-[24px] flex items-start gap-4">
                 <AlertTriangle className="h-5 w-5 text-primary shrink-0 mt-1" />
                 <p className="text-[10px] font-bold text-primary/80 uppercase leading-relaxed tracking-wider">
-                  Purging old data improves system speed but is permanent. Download an Excel backup from the Business Ledger before cleaning.
+                  Nuclear actions are permanent. Resetting will erase all test data. Use only before deploying for actual business use.
                 </p>
               </div>
             </div>
