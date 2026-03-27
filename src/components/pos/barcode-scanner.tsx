@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useRef, useCallback, useId } from 'react';
@@ -89,6 +90,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
     if (!isOpen) return;
 
     const startScanner = async () => {
+      if (isTransitioningRef.current) return;
       try {
         if (!html5QrCodeRef.current) {
           html5QrCodeRef.current = new Html5Qrcode(scannerId);
@@ -138,10 +140,18 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       const scanner = html5QrCodeRef.current;
       if (scanner && scanner.isScanning && !isTransitioningRef.current) {
         isTransitioningRef.current = true;
+        // Definitive fix for removeChild error: 
+        // Stop the scanner AND clear the container only if container exists
         scanner.stop()
-          .then(() => scanner.clear())
-          .catch(err => console.warn(err))
-          .finally(() => { isTransitioningRef.current = false; });
+          .then(() => {
+            if (document.getElementById(scannerId)) {
+              scanner.clear();
+            }
+          })
+          .catch(err => console.warn('Scanner stop error:', err))
+          .finally(() => { 
+            isTransitioningRef.current = false; 
+          });
       }
     };
   }, [isOpen, onScanSuccess, playBeep, performOcrScan, scannerId, lastScanned]);

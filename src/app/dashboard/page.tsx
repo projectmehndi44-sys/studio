@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo, useState } from 'react';
@@ -235,7 +236,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 font-body">
-      {/* PRINT-ONLY RECEIPT (Remains same for consistency) */}
+      {/* PRINT-ONLY RECEIPT */}
       <div className={cn(
         "hidden print-only p-4 bg-white text-slate-900 font-receipt min-h-screen text-[10pt] leading-normal",
         printType === 'thermal' ? 'print-thermal' : 'print-normal'
@@ -252,7 +253,7 @@ export default function DashboardPage() {
           </div>
           <div className="space-y-0.5 text-right overflow-hidden">
             <p className="font-bold truncate">Cust: {viewingSale?.customerName || 'Walk-in'}</p>
-            <p className="font-bold whitespace-nowrap">Served By: {viewingSale?.staffName || 'System'}</p>
+            <p className="font-bold whitespace-nowrap">Staff : {viewingSale?.staffName || 'System'}</p>
             <p className="font-bold">Mode: {viewingSale?.paymentMode || 'Cash'}</p>
           </div>
         </div>
@@ -494,7 +495,7 @@ export default function DashboardPage() {
                    <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">₹{viewingSale?.totalAmount.toFixed(0)}</span>
                 </div>
                 <div className="text-right overflow-hidden">
-                   <span className="text-[7pt] font-bold text-slate-400 uppercase block tracking-widest">Served By</span>
+                   <span className="text-[7pt] font-bold text-slate-400 uppercase block tracking-widest">Staff :</span>
                    <span className="text-[7pt] font-bold text-emerald-500 uppercase whitespace-nowrap">{viewingSale?.staffName || 'System'}</span>
                 </div>
               </div>

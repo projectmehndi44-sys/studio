@@ -360,7 +360,7 @@ export default function POSPage() {
           </div>
           <div className="space-y-0.5 text-right overflow-hidden">
             <p className="font-bold truncate">Cust: {lastSale?.customerName || 'Walk-in'}</p>
-            <p className="font-bold whitespace-nowrap">Served By: {lastSale?.staffName || activeStaffName}</p>
+            <p className="font-bold whitespace-nowrap">Staff : {lastSale?.staffName || activeStaffName}</p>
             <p className="font-bold">Mode: {lastSale?.paymentMode || 'Cash'}</p>
           </div>
         </div>
@@ -419,12 +419,12 @@ export default function POSPage() {
            <div className="hidden sm:block h-8 w-px bg-slate-100 mx-2" />
            
            <div className="hidden sm:flex flex-col gap-1">
-             <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Served By (Duty)</span>
+             <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Staff On Duty</span>
              <div className="flex items-center gap-3">
                <UserCircle className="h-4 w-4 text-primary" />
                <Select value={activeStaffName} onValueChange={handleStaffChange}>
                  <SelectTrigger className="h-8 md:h-9 w-[120px] md:w-[160px] bg-slate-50 border-none rounded-xl font-bold text-[8px] md:text-[9px] uppercase tracking-widest">
-                   <SelectValue placeholder="Staff On Duty" />
+                   <SelectValue placeholder="Select Staff" />
                  </SelectTrigger>
                  <SelectContent className="rounded-xl border-none shadow-2xl">
                    {Object.values(STAFF_MAPPING).map(name => (
@@ -612,7 +612,7 @@ export default function POSPage() {
                    <span className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter leading-none">₹{lastSale?.totalAmount.toFixed(0)}</span>
                 </div>
                 <div className="text-right overflow-hidden">
-                  <span className="text-[6pt] md:text-[7pt] font-bold text-slate-400 uppercase block tracking-widest">Served By</span>
+                  <span className="text-[6pt] md:text-[7pt] font-bold text-slate-400 uppercase block tracking-widest">Staff :</span>
                   <span className="text-[6pt] md:text-[7pt] font-bold text-emerald-500 uppercase whitespace-nowrap">{lastSale?.staffName || activeStaffName}</span>
                 </div>
               </div>
