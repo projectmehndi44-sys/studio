@@ -17,7 +17,7 @@ import {
   FastForward,
   UserCircle
 } from 'lucide-react';
-import { Product, CartItem, PurchaseRecord } from '@/types';
+import { Product, CartItem, PurchaseRecord } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
 import { CartList } from '@/components/pos/cart-list';
 import { CheckoutPanel } from '@/components/pos/checkout-panel';
