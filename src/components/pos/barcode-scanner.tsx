@@ -28,7 +28,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   const isTransitioningRef = useRef(false);
   const lastScannedRef = useRef<string | null>(null);
 
-  // Use refs for callbacks to prevent effect re-runs
+  // Use refs for callbacks to prevent effect re-runs and flickering
   const onScanSuccessRef = useRef(onScanSuccess);
   const onOcrSuccessRef = useRef(onOcrSuccess);
 
@@ -114,12 +114,13 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
     let isMounted = true;
 
     const startScanner = async () => {
+      // Transition lock to prevent concurrent start/stop/removeChild crashes
       if (isTransitioningRef.current) return;
       isTransitioningRef.current = true;
 
       try {
         const container = document.getElementById(SCANNER_ID);
-        if (!container) {
+        if (!container || !isMounted) {
            isTransitioningRef.current = false;
            return;
         }
@@ -131,10 +132,13 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         const scanner = html5QrCodeRef.current;
         
         if (scanner.isScanning) {
-          await scanner.stop();
+          try { await scanner.stop(); } catch(e) {}
         }
 
-        if (!isMounted) return;
+        if (!isMounted) {
+          isTransitioningRef.current = false;
+          return;
+        }
 
         await scanner.start(
           { facingMode: "environment" },
@@ -161,27 +165,29 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         if (isMounted) {
           setHasCameraPermission(true);
           // Set up the auto-scan loop
+          if (autoScanIntervalRef.current) clearInterval(autoScanIntervalRef.current);
           autoScanIntervalRef.current = setInterval(() => {
             performOcrScan(true);
-          }, 3000);
+          }, 3500);
         }
 
       } catch (error) {
-        console.error('Scanner start error:', error);
+        console.warn('Scanner start error:', error);
         if (isMounted) setHasCameraPermission(false);
       } finally {
         isTransitioningRef.current = false;
       }
     };
 
-    // Wait for Dialog animation to finish before starting camera
-    const timer = setTimeout(startScanner, 600);
+    // Wait for Dialog animation to finish before starting camera hardware
+    const timer = setTimeout(startScanner, 800);
 
     return () => {
       isMounted = false;
       clearTimeout(timer);
       if (autoScanIntervalRef.current) {
         clearInterval(autoScanIntervalRef.current);
+        autoScanIntervalRef.current = null;
       }
       
       const scanner = html5QrCodeRef.current;
@@ -193,7 +199,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
               await scanner.stop();
             }
           } catch (err) {
-            console.warn("Scanner cleanup suppressed:", err);
+            console.warn("Scanner cleanup error suppressed:", err);
           } finally {
             isTransitioningRef.current = false;
           }
