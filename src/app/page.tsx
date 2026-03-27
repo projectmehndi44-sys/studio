@@ -393,10 +393,13 @@ export default function POSPage() {
           </div>
         </div>
         <div className="mt-4 text-center space-y-1">
-          <p className="text-[6pt] font-bold uppercase tracking-tight text-slate-500 whitespace-nowrap overflow-hidden">
-            Computer Generated Invoice • No Exchange without Bill
+          <p className="text-[6pt] font-light uppercase tracking-tight text-slate-500 whitespace-nowrap overflow-hidden">
+            COMPUTER GENERATED RECEIPT.
           </p>
-          <p className="text-[8pt] font-bold whitespace-nowrap overflow-hidden">Thank you for shopping at Krishna's Super 9+!</p>
+          <p className="text-[6pt] font-light uppercase tracking-tight text-slate-500 whitespace-nowrap overflow-hidden">
+            Bill mandatory for exchange; subject to quality check.
+          </p>
+          <p className="text-[8pt] font-bold whitespace-nowrap overflow-hidden">Thank you for shopping at Krishna's Super 9+ !</p>
         </div>
       </div>
 
