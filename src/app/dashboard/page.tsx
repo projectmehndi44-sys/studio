@@ -20,13 +20,14 @@ import {
   BarChart3,
   ShieldAlert,
   FileDown,
-  ExternalLink
+  ExternalLink,
+  Trash2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase, useDoc, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, query, orderBy, limit, doc } from 'firebase/firestore';
 import { PurchaseRecord, CashTransaction } from '@/lib/types';
 import { 
@@ -52,6 +53,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription
 } from "@/components/ui/dialog";
 import {
   Table,
@@ -60,7 +62,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,10 +74,12 @@ import {
 import { PhoneAuthGate } from '@/components/auth/phone-auth-gate';
 import { isStaffAdmin } from '@/lib/staff';
 import { AdminPinDialog } from '@/components/admin/admin-pin-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 type DateFilter = 'today' | 'yesterday' | 'month' | 'last7' | 'all';
 
 export default function DashboardPage() {
+  const { toast } = useToast();
   const router = useRouter();
   const db = useFirestore();
   const { user, isUserLoading: isAuthLoading } = useUser();
@@ -85,6 +89,7 @@ export default function DashboardPage() {
   const [dateFilter, setDateFilter] = useState<DateFilter>('today');
   const [searchQuery, setSearchQuery] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [deletingSaleId, setDeletingSaleId] = useState<string | null>(null);
   
   const [selectedMonth, setSelectedMonth] = useState<string>(getMonth(new Date()).toString());
   const [selectedYear, setSelectedYear] = useState<string>(getYear(new Date()).toString());
@@ -195,6 +200,13 @@ export default function DashboardPage() {
     setTimeout(() => window.print(), 100);
   };
 
+  const handleDeleteSale = () => {
+    if (!deletingSaleId) return;
+    deleteDocumentNonBlocking(doc(db, 'purchases', deletingSaleId));
+    setDeletingSaleId(null);
+    toast({ title: "Record Deleted", description: "The sale has been removed from the ledger." });
+  };
+
   if (isAuthLoading) return <div className="h-screen flex items-center justify-center">Analyzing Ledger...</div>;
   if (!user) return <PhoneAuthGate />;
 
@@ -223,7 +235,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 font-body">
-      {/* UNIFIED PRINT RECEIPT */}
       <div className={cn(
         "hidden print-only p-4 bg-white text-slate-900 font-receipt min-h-screen text-[10pt] leading-normal",
         printType === 'thermal' ? 'print-thermal' : 'print-normal'
@@ -369,7 +380,7 @@ export default function DashboardPage() {
                   </TableHeader>
                   <TableBody>
                     {filteredSales.map((sale) => (
-                      <TableRow key={sale.id} className="hover:bg-slate-50/50 transition-colors border-slate-50">
+                      <TableRow key={sale.id} className="hover:bg-slate-50/50 transition-colors border-slate-50 group">
                         <TableCell className="pl-8">
                           <p className="font-bold text-slate-900 text-sm">{getFormattedDateTime(sale.timestamp)}</p>
                         </TableCell>
@@ -379,9 +390,14 @@ export default function DashboardPage() {
                           <p className="text-[9px] font-bold text-emerald-500 uppercase">{sale.paymentMode}</p>
                         </TableCell>
                         <TableCell className="text-right pr-8">
-                          <Button variant="ghost" size="sm" onClick={() => setViewingSale(sale)} className="h-9 font-bold text-[10px] uppercase gap-2 hover:bg-secondary hover:text-white transition-all rounded-xl">
-                            <Eye className="h-4 w-4" /> View
-                          </Button>
+                          <div className="flex items-center justify-end gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => setViewingSale(sale)} className="h-9 font-bold text-[10px] uppercase gap-2 hover:bg-secondary hover:text-white transition-all rounded-xl">
+                              <Eye className="h-4 w-4" /> View
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => setDeletingSaleId(sale.id)} className="h-9 w-9 text-slate-300 hover:text-primary transition-all rounded-xl opacity-0 group-hover:opacity-100">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -468,6 +484,21 @@ export default function DashboardPage() {
             </div>
           </div>
           <DialogFooter><Button className="w-full h-14 rounded-2xl font-bold text-sm bg-slate-100 text-slate-600" onClick={() => setViewingSale(null)}>CLOSE ARCHIVE</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!deletingSaleId} onOpenChange={(open) => !open && setDeletingSaleId(null)}>
+        <DialogContent className="sm:max-w-md rounded-[32px] p-10 border-none shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black uppercase text-primary">Purge Record?</DialogTitle>
+            <DialogDescription className="font-bold text-[10px] uppercase tracking-widest pt-2">
+              This action cannot be undone. The sale will be removed from all reports.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="grid grid-cols-2 gap-4 mt-6">
+            <Button variant="outline" onClick={() => setDeletingSaleId(null)} className="h-14 rounded-2xl font-bold uppercase text-[10px]">Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteSale} className="h-14 rounded-2xl font-black uppercase text-[10px]">Delete Forever</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

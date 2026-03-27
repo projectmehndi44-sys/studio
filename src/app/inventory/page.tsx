@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -13,7 +14,8 @@ import {
   Check,
   FileUp,
   History,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,7 +29,8 @@ import {
   useUser, 
   useMemoFirebase, 
   updateDocumentNonBlocking, 
-  addDocumentNonBlocking 
+  addDocumentNonBlocking,
+  deleteDocumentNonBlocking
 } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Product } from '@/lib/types';
@@ -40,7 +43,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/table";
 import {
   Select,
   SelectContent,
@@ -48,6 +51,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription
+} from "@/components/ui/dialog";
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { PhoneAuthGate } from '@/components/auth/phone-auth-gate';
@@ -68,6 +79,7 @@ export default function InventoryPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [quickEnrollText, setQuickEnrollText] = useState('');
+  const [deletingProductId, setDeletingProductId] = useState<string | null>(null);
   
   const [editingCell, setEditingCell] = useState<{ id: string, field: 'price' | 'stock' } | null>(null);
   const [editValue, setEditValue] = useState('');
@@ -161,6 +173,13 @@ export default function InventoryPage() {
       isPopular: !!p.isPopular
     });
     setIsEditing(true);
+  };
+
+  const handleDeleteProduct = () => {
+    if (!deletingProductId) return;
+    deleteDocumentNonBlocking(doc(db, 'products', deletingProductId));
+    setDeletingProductId(null);
+    toast({ title: "SKU Deleted", description: "Item removed from the catalog." });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -293,7 +312,10 @@ export default function InventoryPage() {
                          )}
                        </TableCell>
                        <TableCell className="text-right pr-8">
-                         <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} className="h-9 w-9 rounded-xl opacity-0 group-hover:opacity-100 transition-all"><Edit className="h-4 w-4" /></Button>
+                         <div className="flex items-center justify-end gap-1">
+                           <Button variant="ghost" size="sm" onClick={() => handleEdit(p)} className="h-9 w-9 rounded-xl opacity-0 group-hover:opacity-100 transition-all"><Edit className="h-4 w-4" /></Button>
+                           <Button variant="ghost" size="sm" onClick={() => setDeletingProductId(p.id)} className="h-9 w-9 text-slate-300 hover:text-primary rounded-xl opacity-0 group-hover:opacity-100 transition-all"><Trash2 className="h-4 w-4" /></Button>
+                         </div>
                        </TableCell>
                      </TableRow>
                    ))}
@@ -347,6 +369,21 @@ export default function InventoryPage() {
           </Card>
         </aside>
       </main>
+
+      <Dialog open={!!deletingProductId} onOpenChange={(open) => !open && setDeletingProductId(null)}>
+        <DialogContent className="sm:max-w-md rounded-[32px] p-10 border-none shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black uppercase text-primary">Remove from Catalog?</DialogTitle>
+            <DialogDescription className="font-bold text-[10px] uppercase tracking-widest pt-2">
+              This will permanently delete the item. Sales history will be preserved.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="grid grid-cols-2 gap-4 mt-6">
+            <Button variant="outline" onClick={() => setDeletingProductId(null)} className="h-14 rounded-2xl font-bold uppercase text-[10px]">Keep Item</Button>
+            <Button variant="destructive" onClick={handleDeleteProduct} className="h-14 rounded-2xl font-black uppercase text-[10px]">Delete Forever</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <BulkImportDialog 
         isOpen={isBulkImportOpen} 
