@@ -35,12 +35,13 @@ const prompt = ai.definePrompt({
   input: {schema: ScanPriceTagInputSchema},
   output: {schema: ScanPriceTagOutputSchema},
   prompt: `You are a specialized retail vision agent for Krishna's SUPER 9+. 
-Your task is to identify the price on a specific price tag layout, regardless of the tag's background color.
+Your task is to identify the price on our shop's specific price tag layout.
 
-1. Locate the currency symbol "₹".
-2. Extract the LARGE numeric price digits immediately following the symbol.
-3. Ignore any branding text like "KRISHNA'S SUPER 9+" or other smaller text elements.
-4. Focus strictly on the design pattern: Branding at the top, a large Rupee symbol, and the price value.
+CRITICAL INSTRUCTIONS:
+1. IGNORE TAG COLOR: The background color of the tag may vary. Focus ONLY on text and layout.
+2. Locate the large currency symbol "₹".
+3. Extract the LARGE numeric digits immediately following the "₹" symbol. This is the item price.
+4. Ignore any other branding text or smaller secondary numbers.
 5. Return the numeric price.
 
 Photo: {{media url=photoDataUri}}`,

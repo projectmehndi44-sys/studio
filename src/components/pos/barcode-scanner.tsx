@@ -50,7 +50,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   }, []);
 
   const performOcrScan = useCallback(async (isAuto = false) => {
-    // Check if we are already processing or if the component is closing
     if (isAiProcessing || lastScanned || !html5QrCodeRef.current?.isScanning) return;
 
     const video = document.querySelector(`#${SCANNER_ID} video`) as HTMLVideoElement;
@@ -72,8 +71,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       if (result && result.price > 0) {
         playBeep();
         setLastScanned(`₹${result.price}`);
-        
-        // Wait a moment for the user to see the "Success" UI before triggering the callback
         setTimeout(() => {
           onOcrSuccess(result.name, result.price);
         }, 800);
@@ -83,7 +80,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         toast({ 
           variant: 'destructive', 
           title: "Scan Failed", 
-          description: "Could not find a price. Ensure the tag is well-lit." 
+          description: "Ensure the tag is well-lit and the digits are clear." 
         });
       }
     } finally {
@@ -93,6 +90,8 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
 
   useEffect(() => {
     if (!isOpen) return;
+
+    let isMounted = true;
 
     const startScanner = async () => {
       if (isTransitioningRef.current) return;
@@ -107,6 +106,8 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         if (scanner.isScanning) {
           await scanner.stop();
         }
+
+        if (!isMounted) return;
 
         await scanner.start(
           { facingMode: "environment" },
@@ -125,51 +126,45 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
             playBeep();
             setLastScanned(decodedText);
             onScanSuccess(decodedText);
-            setTimeout(() => setLastScanned(null), 1500);
+            setTimeout(() => {
+              if (isMounted) setLastScanned(null);
+            }, 1500);
           },
           () => {} 
         );
 
         setHasCameraPermission(true);
-        
-        // Start auto-detection loop for price tags
         autoScanIntervalRef.current = setInterval(() => {
           performOcrScan(true);
         }, 3000);
 
       } catch (error) {
         console.error('Scanner start error:', error);
-        setHasCameraPermission(false);
+        if (isMounted) setHasCameraPermission(false);
       } finally {
         isTransitioningRef.current = false;
       }
     };
 
-    // Small delay to let Dialog animations settle and prevent DOM race conditions
-    const timer = setTimeout(startScanner, 300);
+    const timer = setTimeout(startScanner, 400);
 
     return () => {
+      isMounted = false;
       clearTimeout(timer);
       if (autoScanIntervalRef.current) {
         clearInterval(autoScanIntervalRef.current);
       }
       
       const scanner = html5QrCodeRef.current;
-      if (scanner && !isTransitioningRef.current) {
+      if (scanner && scanner.isScanning && !isTransitioningRef.current) {
         isTransitioningRef.current = true;
-        const cleanup = async () => {
-          try {
-            if (scanner.isScanning) {
-              await scanner.stop();
-            }
-            scanner.clear();
-          } catch (err) {
-            console.warn("Scanner cleanup warning:", err);
-          } finally {
-            isTransitioningRef.current = false;
-          }
-        };
-        cleanup();
+        scanner.stop().then(() => {
+          scanner.clear();
+        }).catch((err) => {
+          console.warn("Cleanup error:", err);
+        }).finally(() => {
+          isTransitioningRef.current = false;
+        });
       }
     };
   }, [isOpen, onScanSuccess, playBeep, performOcrScan]);
@@ -197,7 +192,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
             <div className="w-full h-full border-[12px] border-primary animate-pulse opacity-40 rounded-[28px]" />
             <div className="absolute bg-primary/90 backdrop-blur-md px-8 py-4 rounded-3xl flex items-center gap-4 shadow-2xl border border-white/20">
                <Loader2 className="h-6 w-6 text-white animate-spin" />
-               <span className="text-white font-black text-sm uppercase tracking-widest">AI Vision Active...</span>
+               <span className="text-white font-black text-sm uppercase tracking-widest">Vision Engine Active...</span>
             </div>
           </div>
         )}
@@ -207,7 +202,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
              <div className="w-72 h-44 border-2 border-dashed border-white/40 rounded-3xl relative">
                 <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-primary/60 shadow-[0_0_20px_rgba(var(--primary),0.8)] animate-bounce" />
              </div>
-             <p className="mt-10 text-white/40 font-black text-[10px] uppercase tracking-[0.4em]">Ready for Tag or Barcode</p>
+             <p className="mt-10 text-white/40 font-black text-[10px] uppercase tracking-[0.4em]">Point at Tag or Barcode</p>
           </div>
         )}
       </div>
@@ -220,16 +215,16 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           className="h-16 rounded-2xl bg-slate-100 text-secondary font-black uppercase tracking-widest gap-3 text-xs border-2 border-transparent hover:border-primary/30 transition-all shadow-sm"
         >
           {isAiProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5 text-primary" />}
-          Snapshot Smart Scan
+          Manual Trigger Scan
         </Button>
       </div>
       
       {hasCameraPermission === false && (
         <Alert variant="destructive" className="rounded-3xl border-none shadow-2xl bg-primary text-white p-6">
           <CameraOff className="h-6 w-6" />
-          <AlertTitle className="font-black uppercase tracking-tighter text-sm mb-1">Access Blocked</AlertTitle>
+          <AlertTitle className="font-black uppercase tracking-tighter text-sm mb-1">Hardware Error</AlertTitle>
           <AlertDescription className="text-[11px] font-bold opacity-90 leading-relaxed">
-            Please allow camera permissions in your tablet settings to use the Super Scanner.
+            Camera access was denied or interrupted. Please ensure permissions are granted in your browser or tablet settings.
           </AlertDescription>
         </Alert>
       )}
@@ -237,11 +232,11 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       <div className="flex items-center justify-between px-4">
          <div className="flex items-center gap-2">
             <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Live Auto-Detection</p>
+            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Auto-Hunt Enabled</p>
          </div>
-         <div className="flex items-center gap-2">
-            <Search className="h-3.5 w-3.5 text-primary" />
-            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">AI Engine v5.2</p>
+         <div className="flex items-center gap-2 text-slate-400">
+            <Search className="h-3.5 w-3.5" />
+            <p className="text-[10px] font-black uppercase tracking-widest">AI v5.4</p>
          </div>
       </div>
     </div>
