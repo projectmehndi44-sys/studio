@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -13,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { useFirestore, useDoc, setDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useDoc, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,7 +25,9 @@ interface SystemSettingsDialogProps {
 export function SystemSettingsDialog({ isOpen, onClose, isAdmin }: SystemSettingsDialogProps) {
   const { toast } = useToast();
   const db = useFirestore();
-  const settingsRef = doc(db, 'settings', 'config');
+  
+  // FIXED: Memoized settingsRef to prevent infinite re-render loops
+  const settingsRef = useMemoFirebase(() => doc(db, 'settings', 'config'), [db]);
   const { data: currentSettings, isLoading } = useDoc(settingsRef);
 
   const [formData, setFormData] = useState({
