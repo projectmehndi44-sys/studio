@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -33,8 +34,9 @@
   }
   
   html {
-    /* Base scaling for mobile devices */
+    /* Base scaling for mobile devices - ensured readability */
     font-size: 14px;
+    -webkit-text-size-adjust: 100%;
   }
   
   @screen md {
@@ -48,10 +50,12 @@
     font-feature-settings: "rlig" 1, "calt" 1;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Prevent horizontal scroll on small devices */
+    overflow-x: hidden;
   }
   
   h1, h2, h3, h4 {
-    @apply font-semibold tracking-tight;
+    @apply font-semibold tracking-tight leading-tight;
   }
 }
 
@@ -105,14 +109,19 @@
   @apply bg-slate-200 rounded-full;
 }
 
-/* Orientation Specific Fixes */
-@media (orientation: landscape) and (max-height: 500px) {
-  .header-shrink {
-    @apply h-12 !important;
-  }
+/* Tab & Navigation Fixes for Small Screens */
+[data-radix-collection-item] {
+  @apply whitespace-nowrap overflow-hidden text-ellipsis flex-shrink-0;
 }
 
-/* Ensure tabs are always clickable and visible */
-[data-radix-collection-item] {
-  @apply whitespace-nowrap overflow-hidden text-ellipsis;
+/* Ensure all interactive elements have sufficient tap targets */
+button, [role="button"] {
+  @apply min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0;
+}
+
+/* Portrait vs Landscape Layout Tweaks */
+@media (max-width: 640px) {
+  .portrait-compact {
+    @apply p-2 gap-2 !important;
+  }
 }

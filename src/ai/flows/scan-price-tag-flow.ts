@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A Genkit flow for extracting price information from Krishna's Super 9+ price tags.
@@ -40,8 +41,8 @@ Your ONLY task is to identify the numeric price located immediately adjacent to 
 STRICT INSTRUCTIONS:
 1. RUPEE SYMBOL IS MANDATORY: You MUST locate the currency symbol "₹". If the "₹" symbol is not clearly visible in the photo, return a price of 0.
 2. EXTRACT ONLY THE PRICE: Look ONLY for the digits (the amount) written next to the "₹" symbol.
-3. IGNORE EVERYTHING ELSE: Disregard tag color, background design, shop names, barcodes, or any other numbers (like dates or SKU codes) that do not have the ₹ symbol next to them.
-4. SPATIAL AWARENESS: In this shop's design, the price is usually the largest number following the ₹ symbol.
+3. IGNORE EVERYTHING ELSE: Disregard tag color, background design, shop names, barcodes, or any other numbers.
+4. SPATIAL AWARENESS: In this shop's design, the price is the digits following the ₹ symbol.
 5. NO COLOR BIAS: It does not matter if the tag is brown, red, or white. Only focus on the ₹ symbol and the price digits.
 
 Photo: {{media url=photoDataUri}}`,

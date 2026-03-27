@@ -1,12 +1,13 @@
 
 "use client";
 
-import { Trash2, Plus, Minus, ShoppingBag, Edit2, Check } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, Edit2, Check, Info } from 'lucide-react';
 import { CartItem } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface CartListProps {
   items: CartItem[];
@@ -33,14 +34,14 @@ export function CartList({ items, onUpdateQuantity, onUpdatePrice, onRemoveItem 
   return (
     <div className="flex flex-col h-full bg-white rounded-[32px] overflow-hidden border border-slate-200 shadow-sm">
       <div className="p-4 px-6 border-b flex justify-between items-center bg-slate-50/50">
-        <h3 className="font-black text-sm uppercase tracking-widest text-slate-900">
-          Items ({items.length})
+        <h3 className="font-black text-xs md:text-sm uppercase tracking-widest text-slate-900">
+          Current Bill ({items.length})
         </h3>
         <button 
-          className="text-destructive font-black text-[10px] uppercase tracking-widest hover:underline"
+          className="text-primary font-black text-[10px] uppercase tracking-widest hover:underline"
           onClick={() => items.forEach(i => onRemoveItem(i.id))}
         >
-          Clear Bill
+          Clear All
         </button>
       </div>
       
@@ -48,10 +49,12 @@ export function CartList({ items, onUpdateQuantity, onUpdatePrice, onRemoveItem 
         <div className="divide-y divide-slate-100">
           {items.map((item) => (
             <div key={item.id} className="p-4 hover:bg-slate-50 transition-colors">
-              <div className="flex justify-between items-center gap-4 mb-3">
+              <div className="flex justify-between items-start gap-4 mb-3">
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-black text-base text-slate-900 truncate tracking-tight">{item.name}</h4>
-                  <div className="flex items-center gap-2 mt-1">
+                  <h4 className="font-black text-sm md:text-base text-slate-900 truncate tracking-tight uppercase leading-tight">
+                    {item.name}
+                  </h4>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
                     {editingId === item.id ? (
                       <div className="flex items-center gap-2 bg-white rounded-lg px-2 border border-primary/30">
                         <span className="text-xs font-black text-primary">₹</span>
@@ -78,14 +81,26 @@ export function CartList({ items, onUpdateQuantity, onUpdatePrice, onRemoveItem 
                         onClick={() => setEditingId(item.id)}
                         className="flex items-center gap-1.5 text-slate-400 hover:text-primary transition-colors group"
                       >
-                        <span className="text-sm font-bold tracking-tight">₹{item.price} / unit</span>
-                        <Edit2 className="h-3 w-3 opacity-0 group-hover:opacity-100" />
+                        <span className="text-[11px] font-bold tracking-tight">₹{item.price} / unit</span>
+                        <Edit2 className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100" />
                       </button>
+                    )}
+
+                    {item.stock !== undefined && (
+                      <div className={cn(
+                        "flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border",
+                        item.stock < 10 
+                          ? "bg-primary/5 text-primary border-primary/20" 
+                          : "bg-emerald-50 text-emerald-600 border-emerald-100"
+                      )}>
+                        <Info className="h-2.5 w-2.5" />
+                        Stock: {item.stock}
+                      </div>
                     )}
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-black text-xl text-primary tracking-tighter">₹{(item.price * item.quantity).toFixed(0)}</p>
+                <div className="text-right shrink-0">
+                  <p className="font-black text-lg md:text-xl text-primary tracking-tighter">₹{(item.price * item.quantity).toFixed(0)}</p>
                 </div>
               </div>
               
@@ -94,7 +109,7 @@ export function CartList({ items, onUpdateQuantity, onUpdatePrice, onRemoveItem 
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 rounded-lg hover:bg-white"
+                    className="h-8 w-8 rounded-lg hover:bg-white transition-all"
                     onClick={() => onUpdateQuantity(item.id, -1)}
                   >
                     <Minus className="h-3 w-3" />
@@ -105,7 +120,7 @@ export function CartList({ items, onUpdateQuantity, onUpdatePrice, onRemoveItem 
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 rounded-lg hover:bg-white"
+                    className="h-8 w-8 rounded-lg hover:bg-white transition-all"
                     onClick={() => onUpdateQuantity(item.id, 1)}
                   >
                     <Plus className="h-3 w-3" />
@@ -115,7 +130,7 @@ export function CartList({ items, onUpdateQuantity, onUpdatePrice, onRemoveItem 
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="text-slate-300 hover:text-destructive hover:bg-destructive/5 rounded-xl h-8 w-8"
+                  className="text-slate-300 hover:text-primary hover:bg-primary/5 rounded-xl h-8 w-8 transition-colors"
                   onClick={() => onRemoveItem(item.id)}
                 >
                   <Trash2 className="h-4 w-4" />

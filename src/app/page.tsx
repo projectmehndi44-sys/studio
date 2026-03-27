@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
@@ -514,11 +515,11 @@ export default function POSPage() {
         ) : (
           <div className="flex flex-col h-full overflow-hidden p-3 md:p-4 gap-3 md:gap-4">
             <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="flex-1 flex flex-col overflow-hidden">
-              <TabsList className="grid w-full grid-cols-2 bg-slate-100 rounded-2xl p-1 mb-3 md:mb-4 h-12 md:h-14">
-                <TabsTrigger value="products" className="font-bold text-[9px] md:text-[10px] uppercase">Catalog</TabsTrigger>
-                <TabsTrigger value="checkout" className="font-bold text-[9px] md:text-[10px] uppercase" disabled={cartItems.length === 0}>Bill ({cartItems.length})</TabsTrigger>
+              <TabsList className="flex w-full bg-slate-100 rounded-2xl p-1 mb-3 md:mb-4 h-12 md:h-14 gap-1">
+                <TabsTrigger value="products" className="flex-1 font-bold text-[9px] md:text-[10px] uppercase rounded-xl">Catalog</TabsTrigger>
+                <TabsTrigger value="checkout" className="flex-1 font-bold text-[9px] md:text-[10px] uppercase rounded-xl" disabled={cartItems.length === 0}>Bill ({cartItems.length})</TabsTrigger>
               </TabsList>
-              <TabsContent value="products" className="flex-1 overflow-hidden flex flex-col gap-3 md:gap-4">
+              <TabsContent value="products" className="flex-1 overflow-hidden flex flex-col gap-3 md:gap-4 m-0">
                 <div className="flex items-center gap-2">
                   <ProductSearch 
                     inputRef={searchInputRef} 
@@ -533,7 +534,7 @@ export default function POSPage() {
                 </div>
                 <CartList items={cartItems} onUpdateQuantity={updateQuantity} onUpdatePrice={updatePrice} onRemoveItem={removeItem} />
               </TabsContent>
-              <TabsContent value="checkout" className="flex-1 overflow-hidden">
+              <TabsContent value="checkout" className="flex-1 overflow-hidden m-0">
                 <CheckoutPanel items={cartItems} onComplete={handleCheckout} />
               </TabsContent>
             </Tabs>
