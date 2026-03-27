@@ -50,6 +50,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   }, []);
 
   const performOcrScan = useCallback(async (isAuto = false) => {
+    // Prevent overlapping AI requests
     if (isAiProcessing || lastScanned || !html5QrCodeRef.current?.isScanning) return;
 
     const video = document.querySelector(`#${SCANNER_ID} video`) as HTMLVideoElement;
@@ -71,11 +72,13 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       if (result && result.price > 0) {
         playBeep();
         setLastScanned(`₹${result.price}`);
+        // Brief delay for visual feedback before acting
         setTimeout(() => {
           onOcrSuccess(result.name, result.price);
         }, 800);
       }
     } catch (e) {
+      // Fail silently for auto-scans to keep the experience smooth
       if (!isAuto) {
         toast({ 
           variant: 'destructive', 
@@ -103,6 +106,8 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         }
 
         const scanner = html5QrCodeRef.current;
+        
+        // Ensure state is clean before starting
         if (scanner.isScanning) {
           await scanner.stop();
           await scanner.clear();
@@ -127,6 +132,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
             playBeep();
             setLastScanned(decodedText);
             onScanSuccess(decodedText);
+            // Brief lock-out to prevent multiple triggers
             setTimeout(() => {
               if (isMounted) setLastScanned(null);
             }, 1500);
@@ -134,10 +140,13 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           () => {} 
         );
 
-        setHasCameraPermission(true);
-        autoScanIntervalRef.current = setInterval(() => {
-          performOcrScan(true);
-        }, 3000);
+        if (isMounted) {
+          setHasCameraPermission(true);
+          // Start the AI "Hunt" loop
+          autoScanIntervalRef.current = setInterval(() => {
+            performOcrScan(true);
+          }, 3500);
+        }
 
       } catch (error) {
         console.error('Scanner start error:', error);
@@ -147,7 +156,8 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       }
     };
 
-    const timer = setTimeout(startScanner, 500);
+    // Delay start slightly to allow Dialog animation to finish
+    const timer = setTimeout(startScanner, 600);
 
     return () => {
       isMounted = false;
@@ -166,7 +176,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
             }
             await scanner.clear();
           } catch (err) {
-            console.warn("Cleanup error:", err);
+            console.warn("Scanner cleanup warning:", err);
           } finally {
             isTransitioningRef.current = false;
           }
@@ -185,6 +195,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           isAiProcessing ? "border-primary/50 scale-[1.02]" : "border-slate-100 scale-100"
         )}
       >
+        {/* Success Overlay */}
         {lastScanned && (
           <div className="absolute inset-0 z-20 bg-emerald-500/95 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
              <div className="h-28 w-28 bg-white rounded-[40px] flex items-center justify-center mb-6 shadow-2xl">
@@ -194,6 +205,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           </div>
         )}
 
+        {/* Processing State */}
         {isAiProcessing && !lastScanned && (
           <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
             <div className="w-full h-full border-[12px] border-primary animate-pulse opacity-40 rounded-[28px]" />
@@ -204,6 +216,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           </div>
         )}
 
+        {/* Hunting UI */}
         {!lastScanned && !isAiProcessing && (
           <div className="absolute inset-0 z-0 pointer-events-none flex flex-col items-center justify-center">
              <div className="w-72 h-44 border-2 border-dashed border-white/40 rounded-3xl relative">
@@ -229,9 +242,9 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       {hasCameraPermission === false && (
         <Alert variant="destructive" className="rounded-3xl border-none shadow-2xl bg-primary text-white p-6">
           <CameraOff className="h-6 w-6" />
-          <AlertTitle className="font-black uppercase tracking-tighter text-sm mb-1">Hardware Error</AlertTitle>
+          <AlertTitle className="font-black uppercase tracking-tighter text-sm mb-1">Hardware Restricted</AlertTitle>
           <AlertDescription className="text-[11px] font-bold opacity-90 leading-relaxed">
-            Camera access was denied or interrupted. Please ensure permissions are granted in your browser or tablet settings.
+            Camera access was interrupted. Ensure browser or tablet permissions are granted.
           </AlertDescription>
         </Alert>
       )}
@@ -243,7 +256,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
          </div>
          <div className="flex items-center gap-2 text-slate-400">
             <Search className="h-3.5 w-3.5" />
-            <p className="text-[10px] font-black uppercase tracking-widest">AI v5.5</p>
+            <p className="text-[10px] font-black uppercase tracking-widest">Vision v5.8</p>
          </div>
       </div>
     </div>

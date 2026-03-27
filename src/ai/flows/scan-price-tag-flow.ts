@@ -38,11 +38,11 @@ const prompt = ai.definePrompt({
 Your task is to identify the price on our shop's specific price tag layout.
 
 CRITICAL INSTRUCTIONS:
-1. IGNORE TAG COLOR: The background color of the tag may vary (brown, red, etc.). Focus ONLY on text and layout.
-2. Locate the large currency symbol "₹".
-3. Extract the LARGE numeric digits immediately following the "₹" symbol. This is the item price.
-4. Ignore any other branding text or smaller secondary numbers.
-5. Return the numeric price.
+1. IGNORE TAG COLOR: The background color of the tag may vary (brown, red, white, etc.). Focus ONLY on the text design and layout.
+2. IDENTIFY THE RUPEE SYMBOL: Locate the large currency symbol "₹".
+3. EXTRACT THE PRICE: Extract the LARGE, BOLD numeric digits immediately following the "₹" symbol. This is the item price.
+4. IGNORE SMALLER TEXT: Ignore any branding text, barcodes, or smaller secondary numbers elsewhere on the tag.
+5. ACCURACY: Return the exact numeric price.
 
 Photo: {{media url=photoDataUri}}`,
 });
