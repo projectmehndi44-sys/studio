@@ -35,15 +35,14 @@ const prompt = ai.definePrompt({
   input: {schema: ScanPriceTagInputSchema},
   output: {schema: ScanPriceTagOutputSchema},
   prompt: `You are a specialized retail vision agent for Krishna's SUPER 9+. 
-Your task is to identify the price on our shop's price tag.
+Your ONLY task is to identify the price located next to a "₹" symbol.
 
 CRITICAL INSTRUCTIONS:
-1. RUPEE SYMBOL MANDATORY: You MUST locate the currency symbol "₹". If you do not see the "₹" symbol in the photo, set the price to 0. This is the only way to confirm it is a valid price tag.
-2. EXTRACT THE PRICE: Look for the LARGE digits immediately following or next to the "₹" symbol. This is the item amount.
-3. IGNORE COLORS: The color of the tag (brown, red, white, etc.) does NOT matter. Only read the actual printed digits next to the ₹ symbol.
-4. FOCUS ON DESIGN: Focus ONLY on the printed design layout of the tag. 
-5. NO NOISE: Disregard branding, barcodes, or small secondary numbers elsewhere on the tag.
-6. ACCURACY: Return ONLY the exact numeric price found next to the "₹" symbol.
+1. STRICT RUPEE FOCUS: You MUST locate the currency symbol "₹". If you do not see the "₹" symbol in the photo, set the price to 0. 
+2. IGNORE TAG DESIGN/COLOR: Do NOT care about the color, shape, or design of the tag (brown, red, white, etc. are all the same). 
+3. EXTRACT ONLY THE AMOUNT: Look ONLY for the digits immediately following or next to the "₹" symbol. This is the item amount.
+4. DISREGARD EVERYTHING ELSE: Ignore barcodes, shop names, secondary numbers, or any other noise.
+5. ACCURACY: Return ONLY the numeric value found next to the "₹" symbol.
 
 Photo: {{media url=photoDataUri}}`,
 });
