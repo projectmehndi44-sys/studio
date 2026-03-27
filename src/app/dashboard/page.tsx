@@ -281,13 +281,13 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="mt-4 text-center space-y-1">
-          <p className="text-[6pt] font-light uppercase tracking-tight text-slate-500 whitespace-nowrap overflow-hidden">
+          <p className="text-[6pt] font-light uppercase tracking-tight text-slate-500">
             COMPUTER GENERATED RECEIPT.
           </p>
-          <p className="text-[6pt] font-light uppercase tracking-tight text-slate-500 whitespace-nowrap overflow-hidden">
+          <p className="text-[6pt] font-light uppercase tracking-tight text-slate-500 leading-tight">
             Bill mandatory for exchange; subject to quality check.
           </p>
-          <p className="text-[8pt] font-bold whitespace-nowrap overflow-hidden">Thank you for shopping at Krishna's Super 9+ !</p>
+          <p className="text-[8pt] font-bold mt-1">Thank you for shopping at Krishna's Super 9+ !</p>
         </div>
       </div>
 
@@ -505,7 +505,7 @@ export default function DashboardPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isPrinterSelectionOpen} onOpenChange={setIsPrinterSelectionOpen}>
+      <Dialog open={isPrinterSelectionOpen} onOpenChange={isPrinterSelectionOpen}>
         <DialogContent className="sm:max-w-md rounded-[32px] p-10 border-none shadow-2xl">
           <DialogHeader><DialogTitle className="text-2xl font-black uppercase text-secondary">Output Device</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-6">

@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from 'html5-qrcode';
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { CameraOff, CheckCircle, Zap, Loader2, Camera } from 'lucide-react';
+import { CameraOff, CheckCircle, Zap, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { scanPriceTag } from '@/ai/flows/scan-price-tag-flow';
 
@@ -19,22 +19,26 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [lastScanned, setLastScanned] = useState<string | null>(null);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
-  const [scanner, setScanner] = useState<Html5QrcodeScanner | null>(null);
+  const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
 
     const startScanner = async () => {
       try {
-        await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         setHasCameraPermission(true);
-        
-        const newScanner = new Html5QrcodeScanner(
-          "barcode-reader", 
-          { 
-            fps: 20, 
-            qrbox: { width: 300, height: 200 },
-            aspectRatio: 1.0,
+        stream.getTracks().forEach(track => track.stop()); // Just checking permission
+
+        const scannerId = "barcode-reader";
+        const scanner = new Html5Qrcode(scannerId);
+        html5QrCodeRef.current = scanner;
+
+        await scanner.start(
+          { facingMode: "environment" },
+          {
+            fps: 15,
+            qrbox: { width: 250, height: 150 },
             formatsToSupport: [
               Html5QrcodeSupportedFormats.EAN_13,
               Html5QrcodeSupportedFormats.EAN_8,
@@ -42,11 +46,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
               Html5QrcodeSupportedFormats.UPC_A,
               Html5QrcodeSupportedFormats.UPC_E
             ]
-          }, 
-          false
-        );
-
-        newScanner.render(
+          },
           (decodedText) => {
             setLastScanned(decodedText);
             onScanSuccess(decodedText);
@@ -54,15 +54,13 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           },
           () => { /* Noise reduction */ }
         );
-
-        setScanner(newScanner);
       } catch (error) {
         console.error('Error accessing camera:', error);
         setHasCameraPermission(false);
         toast({
           variant: 'destructive',
           title: 'Camera Access Denied',
-          description: 'Enable permissions for Continuous Scanning.',
+          description: 'Please allow camera access in your browser settings to use the scanner.',
         });
       }
     };
@@ -70,8 +68,8 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
     startScanner();
 
     return () => {
-      if (scanner) {
-        scanner.clear().catch(err => console.error("Scanner clear cleanup error", err));
+      if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
+        html5QrCodeRef.current.stop().catch(err => console.error("Scanner stop error", err));
       }
     };
   }, [isOpen]);

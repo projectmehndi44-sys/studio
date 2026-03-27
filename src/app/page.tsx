@@ -133,7 +133,6 @@ export default function POSPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Staff Persistence Logic
   useEffect(() => {
     if (user) {
       const savedStaff = localStorage.getItem(STAFF_STORAGE_KEY);
@@ -153,7 +152,6 @@ export default function POSPage() {
     toast({ title: "Staff Changed", description: `Terminal now active for ${name}` });
   };
 
-  // Auto-Focus Engine
   useEffect(() => {
     if (!isUserLoading && user && (!isLauncherEnabled || launcherActive)) {
       searchInputRef.current?.focus();
@@ -249,7 +247,6 @@ export default function POSPage() {
 
     addDocumentNonBlocking(collection(db, 'purchases'), { ...saleData, timestamp: serverTimestamp() });
 
-    // Logical Inventory Sync
     cartItems.forEach(item => {
       const sourceProduct = productsData?.find(p => p.id === item.id);
       if (sourceProduct && typeof sourceProduct.stock === 'number') {
@@ -297,7 +294,6 @@ export default function POSPage() {
   if (isUserLoading) return <div className="h-screen flex items-center justify-center bg-white"><p className="text-slate-400 font-bold animate-pulse text-[10px] tracking-[0.2em]">BOOTING TERMINAL...</p></div>;
   if (!user) return <PhoneAuthGate />;
 
-  // System Launcher Mode
   if (isLauncherEnabled && !launcherActive) {
     return (
       <div className="h-screen bg-slate-900 flex flex-col items-center justify-center p-8 text-white relative overflow-hidden font-body">
@@ -344,7 +340,6 @@ export default function POSPage() {
     <div className="flex flex-col h-screen bg-slate-50/50 overflow-hidden font-body">
       <Toaster />
       
-      {/* HIGH-FIDELITY PRINT ENGINE */}
       <div className={cn(
         "hidden print-only p-4 bg-white text-slate-900 min-h-screen font-receipt text-[10pt] leading-normal",
         printType === 'thermal' ? 'print-thermal' : 'print-normal'
@@ -393,13 +388,13 @@ export default function POSPage() {
           </div>
         </div>
         <div className="mt-4 text-center space-y-1">
-          <p className="text-[6pt] font-light uppercase tracking-tight text-slate-500 whitespace-nowrap overflow-hidden">
+          <p className="text-[6pt] font-light uppercase tracking-tight text-slate-500">
             COMPUTER GENERATED RECEIPT.
           </p>
-          <p className="text-[6pt] font-light uppercase tracking-tight text-slate-500 whitespace-nowrap overflow-hidden">
+          <p className="text-[6pt] font-light uppercase tracking-tight text-slate-500 leading-tight">
             Bill mandatory for exchange; subject to quality check.
           </p>
-          <p className="text-[8pt] font-bold whitespace-nowrap overflow-hidden">Thank you for shopping at Krishna's Super 9+ !</p>
+          <p className="text-[8pt] font-bold mt-1">Thank you for shopping at Krishna's Super 9+ !</p>
         </div>
       </div>
 
@@ -437,7 +432,6 @@ export default function POSPage() {
              </div>
            </div>
            
-           {/* REAL-TIME TOP TOTAL DISPLAY */}
            {cartItems.length > 0 && (
              <div className="ml-4 flex items-center gap-3 bg-primary/5 px-5 py-2 rounded-2xl animate-in fade-in zoom-in duration-300 border border-primary/10">
                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Bill</span>
@@ -541,7 +535,6 @@ export default function POSPage() {
         isAdmin={isAdmin}
       />
 
-      {/* SUCCESS DIALOG */}
       <Dialog open={isSuccessDialogOpen} onOpenChange={(val) => { setIsSuccessDialogOpen(val); }}>
         <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden print:hidden text-[9pt]">
           <div className="absolute top-0 left-0 w-full h-2 bg-emerald-500" />
@@ -619,7 +612,6 @@ export default function POSPage() {
         </DialogContent>
       </Dialog>
 
-      {/* PRINTER SELECTION */}
       <Dialog open={isPrinterSelectionOpen} onOpenChange={setIsPrinterSelectionOpen}>
         <DialogContent className="sm:max-w-md rounded-[32px] p-10 border-none shadow-2xl">
           <DialogHeader><DialogTitle className="text-2xl font-black uppercase text-secondary">Output Device</DialogTitle></DialogHeader>

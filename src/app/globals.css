@@ -57,14 +57,13 @@
     color: black !important;
   }
   
-  /* Thermal Printer Optimization (58/80mm) */
   .print-thermal {
     width: 58mm !important;
-    padding: 1mm !important;
+    padding: 0.5mm !important;
     font-size: 8pt !important;
+    overflow: hidden;
   }
   
-  /* Desktop Printer Optimization (A4) */
   .print-normal {
     width: 100% !important;
     max-width: 210mm;
