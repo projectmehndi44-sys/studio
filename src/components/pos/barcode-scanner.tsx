@@ -15,7 +15,7 @@ interface BarcodeScannerProps {
   isOpen: boolean;
 }
 
-const SCANNER_ID = "barcode-reader-surface-stable";
+const SCANNER_ID = "super-scanner-stable-container";
 
 export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeScannerProps) {
   const { toast } = useToast();
@@ -28,7 +28,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   const isTransitioningRef = useRef(false);
   const lastScannedRef = useRef<string | null>(null);
 
-  // Use refs for callbacks to prevent the useEffect from re-running and flickering the camera
   const onScanSuccessRef = useRef(onScanSuccess);
   const onOcrSuccessRef = useRef(onOcrSuccess);
 
@@ -61,7 +60,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   }, []);
 
   const performOcrScan = useCallback(async (isAuto = false) => {
-    // Avoid double-processing or processing while success overlay is shown
     if (isAiProcessing || lastScannedRef.current || !html5QrCodeRef.current?.isScanning) return;
 
     const video = document.querySelector(`#${SCANNER_ID} video`) as HTMLVideoElement;
@@ -86,7 +84,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         lastScannedRef.current = priceLabel;
         setLastScanned(priceLabel);
         
-        // Give visual feedback before calling success
         setTimeout(() => {
           onOcrSuccessRef.current(result.name, result.price);
         }, 1200);
@@ -114,7 +111,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
     let isMounted = true;
 
     const startScanner = async () => {
-      // Transition lock to prevent concurrent start/stop crashes (Atomic Lifecycle)
       if (isTransitioningRef.current) return;
       isTransitioningRef.current = true;
 
@@ -164,7 +160,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
 
         if (isMounted) {
           setHasCameraPermission(true);
-          // Set up the auto-scan loop
           if (autoScanIntervalRef.current) clearInterval(autoScanIntervalRef.current);
           autoScanIntervalRef.current = setInterval(() => {
             performOcrScan(true);
@@ -179,7 +174,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       }
     };
 
-    // Wait for Dialog animation to finish before touching hardware
     const timer = setTimeout(startScanner, 800);
 
     return () => {
@@ -197,7 +191,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           try {
             if (scanner.isScanning) {
               await scanner.stop();
-              // Prevent removeChild crash by ensuring library cleans up its own nodes safely
               scanner.clear(); 
             }
           } catch (err) {
@@ -220,7 +213,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           isAiProcessing ? "border-primary/50 scale-[1.01]" : "border-slate-100 scale-100"
         )}
       >
-        {/* Success Overlay */}
         {lastScanned && (
           <div className="absolute inset-0 z-20 bg-emerald-500/95 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
              <div className="h-24 w-24 bg-white rounded-[32px] flex items-center justify-center mb-6 shadow-2xl">
@@ -230,7 +222,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           </div>
         )}
 
-        {/* AI Processing Feedback */}
         {isAiProcessing && !lastScanned && (
           <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
             <div className="w-full h-full border-[10px] border-primary animate-pulse opacity-30 rounded-[28px]" />
@@ -241,7 +232,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           </div>
         )}
 
-        {/* Target Frame */}
         {!lastScanned && !isAiProcessing && (
           <div className="absolute inset-0 z-0 pointer-events-none flex flex-col items-center justify-center">
              <div className="w-64 h-40 border-2 border-dashed border-white/30 rounded-2xl relative">
