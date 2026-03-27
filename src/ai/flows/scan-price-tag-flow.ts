@@ -38,11 +38,11 @@ const prompt = ai.definePrompt({
 Your task is to identify the price on our shop's price tag.
 
 CRITICAL INSTRUCTIONS:
-1. COLOR-BLIND MODE: Ignore the color of the tag entirely (brown, red, white, etc. do not matter).
-2. FOCUS ON DESIGN: Focus ONLY on the printed design and layout of the tag.
-3. FIND THE RUPEE SYMBOL: Locate the large currency symbol "₹".
+1. COLOR-BLIND MODE: Ignore the color of the tag entirely (brown, red, white, orange, etc. do not matter).
+2. FOCUS ON DESIGN: Focus ONLY on the printed design layout of the tag.
+3. FIND THE RUPEE SYMBOL: Locate the currency symbol "₹".
 4. EXTRACT THE PRICE: Look for the LARGE digits immediately following or next to the "₹" symbol. This is the item amount.
-5. NO COLOR BIAS: Do not assume a tag color means a specific price. Only read the actual printed numbers.
+5. NO COLOR BIAS: Do not assume a tag color means a specific price. Only read the actual printed numbers after the ₹ symbol.
 6. IGNORE NOISE: Disregard branding, barcodes, or small secondary numbers elsewhere on the tag.
 7. ACCURACY: Return ONLY the exact numeric price found next to the "₹" symbol.
 

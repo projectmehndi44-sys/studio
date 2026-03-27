@@ -114,7 +114,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
     let isMounted = true;
 
     const startScanner = async () => {
-      // Transition lock to prevent concurrent start/stop/removeChild crashes
+      // Transition lock to prevent concurrent start/stop crashes
       if (isTransitioningRef.current) return;
       isTransitioningRef.current = true;
 
@@ -179,7 +179,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       }
     };
 
-    // Wait for Dialog animation to finish before starting camera hardware
+    // Wait for UI stabilization before starting camera
     const timer = setTimeout(startScanner, 800);
 
     return () => {
