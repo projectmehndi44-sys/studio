@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
@@ -207,6 +206,19 @@ export default function POSPage() {
     }
   };
 
+  const handleOcrSuccess = (name: string, price: number) => {
+    const customItem: Product = {
+      id: `ocr-${Date.now()}`,
+      name: name,
+      barcode: 'OCR_SCANNED',
+      price: price,
+      costPrice: price * 0.8,
+      category: 'General',
+      isPopular: false
+    };
+    handleProductSelect(customItem);
+  };
+
   const updateQuantity = (id: string, delta: number) => {
     setCartItems(prev => prev.map(item => item.id === id ? { ...item, quantity: Math.max(1, item.quantity + delta) } : item));
   };
@@ -298,15 +310,15 @@ export default function POSPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-left space-y-2">
-              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Active Staff</p>
-              <p className="text-4xl font-black tracking-tighter truncate">{activeStaffName}</p>
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Logged In As</p>
+              <p className="text-4xl font-black tracking-tighter truncate text-emerald-400">{getStaffName(user.phoneNumber)}</p>
             </div>
             <div className={cn("bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-left space-y-2", lowStockCount > 0 && "border-primary/50")}>
-              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{lowStockCount > 0 ? 'Stock Alerts' : 'System Status'}</p>
-              <p className={cn("text-4xl font-black tracking-tighter", lowStockCount > 0 && "text-primary")}>{lowStockCount > 0 ? `${lowStockCount} Low` : 'Active'}</p>
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Active Staff On Duty</p>
+              <p className="text-4xl font-black tracking-tighter text-white">{activeStaffName}</p>
             </div>
             <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-left space-y-2">
-              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Session Status</p>
+              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">System Status</p>
               <p className="text-4xl font-black tracking-tighter">SECURED</p>
             </div>
           </div>
@@ -351,7 +363,7 @@ export default function POSPage() {
           <div className="space-y-0.5 text-right">
             <p className="font-bold">Cust: {lastSale?.customerName || 'Walk-in'}</p>
             {lastSale?.customerId && <p className="font-bold">Phone: {lastSale.customerId}</p>}
-            <p className="font-bold">Staff: {lastSale?.staffName || activeStaffName}</p>
+            <p className="font-bold">Served By: {lastSale?.staffName || activeStaffName}</p>
             <p className="font-bold">Mode: {lastSale?.paymentMode || 'Cash'}</p>
           </div>
         </div>
@@ -401,23 +413,26 @@ export default function POSPage() {
                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em]">KRISHNA'S</span>
                <span className="text-base font-black tracking-tight uppercase text-secondary">SUPER 9+</span>
              </div>
-             <span className="text-[9px] font-black text-emerald-500 uppercase tracking-wider">Active: {activeStaffName}</span>
+             <span className="text-[9px] font-black text-emerald-500 uppercase tracking-wider">Logged in: {getStaffName(user.phoneNumber)}</span>
            </div>
            
            <div className="h-8 w-px bg-slate-100 mx-2" />
            
-           <div className="flex items-center gap-3">
-             <UserCircle className="h-4 w-4 text-slate-300" />
-             <Select value={activeStaffName} onValueChange={handleStaffChange}>
-               <SelectTrigger className="h-9 w-[160px] bg-slate-50 border-none rounded-xl font-bold text-[9px] uppercase tracking-widest">
-                 <SelectValue placeholder="Staff On Duty" />
-               </SelectTrigger>
-               <SelectContent className="rounded-xl border-none shadow-2xl">
-                 {Object.values(STAFF_MAPPING).map(name => (
-                   <SelectItem key={name} value={name} className="font-bold text-[10px] uppercase">{name}</SelectItem>
-                 ))}
-               </SelectContent>
-             </Select>
+           <div className="flex flex-col gap-1">
+             <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Served By (Duty)</span>
+             <div className="flex items-center gap-3">
+               <UserCircle className="h-4 w-4 text-primary" />
+               <Select value={activeStaffName} onValueChange={handleStaffChange}>
+                 <SelectTrigger className="h-9 w-[160px] bg-slate-50 border-none rounded-xl font-bold text-[9px] uppercase tracking-widest">
+                   <SelectValue placeholder="Staff On Duty" />
+                 </SelectTrigger>
+                 <SelectContent className="rounded-xl border-none shadow-2xl">
+                   {Object.values(STAFF_MAPPING).map(name => (
+                     <SelectItem key={name} value={name} className="font-bold text-[10px] uppercase">{name}</SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+             </div>
            </div>
            
            {/* REAL-TIME TOP TOTAL DISPLAY */}
@@ -634,7 +649,7 @@ export default function POSPage() {
             <div className="mx-auto w-16 h-16 bg-primary/5 rounded-[24px] flex items-center justify-center"><ScanLine className="h-8 w-8 text-primary" /></div>
             <DialogTitle className="text-center text-xl font-black uppercase text-secondary">Super Scanner</DialogTitle>
           </DialogHeader>
-          <div className="py-4"><BarcodeScanner isOpen={isScannerOpen} onScanSuccess={handleBarcodeScan} /></div>
+          <div className="py-4"><BarcodeScanner isOpen={isScannerOpen} onScanSuccess={handleBarcodeScan} onOcrSuccess={handleOcrSuccess} /></div>
           <DialogFooter><Button variant="secondary" className="w-full h-14 rounded-2xl font-black text-xs uppercase" onClick={() => setIsScannerOpen(false)}>Close Scanner</Button></DialogFooter>
         </DialogContent>
       </Dialog>
