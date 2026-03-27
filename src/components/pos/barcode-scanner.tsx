@@ -21,13 +21,13 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   const [lastScanned, setLastScanned] = useState<string | null>(null);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   
-  // Use a stable, unique ID for the scanner container
-  const scannerId = useRef(`scanner-container-stable`).current;
+  // Unique ID to avoid DOM collisions
+  const scannerId = useRef(`scanner-v3-unique`).current;
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const autoScanIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isTransitioningRef = useRef(false);
   
-  // CRITICAL: Store callbacks in refs to prevent useEffect re-triggering
+  // Callback Refs to prevent unnecessary effect re-runs (fixes flickering)
   const onScanSuccessRef = useRef(onScanSuccess);
   const onOcrSuccessRef = useRef(onOcrSuccess);
   const isAiProcessingRef = useRef(false);
@@ -63,7 +63,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
     }
   }, []);
 
-  // Stable OCR function that doesn't trigger effect re-runs
   const performOcrScan = useCallback(async (isAuto = false) => {
     if (isAiProcessingRef.current || !!lastScannedRef.current || !html5QrCodeRef.current?.isScanning) return;
 
@@ -89,7 +88,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         const priceLabel = `₹${result.price}`;
         setLastScanned(priceLabel);
         
-        // Use timeout to let the UI show the detected price before closing
+        // Brief success pause before filtering the terminal
         setTimeout(() => {
           onOcrSuccessRef.current(result.name, result.price);
         }, 1200);
@@ -99,7 +98,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         toast({ 
           variant: 'destructive', 
           title: "Scan Failed", 
-          description: "Ensure the tag is well-lit and the Rupee symbol is visible." 
+          description: "Ensure the tag is well-lit and the Rupee symbol (₹) is visible." 
         });
       }
     } finally {
@@ -113,7 +112,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
     let isMounted = true;
 
     const startScanner = async () => {
-      // Prevent multiple starts or overlapping transitions
+      // Transition lock to prevent concurrent sessions (fixes start errors)
       if (isTransitioningRef.current || html5QrCodeRef.current?.isScanning) return;
       isTransitioningRef.current = true;
 
@@ -150,49 +149,48 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
 
         if (isMounted) {
           setHasCameraPermission(true);
-          // Set interval for AI price tag hunting
+          // Set "Smart Hunt" interval for automated detection
           autoScanIntervalRef.current = setInterval(() => {
             performOcrScan(true);
           }, 3500);
         }
       } catch (err) {
-        console.error("Scanner start error:", err);
+        console.error("Scanner session error:", err);
         if (isMounted) setHasCameraPermission(false);
       } finally {
         isTransitioningRef.current = false;
       }
     };
 
-    // Give time for dialog animation to finish
-    const timer = setTimeout(startScanner, 350);
+    // Delay start until the dialog is fully settled
+    const startTimer = setTimeout(startScanner, 350);
 
     return () => {
       isMounted = false;
-      clearTimeout(timer);
+      clearTimeout(startTimer);
       if (autoScanIntervalRef.current) {
         clearInterval(autoScanIntervalRef.current);
       }
       
       const scanner = html5QrCodeRef.current;
       if (scanner) {
-        const stopAndCleanup = async () => {
+        const stopScannerSession = async () => {
           try {
             if (scanner.isScanning) {
               await scanner.stop();
             }
-            // Defensively clear DOM only if container still exists
+            // Clear DOM only AFTER the session is fully stopped (fixes removeChild error)
             const container = document.getElementById(scannerId);
             if (container) {
               container.innerHTML = "";
             }
           } catch (e) {
-            // Ignore stop errors during unmount
-            console.warn("Scanner teardown warning", e);
+            console.warn("Scanner shutdown warning", e);
           } finally {
             html5QrCodeRef.current = null;
           }
         };
-        stopAndCleanup();
+        stopScannerSession();
       }
     };
   }, [isOpen, scannerId, performOcrScan, playBeep]);
@@ -220,7 +218,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
             <div className="w-full h-full border-[10px] border-primary animate-pulse opacity-30 rounded-[28px]" />
             <div className="absolute bg-primary/90 backdrop-blur-md px-6 py-3 rounded-2xl flex items-center gap-3 shadow-2xl border border-white/20">
                <Loader2 className="h-4 w-4 text-white animate-spin" />
-               <span className="text-white font-black text-[9px] uppercase tracking-[0.2em]">AI Vision Hunting</span>
+               <span className="text-white font-black text-[9px] uppercase tracking-[0.2em]">Searching for ₹ Symbol</span>
             </div>
           </div>
         )}
@@ -230,7 +228,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
              <div className="w-56 h-32 border-2 border-dashed border-white/30 rounded-2xl relative">
                 <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-primary/40 shadow-[0_0_15px_rgba(var(--primary),0.5)] animate-bounce" />
              </div>
-             <p className="mt-8 text-white/30 font-black text-[8px] uppercase tracking-[0.4em]">Align Barcode or Tag</p>
+             <p className="mt-8 text-white/30 font-black text-[8px] uppercase tracking-[0.4em]">Align Barcode or ₹ Tag</p>
           </div>
         )}
       </div>
@@ -243,16 +241,16 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           className="h-14 rounded-2xl bg-slate-50 text-secondary font-black uppercase tracking-widest gap-3 text-[10px] border-2 border-transparent hover:border-primary/20 transition-all"
         >
           {isAiProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4 text-primary" />}
-          Manual Tag Capture
+          Manual Tag Hunt
         </Button>
       </div>
       
       {hasCameraPermission === false && (
         <Alert variant="destructive" className="rounded-3xl border-none shadow-xl bg-primary text-white p-6">
           <CameraOff className="h-5 w-5" />
-          <AlertTitle className="font-black uppercase tracking-tight text-xs mb-1 text-white">Camera Restricted</AlertTitle>
+          <AlertTitle className="font-black uppercase tracking-tight text-xs mb-1 text-white">Vision Restricted</AlertTitle>
           <AlertDescription className="text-[10px] font-bold opacity-90 leading-relaxed text-white/90">
-            Please enable camera access in browser settings to use the scanner.
+            Please allow camera access to enable the terminal's AI Vision engine.
           </AlertDescription>
         </Alert>
       )}

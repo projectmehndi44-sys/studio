@@ -21,7 +21,7 @@ export type ScanPriceTagInput = z.infer<typeof ScanPriceTagInputSchema>;
 
 const ScanPriceTagOutputSchema = z.object({
   name: z.string().describe('The name of the product if visible. Use "Scanned Item" if not clear.'),
-  price: z.number().describe('The numeric price extracted from the tag.'),
+  price: z.number().describe('The numeric price extracted from the tag. Must be 0 if no Rupee symbol is found.'),
   confidence: z.number().describe('Confidence level 0-1.'),
 });
 export type ScanPriceTagOutput = z.infer<typeof ScanPriceTagOutputSchema>;
@@ -38,13 +38,12 @@ const prompt = ai.definePrompt({
 Your task is to identify the price on our shop's price tag.
 
 CRITICAL INSTRUCTIONS:
-1. COLOR-BLIND MODE: Ignore the color of the tag entirely (brown, red, white, orange, etc. do not matter).
-2. FOCUS ON DESIGN: Focus ONLY on the printed design layout of the tag.
-3. FIND THE RUPEE SYMBOL: Locate the currency symbol "₹".
-4. EXTRACT THE PRICE: Look for the LARGE digits immediately following or next to the "₹" symbol. This is the item amount.
-5. NO COLOR BIAS: Do not assume a tag color means a specific price. Only read the actual printed numbers after the ₹ symbol.
-6. IGNORE NOISE: Disregard branding, barcodes, or small secondary numbers elsewhere on the tag.
-7. ACCURACY: Return ONLY the exact numeric price found next to the "₹" symbol.
+1. RUPEE SYMBOL MANDATORY: You MUST locate the currency symbol "₹". If you do not see the "₹" symbol, set the price to 0.
+2. EXTRACT THE PRICE: Look for the LARGE digits immediately following or next to the "₹" symbol. This is the item amount.
+3. IGNORE COLORS: The color of the tag (brown, red, white, etc.) does NOT matter. Only read the actual printed digits next to the ₹ symbol.
+4. FOCUS ON DESIGN: Focus ONLY on the printed design layout of the tag. 
+5. NO NOISE: Disregard branding, barcodes, or small secondary numbers elsewhere on the tag.
+6. ACCURACY: Return ONLY the exact numeric price found next to the "₹" symbol.
 
 Photo: {{media url=photoDataUri}}`,
 });
