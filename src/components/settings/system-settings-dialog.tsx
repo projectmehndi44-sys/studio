@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -18,7 +17,9 @@ import {
   RefreshCw,
   Clock,
   AlertTriangle,
-  Skull
+  Skull,
+  Calendar as CalendarIcon,
+  Loader2
 } from 'lucide-react';
 import {
   Dialog,
@@ -41,10 +42,11 @@ import {
   useCollection,
   deleteDocumentNonBlocking 
 } from '@/firebase';
-import { doc, collection, query, where, getDocs, writeBatch, Timestamp } from 'firebase/firestore';
+import { doc, collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { subDays } from 'date-fns';
+import { subDays, format, isBefore, startOfDay } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface SystemSettingsDialogProps {
   isOpen: boolean;
@@ -57,6 +59,7 @@ export function SystemSettingsDialog({ isOpen, onClose, isAdmin }: SystemSetting
   const db = useFirestore();
   const [isCleaning, setIsCleaning] = useState(false);
   const [activeTab, setActiveTab] = useState('shop');
+  const [customCutoffDate, setCustomCutoffDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   
   const settingsRef = useMemoFirebase(() => doc(db, 'settings', 'config'), [db]);
   const { data: currentSettings } = useDoc(settingsRef);
@@ -105,18 +108,16 @@ export function SystemSettingsDialog({ isOpen, onClose, isAdmin }: SystemSetting
     onClose();
   };
 
-  const cleanOldData = async (days: number) => {
-    if (!isAdmin || !confirm(`Clean all sales and logs older than ${days} days?`)) return;
+  const cleanByCutoff = async (cutoff: Date, label: string) => {
+    if (!isAdmin || !confirm(`Clean all sales and logs older than ${label}?`)) return;
     
     setIsCleaning(true);
-    const cutoffDate = subDays(new Date(), days);
-    
     try {
-      const pQuery = query(collection(db, 'purchases'), where('timestamp', '<', Timestamp.fromDate(cutoffDate)));
+      const pQuery = query(collection(db, 'purchases'), where('timestamp', '<', Timestamp.fromDate(cutoff)));
       const pSnap = await getDocs(pQuery);
       pSnap.docs.forEach(d => deleteDocumentNonBlocking(d.ref));
 
-      const cQuery = query(collection(db, 'cashTransactions'), where('timestamp', '<', Timestamp.fromDate(cutoffDate)));
+      const cQuery = query(collection(db, 'cashTransactions'), where('timestamp', '<', Timestamp.fromDate(cutoff)));
       const cSnap = await getDocs(cQuery);
       cSnap.docs.forEach(d => deleteDocumentNonBlocking(d.ref));
 
@@ -132,8 +133,8 @@ export function SystemSettingsDialog({ isOpen, onClose, isAdmin }: SystemSetting
     if (!isAdmin) return;
     
     const message = type === 'ledger' 
-      ? "NUCLEAR ACTION: DELETE ALL Sales and Cash Logs? This will wipe your entire history permanently."
-      : "NUCLEAR ACTION: DELETE ALL Products? This will empty your Stock Master completely.";
+      ? "NUCLEAR ACTION: DELETE ALL Ledger History? This will wipe every Sale and Cash Log permanently."
+      : "NUCLEAR ACTION: DELETE ALL Stocks Inventory? This will empty your entire Product catalog.";
     
     if (!confirm(message)) return;
 
@@ -217,7 +218,7 @@ export function SystemSettingsDialog({ isOpen, onClose, isAdmin }: SystemSetting
             </form>
           </TabsContent>
 
-          <TabsContent value="data" className="p-10 space-y-10 bg-white m-0 h-[500px] overflow-y-auto">
+          <TabsContent value="data" className="p-10 space-y-10 bg-white m-0 h-[500px] overflow-y-auto custom-scrollbar">
             <div className="space-y-6">
               <div className="bg-slate-50 p-8 rounded-[32px] border border-slate-100 space-y-6">
                 <div className="flex items-center justify-between">
@@ -231,31 +232,49 @@ export function SystemSettingsDialog({ isOpen, onClose, isAdmin }: SystemSetting
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-400"><span>Free Tier Capacity</span><span>{usagePercentage.toFixed(1)}%</span></div>
+                  <div className="flex justify-between text-[9px] font-black uppercase tracking-widest text-slate-400"><span>Free Tier Capacity (50k limit)</span><span>{usagePercentage.toFixed(1)}%</span></div>
                   <Progress value={usagePercentage} className="h-2 bg-white" />
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /><h4 className="text-[10px] font-black uppercase tracking-widest text-secondary">Historical Cleanup</h4></div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <Button variant="outline" disabled={isCleaning} onClick={() => cleanOldData(30)} className="h-14 rounded-2xl flex flex-col items-center justify-center border-slate-100 hover:bg-primary/5 hover:border-primary/20 group">
-                    <span className="text-[10px] font-black text-secondary group-hover:text-primary uppercase">30 Days</span>
-                    <span className="text-[8px] font-bold text-slate-400 uppercase">Purge Legacy</span>
-                  </Button>
-                  <Button variant="outline" disabled={isCleaning} onClick={() => cleanOldData(90)} className="h-14 rounded-2xl flex flex-col items-center justify-center border-slate-100 hover:bg-primary/5 hover:border-primary/20 group">
-                    <span className="text-[10px] font-black text-secondary group-hover:text-primary uppercase">90 Days</span>
-                    <span className="text-[8px] font-bold text-slate-400 uppercase">Standard Purge</span>
-                  </Button>
-                  <Button variant="outline" disabled={isCleaning} onClick={() => cleanOldData(365)} className="h-14 rounded-2xl flex flex-col items-center justify-center border-slate-100 hover:bg-primary/5 hover:border-primary/20 group">
-                    <span className="text-[10px] font-black text-secondary group-hover:text-primary uppercase">Annual</span>
-                    <span className="text-[8px] font-bold text-slate-400 uppercase">Archive Clean</span>
-                  </Button>
+              <div className="space-y-6">
+                <div className="flex items-center gap-2"><Clock className="h-4 w-4 text-primary" /><h4 className="text-[10px] font-black uppercase tracking-widest text-secondary">History & Cleanup</h4></div>
+                
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Button variant="outline" disabled={isCleaning} onClick={() => cleanByCutoff(subDays(new Date(), 30), "30 Days")} className="h-14 rounded-2xl flex flex-col items-center justify-center border-slate-100 hover:bg-slate-50 group">
+                      <span className="text-[10px] font-black text-secondary uppercase">Delete Ledger &lt; 30 Days</span>
+                      <span className="text-[8px] font-bold text-slate-400 uppercase">Retention Purge</span>
+                    </Button>
+                    <Button variant="outline" disabled={isCleaning} onClick={() => cleanByCutoff(subDays(new Date(), 90), "90 Days")} className="h-14 rounded-2xl flex flex-col items-center justify-center border-slate-100 hover:bg-slate-50 group">
+                      <span className="text-[10px] font-black text-secondary uppercase">Delete Ledger &lt; 90 Days</span>
+                      <span className="text-[8px] font-bold text-slate-400 uppercase">Quarterly Purge</span>
+                    </Button>
+                  </div>
+
+                  <div className="bg-slate-50 p-6 rounded-[24px] border border-slate-100 space-y-4">
+                    <p className="text-[9px] font-black uppercase text-slate-400">Custom Cutoff Purge</p>
+                    <div className="flex flex-col md:flex-row gap-3">
+                      <Input 
+                        type="date" 
+                        value={customCutoffDate} 
+                        onChange={(e) => setCustomCutoffDate(e.target.value)} 
+                        className="h-12 bg-white border-slate-200 rounded-xl font-bold text-xs"
+                      />
+                      <Button 
+                        disabled={isCleaning || !customCutoffDate} 
+                        onClick={() => cleanByCutoff(startOfDay(new Date(customCutoffDate)), format(new Date(customCutoffDate), 'dd MMM yyyy'))}
+                        className="h-12 px-6 rounded-xl font-black uppercase text-[9px] bg-secondary text-white gap-2"
+                      >
+                        <Trash2 className="h-3 w-3" /> Delete History older than selected date
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <div className="pt-6 border-t border-slate-100">
-                <div className="flex items-center gap-2 mb-4"><Skull className="h-4 w-4 text-primary" /><h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Danger Zone (Reset Terminal)</h4></div>
+                <div className="flex items-center gap-2 mb-4"><Skull className="h-4 w-4 text-primary" /><h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Danger Zone (Nuclear Resets)</h4></div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Button 
                     variant="destructive" 
@@ -263,7 +282,7 @@ export function SystemSettingsDialog({ isOpen, onClose, isAdmin }: SystemSetting
                     onClick={() => purgeAllData('ledger')}
                     className="h-16 rounded-[24px] flex flex-col items-center justify-center gap-1 bg-primary/10 hover:bg-primary text-primary hover:text-white border-none transition-all shadow-sm"
                   >
-                    <span className="text-[10px] font-black uppercase">Purge Ledger Data</span>
+                    <span className="text-[10px] font-black uppercase">Delete All Ledger History</span>
                     <span className="text-[8px] font-bold uppercase opacity-80">Wipe Sales & Cash Logs</span>
                   </Button>
                   <Button 
@@ -272,7 +291,7 @@ export function SystemSettingsDialog({ isOpen, onClose, isAdmin }: SystemSetting
                     onClick={() => purgeAllData('inventory')}
                     className="h-16 rounded-[24px] flex flex-col items-center justify-center gap-1 bg-primary/10 hover:bg-primary text-primary hover:text-white border-none transition-all shadow-sm"
                   >
-                    <span className="text-[10px] font-black uppercase">Purge Inventory</span>
+                    <span className="text-[10px] font-black uppercase">Delete All Stocks Inventory</span>
                     <span className="text-[8px] font-bold uppercase opacity-80">Wipe Stock Master</span>
                   </Button>
                 </div>
@@ -281,7 +300,7 @@ export function SystemSettingsDialog({ isOpen, onClose, isAdmin }: SystemSetting
               <div className="p-6 bg-primary/5 border border-primary/10 rounded-[24px] flex items-start gap-4">
                 <AlertTriangle className="h-5 w-5 text-primary shrink-0 mt-1" />
                 <p className="text-[10px] font-bold text-primary/80 uppercase leading-relaxed tracking-wider">
-                  Nuclear actions are permanent. Resetting will erase all test data. Use only before deploying for actual business use.
+                  Caution: Deletions are final. Ensure you have exported required data to Excel/PDF before purging records.
                 </p>
               </div>
             </div>
