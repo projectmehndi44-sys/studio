@@ -29,7 +29,6 @@ import { Product, CartItem, PurchaseRecord } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
 import { CartList } from '@/components/pos/cart-list';
 import { CheckoutPanel } from '@/components/pos/checkout-panel';
-import { QuickTapGrid } from '@/components/pos/quick-tap-grid';
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import Link from 'next/link';
@@ -503,13 +502,6 @@ export default function POSPage() {
                   <FastForward className="h-5 w-5" /> EXACT CASH
                 </Button>
               </div>
-              <div className="h-[180px] shrink-0">
-                <div className="flex items-center gap-2 mb-3">
-                  <Zap className="h-4 w-4 text-primary fill-primary" />
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Quick Tap Items</h3>
-                </div>
-                <QuickTapGrid products={productsData || []} onProductSelect={handleProductSelect} />
-              </div>
               <div className="flex-1 overflow-hidden">
                 <CartList items={cartItems} onUpdateQuantity={updateQuantity} onUpdatePrice={updatePrice} onRemoveItem={removeItem} />
               </div>
@@ -530,7 +522,6 @@ export default function POSPage() {
                   <ProductSearch inputRef={searchInputRef} products={productsData || []} onProductSelect={handleProductSelect} onScanClick={() => setIsScannerOpen(true)} onAddNewProduct={handleAddNewProduct} />
                   <Button disabled={cartItems.length === 0} onClick={handleFastPay} className="h-14 w-14 p-0 rounded-2xl bg-emerald-500 text-white shadow-lg shrink-0"><FastForward className="h-6 w-6" /></Button>
                 </div>
-                <QuickTapGrid products={productsData || []} onProductSelect={handleProductSelect} />
                 <CartList items={cartItems} onUpdateQuantity={updateQuantity} onUpdatePrice={updatePrice} onRemoveItem={removeItem} />
               </TabsContent>
               <TabsContent value="checkout" className="flex-1 overflow-hidden">
