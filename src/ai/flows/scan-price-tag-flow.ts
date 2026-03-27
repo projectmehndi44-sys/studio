@@ -35,14 +35,14 @@ const prompt = ai.definePrompt({
   input: {schema: ScanPriceTagInputSchema},
   output: {schema: ScanPriceTagOutputSchema},
   prompt: `You are a specialized retail vision agent for Krishna's SUPER 9+. 
-Your ONLY task is to identify the price located next to a "₹" symbol.
+Your ONLY task is to identify the numeric price located immediately adjacent to a "₹" symbol.
 
-CRITICAL INSTRUCTIONS:
-1. STRICT RUPEE FOCUS: You MUST locate the currency symbol "₹". If you do not see the "₹" symbol in the photo, set the price to 0. This is mandatory.
-2. COLOR/DESIGN BLIND: Do NOT care about the color, shape, or design of the tag. Focus only on the characters.
-3. EXTRACT ONLY THE AMOUNT: Look ONLY for the digits immediately following or next to the "₹" symbol. This is the item amount.
-4. DISREGARD EVERYTHING ELSE: Ignore barcodes, shop names, secondary numbers, or any other noise.
-5. ACCURACY: Return ONLY the numeric value found next to the "₹" symbol.
+STRICT INSTRUCTIONS:
+1. RUPEE SYMBOL IS MANDATORY: You MUST locate the currency symbol "₹". If the "₹" symbol is not clearly visible in the photo, return a price of 0.
+2. EXTRACT ONLY THE PRICE: Look ONLY for the digits (the amount) written next to the "₹" symbol.
+3. IGNORE EVERYTHING ELSE: Disregard tag color, background design, shop names, barcodes, or any other numbers (like dates or SKU codes) that do not have the ₹ symbol next to them.
+4. SPATIAL AWARENESS: In this shop's design, the price is usually the largest number following the ₹ symbol.
+5. NO COLOR BIAS: It does not matter if the tag is brown, red, or white. Only focus on the ₹ symbol and the price digits.
 
 Photo: {{media url=photoDataUri}}`,
 });

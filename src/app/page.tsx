@@ -303,35 +303,35 @@ export default function POSPage() {
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1557683316-973673baf926')] bg-cover opacity-10" />
         <div className="z-10 text-center space-y-12 max-w-4xl w-full animate-in fade-in zoom-in-95 duration-700">
           <div className="space-y-4">
-            <h1 className="text-8xl font-black tracking-tighter uppercase leading-none">{format(currentTime, 'HH:mm')}</h1>
-            <p className="text-2xl font-bold text-primary uppercase tracking-[0.3em]">{format(currentTime, 'EEEE, dd MMMM')}</p>
+            <h1 className="text-6xl md:text-8xl font-black tracking-tighter uppercase leading-none">{format(currentTime, 'HH:mm')}</h1>
+            <p className="text-lg md:text-2xl font-bold text-primary uppercase tracking-[0.3em]">{format(currentTime, 'EEEE, dd MMMM')}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-left space-y-2">
+            <div className="bg-white/5 backdrop-blur-xl p-6 md:p-8 rounded-[40px] border border-white/10 text-left space-y-2">
               <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Logged In As</p>
-              <p className="text-4xl font-black tracking-tighter truncate text-emerald-400">{getStaffName(user.phoneNumber)}</p>
+              <p className="text-2xl md:text-4xl font-black tracking-tighter truncate text-emerald-400">{getStaffName(user.phoneNumber)}</p>
             </div>
-            <div className={cn("bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-left space-y-2", lowStockCount > 0 && "border-primary/50")}>
+            <div className={cn("bg-white/5 backdrop-blur-xl p-6 md:p-8 rounded-[40px] border border-white/10 text-left space-y-2", lowStockCount > 0 && "border-primary/50")}>
               <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Active Staff On Duty</p>
-              <p className="text-4xl font-black tracking-tighter text-white">{activeStaffName}</p>
+              <p className="text-2xl md:text-4xl font-black tracking-tighter text-white">{activeStaffName}</p>
             </div>
-            <div className="bg-white/5 backdrop-blur-xl p-8 rounded-[40px] border border-white/10 text-left space-y-2">
+            <div className="bg-white/5 backdrop-blur-xl p-6 md:p-8 rounded-[40px] border border-white/10 text-left space-y-2">
               <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">System Status</p>
-              <p className="text-4xl font-black tracking-tighter">SECURED</p>
+              <p className="text-2xl md:text-4xl font-black tracking-tighter">SECURED</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <button onClick={() => { setLauncherActive(true); toggleFullscreen(true); }} className="group bg-primary p-10 rounded-[48px] flex flex-col items-center justify-center gap-4 transition-all hover:scale-105 shadow-2xl">
-              <ShoppingBag className="h-12 w-12 text-white" /><span className="font-black uppercase text-xs">Terminal</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+            <button onClick={() => { setLauncherActive(true); toggleFullscreen(true); }} className="group bg-primary p-6 md:p-10 rounded-[48px] flex flex-col items-center justify-center gap-4 transition-all hover:scale-105 shadow-2xl">
+              <ShoppingBag className="h-8 w-8 md:h-12 md:w-12 text-white" /><span className="font-black uppercase text-[10px] md:text-xs">Terminal</span>
             </button>
-            <Link href="/dashboard" className="bg-white/5 p-10 rounded-[48px] flex flex-col items-center justify-center gap-4 hover:bg-white/10 border border-white/10">
-              <LayoutDashboard className="h-12 w-12 text-white" /><span className="font-black uppercase text-xs">Ledger</span>
+            <Link href="/dashboard" className="bg-white/5 p-6 md:p-10 rounded-[48px] flex flex-col items-center justify-center gap-4 hover:bg-white/10 border border-white/10">
+              <LayoutDashboard className="h-8 w-8 md:h-12 md:w-12 text-white" /><span className="font-black uppercase text-[10px] md:text-xs">Ledger</span>
             </Link>
-            <Link href="/inventory" className="bg-white/5 p-10 rounded-[48px] flex flex-col items-center justify-center gap-4 hover:bg-white/10 border border-white/10">
-              <PackageSearch className="h-12 w-12 text-white" /><span className="font-black uppercase text-xs">Inventory</span>
+            <Link href="/inventory" className="bg-white/5 p-6 md:p-10 rounded-[48px] flex flex-col items-center justify-center gap-4 hover:bg-white/10 border border-white/10">
+              <PackageSearch className="h-8 w-8 md:h-12 md:w-12 text-white" /><span className="font-black uppercase text-[10px] md:text-xs">Inventory</span>
             </Link>
-            <button onClick={() => auth.signOut()} className="bg-white/5 p-10 rounded-[48px] flex flex-col items-center justify-center gap-4 hover:bg-white/10 border border-white/10">
-              <LogOut className="h-12 w-12 text-white" /><span className="font-black uppercase text-xs">Sign Out</span>
+            <button onClick={() => auth.signOut()} className="bg-white/5 p-6 md:p-10 rounded-[48px] flex flex-col items-center justify-center gap-4 hover:bg-white/10 border border-white/10">
+              <LogOut className="h-8 w-8 md:h-12 md:w-12 text-white" /><span className="font-black uppercase text-[10px] md:text-xs">Sign Out</span>
             </button>
           </div>
         </div>
@@ -400,29 +400,29 @@ export default function POSPage() {
         </div>
       </div>
 
-      <header className="h-20 border-b border-slate-100 bg-white flex items-center justify-between px-8 shrink-0 z-20 print:hidden shadow-sm">
-        <div className="flex items-center gap-6">
+      <header className="h-16 md:h-20 border-b border-slate-100 bg-white flex items-center justify-between px-4 md:px-8 shrink-0 z-20 print:hidden shadow-sm">
+        <div className="flex items-center gap-4 md:gap-6">
            {isLauncherEnabled && (
-             <button onClick={() => { setLauncherActive(false); toggleFullscreen(false); }} className="h-10 w-10 rounded-xl bg-slate-50 text-secondary flex items-center justify-center">
-               <Monitor className="h-5 w-5" />
+             <button onClick={() => { setLauncherActive(false); toggleFullscreen(false); }} className="h-9 w-9 md:h-10 md:w-10 rounded-xl bg-slate-50 text-secondary flex items-center justify-center">
+               <Monitor className="h-4 w-4 md:h-5 md:w-5" />
              </button>
            )}
            <div className="flex flex-col">
              <div className="flex items-center gap-2">
-               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em]">KRISHNA'S</span>
-               <span className="text-base font-black tracking-tight uppercase text-secondary">SUPER 9+</span>
+               <span className="text-[8px] md:text-[10px] font-bold text-slate-400 uppercase tracking-[0.1em]">KRISHNA'S</span>
+               <span className="text-sm md:text-base font-black tracking-tight uppercase text-secondary">SUPER 9+</span>
              </div>
-             <span className="text-[9px] font-black text-emerald-500 uppercase tracking-wider">Logged in: {getStaffName(user.phoneNumber)}</span>
+             <span className="text-[7px] md:text-[9px] font-black text-emerald-500 uppercase tracking-wider">Logged in: {getStaffName(user.phoneNumber)}</span>
            </div>
            
-           <div className="h-8 w-px bg-slate-100 mx-2" />
+           <div className="hidden sm:block h-8 w-px bg-slate-100 mx-2" />
            
-           <div className="flex flex-col gap-1">
+           <div className="hidden sm:flex flex-col gap-1">
              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Served By (Duty)</span>
              <div className="flex items-center gap-3">
                <UserCircle className="h-4 w-4 text-primary" />
                <Select value={activeStaffName} onValueChange={handleStaffChange}>
-                 <SelectTrigger className="h-9 w-[160px] bg-slate-50 border-none rounded-xl font-bold text-[9px] uppercase tracking-widest">
+                 <SelectTrigger className="h-8 md:h-9 w-[120px] md:w-[160px] bg-slate-50 border-none rounded-xl font-bold text-[8px] md:text-[9px] uppercase tracking-widest">
                    <SelectValue placeholder="Staff On Duty" />
                  </SelectTrigger>
                  <SelectContent className="rounded-xl border-none shadow-2xl">
@@ -435,45 +435,45 @@ export default function POSPage() {
            </div>
            
            {cartItems.length > 0 && (
-             <div className="ml-4 flex items-center gap-3 bg-primary/5 px-5 py-2 rounded-2xl animate-in fade-in zoom-in duration-300 border border-primary/10">
-               <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Bill</span>
-               <span className="text-xl font-black text-primary tracking-tighter">₹{cartTotalPrice.toLocaleString()}</span>
+             <div className="ml-2 md:ml-4 flex items-center gap-2 md:gap-3 bg-primary/5 px-3 md:px-5 py-1.5 md:py-2 rounded-2xl animate-in fade-in zoom-in duration-300 border border-primary/10">
+               <span className="hidden xs:block text-[8px] md:text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Total Bill</span>
+               <span className="text-base md:text-xl font-black text-primary tracking-tighter">₹{cartTotalPrice.toLocaleString()}</span>
              </div>
            )}
         </div>
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2 md:gap-6">
           <Button 
             variant="ghost" 
             size="sm" 
             onClick={handleSettingsClick}
-            className="h-10 px-4 rounded-xl font-bold text-[10px] uppercase text-slate-500 gap-2"
+            className="hidden sm:flex h-9 md:h-10 px-3 md:px-4 rounded-xl font-bold text-[8px] md:text-[10px] uppercase text-slate-500 gap-2"
           >
-            <Settings className="h-4 w-4" /> System
+            <Settings className="h-3.5 w-3.5 md:h-4 md:w-4" /> System
           </Button>
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-slate-50">
+              <Button variant="ghost" size="icon" className="h-9 w-9 md:h-10 md:w-10 rounded-xl hover:bg-slate-50">
                 <Menu className="h-5 w-5 text-slate-600" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-[340px] p-8 border-none shadow-2xl rounded-l-[40px]">
-              <SheetHeader><SheetTitle className="text-left font-black uppercase text-2xl text-secondary">Menu</SheetTitle></SheetHeader>
-              <nav className="flex flex-col gap-3 pt-8">
-                <Link href="/" className="flex items-center justify-between p-4 bg-secondary/5 text-secondary rounded-2xl font-bold uppercase text-xs">
-                  <ShoppingBag className="h-5 w-5 mr-3" /> Billing Desk <ChevronRight className="h-4 w-4" />
+            <SheetContent side="right" className="w-[280px] md:w-[340px] p-6 md:p-8 border-none shadow-2xl rounded-l-[40px]">
+              <SheetHeader><SheetTitle className="text-left font-black uppercase text-xl md:text-2xl text-secondary">Menu</SheetTitle></SheetHeader>
+              <nav className="flex flex-col gap-2 md:gap-3 pt-6 md:pt-8">
+                <Link href="/" className="flex items-center justify-between p-3 md:p-4 bg-secondary/5 text-secondary rounded-2xl font-bold uppercase text-[10px] md:text-xs">
+                  <div className="flex items-center gap-3"><ShoppingBag className="h-4 w-4 md:h-5 md:w-5" /> Billing Desk</div> <ChevronRight className="h-4 w-4" />
                 </Link>
                 {isAdmin && (
                   <>
-                    <Link href="/inventory" className="flex items-center justify-between p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-bold uppercase text-xs">
-                      <PackageSearch className="h-5 w-5 mr-3" /> Stock Master <ChevronRight className="h-4 w-4" />
+                    <Link href="/inventory" className="flex items-center justify-between p-3 md:p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-bold uppercase text-[10px] md:text-xs">
+                      <div className="flex items-center gap-3"><PackageSearch className="h-4 w-4 md:h-5 md:w-5" /> Stock Master</div> <ChevronRight className="h-4 w-4" />
                     </Link>
-                    <Link href="/dashboard" className="flex items-center justify-between p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-bold uppercase text-xs">
-                      <LayoutDashboard className="h-5 w-5 mr-3" /> Business Ledger <ChevronRight className="h-4 w-4" />
+                    <Link href="/dashboard" className="flex items-center justify-between p-3 md:p-4 hover:bg-slate-50 text-slate-600 rounded-2xl font-bold uppercase text-[10px] md:text-xs">
+                      <div className="flex items-center gap-3"><LayoutDashboard className="h-4 w-4 md:h-5 md:w-5" /> Business Ledger</div> <ChevronRight className="h-4 w-4" />
                     </Link>
                   </>
                 )}
-                <Button onClick={() => auth.signOut()} variant="destructive" className="w-full h-14 font-bold rounded-2xl gap-3 text-xs uppercase mt-8 shadow-lg">
-                  <LogOut className="h-5 w-5" /> EXIT TERMINAL
+                <Button onClick={() => auth.signOut()} variant="destructive" className="w-full h-12 md:h-14 font-bold rounded-2xl gap-3 text-[10px] md:text-xs uppercase mt-6 md:mt-8 shadow-lg">
+                  <LogOut className="h-4 w-4 md:h-5 md:w-5" /> EXIT TERMINAL
                 </Button>
               </nav>
             </SheetContent>
@@ -481,10 +481,10 @@ export default function POSPage() {
         </div>
       </header>
 
-      <main className={cn("flex-1 overflow-hidden print:hidden", !isMobile ? "grid grid-cols-[1fr_420px] h-full" : "flex flex-col")}>
+      <main className={cn("flex-1 overflow-hidden print:hidden", !isMobile ? "grid grid-cols-[1fr_360px] lg:grid-cols-[1fr_420px] h-full" : "flex flex-col")}>
         {!isMobile ? (
           <>
-            <div className="flex flex-col h-full p-8 overflow-hidden gap-8 bg-white/40 border-r border-slate-100">
+            <div className="flex flex-col h-full p-6 md:p-8 overflow-hidden gap-6 md:gap-8 bg-white/40 border-r border-slate-100">
               <div className="flex items-center gap-4">
                 <ProductSearch 
                   inputRef={searchInputRef} 
@@ -498,9 +498,9 @@ export default function POSPage() {
                 <Button 
                   disabled={cartItems.length === 0} 
                   onClick={handleFastPay} 
-                  className="h-14 px-8 rounded-2xl font-black text-xs uppercase bg-emerald-500 text-white shadow-xl gap-2 shrink-0 hover:bg-emerald-600 transition-all"
+                  className="h-12 md:h-14 px-6 md:px-8 rounded-2xl font-black text-[10px] md:text-xs uppercase bg-emerald-500 text-white shadow-xl gap-2 shrink-0 hover:bg-emerald-600 transition-all"
                 >
-                  <FastForward className="h-5 w-5" /> EXACT CASH
+                  <FastForward className="h-4 w-4 md:h-5 md:w-5" /> EXACT CASH
                 </Button>
               </div>
               <div className="flex-1 overflow-hidden">
@@ -512,13 +512,13 @@ export default function POSPage() {
             </div>
           </>
         ) : (
-          <div className="flex flex-col h-full overflow-hidden p-4 gap-4">
+          <div className="flex flex-col h-full overflow-hidden p-3 md:p-4 gap-3 md:gap-4">
             <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="flex-1 flex flex-col overflow-hidden">
-              <TabsList className="grid w-full grid-cols-2 bg-slate-100 rounded-2xl p-1 mb-4 h-14">
-                <TabsTrigger value="products" className="font-bold text-[10px] uppercase">Catalog</TabsTrigger>
-                <TabsTrigger value="checkout" className="font-bold text-[10px] uppercase" disabled={cartItems.length === 0}>Bill ({cartItems.length})</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 bg-slate-100 rounded-2xl p-1 mb-3 md:mb-4 h-12 md:h-14">
+                <TabsTrigger value="products" className="font-bold text-[9px] md:text-[10px] uppercase">Catalog</TabsTrigger>
+                <TabsTrigger value="checkout" className="font-bold text-[9px] md:text-[10px] uppercase" disabled={cartItems.length === 0}>Bill ({cartItems.length})</TabsTrigger>
               </TabsList>
-              <TabsContent value="products" className="flex-1 overflow-hidden flex flex-col gap-4">
+              <TabsContent value="products" className="flex-1 overflow-hidden flex flex-col gap-3 md:gap-4">
                 <div className="flex items-center gap-2">
                   <ProductSearch 
                     inputRef={searchInputRef} 
@@ -529,7 +529,7 @@ export default function POSPage() {
                     query={searchQuery}
                     setQuery={setSearchQuery}
                   />
-                  <Button disabled={cartItems.length === 0} onClick={handleFastPay} className="h-14 w-14 p-0 rounded-2xl bg-emerald-500 text-white shadow-lg shrink-0"><FastForward className="h-6 w-6" /></Button>
+                  <Button disabled={cartItems.length === 0} onClick={handleFastPay} className="h-12 w-12 md:h-14 md:w-14 p-0 rounded-2xl bg-emerald-500 text-white shadow-lg shrink-0"><FastForward className="h-5 w-5 md:h-6 md:w-6" /></Button>
                 </div>
                 <CartList items={cartItems} onUpdateQuantity={updateQuantity} onUpdatePrice={updatePrice} onRemoveItem={removeItem} />
               </TabsContent>
@@ -559,16 +559,16 @@ export default function POSPage() {
       />
 
       <Dialog open={isSuccessDialogOpen} onOpenChange={(val) => { setIsSuccessDialogOpen(val); }}>
-        <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden print:hidden text-[9pt]">
+        <DialogContent className="sm:max-w-md rounded-[40px] p-6 md:p-10 border-none shadow-2xl overflow-hidden print:hidden text-[9pt]">
           <div className="absolute top-0 left-0 w-full h-2 bg-emerald-500" />
           <DialogHeader className="space-y-4">
-            <div className="mx-auto w-20 h-20 bg-emerald-50 rounded-[32px] flex items-center justify-center">
-              <CheckCircle2 className="h-12 w-12 text-emerald-500" />
+            <div className="mx-auto w-16 h-16 md:w-20 md:h-20 bg-emerald-50 rounded-[32px] flex items-center justify-center">
+              <CheckCircle2 className="h-10 w-10 md:h-12 md:w-12 text-emerald-500" />
             </div>
-            <DialogTitle className="text-center text-2xl font-black uppercase text-secondary">Bill Finalized</DialogTitle>
+            <DialogTitle className="text-center text-xl md:text-2xl font-black uppercase text-secondary">Bill Finalized</DialogTitle>
           </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="bg-slate-50 rounded-[28px] p-6 space-y-3 font-receipt border border-slate-200 leading-normal">
+          <div className="py-2 md:py-4 space-y-4">
+            <div className="bg-slate-50 rounded-[28px] p-4 md:p-6 space-y-3 font-receipt border border-slate-200 leading-normal">
               <div className="flex flex-col border-b border-slate-100 pb-2 space-y-2">
                  <div className="flex justify-between items-center text-[7pt] font-bold">
                     <span className="text-slate-400 uppercase">Customer</span>
@@ -583,7 +583,7 @@ export default function POSPage() {
                     <span className="text-secondary">{getFormattedDateTime(lastSale?.timestamp)}</span>
                  </div>
               </div>
-              <div className="py-3 border-b border-slate-100">
+              <div className="py-2 md:py-3 border-b border-slate-100">
                 <table className="w-full text-[8pt] leading-normal">
                   <thead>
                     <tr className="border-b border-slate-200">
@@ -607,59 +607,59 @@ export default function POSPage() {
               </div>
               <div className="flex justify-between items-end pt-4">
                 <div className="flex flex-col">
-                   <span className="text-[8pt] font-bold text-slate-400 uppercase tracking-widest mb-1">Final Amount</span>
-                   <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">₹{lastSale?.totalAmount.toFixed(0)}</span>
+                   <span className="text-[7pt] md:text-[8pt] font-bold text-slate-400 uppercase tracking-widest mb-1">Final Amount</span>
+                   <span className="text-2xl md:text-3xl font-black text-slate-900 tracking-tighter leading-none">₹{lastSale?.totalAmount.toFixed(0)}</span>
                 </div>
                 <div className="text-right overflow-hidden">
-                  <span className="text-[7pt] font-bold text-slate-400 uppercase block tracking-widest">Served By</span>
-                  <span className="text-[7pt] font-bold text-emerald-500 uppercase whitespace-nowrap">{lastSale?.staffName || activeStaffName}</span>
+                  <span className="text-[6pt] md:text-[7pt] font-bold text-slate-400 uppercase block tracking-widest">Served By</span>
+                  <span className="text-[6pt] md:text-[7pt] font-bold text-emerald-500 uppercase whitespace-nowrap">{lastSale?.staffName || activeStaffName}</span>
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="h-14 rounded-2xl font-bold uppercase text-[10px] gap-2" onClick={() => setIsPrinterSelectionOpen(true)}>
-                <Printer className="h-4 w-4" /> Print
+            <div className="grid grid-cols-2 gap-2 md:gap-3">
+              <Button variant="outline" className="h-12 md:h-14 rounded-2xl font-bold uppercase text-[9px] md:text-[10px] gap-2" onClick={() => setIsPrinterSelectionOpen(true)}>
+                <Printer className="h-3.5 w-3.5 md:h-4 md:w-4" /> Print
               </Button>
-              <Button variant="outline" className="h-14 rounded-2xl font-bold uppercase text-[10px] gap-2">
-                <Download className="h-4 w-4" /> Digital PDF
+              <Button variant="outline" className="h-12 md:h-14 rounded-2xl font-bold uppercase text-[9px] md:text-[10px] gap-2">
+                <Download className="h-3.5 w-3.5 md:h-4 md:w-4" /> Digital
               </Button>
             </div>
           </div>
           <DialogFooter>
-            <Button className="w-full h-16 rounded-2xl font-black text-sm shadow-xl bg-primary text-white uppercase tracking-widest" onClick={() => { setIsSuccessDialogOpen(false); }}>
-              NEXT CUSTOMER (ESC)
+            <Button className="w-full h-14 md:h-16 rounded-2xl font-black text-xs md:text-sm shadow-xl bg-primary text-white uppercase tracking-widest" onClick={() => { setIsSuccessDialogOpen(false); }}>
+              NEXT CUSTOMER
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isPrinterSelectionOpen} onOpenChange={setIsPrinterSelectionOpen}>
-        <DialogContent className="sm:max-w-md rounded-[32px] p-10 border-none shadow-2xl">
-          <DialogHeader><DialogTitle className="text-2xl font-black uppercase text-secondary">Output Device</DialogTitle></DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-6">
-            <button onClick={() => { setPrintType('normal'); setIsPrinterSelectionOpen(false); setTimeout(() => window.print(), 100); }} className="flex flex-col items-center justify-center h-40 bg-slate-50 rounded-[32px] hover:bg-secondary/5 group transition-all border-2 border-transparent hover:border-secondary/10">
-              <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4"><Printer className="h-6 w-6 text-slate-400 group-hover:text-secondary" /></div>
-              <span className="font-bold text-[10px] uppercase tracking-widest">Normal (A4)</span>
+        <DialogContent className="sm:max-w-md rounded-[32px] p-8 md:p-10 border-none shadow-2xl">
+          <DialogHeader><DialogTitle className="text-xl md:text-2xl font-black uppercase text-secondary">Output Device</DialogTitle></DialogHeader>
+          <div className="grid grid-cols-2 gap-3 md:gap-4 py-4 md:py-6">
+            <button onClick={() => { setPrintType('normal'); setIsPrinterSelectionOpen(false); setTimeout(() => window.print(), 100); }} className="flex flex-col items-center justify-center h-32 md:h-40 bg-slate-50 rounded-[32px] hover:bg-secondary/5 group transition-all border-2 border-transparent hover:border-secondary/10">
+              <div className="h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4"><Printer className="h-5 w-5 md:h-6 md:w-6 text-slate-400 group-hover:text-secondary" /></div>
+              <span className="font-bold text-[9px] md:text-[10px] uppercase tracking-widest">Normal (A4)</span>
             </button>
-            <button onClick={() => { setPrintType('thermal'); setIsPrinterSelectionOpen(false); setTimeout(() => window.print(), 100); }} className="flex flex-col items-center justify-center h-40 bg-slate-50 rounded-[32px] hover:bg-primary/5 group transition-all border-2 border-transparent hover:border-primary/10">
-              <div className="h-14 w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4"><Printer className="h-6 w-6 text-slate-400 group-hover:text-primary" /></div>
-              <span className="font-bold text-[10px] uppercase tracking-widest">Thermal (58/80mm)</span>
+            <button onClick={() => { setPrintType('thermal'); setIsPrinterSelectionOpen(false); setTimeout(() => window.print(), 100); }} className="flex flex-col items-center justify-center h-32 md:h-40 bg-slate-50 rounded-[32px] hover:bg-primary/5 group transition-all border-2 border-transparent hover:border-primary/10">
+              <div className="h-12 w-12 md:h-14 md:w-14 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-4"><Printer className="h-5 w-5 md:h-6 md:w-6 text-slate-400 group-hover:text-primary" /></div>
+              <span className="font-bold text-[9px] md:text-[10px] uppercase tracking-widest">Thermal</span>
             </button>
           </div>
         </DialogContent>
       </Dialog>
 
       <Dialog open={isScannerOpen} onOpenChange={setIsScannerOpen}>
-        <DialogContent className="sm:max-w-md rounded-[40px] p-10 border-none shadow-2xl overflow-hidden print:hidden">
+        <DialogContent className="sm:max-w-md rounded-[40px] p-6 md:p-10 border-none shadow-2xl overflow-hidden print:hidden">
           <div className="absolute top-0 left-0 w-full h-2 bg-primary" />
           <DialogHeader className="space-y-4">
-            <div className="mx-auto w-16 h-16 bg-primary/5 rounded-[24px] flex items-center justify-center"><ScanLine className="h-8 w-8 text-primary" /></div>
-            <DialogTitle className="text-center text-xl font-black uppercase text-secondary">Super Scanner</DialogTitle>
+            <div className="mx-auto w-12 h-12 md:w-16 md:h-16 bg-primary/5 rounded-[24px] flex items-center justify-center"><ScanLine className="h-6 w-6 md:h-8 md:w-8 text-primary" /></div>
+            <DialogTitle className="text-center text-lg md:text-xl font-black uppercase text-secondary">Super Scanner</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
+          <div className="py-2 md:py-4">
             <BarcodeScanner isOpen={isScannerOpen} onScanSuccess={handleBarcodeScan} onOcrSuccess={handleOcrSuccess} />
           </div>
-          <DialogFooter><Button variant="secondary" className="w-full h-14 rounded-2xl font-black text-xs uppercase" onClick={() => setIsScannerOpen(false)}>Close Scanner</Button></DialogFooter>
+          <DialogFooter><Button variant="secondary" className="w-full h-12 md:h-14 rounded-2xl font-black text-[10px] md:text-xs uppercase" onClick={() => setIsScannerOpen(false)}>Close Scanner</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

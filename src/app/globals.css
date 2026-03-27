@@ -31,10 +31,25 @@
   * {
     @apply border-border;
   }
-  body {
-    @apply bg-background text-foreground selection:bg-primary/20 text-sm;
-    font-feature-settings: "rlig" 1, "calt" 1;
+  
+  html {
+    /* Base scaling for mobile devices */
+    font-size: 14px;
   }
+  
+  @screen md {
+    html {
+      font-size: 16px;
+    }
+  }
+
+  body {
+    @apply bg-background text-foreground selection:bg-primary/20;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
   h1, h2, h3, h4 {
     @apply font-semibold tracking-tight;
   }
@@ -88,4 +103,16 @@
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
   @apply bg-slate-200 rounded-full;
+}
+
+/* Orientation Specific Fixes */
+@media (orientation: landscape) and (max-height: 500px) {
+  .header-shrink {
+    @apply h-12 !important;
+  }
+}
+
+/* Ensure tabs are always clickable and visible */
+[data-radix-collection-item] {
+  @apply whitespace-nowrap overflow-hidden text-ellipsis;
 }

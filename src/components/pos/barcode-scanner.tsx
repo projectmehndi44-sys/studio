@@ -21,13 +21,14 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   const [lastScanned, setLastScanned] = useState<string | null>(null);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   
+  // Create a unique ID for the container, sanitized for HTML
   const scannerId = useId().replace(/:/g, '-');
   const containerRef = useRef<HTMLDivElement>(null);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const isTransitioningRef = useRef(false);
   const autoScanIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Stable Refs for callbacks to prevent effect re-triggers and "On-Off" flickering
+  // Stable Refs for callbacks and state to avoid unnecessary re-initializations
   const onScanSuccessRef = useRef(onScanSuccess);
   const onOcrSuccessRef = useRef(onOcrSuccess);
   const isAiProcessingRef = useRef(false);
@@ -60,6 +61,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   }, []);
 
   const performOcrScan = useCallback(async (isAuto = false) => {
+    // Prevent overlapping AI scans or duplicate detections
     if (isAiProcessingRef.current || !!lastScannedRef.current || !html5QrCodeRef.current?.isScanning) return;
 
     const video = containerRef.current?.querySelector('video') as HTMLVideoElement;
@@ -82,11 +84,14 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         playBeep();
         const priceLabel = `₹${result.price}`;
         setLastScanned(priceLabel);
+        
+        // Finalize detection after a short visual delay
         setTimeout(() => {
           onOcrSuccessRef.current(result.name, result.price);
         }, 1200);
       }
     } catch (e) {
+      // Auto-scans fail silently to prevent UI noise
       if (!isAuto) {
         toast({ 
           variant: 'destructive', 
@@ -105,17 +110,20 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
     let isMounted = true;
 
     const startScanner = async () => {
+      // Transition lock to prevent concurrent start/stop cycles
       if (isTransitioningRef.current || !isMounted) return;
       isTransitioningRef.current = true;
 
       try {
-        const container = document.getElementById(scannerId);
-        if (!container) {
+        const targetElement = containerRef.current;
+        if (!targetElement) {
+          // If ref isn't ready, retry once after a tiny delay
           setTimeout(startScanner, 100);
           isTransitioningRef.current = false;
           return;
         }
 
+        // Clean slate: kill existing instance if any
         if (html5QrCodeRef.current) {
           try {
             if (html5QrCodeRef.current.isScanning) await html5QrCodeRef.current.stop();
@@ -123,6 +131,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           html5QrCodeRef.current = null;
         }
 
+        // Initialize library instance with the direct ref's ID
         const scanner = new Html5Qrcode(scannerId);
         html5QrCodeRef.current = scanner;
 
@@ -133,7 +142,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
             qrbox: { width: 250, height: 250 },
             formatsToSupport: [
               Html5QrcodeSupportedFormats.EAN_13,
-              Html5QrcodeSupportedFormats.EAN_8,
               Html5QrcodeSupportedFormats.CODE_128,
               Html5QrcodeSupportedFormats.UPC_A
             ]
@@ -144,24 +152,26 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
             setLastScanned(decodedText);
             onScanSuccessRef.current(decodedText);
           },
-          () => {}
+          () => {} // Quiet on frame failures
         );
 
         if (isMounted) {
           setHasCameraPermission(true);
+          // Kick off the AI "Smart Hunt" loop
           autoScanIntervalRef.current = setInterval(() => {
             performOcrScan(true);
-          }, 4000);
+          }, 3500);
         }
       } catch (err) {
-        console.error("Scanner failed to start:", err);
+        console.error("Scanner session start failed:", err);
         if (isMounted) setHasCameraPermission(false);
       } finally {
         isTransitioningRef.current = false;
       }
     };
 
-    const timer = setTimeout(startScanner, 500);
+    // Wait for the dialog animation to settle before starting hardware
+    const timer = setTimeout(startScanner, 400);
 
     return () => {
       isMounted = false;
@@ -172,14 +182,13 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       if (scanner) {
         isTransitioningRef.current = true;
         scanner.stop()
-          .catch(e => console.warn("Scanner stop warning:", e))
+          .catch(e => console.warn("Scanner teardown warning:", e))
           .finally(() => {
             html5QrCodeRef.current = null;
             isTransitioningRef.current = false;
-            // Safe teardown: verify existence before clearing
-            const el = document.getElementById(scannerId);
-            if (el && document.body.contains(el)) {
-              el.innerHTML = "";
+            // Atomic cleanup: only clear if the container is still present
+            if (containerRef.current) {
+              containerRef.current.innerHTML = "";
             }
           });
       }
@@ -198,29 +207,29 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       >
         {lastScanned && (
           <div className="absolute inset-0 z-20 bg-emerald-500/95 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
-             <div className="h-20 w-20 bg-white rounded-[28px] flex items-center justify-center mb-6 shadow-2xl">
-               <CheckCircle className="h-10 w-10 text-emerald-500" />
+             <div className="h-16 w-16 md:h-20 md:w-20 bg-white rounded-[28px] flex items-center justify-center mb-6 shadow-2xl">
+               <CheckCircle className="h-8 w-8 md:h-10 md:w-10 text-emerald-500" />
              </div>
-             <p className="text-white font-black text-4xl tracking-tighter uppercase text-center px-4">{lastScanned}</p>
+             <p className="text-white font-black text-2xl md:text-4xl tracking-tighter uppercase text-center px-4">{lastScanned}</p>
           </div>
         )}
 
         {isAiProcessing && !lastScanned && (
           <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
             <div className="w-full h-full border-[10px] border-primary animate-pulse opacity-30 rounded-[28px]" />
-            <div className="absolute bg-primary/90 backdrop-blur-md px-6 py-3 rounded-2xl flex items-center gap-3 shadow-2xl border border-white/20">
-               <Loader2 className="h-4 w-4 text-white animate-spin" />
-               <span className="text-white font-black text-[9px] uppercase tracking-[0.2em]">Searching for ₹ Symbol</span>
+            <div className="absolute bg-primary/90 backdrop-blur-md px-4 md:px-6 py-2 md:py-3 rounded-2xl flex items-center gap-3 shadow-2xl border border-white/20">
+               <Loader2 className="h-3.5 w-3.5 md:h-4 md:w-4 text-white animate-spin" />
+               <span className="text-white font-black text-[7px] md:text-[9px] uppercase tracking-[0.2em]">Hunting ₹ Symbol</span>
             </div>
           </div>
         )}
 
         {!lastScanned && !isAiProcessing && (
           <div className="absolute inset-0 z-0 pointer-events-none flex flex-col items-center justify-center">
-             <div className="w-56 h-32 border-2 border-dashed border-white/30 rounded-2xl relative">
+             <div className="w-40 h-24 md:w-56 md:h-32 border-2 border-dashed border-white/30 rounded-2xl relative">
                 <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-primary/40 shadow-[0_0_15px_rgba(var(--primary),0.5)] animate-bounce" />
              </div>
-             <p className="mt-8 text-white/30 font-black text-[8px] uppercase tracking-[0.4em]">Align ₹ Symbol Clearly</p>
+             <p className="mt-4 md:mt-8 text-white/30 font-black text-[7px] md:text-[8px] uppercase tracking-[0.4em]">Align ₹ Symbol</p>
           </div>
         )}
       </div>
@@ -230,31 +239,31 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           variant="secondary"
           onClick={() => performOcrScan(false)} 
           disabled={isAiProcessing || !!lastScanned || !hasCameraPermission}
-          className="h-14 rounded-2xl bg-slate-50 text-secondary font-black uppercase tracking-widest gap-3 text-[10px] border-2 border-transparent hover:border-primary/20 transition-all"
+          className="h-12 md:h-14 rounded-2xl bg-slate-50 text-secondary font-black uppercase tracking-widest gap-3 text-[9px] md:text-[10px] border-2 border-transparent hover:border-primary/20 transition-all"
         >
-          {isAiProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4 text-primary" />}
-          Force Manual Capture
+          {isAiProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-3.5 w-3.5 md:h-4 md:w-4 text-primary" />}
+          Manual Detection
         </Button>
       </div>
       
       {hasCameraPermission === false && (
-        <Alert variant="destructive" className="rounded-3xl border-none shadow-xl bg-primary text-white p-6">
-          <CameraOff className="h-5 w-5" />
-          <AlertTitle className="font-black uppercase tracking-tight text-xs mb-1 text-white">Vision Restricted</AlertTitle>
-          <AlertDescription className="text-[10px] font-bold opacity-90 leading-relaxed text-white/90">
-            Please allow camera access to enable the terminal's AI Vision engine.
+        <Alert variant="destructive" className="rounded-3xl border-none shadow-xl bg-primary text-white p-4 md:p-6">
+          <CameraOff className="h-4 w-4 md:h-5 md:w-5" />
+          <AlertTitle className="font-black uppercase tracking-tight text-[10px] md:text-xs mb-1 text-white">Vision Restricted</AlertTitle>
+          <AlertDescription className="text-[8px] md:text-[10px] font-bold opacity-90 leading-relaxed text-white/90">
+            Allow camera access to enable the terminal's AI Vision.
           </AlertDescription>
         </Alert>
       )}
 
       <div className="flex items-center justify-between px-2">
          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Vision Engine Online</p>
+            <span className="h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <p className="text-[7px] md:text-[9px] font-black uppercase text-slate-400 tracking-widest">Vision Engine Active</p>
          </div>
          <div className="flex items-center gap-2 text-slate-400">
             <Search className="h-3 w-3" />
-            <p className="text-[9px] font-black uppercase tracking-widest">Super 9+ POS</p>
+            <p className="text-[7px] md:text-[9px] font-black uppercase tracking-widest">Super 9+ POS</p>
          </div>
       </div>
     </div>
