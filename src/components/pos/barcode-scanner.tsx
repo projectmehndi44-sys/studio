@@ -21,13 +21,11 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   const [lastScanned, setLastScanned] = useState<string | null>(null);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   
-  // Use a unique ID for each instance to prevent DOM collisions
   const scannerId = useRef(`scanner-${Math.random().toString(36).slice(2, 9)}`).current;
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const isTransitioningRef = useRef(false);
   const autoScanIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Keep stable refs for callbacks to prevent the camera from restarting on every state change
   const onScanSuccessRef = useRef(onScanSuccess);
   const onOcrSuccessRef = useRef(onOcrSuccess);
 
@@ -83,7 +81,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         const priceLabel = `₹${result.price}`;
         setLastScanned(priceLabel);
         
-        // Wait for user to see the success before closing
         setTimeout(() => {
           onOcrSuccessRef.current(result.name, result.price);
         }, 1200);
@@ -114,7 +111,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       isTransitioningRef.current = true;
 
       try {
-        // Small delay to ensure the DOM is ready and any previous transition is complete
         await new Promise(r => setTimeout(r, 600));
         if (!isMounted) {
           isTransitioningRef.current = false;
@@ -148,7 +144,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
             setLastScanned(decodedText);
             onScanSuccessRef.current(decodedText);
           },
-          () => {} // Silent failures for noise
+          () => {} 
         );
 
         if (isMounted) {
@@ -179,12 +175,10 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       if (scanner && !isTransitioningRef.current) {
         isTransitioningRef.current = true;
         
-        // Use an async cleanup that handles the promise properly
         const cleanup = async () => {
           try {
             if (scanner.isScanning) {
               await scanner.stop();
-              // Only clear if we actually stopped successfully
               try { scanner.clear(); } catch(e) {}
             }
           } catch (err) {
