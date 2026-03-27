@@ -11,7 +11,7 @@ interface ProductSearchProps {
   products: Product[] | null;
   onProductSelect: (product: Product) => void;
   onScanClick: () => void;
-  onAddNewProduct: (initialName: string, isSilent?: boolean) => void;
+  onAddNewProduct: (initialName: string) => void;
   inputRef?: React.RefObject<HTMLInputElement>;
   query: string;
   setQuery: (q: string) => void;
@@ -100,7 +100,7 @@ export function ProductSearch({
       } else if (quickPrice) {
         handleQuickAdd();
       } else {
-        onAddNewProduct(query, true);
+        onAddNewProduct(query);
         setQuery('');
       }
     }
@@ -202,10 +202,13 @@ export function ProductSearch({
               ))}
 
               {query.trim() && filteredProducts.length === 0 && !quickPrice && (
-                <div className="py-10 text-center">
+                <button 
+                  onClick={() => onAddNewProduct(query)}
+                  className="w-full py-6 text-center hover:bg-slate-50 transition-colors"
+                >
                   <p className="text-secondary font-black uppercase text-xs">No matches found</p>
-                  <p className="text-slate-400 font-bold text-[9px] uppercase mt-1">Press Enter to Enroll "{query}"</p>
-                </div>
+                  <p className="text-primary font-black text-[10px] uppercase mt-2 tracking-widest">Enroll "{query}" & Add to Bill</p>
+                </button>
               )}
             </div>
           </ScrollArea>

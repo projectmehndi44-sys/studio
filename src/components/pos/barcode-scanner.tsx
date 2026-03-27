@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useRef, useCallback, useId } from 'react';
@@ -122,7 +121,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           setHasCameraPermission(true);
           autoScanIntervalRef.current = setInterval(() => {
             performOcrScan(true);
-          }, 3000);
+          }, 3500);
         }
       } catch (error) {
         console.error('Scanner start error:', error);
@@ -140,8 +139,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       const scanner = html5QrCodeRef.current;
       if (scanner && scanner.isScanning && !isTransitioningRef.current) {
         isTransitioningRef.current = true;
-        // Definitive fix for removeChild error: 
-        // Stop the scanner AND clear the container only if container exists
         scanner.stop()
           .then(() => {
             if (document.getElementById(scannerId)) {

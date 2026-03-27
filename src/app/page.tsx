@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
@@ -17,7 +16,8 @@ import {
   ScanLine,
   Monitor,
   FastForward,
-  UserCircle
+  UserCircle,
+  PackagePlus
 } from 'lucide-react';
 import { Product, CartItem, PurchaseRecord } from '@/lib/types';
 import { ProductSearch } from '@/components/pos/product-search';
@@ -29,6 +29,8 @@ import Link from 'next/link';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { 
   useCollection, 
@@ -68,7 +70,6 @@ import { PhoneAuthGate } from '@/components/auth/phone-auth-gate';
 import { getStaffName, isStaffAdmin, STAFF_MAPPING } from '@/lib/staff';
 import { AdminPinDialog } from '@/components/admin/admin-pin-dialog';
 
-// Dynamic import for the scanner to prevent hydration issues and ensure client-side execution
 const BarcodeScanner = dynamic(
   () => import('@/components/pos/barcode-scanner').then((mod) => mod.BarcodeScanner),
   { ssr: false, loading: () => <div className="aspect-square bg-slate-100 animate-pulse rounded-[32px] flex items-center justify-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Waking Vision...</div> }
@@ -98,6 +99,10 @@ export default function POSPage() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [launcherActive, setLauncherActive] = useState(false);
   const [activeStaffName, setActiveStaffName] = useState<string>('');
+
+  const [isQuickEnrollOpen, setIsQuickEnrollOpen] = useState(false);
+  const [quickEnrollName, setQuickEnrollName] = useState('');
+  const [quickEnrollPrice, setQuickEnrollPrice] = useState('');
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -153,7 +158,7 @@ export default function POSPage() {
     if (!isUserLoading && user && (!isLauncherEnabled || launcherActive)) {
       searchInputRef.current?.focus();
     }
-  }, [isUserLoading, user, launcherActive, isLauncherEnabled, isSuccessDialogOpen, isScannerOpen]);
+  }, [isUserLoading, user, launcherActive, isLauncherEnabled, isSuccessDialogOpen, isScannerOpen, isQuickEnrollOpen]);
 
   const toggleFullscreen = async (enable: boolean) => {
     try {
@@ -259,13 +264,25 @@ export default function POSPage() {
     handleCheckout({ total: cartTotalPrice, paymentMode: 'Cash', customerName: 'Walk-in (Exact Cash)' });
   };
 
-  const handleAddNewProduct = (name: string, isSilent?: boolean) => {
+  const handleAddNewProduct = (name: string) => {
+    setQuickEnrollName(name);
+    setQuickEnrollPrice('');
+    setIsQuickEnrollOpen(true);
+  };
+
+  const confirmQuickEnroll = async () => {
+    const price = parseFloat(quickEnrollPrice);
+    if (!quickEnrollName || isNaN(price) || price <= 0) {
+      toast({ variant: 'destructive', title: 'Invalid Entry', description: 'Please provide a name and valid price.' });
+      return;
+    }
+
     const newId = `prod-${Date.now()}`;
     const newProd: Product = {
       id: newId,
-      name,
-      price: 0,
-      costPrice: 0,
+      name: quickEnrollName,
+      price: price,
+      costPrice: price * 0.8,
       barcode: '',
       category: 'General',
       isPopular: false,
@@ -273,9 +290,10 @@ export default function POSPage() {
       createdAt: new Date().toISOString()
     };
     
-    addDocumentNonBlocking(collection(db, 'products'), newProd);
+    await addDocumentNonBlocking(collection(db, 'products'), newProd);
     handleProductSelect(newProd);
-    if (!isSilent) toast({ title: "Quick Enrolled", description: `Added ${name} to master.` });
+    setIsQuickEnrollOpen(false);
+    toast({ title: "Stock Master Updated", description: `${quickEnrollName} added at ₹${price}.` });
   };
 
   const getFormattedDateTime = (ts: any) => {
@@ -558,6 +576,43 @@ export default function POSPage() {
         }} 
         requiredFor="Access System Configuration & Data Storage" 
       />
+
+      <Dialog open={isQuickEnrollOpen} onOpenChange={setIsQuickEnrollOpen}>
+        <DialogContent className="sm:max-w-md rounded-[32px] p-8 md:p-10 border-none shadow-2xl overflow-hidden text-center">
+          <div className="absolute top-0 left-0 w-full h-2 bg-primary" />
+          <DialogHeader className="space-y-4">
+            <div className="mx-auto w-16 h-16 bg-primary/5 rounded-[24px] flex items-center justify-center">
+              <PackagePlus className="h-8 w-8 text-primary" />
+            </div>
+            <DialogTitle className="text-center text-xl font-black uppercase text-secondary">Quick Enroll Stock</DialogTitle>
+          </DialogHeader>
+          <div className="py-6 space-y-6 text-left">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Item Name</Label>
+              <Input 
+                value={quickEnrollName} 
+                onChange={(e) => setQuickEnrollName(e.target.value)} 
+                className="h-14 bg-slate-50 border-none rounded-2xl font-bold text-lg focus-visible:ring-primary/20"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Selling Price (₹)</Label>
+              <Input 
+                type="number"
+                value={quickEnrollPrice} 
+                onChange={(e) => setQuickEnrollPrice(e.target.value)} 
+                placeholder="Enter amount"
+                className="h-14 bg-slate-50 border-none rounded-2xl font-black text-2xl focus-visible:ring-primary/20"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter className="grid grid-cols-2 gap-4">
+            <Button variant="outline" className="h-14 rounded-2xl font-bold uppercase text-[10px] tracking-widest border-slate-100" onClick={() => setIsQuickEnrollOpen(false)}>Cancel</Button>
+            <Button className="h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-xl" onClick={confirmQuickEnroll}>Sync & Add</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={isSuccessDialogOpen} onOpenChange={(val) => { setIsSuccessDialogOpen(val); }}>
         <DialogContent className="sm:max-w-md rounded-[40px] p-6 md:p-10 border-none shadow-2xl overflow-hidden print:hidden text-[9pt]">
