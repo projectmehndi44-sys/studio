@@ -22,9 +22,20 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [lastScanned, setLastScanned] = useState<string | null>(null);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
+  
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const autoScanIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isTransitioningRef = useRef(false);
+  const lastScannedRef = useRef<string | null>(null);
+
+  // Use refs for callbacks to prevent effect re-runs
+  const onScanSuccessRef = useRef(onScanSuccess);
+  const onOcrSuccessRef = useRef(onOcrSuccess);
+
+  useEffect(() => {
+    onScanSuccessRef.current = onScanSuccess;
+    onOcrSuccessRef.current = onOcrSuccess;
+  }, [onScanSuccess, onOcrSuccess]);
 
   const playBeep = useCallback(() => {
     try {
@@ -50,7 +61,8 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   }, []);
 
   const performOcrScan = useCallback(async (isAuto = false) => {
-    if (isAiProcessing || lastScanned || !html5QrCodeRef.current?.isScanning) return;
+    // Avoid double-processing or processing while success overlay is shown
+    if (isAiProcessing || lastScannedRef.current || !html5QrCodeRef.current?.isScanning) return;
 
     const video = document.querySelector(`#${SCANNER_ID} video`) as HTMLVideoElement;
     if (!video || video.readyState !== 4) return;
@@ -70,11 +82,14 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       
       if (result && result.price > 0) {
         playBeep();
-        setLastScanned(`₹${result.price}`);
+        const priceLabel = `₹${result.price}`;
+        lastScannedRef.current = priceLabel;
+        setLastScanned(priceLabel);
+        
         // Give visual feedback before calling success
         setTimeout(() => {
-          onOcrSuccess(result.name, result.price);
-        }, 1000);
+          onOcrSuccessRef.current(result.name, result.price);
+        }, 1200);
       }
     } catch (e) {
       if (!isAuto) {
@@ -87,10 +102,14 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
     } finally {
       setIsAiProcessing(false);
     }
-  }, [isAiProcessing, lastScanned, onOcrSuccess, playBeep, toast]);
+  }, [isAiProcessing, playBeep, toast]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setLastScanned(null);
+      lastScannedRef.current = null;
+      return;
+    }
 
     let isMounted = true;
 
@@ -99,7 +118,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       isTransitioningRef.current = true;
 
       try {
-        // Ensure container exists
         const container = document.getElementById(SCANNER_ID);
         if (!container) {
            isTransitioningRef.current = false;
@@ -112,7 +130,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
 
         const scanner = html5QrCodeRef.current;
         
-        // Safety check to prevent double-start
         if (scanner.isScanning) {
           await scanner.stop();
         }
@@ -132,22 +149,21 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
             ]
           },
           (decodedText) => {
-            if (lastScanned) return;
+            if (lastScannedRef.current) return;
             playBeep();
+            lastScannedRef.current = decodedText;
             setLastScanned(decodedText);
-            onScanSuccess(decodedText);
-            setTimeout(() => {
-              if (isMounted) setLastScanned(null);
-            }, 2000);
+            onScanSuccessRef.current(decodedText);
           },
           () => {} 
         );
 
         if (isMounted) {
           setHasCameraPermission(true);
+          // Set up the auto-scan loop
           autoScanIntervalRef.current = setInterval(() => {
             performOcrScan(true);
-          }, 3500);
+          }, 3000);
         }
 
       } catch (error) {
@@ -158,8 +174,8 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       }
     };
 
-    // Wait for Dialog animation
-    const timer = setTimeout(startScanner, 800);
+    // Wait for Dialog animation to finish before starting camera
+    const timer = setTimeout(startScanner, 600);
 
     return () => {
       isMounted = false;
@@ -171,15 +187,11 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       const scanner = html5QrCodeRef.current;
       if (scanner && !isTransitioningRef.current) {
         isTransitioningRef.current = true;
-        
-        // Handle cleanup without triggering removeChild errors
         const cleanup = async () => {
           try {
             if (scanner.isScanning) {
               await scanner.stop();
             }
-            // We skip .clear() if it causes DOM issues during unmount
-            // React handles removing the children of SCANNER_ID anyway
           } catch (err) {
             console.warn("Scanner cleanup suppressed:", err);
           } finally {
@@ -189,7 +201,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         cleanup();
       }
     };
-  }, [isOpen, onScanSuccess, playBeep, performOcrScan]);
+  }, [isOpen, playBeep, performOcrScan]);
 
   return (
     <div className="space-y-4 relative">
@@ -216,7 +228,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
             <div className="w-full h-full border-[10px] border-primary animate-pulse opacity-30 rounded-[28px]" />
             <div className="absolute bg-primary/90 backdrop-blur-md px-6 py-3 rounded-2xl flex items-center gap-3 shadow-2xl border border-white/20">
                <Loader2 className="h-5 w-5 text-white animate-spin" />
-               <span className="text-white font-black text-[10px] uppercase tracking-[0.2em]">AI Hunting...</span>
+               <span className="text-white font-black text-[10px] uppercase tracking-[0.2em]">AI Detecting...</span>
             </div>
           </div>
         )}
@@ -240,16 +252,16 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           className="h-14 rounded-2xl bg-slate-50 text-secondary font-black uppercase tracking-widest gap-3 text-[10px] border-2 border-transparent hover:border-primary/20 transition-all"
         >
           {isAiProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4 text-primary" />}
-          Force Price Tag Scan
+          Force Scan Price Tag
         </Button>
       </div>
       
       {hasCameraPermission === false && (
         <Alert variant="destructive" className="rounded-3xl border-none shadow-xl bg-primary text-white p-6">
           <CameraOff className="h-5 w-5" />
-          <AlertTitle className="font-black uppercase tracking-tight text-xs mb-1">Camera Error</AlertTitle>
+          <AlertTitle className="font-black uppercase tracking-tight text-xs mb-1">Camera Access Required</AlertTitle>
           <AlertDescription className="text-[10px] font-bold opacity-90 leading-relaxed">
-            Please check browser permissions or ensure no other app is using the camera.
+            Please allow camera access in your browser settings to use the scanner.
           </AlertDescription>
         </Alert>
       )}
@@ -257,11 +269,11 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       <div className="flex items-center justify-between px-2">
          <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Vision Auto-Scan Active</p>
+            <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Vision Engine Operational</p>
          </div>
          <div className="flex items-center gap-2 text-slate-400">
             <Search className="h-3 w-3" />
-            <p className="text-[9px] font-black uppercase tracking-widest">Super 9+ POS v6.2</p>
+            <p className="text-[9px] font-black uppercase tracking-widest">Super 9+ Terminal</p>
          </div>
       </div>
     </div>
