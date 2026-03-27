@@ -38,7 +38,7 @@ const prompt = ai.definePrompt({
 Your task is to identify the price on our shop's price tag.
 
 CRITICAL INSTRUCTIONS:
-1. RUPEE SYMBOL MANDATORY: You MUST locate the currency symbol "₹". If you do not see the "₹" symbol, set the price to 0.
+1. RUPEE SYMBOL MANDATORY: You MUST locate the currency symbol "₹". If you do not see the "₹" symbol in the photo, set the price to 0. This is the only way to confirm it is a valid price tag.
 2. EXTRACT THE PRICE: Look for the LARGE digits immediately following or next to the "₹" symbol. This is the item amount.
 3. IGNORE COLORS: The color of the tag (brown, red, white, etc.) does NOT matter. Only read the actual printed digits next to the ₹ symbol.
 4. FOCUS ON DESIGN: Focus ONLY on the printed design layout of the tag. 

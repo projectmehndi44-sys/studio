@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useId } from 'react';
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
@@ -21,13 +21,13 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   const [lastScanned, setLastScanned] = useState<string | null>(null);
   const [isAiProcessing, setIsAiProcessing] = useState(false);
   
-  // Unique ID to avoid DOM collisions
-  const scannerId = useRef(`scanner-v3-unique`).current;
+  const scannerId = useId();
+  const containerRef = useRef<HTMLDivElement>(null);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
-  const autoScanIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isTransitioningRef = useRef(false);
+  const autoScanIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Callback Refs to prevent unnecessary effect re-runs (fixes flickering)
+  // Stable Refs for callbacks to prevent effect re-triggers
   const onScanSuccessRef = useRef(onScanSuccess);
   const onOcrSuccessRef = useRef(onOcrSuccess);
   const isAiProcessingRef = useRef(false);
@@ -44,18 +44,14 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
     try {
       const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
       if (!AudioContextClass) return;
-      
       const audioCtx = new AudioContextClass();
       const oscillator = audioCtx.createOscillator();
       const gainNode = audioCtx.createGain();
-
       oscillator.connect(gainNode);
       gainNode.connect(audioCtx.destination);
-
       oscillator.type = 'sine';
       oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); 
       gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-
       oscillator.start();
       oscillator.stop(audioCtx.currentTime + 0.15);
     } catch (e) {
@@ -66,8 +62,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   const performOcrScan = useCallback(async (isAuto = false) => {
     if (isAiProcessingRef.current || !!lastScannedRef.current || !html5QrCodeRef.current?.isScanning) return;
 
-    const container = document.getElementById(scannerId);
-    const video = container?.querySelector('video') as HTMLVideoElement;
+    const video = containerRef.current?.querySelector('video') as HTMLVideoElement;
     if (!video || video.readyState !== 4) return;
 
     setIsAiProcessing(true);
@@ -87,8 +82,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         playBeep();
         const priceLabel = `₹${result.price}`;
         setLastScanned(priceLabel);
-        
-        // Brief success pause before filtering the terminal
         setTimeout(() => {
           onOcrSuccessRef.current(result.name, result.price);
         }, 1200);
@@ -98,13 +91,13 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         toast({ 
           variant: 'destructive', 
           title: "Scan Failed", 
-          description: "Ensure the tag is well-lit and the Rupee symbol (₹) is visible." 
+          description: "Align the tag's ₹ symbol clearly in the frame." 
         });
       }
     } finally {
       setIsAiProcessing(false);
     }
-  }, [playBeep, scannerId, toast]);
+  }, [playBeep, toast]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -112,15 +105,16 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
     let isMounted = true;
 
     const startScanner = async () => {
-      // Transition lock to prevent concurrent sessions (fixes start errors)
-      if (isTransitioningRef.current || html5QrCodeRef.current?.isScanning) return;
+      if (isTransitioningRef.current || !isMounted) return;
       isTransitioningRef.current = true;
 
       try {
-        const container = document.getElementById(scannerId);
-        if (!container || !isMounted) {
-          isTransitioningRef.current = false;
-          return;
+        if (!containerRef.current) throw new Error("Scanner container not found");
+        
+        // Ensure old instances are cleaned up
+        if (html5QrCodeRef.current) {
+          if (html5QrCodeRef.current.isScanning) await html5QrCodeRef.current.stop();
+          html5QrCodeRef.current = null;
         }
 
         const scanner = new Html5Qrcode(scannerId);
@@ -144,53 +138,49 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
             setLastScanned(decodedText);
             onScanSuccessRef.current(decodedText);
           },
-          () => {} // Silent frame errors
+          () => {} // Frame errors are normal
         );
 
         if (isMounted) {
           setHasCameraPermission(true);
-          // Set "Smart Hunt" interval for automated detection
           autoScanIntervalRef.current = setInterval(() => {
             performOcrScan(true);
           }, 3500);
         }
       } catch (err) {
-        console.error("Scanner session error:", err);
+        console.error("Scanner failed to start:", err);
         if (isMounted) setHasCameraPermission(false);
       } finally {
         isTransitioningRef.current = false;
       }
     };
 
-    // Delay start until the dialog is fully settled
-    const startTimer = setTimeout(startScanner, 350);
+    // Delay start slightly to allow dialog animation to settle
+    const timer = setTimeout(startScanner, 300);
 
     return () => {
       isMounted = false;
-      clearTimeout(startTimer);
-      if (autoScanIntervalRef.current) {
-        clearInterval(autoScanIntervalRef.current);
-      }
+      clearTimeout(timer);
+      if (autoScanIntervalRef.current) clearInterval(autoScanIntervalRef.current);
       
       const scanner = html5QrCodeRef.current;
       if (scanner) {
-        const stopScannerSession = async () => {
+        const teardown = async () => {
           try {
             if (scanner.isScanning) {
               await scanner.stop();
             }
-            // Clear DOM only AFTER the session is fully stopped (fixes removeChild error)
-            const container = document.getElementById(scannerId);
-            if (container) {
-              container.innerHTML = "";
-            }
           } catch (e) {
-            console.warn("Scanner shutdown warning", e);
+            console.warn("Scanner stop warning:", e);
           } finally {
             html5QrCodeRef.current = null;
+            // Only clear DOM if the container still exists to avoid removeChild errors
+            if (containerRef.current) {
+              containerRef.current.innerHTML = "";
+            }
           }
         };
-        stopScannerSession();
+        teardown();
       }
     };
   }, [isOpen, scannerId, performOcrScan, playBeep]);
@@ -199,6 +189,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
     <div className="space-y-4 relative">
       <div 
         id={scannerId} 
+        ref={containerRef}
         className={cn(
           "w-full aspect-square rounded-[32px] overflow-hidden border-4 bg-slate-900 relative shadow-2xl transition-all duration-500",
           isAiProcessing ? "border-primary/50 scale-[1.01]" : "border-slate-100 scale-100"
@@ -228,7 +219,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
              <div className="w-56 h-32 border-2 border-dashed border-white/30 rounded-2xl relative">
                 <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-primary/40 shadow-[0_0_15px_rgba(var(--primary),0.5)] animate-bounce" />
              </div>
-             <p className="mt-8 text-white/30 font-black text-[8px] uppercase tracking-[0.4em]">Align Barcode or ₹ Tag</p>
+             <p className="mt-8 text-white/30 font-black text-[8px] uppercase tracking-[0.4em]">Align ₹ Symbol Clearly</p>
           </div>
         )}
       </div>
@@ -241,7 +232,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           className="h-14 rounded-2xl bg-slate-50 text-secondary font-black uppercase tracking-widest gap-3 text-[10px] border-2 border-transparent hover:border-primary/20 transition-all"
         >
           {isAiProcessing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4 text-primary" />}
-          Manual Tag Hunt
+          Force Manual Capture
         </Button>
       </div>
       
