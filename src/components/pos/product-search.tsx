@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect, KeyboardEvent, useRef } from 'react';
 import { Search, Scan, Plus, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Product } from '@/lib/types';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
@@ -14,10 +13,19 @@ interface ProductSearchProps {
   onScanClick: () => void;
   onAddNewProduct: (initialName: string, isSilent?: boolean) => void;
   inputRef?: React.RefObject<HTMLInputElement>;
+  query: string;
+  setQuery: (q: string) => void;
 }
 
-export function ProductSearch({ products, onProductSelect, onScanClick, onAddNewProduct, inputRef }: ProductSearchProps) {
-  const [query, setQuery] = useState('');
+export function ProductSearch({ 
+  products, 
+  onProductSelect, 
+  onScanClick, 
+  onAddNewProduct, 
+  inputRef,
+  query,
+  setQuery
+}: ProductSearchProps) {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [isFocused, setIsFocused] = useState(false);
   const internalInputRef = useRef<HTMLInputElement>(null);
@@ -47,7 +55,6 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
     setSelectedIndex(-1);
   }, [query]);
 
-  // Handle clicking outside to close results
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -148,7 +155,6 @@ export function ProductSearch({ products, onProductSelect, onScanClick, onAddNew
         </button>
       </div>
 
-      {/* INLINE SEARCH RESULTS */}
       {showResults && (
         <div className="absolute top-full left-0 right-0 mt-2 z-[50] bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
           <ScrollArea className="max-h-[400px]">

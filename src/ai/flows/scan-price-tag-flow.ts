@@ -1,8 +1,8 @@
 'use server';
 /**
- * @fileOverview A Genkit flow for extracting price and product information from a price tag photo.
+ * @fileOverview A Genkit flow for extracting price information from Krishna's Super 9+ price tags.
  *
- * - scanPriceTag - A function that processes a photo of a price tag and returns price and name.
+ * - scanPriceTag - A function that processes a photo of a price tag and returns the price.
  * - ScanPriceTagInput - The input type for the scanPriceTag function.
  * - ScanPriceTagOutput - The return type for the scanPriceTag function.
  */
@@ -20,9 +20,9 @@ const ScanPriceTagInputSchema = z.object({
 export type ScanPriceTagInput = z.infer<typeof ScanPriceTagInputSchema>;
 
 const ScanPriceTagOutputSchema = z.object({
-  name: z.string().describe('The name of the product extracted from the tag. Use "Price Tag Item" if not clear.'),
+  name: z.string().describe('The name of the product if visible. Use "Scanned Item" if not clear.'),
   price: z.number().describe('The numeric price extracted from the tag.'),
-  confidence: z.number().describe('How confident the AI is in the extraction (0 to 1).'),
+  confidence: z.number().describe('Confidence level 0-1.'),
 });
 export type ScanPriceTagOutput = z.infer<typeof ScanPriceTagOutputSchema>;
 
@@ -34,12 +34,13 @@ const prompt = ai.definePrompt({
   name: 'scanPriceTagPrompt',
   input: {schema: ScanPriceTagInputSchema},
   output: {schema: ScanPriceTagOutputSchema},
-  prompt: `You are a professional retail scanner for Krishna's SUPER 9+ POS. 
-Your task is to analyze the provided image of a price tag or product label.
+  prompt: `You are a specialized retail vision agent for Krishna's SUPER 9+. 
+Your task is to identify the price on a specific price tag format.
 
-1. Extract the numeric Price (ignore currency symbols like ₹, RS, etc.).
-2. Extract the Product Name if clearly visible. If not, return "Scanned Item".
-3. Return the data in the specified JSON format.
+1. Locate the currency symbol "₹" (often in red/orange).
+2. Extract the LARGE numeric price digits following the symbol (often in large brown/maroon font).
+3. Ignore the branding text "KRISHNA'S SUPER 9+" and any background noise.
+4. Return the numeric price.
 
 Photo: {{media url=photoDataUri}}`,
 });

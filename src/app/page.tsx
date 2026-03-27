@@ -7,9 +7,6 @@ import {
   Menu,
   LogOut,
   PackageSearch,
-  Banknote,
-  PlusCircle,
-  MinusCircle,
   CheckCircle2,
   Printer,
   Download,
@@ -17,12 +14,7 @@ import {
   ChevronRight,
   ScanLine,
   Monitor,
-  Battery,
-  Wifi,
-  Zap,
   FastForward,
-  AlertTriangle,
-  Clock,
   UserCircle
 } from 'lucide-react';
 import { Product, CartItem, PurchaseRecord } from '@/lib/types';
@@ -35,9 +27,6 @@ import Link from 'next/link';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { 
   useCollection, 
@@ -47,7 +36,6 @@ import {
   addDocumentNonBlocking, 
   useAuth,
   useDoc,
-  setDocumentNonBlocking,
   updateDocumentNonBlocking
 } from '@/firebase';
 import { collection, serverTimestamp, doc } from 'firebase/firestore';
@@ -89,7 +77,7 @@ export default function POSPage() {
   const { user, isUserLoading } = useUser();
   
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [isCashDialogOpen, setIsCashDialogOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isPrinterSelectionOpen, setIsPrinterSelectionOpen] = useState(false);
@@ -112,7 +100,6 @@ export default function POSPage() {
   
   const { data: shopSettings } = useDoc(settingsRef);
 
-  const shopName = shopSettings?.shopName || "KRISHNA'S SUPER 9+";
   const shopAddress = shopSettings?.address || "Hoolungooree, Mariani";
   const isLauncherEnabled = !!shopSettings?.launcherMode;
 
@@ -156,7 +143,7 @@ export default function POSPage() {
     if (!isUserLoading && user && (!isLauncherEnabled || launcherActive)) {
       searchInputRef.current?.focus();
     }
-  }, [isUserLoading, user, launcherActive, isLauncherEnabled, isSuccessDialogOpen, isCashDialogOpen, isScannerOpen]);
+  }, [isUserLoading, user, launcherActive, isLauncherEnabled, isSuccessDialogOpen, isScannerOpen]);
 
   const toggleFullscreen = async (enable: boolean) => {
     try {
@@ -189,6 +176,7 @@ export default function POSPage() {
       }
       return [...prev, { ...product, quantity: 1 }];
     });
+    setSearchQuery('');
     setTimeout(() => searchInputRef.current?.focus(), 50);
   }, []);
 
@@ -204,16 +192,11 @@ export default function POSPage() {
   };
 
   const handleOcrSuccess = (name: string, price: number) => {
-    const customItem: Product = {
-      id: `ocr-${Date.now()}`,
-      name: name,
-      barcode: 'OCR_SCANNED',
-      price: price,
-      costPrice: price * 0.8,
-      category: 'General',
-      isPopular: false
-    };
-    handleProductSelect(customItem);
+    // If it's a price tag, we filter items by that price
+    setSearchQuery(price.toString());
+    setIsScannerOpen(false);
+    toast({ title: "Price Tag Scanned", description: `Filtering items priced at ₹${price}` });
+    setTimeout(() => searchInputRef.current?.focus(), 150);
   };
 
   const updateQuantity = (id: string, delta: number) => {
@@ -488,7 +471,9 @@ export default function POSPage() {
                   products={productsData || []} 
                   onProductSelect={handleProductSelect} 
                   onScanClick={() => setIsScannerOpen(true)} 
-                  onAddNewProduct={handleAddNewProduct} 
+                  onAddNewProduct={handleAddNewProduct}
+                  query={searchQuery}
+                  setQuery={setSearchQuery}
                 />
                 <Button 
                   disabled={cartItems.length === 0} 
@@ -515,7 +500,15 @@ export default function POSPage() {
               </TabsList>
               <TabsContent value="products" className="flex-1 overflow-hidden flex flex-col gap-4">
                 <div className="flex items-center gap-2">
-                  <ProductSearch inputRef={searchInputRef} products={productsData || []} onProductSelect={handleProductSelect} onScanClick={() => setIsScannerOpen(true)} onAddNewProduct={handleAddNewProduct} />
+                  <ProductSearch 
+                    inputRef={searchInputRef} 
+                    products={productsData || []} 
+                    onProductSelect={handleProductSelect} 
+                    onScanClick={() => setIsScannerOpen(true)} 
+                    onAddNewProduct={handleAddNewProduct} 
+                    query={searchQuery}
+                    setQuery={setSearchQuery}
+                  />
                   <Button disabled={cartItems.length === 0} onClick={handleFastPay} className="h-14 w-14 p-0 rounded-2xl bg-emerald-500 text-white shadow-lg shrink-0"><FastForward className="h-6 w-6" /></Button>
                 </div>
                 <CartList items={cartItems} onUpdateQuantity={updateQuantity} onUpdatePrice={updatePrice} onRemoveItem={removeItem} />
