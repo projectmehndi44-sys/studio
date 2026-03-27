@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -15,7 +14,12 @@ import {
   FileUp,
   History,
   AlertCircle,
-  Trash2
+  Trash2,
+  Download,
+  FileDown,
+  FileText,
+  Printer,
+  ChevronDown
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,7 +34,8 @@ import {
   useMemoFirebase, 
   updateDocumentNonBlocking, 
   addDocumentNonBlocking,
-  deleteDocumentNonBlocking
+  deleteDocumentNonBlocking,
+  useDoc
 } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Product } from '@/lib/types';
@@ -59,11 +64,21 @@ import {
   DialogFooter,
   DialogDescription
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { PhoneAuthGate } from '@/components/auth/phone-auth-gate';
 import { isStaffAdmin } from '@/lib/staff';
 import { BulkImportDialog } from '@/components/inventory/bulk-import-dialog';
+import * as XLSX from 'xlsx';
+import { format } from 'date-fns';
 
 const CATEGORIES = [
   'Garments', 'Electronics', 'Crockery', 'Dairy', 'Beverages', 'Bakery', 'Staples', 'Snacks', 'Personal Care', 'Cleaning', 'General'
@@ -95,6 +110,11 @@ export default function InventoryPage() {
   });
 
   const isAdmin = useMemo(() => isStaffAdmin(user?.phoneNumber || null), [user]);
+
+  const settingsRef = useMemoFirebase(() => doc(db, 'settings', 'config'), [db]);
+  const { data: shopSettings } = useDoc(settingsRef);
+  const shopName = shopSettings?.shopName || "KRISHNA'S SUPER 9+";
+  const shopAddress = shopSettings?.address || "Hoolungooree, Mariani";
 
   const productsQuery = useMemoFirebase(() => {
     if (!user || !isAdmin) return null;
@@ -208,6 +228,28 @@ export default function InventoryPage() {
     setSelectedProduct(null);
   };
 
+  const exportToExcel = () => {
+    const wsData = filteredProducts.map(p => ({
+      'Item Name': p.name,
+      'Barcode': p.barcode || '--',
+      'Category': p.category,
+      'Price (₹)': p.price,
+      'Stock': p.stock ?? 'Untracked',
+      'Popular': p.isPopular ? 'Yes' : 'No'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Inventory");
+    XLSX.writeFile(wb, `Super9_Stock_${format(new Date(), 'ddMMyy')}.xlsx`);
+    
+    toast({ title: "Export Complete", description: "Stock list saved as Excel." });
+  };
+
+  const handlePrintCatalog = () => {
+    setTimeout(() => window.print(), 100);
+  };
+
   if (isUserLoading || isLoading) return <div className="h-screen flex items-center justify-center">Syncing Item Master...</div>;
   if (!user) return <PhoneAuthGate />;
 
@@ -224,7 +266,43 @@ export default function InventoryPage() {
   return (
     <div className="min-h-screen bg-slate-50/50 flex flex-col font-body">
       <Toaster />
-      <header className="h-20 border-b border-slate-100 bg-white flex items-center justify-between px-8 shrink-0 z-10">
+
+      {/* PRINT-ONLY INVENTORY REPORT */}
+      <div className="hidden print-only p-8 bg-white text-slate-900 font-sans min-h-screen">
+        <div className="text-center border-b-2 border-slate-900 pb-4 mb-8">
+          <h1 className="text-3xl font-black uppercase tracking-tighter">{shopName}</h1>
+          <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mt-1">Stock Master Report • {format(new Date(), 'dd/MM/yyyy HH:mm')}</p>
+        </div>
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="border-b-2 border-slate-900">
+              <th className="py-3 font-black uppercase text-xs">Item Description</th>
+              <th className="py-3 font-black uppercase text-xs">Category</th>
+              <th className="py-3 font-black uppercase text-xs text-right">Price</th>
+              <th className="py-3 font-black uppercase text-xs text-right">Stock</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {filteredProducts.map((p) => (
+              <tr key={p.id}>
+                <td className="py-3">
+                  <p className="font-bold text-sm">{p.name}</p>
+                  <p className="text-[10px] text-slate-400 font-mono">{p.barcode || 'NO BARCODE'}</p>
+                </td>
+                <td className="py-3 text-sm font-medium">{p.category}</td>
+                <td className="py-3 text-sm font-black text-right">₹{p.price.toLocaleString()}</td>
+                <td className="py-3 text-sm font-bold text-right">{p.stock ?? '--'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="mt-12 pt-8 border-t border-slate-200 flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+           <span>Items Listed: {filteredProducts.length}</span>
+           <span>Authorized Signatory _______________________</span>
+        </div>
+      </div>
+
+      <header className="h-20 border-b border-slate-100 bg-white flex items-center justify-between px-8 shrink-0 z-20 print:hidden">
         <div className="flex items-center gap-6">
           <Link href="/">
             <Button variant="outline" size="icon" className="h-11 w-11 rounded-2xl bg-white border-none shadow-sm transition-all hover:scale-110"><ArrowLeft className="h-5 w-5 text-secondary" /></Button>
@@ -249,12 +327,29 @@ export default function InventoryPage() {
         </form>
 
         <div className="flex items-center gap-3">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-11 px-6 rounded-xl font-bold uppercase text-[10px] bg-white border-slate-200 gap-2">
+                <Download className="h-4 w-4" /> Export Catalog <ChevronDown className="h-3 w-3 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 border-none shadow-2xl">
+              <DropdownMenuLabel className="text-[10px] font-black uppercase text-slate-400 p-2">Select Format</DropdownMenuLabel>
+              <DropdownMenuItem onClick={exportToExcel} className="h-12 rounded-xl font-bold text-xs gap-3">
+                <FileDown className="h-4 w-4 text-emerald-500" /> Excel (.xlsx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handlePrintCatalog} className="h-12 rounded-xl font-bold text-xs gap-3">
+                <FileText className="h-4 w-4 text-primary" /> PDF Report (Print)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Button variant="outline" onClick={() => setIsBulkImportOpen(true)} className="h-11 px-6 rounded-xl font-bold uppercase text-[10px] bg-white border-slate-200 gap-2"><FileUp className="h-4 w-4" /> Bulk Import</Button>
           <Button onClick={() => { setSelectedProduct(null); setIsEditing(true); }} className="h-11 px-8 rounded-xl font-bold uppercase text-[10px] bg-primary text-white shadow-lg gap-2"><PackagePlus className="h-4 w-4" /> Create New</Button>
         </div>
       </header>
 
-      <main className="flex-1 overflow-hidden p-8 grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8">
+      <main className="flex-1 overflow-hidden p-8 grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-8 print:hidden">
         <Card className="bg-white border-none shadow-sm rounded-[32px] overflow-hidden flex flex-col min-h-0">
           <CardHeader className="p-8 border-b bg-slate-50/30 flex flex-col md:flex-row md:items-center justify-between gap-6 shrink-0">
             <div className="flex items-center gap-4">
