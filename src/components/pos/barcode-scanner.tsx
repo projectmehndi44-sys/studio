@@ -28,7 +28,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   const isTransitioningRef = useRef(false);
   const lastScannedRef = useRef<string | null>(null);
 
-  // Use refs for callbacks to prevent effect re-runs and flickering
+  // Use refs for callbacks to prevent the useEffect from re-running and flickering the camera
   const onScanSuccessRef = useRef(onScanSuccess);
   const onOcrSuccessRef = useRef(onOcrSuccess);
 
@@ -96,7 +96,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         toast({ 
           variant: 'destructive', 
           title: "Scan Failed", 
-          description: "Ensure the tag is well-lit and the ₹ symbol is visible." 
+          description: "Ensure the tag is well-lit and the Rupee symbol is visible." 
         });
       }
     } finally {
@@ -114,7 +114,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
     let isMounted = true;
 
     const startScanner = async () => {
-      // Transition lock to prevent concurrent start/stop crashes
+      // Transition lock to prevent concurrent start/stop crashes (Atomic Lifecycle)
       if (isTransitioningRef.current) return;
       isTransitioningRef.current = true;
 
@@ -179,7 +179,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       }
     };
 
-    // Wait for UI stabilization before starting camera
+    // Wait for Dialog animation to finish before touching hardware
     const timer = setTimeout(startScanner, 800);
 
     return () => {
@@ -197,9 +197,11 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           try {
             if (scanner.isScanning) {
               await scanner.stop();
+              // Prevent removeChild crash by ensuring library cleans up its own nodes safely
+              scanner.clear(); 
             }
           } catch (err) {
-            console.warn("Scanner cleanup error suppressed:", err);
+            console.warn("Scanner cleanup suppressed:", err);
           } finally {
             isTransitioningRef.current = false;
           }
