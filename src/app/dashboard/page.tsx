@@ -20,7 +20,8 @@ import {
   ShieldAlert,
   FileDown,
   ExternalLink,
-  Trash2
+  Trash2,
+  User
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -234,6 +235,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 p-6 md:p-8 font-body">
+      {/* PRINT-ONLY RECEIPT (Remains same for consistency) */}
       <div className={cn(
         "hidden print-only p-4 bg-white text-slate-900 font-receipt min-h-screen text-[10pt] leading-normal",
         printType === 'thermal' ? 'print-thermal' : 'print-normal'
@@ -368,7 +370,7 @@ export default function DashboardPage() {
                 <div><CardTitle className="text-lg font-bold text-secondary uppercase tracking-tight">Invoice Explorer</CardTitle></div>
                 <div className="relative w-full md:w-[320px]">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input placeholder="Search ID, Customer..." className="h-11 pl-11 bg-white border-slate-100 rounded-xl font-bold text-xs" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+                  <Input placeholder="Search ID, Customer, Staff..." className="h-11 pl-11 bg-white border-slate-100 rounded-xl font-bold text-xs" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                 </div>
               </CardHeader>
               <CardContent className="p-0">
@@ -377,6 +379,7 @@ export default function DashboardPage() {
                     <TableRow className="border-none">
                       <TableHead className="font-bold text-[10px] uppercase h-14 pl-8">Timestamp</TableHead>
                       <TableHead className="font-bold text-[10px] uppercase h-14">Bill ID</TableHead>
+                      <TableHead className="font-bold text-[10px] uppercase h-14">Staff</TableHead>
                       <TableHead className="font-bold text-[10px] uppercase h-14 text-right">Amount</TableHead>
                       <TableHead className="font-bold text-[10px] uppercase h-14 text-right pr-8">Actions</TableHead>
                     </TableRow>
@@ -388,6 +391,12 @@ export default function DashboardPage() {
                           <p className="font-bold text-slate-900 text-sm">{getFormattedDateTime(sale.timestamp)}</p>
                         </TableCell>
                         <TableCell><code className="text-[10px] font-bold text-secondary bg-secondary/5 px-2 py-1 rounded-lg uppercase">#{sale.id?.slice(-8)}</code></TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <User className="h-3 w-3 text-slate-400" />
+                            <span className="font-bold text-slate-500 text-xs uppercase tracking-tight">{sale.staffName || 'System'}</span>
+                          </div>
+                        </TableCell>
                         <TableCell className="text-right">
                           <p className="font-black text-slate-900 text-base">₹{sale.totalAmount.toLocaleString()}</p>
                           <p className="text-[9px] font-bold text-emerald-500 uppercase">{sale.paymentMode}</p>
