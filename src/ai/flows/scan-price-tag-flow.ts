@@ -35,14 +35,14 @@ const prompt = ai.definePrompt({
   input: {schema: ScanPriceTagInputSchema},
   output: {schema: ScanPriceTagOutputSchema},
   prompt: `You are a specialized retail vision agent for Krishna's SUPER 9+. 
-Your task is to identify the price on our shop's specific price tag layout.
+Your task is to identify the price on our shop's price tag.
 
 CRITICAL INSTRUCTIONS:
-1. IGNORE TAG COLOR: The background color of the tag may vary (brown, red, white, etc.). Focus ONLY on the text design and layout.
-2. IDENTIFY THE RUPEE SYMBOL: Locate the large currency symbol "₹".
-3. EXTRACT THE PRICE: Extract the LARGE, BOLD numeric digits immediately following the "₹" symbol. This is the item price.
-4. IGNORE SMALLER TEXT: Ignore any branding text, barcodes, or smaller secondary numbers elsewhere on the tag.
-5. ACCURACY: Return the exact numeric price.
+1. IGNORE COLOURS: The tag color (brown, red, white, etc.) is irrelevant. Do not let color influence your reading.
+2. IDENTIFY THE RUPEE SYMBOL: Locate the currency symbol "₹".
+3. EXTRACT THE PRICE: Extract the LARGE digits immediately following the "₹" symbol. This is the item amount.
+4. IGNORE EVERYTHING ELSE: Disregard branding, barcodes, or small secondary numbers.
+5. ACCURACY: Return ONLY the exact numeric price found after the "₹" symbol.
 
 Photo: {{media url=photoDataUri}}`,
 });
