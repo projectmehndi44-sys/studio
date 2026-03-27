@@ -18,7 +18,9 @@ import {
   ChevronDown,
   FileText,
   BarChart3,
-  ShieldAlert
+  ShieldAlert,
+  FileDown,
+  ExternalLink
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,6 +45,7 @@ import {
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import * as XLSX from 'xlsx';
 import {
   Dialog,
   DialogContent,
@@ -58,6 +61,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import { PhoneAuthGate } from '@/components/auth/phone-auth-gate';
 import { isStaffAdmin } from '@/lib/staff';
 import { AdminPinDialog } from '@/components/admin/admin-pin-dialog';
@@ -90,12 +101,12 @@ export default function DashboardPage() {
 
   const salesQuery = useMemoFirebase(() => {
     if (!user || !isAdmin || !isAuthorized) return null;
-    return query(collection(db, 'purchases'), orderBy('timestamp', 'desc'), limit(1000));
+    return query(collection(db, 'purchases'), orderBy('timestamp', 'desc'), limit(5000));
   }, [db, user, isAdmin, isAuthorized]);
 
   const cashQuery = useMemoFirebase(() => {
     if (!user || !isAdmin || !isAuthorized) return null;
-    return query(collection(db, 'cashTransactions'), orderBy('timestamp', 'desc'), limit(500));
+    return query(collection(db, 'cashTransactions'), orderBy('timestamp', 'desc'), limit(1000));
   }, [db, user, isAdmin, isAuthorized]);
 
   const { data: rawSales, isLoading: isSalesLoading } = useCollection<PurchaseRecord>(salesQuery);
@@ -107,8 +118,14 @@ export default function DashboardPage() {
 
     const filterByDate = (items: any[]) => {
       return items.filter(item => {
-        if (!item.timestamp?.seconds) return true;
-        const itemDate = new Date(item.timestamp.seconds * 1000);
+        let itemDate: Date;
+        if (item.timestamp?.seconds) {
+          itemDate = new Date(item.timestamp.seconds * 1000);
+        } else if (item.timestamp instanceof Date) {
+          itemDate = item.timestamp;
+        } else {
+          itemDate = new Date(item.timestamp);
+        }
 
         switch (dateFilter) {
           case 'today': return isAfter(itemDate, startOfToday()) || isSameDay(itemDate, startOfToday());
@@ -155,6 +172,29 @@ export default function DashboardPage() {
     return format(new Date(timestamp), 'dd/MM/yyyy HH:mm');
   };
 
+  const exportToExcel = (data: PurchaseRecord[], filename: string) => {
+    const wsData = data.map(sale => ({
+      'Bill ID': sale.id?.slice(-8),
+      'Date': getFormattedDateTime(sale.timestamp),
+      'Customer': sale.customerName || 'Walk-in',
+      'Staff': sale.staffName,
+      'Payment Mode': sale.paymentMode,
+      'Items Count': sale.items.length,
+      'Total Amount': sale.totalAmount
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sales Ledger");
+    XLSX.writeFile(wb, `${filename}.xlsx`);
+    
+    toast({ title: "Export Complete", description: `${filename}.xlsx saved.` });
+  };
+
+  const handlePrintReport = () => {
+    setTimeout(() => window.print(), 100);
+  };
+
   if (isAuthLoading) return <div className="h-screen flex items-center justify-center">Analyzing Ledger...</div>;
   if (!user) return <PhoneAuthGate />;
 
@@ -168,7 +208,6 @@ export default function DashboardPage() {
     );
   }
 
-  // Final PIN authorization check
   if (!isAuthorized) {
     return (
       <AdminPinDialog 
@@ -233,9 +272,8 @@ export default function DashboardPage() {
         </div>
         <div className="mt-4 text-center space-y-1">
           <p className="text-[7pt] font-bold uppercase tracking-widest text-slate-400">
-            Computer Generated Invoice • No Exchange without Bill
+            Invoice Archive Report • Generated for Krishna's Super 9+
           </p>
-          <p className="text-[9pt] font-bold">Thank you for shopping at Krishna's Super 9+!</p>
         </div>
       </div>
 
@@ -251,7 +289,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200">
+            <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl shadow-sm border border-slate-200 mr-2">
                {(['today', 'yesterday', 'last7', 'month', 'all'] as const).map((filter) => (
                  <Button
                    key={filter}
@@ -263,6 +301,28 @@ export default function DashboardPage() {
                  </Button>
                ))}
             </div>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="h-11 px-6 rounded-xl font-bold uppercase text-[10px] bg-primary text-white shadow-lg gap-2">
+                  <Download className="h-4 w-4" /> Export Ledger
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 border-none shadow-2xl">
+                <DropdownMenuLabel className="text-[10px] font-black uppercase text-slate-400 p-2">Download Formats</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => exportToExcel(filteredSales, `Super9_Sales_${dateFilter}_${format(new Date(), 'ddMMyy')}`)} className="h-12 rounded-xl font-bold text-xs gap-3">
+                  <FileDown className="h-4 w-4 text-emerald-500" /> Excel (.xlsx)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handlePrintReport} className="h-12 rounded-xl font-bold text-xs gap-3">
+                  <FileText className="h-4 w-4 text-primary" /> PDF Report (Print)
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-[10px] font-black uppercase text-slate-400 p-2">Entire History</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => exportToExcel(rawSales || [], `Super9_Full_Archive_${format(new Date(), 'ddMMyy')}`)} className="h-12 rounded-xl font-bold text-xs gap-3">
+                  <ExternalLink className="h-4 w-4 text-secondary" /> All Time Backup
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
@@ -403,12 +463,11 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-               <Button onClick={() => setIsPrinterSelectionOpen(true)} variant="outline" className="h-14 rounded-2xl bg-white font-bold uppercase text-[10px] gap-2"><Printer className="h-4 w-4" /> Print</Button>
-               <Button variant="outline" className="h-14 rounded-2xl bg-white font-bold uppercase text-[10px] gap-2"><Download className="h-4 w-4" /> PDF</Button>
+            <div className="grid grid-cols-1 gap-3">
+               <Button onClick={() => setIsPrinterSelectionOpen(true)} className="h-14 rounded-2xl bg-secondary text-white font-bold uppercase text-[10px] gap-2"><Printer className="h-4 w-4" /> Print Receipt</Button>
             </div>
           </div>
-          <DialogFooter><Button className="w-full h-14 rounded-2xl font-bold text-sm bg-secondary text-white" onClick={() => setViewingSale(null)}>CLOSE ARCHIVE</Button></DialogFooter>
+          <DialogFooter><Button className="w-full h-14 rounded-2xl font-bold text-sm bg-slate-100 text-slate-600" onClick={() => setViewingSale(null)}>CLOSE ARCHIVE</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 

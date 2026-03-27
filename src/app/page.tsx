@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
@@ -66,6 +67,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { BarcodeScanner } from '@/components/pos/barcode-scanner';
+import { SystemSettingsDialog } from '@/components/settings/system-settings-dialog';
 import { format } from 'date-fns';
 import { PhoneAuthGate } from '@/components/auth/phone-auth-gate';
 import { getStaffName, isStaffAdmin } from '@/lib/staff';
@@ -84,6 +86,7 @@ export default function POSPage() {
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isPrinterSelectionOpen, setIsPrinterSelectionOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [printType, setPrintType] = useState<'normal' | 'thermal'>('normal');
   const [lastSale, setLastSale] = useState<PurchaseRecord | null>(null);
   const [activeMainTab, setActiveMainTab] = useState('products');
@@ -379,7 +382,12 @@ export default function POSPage() {
            )}
         </div>
         <div className="flex items-center gap-6">
-          <Button variant="ghost" size="sm" className="h-10 px-4 rounded-xl font-bold text-[10px] uppercase text-slate-500 gap-2">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => setIsSettingsOpen(true)}
+            className="h-10 px-4 rounded-xl font-bold text-[10px] uppercase text-slate-500 gap-2"
+          >
             <Settings className="h-4 w-4" /> System
           </Button>
           <Sheet>
@@ -470,6 +478,12 @@ export default function POSPage() {
           </div>
         )}
       </main>
+
+      <SystemSettingsDialog 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)} 
+        isAdmin={isAdmin}
+      />
 
       {/* SUCCESS DIALOG */}
       <Dialog open={isSuccessDialogOpen} onOpenChange={(val) => { setIsSuccessDialogOpen(val); }}>
