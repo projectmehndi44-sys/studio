@@ -89,6 +89,8 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   }, [isAiProcessing, lastScanned, onOcrSuccess, playBeep, toast, scannerId]);
 
   useEffect(() => {
+    let isMounted = true;
+
     if (!isOpen) {
       if (autoScanIntervalRef.current) {
         clearInterval(autoScanIntervalRef.current);
@@ -99,6 +101,8 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
 
     const startScanner = async () => {
       try {
+        if (!isMounted) return;
+        
         const scanner = new Html5Qrcode(scannerId);
         html5QrCodeRef.current = scanner;
 
@@ -117,28 +121,32 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           (decodedText) => {
             if (lastScanned) return;
             playBeep();
-            setLastScanned(decodedText);
+            if (isMounted) setLastScanned(decodedText);
             onScanSuccess(decodedText);
-            setTimeout(() => setLastScanned(null), 1000);
+            setTimeout(() => {
+              if (isMounted) setLastScanned(null);
+            }, 1000);
           },
           () => {} 
         );
 
-        setHasCameraPermission(true);
-
-        autoScanIntervalRef.current = setInterval(() => {
-          performOcrScan(true);
-        }, 2500);
+        if (isMounted) {
+          setHasCameraPermission(true);
+          autoScanIntervalRef.current = setInterval(() => {
+            performOcrScan(true);
+          }, 2500);
+        }
 
       } catch (error) {
         console.error('Scanner start error:', error);
-        setHasCameraPermission(false);
+        if (isMounted) setHasCameraPermission(false);
       }
     };
 
     startScanner();
 
     return () => {
+      isMounted = false;
       if (autoScanIntervalRef.current) {
         clearInterval(autoScanIntervalRef.current);
         autoScanIntervalRef.current = null;
@@ -146,18 +154,24 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       
       if (html5QrCodeRef.current) {
         const scanner = html5QrCodeRef.current;
+        html5QrCodeRef.current = null;
+        
         if (scanner.isScanning) {
           scanner.stop()
             .then(() => {
-              // Only clear after stop is complete to avoid removeChild errors
-              scanner.clear();
+              try {
+                scanner.clear();
+              } catch (e) {
+                // Ignore clear errors if DOM is already gone
+              }
             })
-            .catch(err => console.warn("Clean stop failed", err));
+            .catch(err => {
+              // Ignore stop errors, especially AbortError on unmount
+            });
         }
-        html5QrCodeRef.current = null;
       }
     };
-  }, [isOpen, onScanSuccess, playBeep, performOcrScan, lastScanned, scannerId]);
+  }, [isOpen, onScanSuccess, playBeep, performOcrScan, scannerId]);
 
   return (
     <div className="space-y-4 relative">
@@ -167,7 +181,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
           isAiProcessing ? "border-primary/50 scale-[1.02]" : "border-slate-100 scale-100"
         )}
       >
-        {/* Dedicated target for the library to prevent DOM conflicts with React overlays */}
         <div id={scannerId} className="absolute inset-0 z-0" />
 
         {/* SUCCESS OVERLAY */}
