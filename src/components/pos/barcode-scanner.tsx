@@ -23,7 +23,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const autoScanIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Play a "beep" sound using Web Audio API to avoid external assets
   const playBeep = useCallback(() => {
     try {
       const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
@@ -37,7 +36,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       gainNode.connect(audioCtx.destination);
 
       oscillator.type = 'sine';
-      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+      oscillator.frequency.setValueAtTime(880, audioCtx.currentTime); 
       gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
 
       oscillator.start();
@@ -48,8 +47,9 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   }, []);
 
   const performOcrScan = useCallback(async (isAuto = false) => {
-    if (isAiProcessing) return;
+    if (isAiProcessing || lastScanned) return;
 
+    // Search for the video element rendered by html5-qrcode
     const video = document.querySelector('#barcode-reader video') as HTMLVideoElement;
     if (!video || video.readyState !== 4) return;
 
@@ -62,7 +62,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       if (!ctx) throw new Error("Canvas context failed");
       
       ctx.drawImage(video, 0, 0);
-      const dataUri = canvas.toDataURL('image/jpeg', 0.7); // Compressed for speed
+      const dataUri = canvas.toDataURL('image/jpeg', 0.6);
       
       const result = await scanPriceTag({ photoDataUri: dataUri });
       
@@ -70,24 +70,23 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         playBeep();
         setLastScanned(`₹${result.price}`);
         
-        // Wait a tiny bit for the user to see the "success" green flash before closing
+        // Brief pause to show the success state before closing
         setTimeout(() => {
           onOcrSuccess(result.name, result.price);
-        }, 500);
+        }, 800);
       }
     } catch (e) {
-      // For auto-scan, we silently ignore errors (like no price found in frame)
       if (!isAuto) {
         toast({ 
           variant: 'destructive', 
           title: "Scan Failed", 
-          description: "Ensure the price tag is clear and visible." 
+          description: "Could not find a price. Ensure the tag is well-lit." 
         });
       }
     } finally {
       setIsAiProcessing(false);
     }
-  }, [isAiProcessing, onOcrSuccess, playBeep, toast]);
+  }, [isAiProcessing, lastScanned, onOcrSuccess, playBeep, toast]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -97,10 +96,6 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
 
     const startScanner = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        setHasCameraPermission(true);
-        stream.getTracks().forEach(track => track.stop());
-
         const scannerId = "barcode-reader";
         const scanner = new Html5Qrcode(scannerId);
         html5QrCodeRef.current = scanner;
@@ -108,8 +103,8 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         await scanner.start(
           { facingMode: "environment" },
           {
-            fps: 20,
-            qrbox: { width: 250, height: 150 },
+            fps: 25,
+            qrbox: { width: 250, height: 180 },
             formatsToSupport: [
               Html5QrcodeSupportedFormats.EAN_13,
               Html5QrcodeSupportedFormats.EAN_8,
@@ -118,27 +113,25 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
             ]
           },
           (decodedText) => {
+            if (lastScanned) return;
             playBeep();
             setLastScanned(decodedText);
             onScanSuccess(decodedText);
             setTimeout(() => setLastScanned(null), 1000);
           },
-          () => { /* Noise reduction */ }
+          () => {} // Suppress errors during normal scanning noise
         );
 
-        // Start the Auto-OCR loop (check every 3 seconds)
+        setHasCameraPermission(true);
+
+        // Auto-OCR loop: Check for price tags every 2.5 seconds
         autoScanIntervalRef.current = setInterval(() => {
           performOcrScan(true);
-        }, 3500);
+        }, 2500);
 
       } catch (error) {
-        console.error('Error accessing camera:', error);
+        console.error('Scanner start error:', error);
         setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Camera Access Denied',
-          description: 'Please allow camera access to use the scanner.',
-        });
       }
     };
 
@@ -146,38 +139,40 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
 
     return () => {
       if (autoScanIntervalRef.current) clearInterval(autoScanIntervalRef.current);
-      if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
-        html5QrCodeRef.current.stop().catch(err => console.error("Scanner stop error", err));
+      if (html5QrCodeRef.current) {
+        if (html5QrCodeRef.current.isScanning) {
+          html5QrCodeRef.current.stop().catch(err => console.error("Stop error", err));
+        }
       }
     };
-  }, [isOpen, onScanSuccess, playBeep, performOcrScan, toast]);
+  }, [isOpen, onScanSuccess, playBeep, performOcrScan, lastScanned]);
 
   return (
     <div className="space-y-4 relative">
       <div 
         id="barcode-reader" 
         className={cn(
-          "w-full aspect-square rounded-[32px] overflow-hidden border-4 bg-slate-900 relative shadow-2xl transition-colors duration-300",
-          isAiProcessing ? "border-primary/40" : "border-slate-100"
+          "w-full aspect-square rounded-[32px] overflow-hidden border-4 bg-slate-900 relative shadow-2xl transition-all duration-500",
+          isAiProcessing ? "border-primary/50 scale-[1.02]" : "border-slate-100 scale-100"
         )}
       >
         {/* SUCCESS OVERLAY */}
         {lastScanned && (
-          <div className="absolute inset-0 z-20 bg-emerald-500/90 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-200">
-             <div className="h-24 w-24 bg-white rounded-full flex items-center justify-center mb-6 shadow-2xl">
-               <CheckCircle className="h-14 w-14 text-emerald-500" />
+          <div className="absolute inset-0 z-20 bg-emerald-500/95 flex flex-col items-center justify-center animate-in fade-in zoom-in duration-300">
+             <div className="h-28 w-28 bg-white rounded-[40px] flex items-center justify-center mb-6 shadow-2xl">
+               <CheckCircle className="h-16 w-16 text-emerald-500" />
              </div>
-             <p className="text-white font-black text-4xl tracking-tighter uppercase text-center px-4">{lastScanned}</p>
+             <p className="text-white font-black text-5xl tracking-tighter uppercase text-center px-4">{lastScanned}</p>
           </div>
         )}
 
         {/* AI CAPTURING PULSE */}
         {isAiProcessing && !lastScanned && (
           <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-            <div className="w-full h-full border-8 border-primary animate-pulse opacity-30" />
-            <div className="absolute bg-primary/80 backdrop-blur-md px-6 py-3 rounded-2xl flex items-center gap-3 shadow-2xl">
-               <Loader2 className="h-5 w-5 text-white animate-spin" />
-               <span className="text-white font-black text-xs uppercase tracking-widest">Reading Price Tag...</span>
+            <div className="w-full h-full border-[12px] border-primary animate-pulse opacity-40 rounded-[28px]" />
+            <div className="absolute bg-primary/90 backdrop-blur-md px-8 py-4 rounded-3xl flex items-center gap-4 shadow-2xl border border-white/20">
+               <Loader2 className="h-6 w-6 text-white animate-spin" />
+               <span className="text-white font-black text-sm uppercase tracking-widest">AI Vision Active...</span>
             </div>
           </div>
         )}
@@ -185,10 +180,10 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         {/* SCANNING GUIDES */}
         {!lastScanned && !isAiProcessing && (
           <div className="absolute inset-0 z-0 pointer-events-none flex flex-col items-center justify-center">
-             <div className="w-64 h-40 border-2 border-dashed border-white/30 rounded-2xl relative">
-                <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-primary/40 shadow-[0_0_15px_rgba(var(--primary),0.5)] animate-bounce" />
+             <div className="w-72 h-44 border-2 border-dashed border-white/40 rounded-3xl relative">
+                <div className="absolute top-1/2 left-4 right-4 h-0.5 bg-primary/60 shadow-[0_0_20px_rgba(var(--primary),0.8)] animate-bounce" />
              </div>
-             <p className="mt-8 text-white/50 font-bold text-[10px] uppercase tracking-[0.3em]">Align Tag or Barcode</p>
+             <p className="mt-10 text-white/40 font-black text-[10px] uppercase tracking-[0.4em]">Ready for Tag or Barcode</p>
           </div>
         )}
       </div>
@@ -197,32 +192,32 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
         <Button 
           variant="secondary"
           onClick={() => performOcrScan(false)} 
-          disabled={isAiProcessing}
-          className="h-16 rounded-2xl bg-slate-100 text-secondary font-black uppercase tracking-widest gap-3 text-xs border-2 border-transparent hover:border-primary/20 transition-all"
+          disabled={isAiProcessing || !!lastScanned}
+          className="h-16 rounded-2xl bg-slate-100 text-secondary font-black uppercase tracking-widest gap-3 text-xs border-2 border-transparent hover:border-primary/30 transition-all shadow-sm"
         >
           {isAiProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Zap className="h-5 w-5 text-primary" />}
-          Force Smart Scan
+          Snapshot Smart Scan
         </Button>
       </div>
       
       {hasCameraPermission === false && (
-        <Alert variant="destructive" className="rounded-2xl border-none shadow-lg">
-          <CameraOff className="h-5 w-5" />
-          <AlertTitle className="font-black uppercase tracking-tight text-xs">Lens Unavailable</AlertTitle>
-          <AlertDescription className="text-[10px] font-bold opacity-80">
-            Check security settings to use the Super Scanner.
+        <Alert variant="destructive" className="rounded-3xl border-none shadow-2xl bg-primary text-white p-6">
+          <CameraOff className="h-6 w-6" />
+          <AlertTitle className="font-black uppercase tracking-tighter text-sm mb-1">Access Blocked</AlertTitle>
+          <AlertDescription className="text-[11px] font-bold opacity-90 leading-relaxed">
+            Please allow camera permissions in your tablet settings or APK manifest to use the Super Scanner.
           </AlertDescription>
         </Alert>
       )}
 
-      <div className="flex items-center justify-between px-2">
+      <div className="flex items-center justify-between px-4">
          <div className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-            <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">Auto-Capture Active</p>
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Live Auto-Detection</p>
          </div>
          <div className="flex items-center gap-2">
-            <Search className="h-3 w-3 text-primary" />
-            <p className="text-[9px] font-black uppercase text-slate-400 tracking-widest">AI Vision v4.0</p>
+            <Search className="h-3.5 w-3.5 text-primary" />
+            <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">AI Engine v5.2</p>
          </div>
       </div>
     </div>
