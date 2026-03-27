@@ -1,9 +1,9 @@
 
 export const STAFF_MAPPING: Record<string, string> = {
-  '+916000861935': 'Admin',
+  '+916000861935': 'Abhi J',
   '+919613993713': 'Owner',
-  '+919181540323': 'Geeta Churi',
-  '+918822081421': 'Muskan Das',
+  '+919181540323': 'Geeta C',
+  '+918822081421': 'Muskan D',
 };
 
 export function getStaffName(phoneNumber: string | null): string {
