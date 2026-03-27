@@ -349,15 +349,14 @@ export default function POSPage() {
           <h2 className="text-[14pt] font-black uppercase tracking-tight">SUPER 9+</h2>
           <p className="text-[8pt] font-bold mt-1">{shopAddress}</p>
         </div>
-        <div className="grid grid-cols-2 gap-2 mb-2 text-[8pt]">
-          <div className="space-y-0.5">
-            <p className="font-bold">Bill ID: #{lastSale?.id?.slice(-8) || 'ARCHIVE'}</p>
+        <div className="grid grid-cols-2 gap-2 mb-2 text-[7pt]">
+          <div className="space-y-0.5 overflow-hidden">
+            <p className="font-bold whitespace-nowrap">Bill ID: #{lastSale?.id?.slice(-8) || 'ARCHIVE'}</p>
             <p className="font-bold">DateTime: {getFormattedDateTime(lastSale?.timestamp)}</p>
           </div>
-          <div className="space-y-0.5 text-right">
-            <p className="font-bold">Cust: {lastSale?.customerName || 'Walk-in'}</p>
-            {lastSale?.customerId && <p className="font-bold">Phone: {lastSale.customerId}</p>}
-            <p className="font-bold">Served By: {lastSale?.staffName || activeStaffName}</p>
+          <div className="space-y-0.5 text-right overflow-hidden">
+            <p className="font-bold truncate">Cust: {lastSale?.customerName || 'Walk-in'}</p>
+            <p className="font-bold whitespace-nowrap">Served By: {lastSale?.staffName || activeStaffName}</p>
             <p className="font-bold">Mode: {lastSale?.paymentMode || 'Cash'}</p>
           </div>
         </div>
@@ -547,17 +546,15 @@ export default function POSPage() {
           <div className="py-4 space-y-4">
             <div className="bg-slate-50 rounded-[28px] p-6 space-y-3 font-receipt border border-slate-200 leading-normal">
               <div className="flex flex-col border-b border-slate-100 pb-2 space-y-2">
-                 <div className="flex justify-between items-center text-[8pt] font-bold">
+                 <div className="flex justify-between items-center text-[7pt] font-bold">
                     <span className="text-slate-400 uppercase">Customer</span>
-                    <span className="text-secondary">{lastSale?.customerName || 'Walk-in'}</span>
+                    <span className="text-secondary truncate">{lastSale?.customerName || 'Walk-in'}</span>
                  </div>
-                 {lastSale?.customerId && (
-                   <div className="flex justify-between items-center text-[8pt] font-bold">
-                      <span className="text-slate-400 uppercase">Phone</span>
-                      <span className="text-secondary">{lastSale.customerId}</span>
-                   </div>
-                 )}
-                 <div className="flex justify-between items-center text-[8pt] font-bold">
+                 <div className="flex justify-between items-center text-[7pt] font-bold">
+                    <span className="text-slate-400 uppercase">Bill ID</span>
+                    <span className="text-secondary whitespace-nowrap">#{lastSale?.id?.slice(-8) || 'ARCHIVE'}</span>
+                 </div>
+                 <div className="flex justify-between items-center text-[7pt] font-bold">
                     <span className="text-slate-400 uppercase">DateTime</span>
                     <span className="text-secondary">{getFormattedDateTime(lastSale?.timestamp)}</span>
                  </div>
@@ -589,9 +586,9 @@ export default function POSPage() {
                    <span className="text-[8pt] font-bold text-slate-400 uppercase tracking-widest mb-1">Final Amount</span>
                    <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">₹{lastSale?.totalAmount.toFixed(0)}</span>
                 </div>
-                <div className="text-right">
+                <div className="text-right overflow-hidden">
                   <span className="text-[7pt] font-bold text-slate-400 uppercase block tracking-widest">Served By</span>
-                  <span className="text-[8pt] font-bold text-emerald-500 uppercase">{lastSale?.staffName || activeStaffName}</span>
+                  <span className="text-[7pt] font-bold text-emerald-500 uppercase whitespace-nowrap">{lastSale?.staffName || activeStaffName}</span>
                 </div>
               </div>
             </div>

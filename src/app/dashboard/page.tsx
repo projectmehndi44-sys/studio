@@ -243,14 +243,14 @@ export default function DashboardPage() {
           <h2 className="text-[14pt] font-black uppercase tracking-tight">SUPER 9+</h2>
           <p className="text-[8pt] font-bold mt-1">{shopAddress}</p>
         </div>
-        <div className="grid grid-cols-2 gap-2 mb-2 text-[8pt]">
-          <div className="space-y-0.5">
-            <p className="font-bold">Bill ID: #{viewingSale?.id?.slice(-8) || 'ARCHIVE'}</p>
+        <div className="grid grid-cols-2 gap-2 mb-2 text-[7pt]">
+          <div className="space-y-0.5 overflow-hidden">
+            <p className="font-bold whitespace-nowrap">Bill ID: #{viewingSale?.id?.slice(-8) || 'ARCHIVE'}</p>
             <p className="font-bold">DateTime: {getFormattedDateTime(viewingSale?.timestamp)}</p>
           </div>
-          <div className="space-y-0.5 text-right">
-            <p className="font-bold">Cust: {viewingSale?.customerName || 'Walk-in'}</p>
-            <p className="font-bold">Staff: {viewingSale?.staffName || 'System'}</p>
+          <div className="space-y-0.5 text-right overflow-hidden">
+            <p className="font-bold truncate">Cust: {viewingSale?.customerName || 'Walk-in'}</p>
+            <p className="font-bold whitespace-nowrap">Served By: {viewingSale?.staffName || 'System'}</p>
             <p className="font-bold">Mode: {viewingSale?.paymentMode || 'Cash'}</p>
           </div>
         </div>
@@ -364,7 +364,7 @@ export default function DashboardPage() {
             </div>
 
             <Card className="bg-white border-none shadow-sm rounded-[32px] overflow-hidden">
-              <CardHeader className="p-8 border-b bg-slate-50/30 flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <CardHeader className="p-8 border-b bg-slate-50/30 flex flex-col md:flex-row md:items-center justify-between gap-6 shrink-0">
                 <div><CardTitle className="text-lg font-bold text-secondary uppercase tracking-tight">Invoice Explorer</CardTitle></div>
                 <div className="relative w-full md:w-[320px]">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -444,11 +444,15 @@ export default function DashboardPage() {
           <div className="py-2 space-y-4">
             <div className="bg-slate-50 rounded-[24px] p-6 space-y-3 font-receipt border border-slate-200 leading-normal">
               <div className="flex flex-col border-b border-slate-100 pb-2 space-y-2">
-                 <div className="flex justify-between items-center text-[8pt] font-bold">
+                 <div className="flex justify-between items-center text-[7pt] font-bold">
                     <span className="text-slate-400 uppercase">Customer</span>
-                    <span className="text-secondary">{viewingSale?.customerName || 'Walk-in'}</span>
+                    <span className="text-secondary truncate">{viewingSale?.customerName || 'Walk-in'}</span>
                  </div>
-                 <div className="flex justify-between items-center text-[8pt] font-bold">
+                 <div className="flex justify-between items-center text-[7pt] font-bold">
+                    <span className="text-slate-400 uppercase">Bill ID</span>
+                    <span className="text-secondary whitespace-nowrap">#{viewingSale?.id?.slice(-8) || 'ARCHIVE'}</span>
+                 </div>
+                 <div className="flex justify-between items-center text-[7pt] font-bold">
                     <span className="text-slate-400 uppercase">DateTime</span>
                     <span className="text-secondary">{getFormattedDateTime(viewingSale?.timestamp)}</span>
                  </div>
@@ -480,6 +484,10 @@ export default function DashboardPage() {
                    <span className="text-[8pt] font-bold text-slate-400 uppercase tracking-widest mb-1">Final Amount</span>
                    <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">₹{viewingSale?.totalAmount.toFixed(0)}</span>
                 </div>
+                <div className="text-right overflow-hidden">
+                   <span className="text-[7pt] font-bold text-slate-400 uppercase block tracking-widest">Served By</span>
+                   <span className="text-[7pt] font-bold text-emerald-500 uppercase whitespace-nowrap">{viewingSale?.staffName || 'System'}</span>
+                </div>
               </div>
             </div>
             <div className="grid grid-cols-1 gap-3">
@@ -505,7 +513,7 @@ export default function DashboardPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isPrinterSelectionOpen} onOpenChange={isPrinterSelectionOpen}>
+      <Dialog open={isPrinterSelectionOpen} onOpenChange={setIsPrinterSelectionOpen}>
         <DialogContent className="sm:max-w-md rounded-[32px] p-10 border-none shadow-2xl">
           <DialogHeader><DialogTitle className="text-2xl font-black uppercase text-secondary">Output Device</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-4 py-6">
