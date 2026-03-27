@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { 
   ShoppingBag, 
   LayoutDashboard, 
@@ -60,12 +61,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { BarcodeScanner } from '@/components/pos/barcode-scanner';
 import { SystemSettingsDialog } from '@/components/settings/system-settings-dialog';
 import { format } from 'date-fns';
 import { PhoneAuthGate } from '@/components/auth/phone-auth-gate';
 import { getStaffName, isStaffAdmin, STAFF_MAPPING } from '@/lib/staff';
 import { AdminPinDialog } from '@/components/admin/admin-pin-dialog';
+
+// Dynamic import for the scanner to prevent hydration issues and ensure client-side execution
+const BarcodeScanner = dynamic(
+  () => import('@/components/pos/barcode-scanner').then((mod) => mod.BarcodeScanner),
+  { ssr: false, loading: () => <div className="aspect-square bg-slate-100 animate-pulse rounded-[32px] flex items-center justify-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">Waking Vision...</div> }
+);
 
 const CART_STORAGE_KEY = 'super9_pos_current_cart';
 const STAFF_STORAGE_KEY = 'super9_pos_active_staff';
@@ -487,7 +493,7 @@ export default function POSPage() {
                   onScanClick={() => setIsScannerOpen(true)} 
                   onAddNewProduct={handleAddNewProduct}
                   query={searchQuery}
-                  setQuery={setSearchQuery}
+                  setQuery={setQuery}
                 />
                 <Button 
                   disabled={cartItems.length === 0} 
@@ -650,7 +656,9 @@ export default function POSPage() {
             <div className="mx-auto w-16 h-16 bg-primary/5 rounded-[24px] flex items-center justify-center"><ScanLine className="h-8 w-8 text-primary" /></div>
             <DialogTitle className="text-center text-xl font-black uppercase text-secondary">Super Scanner</DialogTitle>
           </DialogHeader>
-          <div className="py-4"><BarcodeScanner isOpen={isScannerOpen} onScanSuccess={handleBarcodeScan} onOcrSuccess={handleOcrSuccess} /></div>
+          <div className="py-4">
+            <BarcodeScanner isOpen={isScannerOpen} onScanSuccess={handleBarcodeScan} onOcrSuccess={handleOcrSuccess} />
+          </div>
           <DialogFooter><Button variant="secondary" className="w-full h-14 rounded-2xl font-black text-xs uppercase" onClick={() => setIsScannerOpen(false)}>Close Scanner</Button></DialogFooter>
         </DialogContent>
       </Dialog>

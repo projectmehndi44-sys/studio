@@ -27,7 +27,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
   const isTransitioningRef = useRef(false);
   const autoScanIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  // Stable Refs for callbacks to prevent effect re-triggers
+  // Stable Refs for callbacks to prevent effect re-triggers and "On-Off" flickering
   const onScanSuccessRef = useRef(onScanSuccess);
   const onOcrSuccessRef = useRef(onOcrSuccess);
   const isAiProcessingRef = useRef(false);
@@ -78,10 +78,12 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       
       const result = await scanPriceTag({ photoDataUri: dataUri });
       
+      // RUPEE MANDATORY CHECK: AI flow handles validation, we just verify price exists
       if (result && result.price > 0) {
         playBeep();
         const priceLabel = `₹${result.price}`;
         setLastScanned(priceLabel);
+        // Delay callback to allow success visual to show
         setTimeout(() => {
           onOcrSuccessRef.current(result.name, result.price);
         }, 1200);
@@ -105,15 +107,18 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
     let isMounted = true;
 
     const startScanner = async () => {
+      // Prevent overlapping transitions
       if (isTransitioningRef.current || !isMounted) return;
       isTransitioningRef.current = true;
 
       try {
         if (!containerRef.current) throw new Error("Scanner container not found");
         
-        // Ensure old instances are cleaned up
+        // Clean up any stale instances before starting
         if (html5QrCodeRef.current) {
-          if (html5QrCodeRef.current.isScanning) await html5QrCodeRef.current.stop();
+          try {
+            if (html5QrCodeRef.current.isScanning) await html5QrCodeRef.current.stop();
+          } catch (e) {}
           html5QrCodeRef.current = null;
         }
 
@@ -138,7 +143,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
             setLastScanned(decodedText);
             onScanSuccessRef.current(decodedText);
           },
-          () => {} // Frame errors are normal
+          () => {} // Frame errors are expected
         );
 
         if (isMounted) {
@@ -155,8 +160,8 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       }
     };
 
-    // Delay start slightly to allow dialog animation to settle
-    const timer = setTimeout(startScanner, 300);
+    // Delay start slightly to allow the dialog animation to settle and avoid DOM race conditions
+    const timer = setTimeout(startScanner, 400);
 
     return () => {
       isMounted = false;
@@ -165,6 +170,7 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
       
       const scanner = html5QrCodeRef.current;
       if (scanner) {
+        // Asynchronous teardown that waits for hardware release
         const teardown = async () => {
           try {
             if (scanner.isScanning) {
@@ -174,10 +180,9 @@ export function BarcodeScanner({ onScanSuccess, onOcrSuccess, isOpen }: BarcodeS
             console.warn("Scanner stop warning:", e);
           } finally {
             html5QrCodeRef.current = null;
-            // Only clear DOM if the container still exists to avoid removeChild errors
-            if (containerRef.current) {
-              containerRef.current.innerHTML = "";
-            }
+            // DEFENSIVE DOM CLEAR: Only clear if the container is still present in the DOM
+            const el = document.getElementById(scannerId);
+            if (el) el.innerHTML = "";
           }
         };
         teardown();
